@@ -27,16 +27,31 @@ function formatDistance(km: number): string {
   return km < 1 ? `${Math.round(km * 1000)} מ׳` : `${km.toFixed(1)} ק״מ`;
 }
 
+type LogisticPin = { id: string; type: string; title: string; lat: number; lng: number; dateRange: string | null };
+
+const LOGISTIC_EMOJI: Record<string, string> = {
+  flight: "✈️",
+  hotel: "🏨",
+  ticket: "🎫",
+  passport: "🛂",
+  visa: "📋",
+  insurance: "🛡️",
+  vaccination: "💉",
+  other: "📄",
+};
+
 export function MapScreen({
   pois,
   categoryNames,
   slug,
   favoritedIds,
+  logisticPins = [],
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
   slug: string;
   favoritedIds: Set<string>;
+  logisticPins?: LogisticPin[];
 }) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -120,6 +135,33 @@ export function MapScreen({
       }
     });
   }, [loaded, shapePois]);
+
+  // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
+  const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    logisticMarkersRef.current.forEach((m) => m.setMap(null));
+    logisticMarkersRef.current = [];
+
+    logisticPins.forEach((pin) => {
+      const marker = new google.maps.Marker({
+        position: { lat: pin.lat, lng: pin.lng },
+        map: mapRef.current!,
+        label: { text: LOGISTIC_EMOJI[pin.type] ?? "📍", fontSize: "16px" },
+        title: pin.title,
+        zIndex: 500,
+      });
+      marker.addListener("click", () => {
+        infoWindowRef.current?.setContent(
+          `<div style="font-family:'Rubik',sans-serif;padding:2px 4px"><strong>${pin.title}</strong>${
+            pin.dateRange ? `<br/><span style="opacity:.6;font-size:12px">${pin.dateRange}</span>` : ""
+          }</div>`
+        );
+        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+      });
+      logisticMarkersRef.current.push(marker);
+    });
+  }, [loaded, logisticPins]);
 
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
     setSelectedPoiId(poi.id);

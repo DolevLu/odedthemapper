@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getResolvedSubscriptionForAccount } from "@/lib/access";
 import { PLANS, formatUsd, type PlanKey } from "@/lib/plans";
 import { daysUntilSwappable } from "@/lib/subscriptionUtils";
+import { getUserTravelStats } from "@/lib/stats";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
 import { SwapDestinationButton } from "./SwapDestinationButton";
@@ -26,9 +27,34 @@ export default async function AccountPage() {
         })
       : [];
 
+  const stats = await getUserTravelStats(session.user.id);
+  const STAT_CARDS = [
+    { label: "מדינות", value: stats.countriesVisited, icon: "🌍" },
+    { label: "מסמכים שמורים", value: stats.documentsCount, icon: "📄" },
+    { label: "מסלולים שיצרתי", value: stats.itinerariesCount, icon: "📅" },
+    { label: "חידונים", value: stats.quizzesTaken, icon: "🧠" },
+    { label: "ימים איתנו", value: stats.daysSinceJoined, icon: "⏱️" },
+    { label: "נקודות", value: stats.totalPoints, icon: "⭐" },
+  ];
+
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-      <h1 className="mb-6 text-2xl font-extrabold">המנוי שלי</h1>
+      <h1 className="mb-4 text-2xl font-extrabold">הפרופיל שלי</h1>
+
+      <div className="mb-8 grid grid-cols-3 gap-3">
+        {STAT_CARDS.map((s) => (
+          <div key={s.label} className="rounded-2xl border border-black/5 bg-white p-4 text-center">
+            <div className="text-xl">{s.icon}</div>
+            <div className="mt-1 text-lg font-extrabold">{s.value}</div>
+            <div className="text-xs opacity-60">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      {stats.bestQuizAveragePct !== null && (
+        <p className="mb-8 -mt-4 text-sm opacity-60">ממוצע הצלחה בחידונים: {stats.bestQuizAveragePct}%</p>
+      )}
+
+      <h2 className="mb-6 text-2xl font-extrabold">המנוי שלי</h2>
 
       {active ? (
         <div className="rounded-3xl border border-black/5 bg-white p-6">

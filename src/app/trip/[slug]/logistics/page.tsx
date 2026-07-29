@@ -1,8 +1,21 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
+import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { prisma } from "@/lib/prisma";
 import { addLogistic, deleteLogistic } from "@/lib/actions/trip";
+import { WhereToStayHeatmap } from "./WhereToStayHeatmap";
+
+const TYPE_LABELS: Record<string, string> = {
+  flight: "✈️ טיסה",
+  hotel: "🏨 מלון",
+  ticket: "🎫 כרטיס",
+  passport: "🛂 דרכון",
+  visa: "📋 ויזה",
+  insurance: "🛡️ ביטוח נסיעות",
+  vaccination: "💉 חיסון",
+  other: "📄 אחר",
+};
 
 export default async function LogisticsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -10,16 +23,23 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
   if (!destination) notFound();
 
   const session = await auth();
-  const items = await prisma.tripLogistic.findMany({
-    where: { userId: session!.user!.id, destinationId: destination.id },
-    orderBy: { startsAt: "asc" },
-  });
+  const [items, pois] = await Promise.all([
+    prisma.tripLogistic.findMany({
+      where: { userId: session!.user!.id, destinationId: destination.id },
+      orderBy: { startsAt: "asc" },
+    }),
+    getFlatPoisForDestination(destination.id),
+  ]);
 
   const addAction = addLogistic.bind(null, destination.id, slug);
+  const heatmapPoints: [number, number][] = pois.map((p) => [p.lat, p.lng]);
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold">✈️ לוגיסטיקת טיול</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold">✈️ לוגיסטיקת טיול</h1>
+        {heatmapPoints.length > 0 && <WhereToStayHeatmap points={heatmapPoints} destinationName={destination.name} />}
+      </div>
 
       <form
         action={addAction}
@@ -27,11 +47,18 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
         <select name="type" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }}>
-          <option value="flight">טיסה</option>
-          <option value="hotel">מלון</option>
+          <option value="flight">✈️ טיסה</option>
+          <option value="hotel">🏨 מלון</option>
+          <option value="ticket">🎫 כרטיס כללי (רכבת/אוטובוס/אטרקציה)</option>
+          <option value="passport">🛂 דרכון</option>
+          <option value="visa">📋 ויזה</option>
+          <option value="insurance">🛡️ ביטוח נסיעות</option>
+          <option value="vaccination">💉 חיסון</option>
+          <option value="other">📄 אחר</option>
         </select>
         <input name="title" placeholder="למשל: אל-על LY386 / מלון רומא סנטרל" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
         <input name="confirmationNumber" placeholder="מספר אישור" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+        <input name="address" placeholder="כתובת (למלון — יסומן אוטומטית על המפה)" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
         <div className="flex gap-2">
           <label className="flex-1 text-xs opacity-60">
             מתאריך
@@ -73,11 +100,16 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
                   <img src={item.imageUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
                 )}
                 <div>
-                  <p className="text-xs opacity-60">{item.type === "flight" ? "✈️ טיסה" : "🏨 מלון"}</p>
+                  <p className="text-xs opacity-60">{TYPE_LABELS[item.type] ?? item.type}</p>
                   <p className="font-semibold">{details.title}</p>
                   {item.confirmationNumber && <p className="text-sm opacity-70">אישור: {item.confirmationNumber}</p>}
                   {dateRange && <p className="text-sm opacity-70">{dateRange}</p>}
                   {details.notes && <p className="text-sm opacity-70">{details.notes}</p>}
+                  {item.address && (
+                    <p className="text-xs opacity-60">
+                      📍 {item.address} {item.lat && item.lng ? "· מסומן על המפה" : ""}
+                    </p>
+                  )}
                 </div>
               </div>
               <form action={deleteLogistic.bind(null, item.id, slug)}>

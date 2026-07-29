@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { getActiveSubscriptionSummary } from "@/lib/access";
+import { prisma } from "@/lib/prisma";
 import { ProfileMenu } from "./ProfileMenu";
 import { DestinationBadge } from "./DestinationBadge";
+import { UpcomingReminderToast } from "@/components/UpcomingReminderToast";
 
 export async function SiteHeader() {
   const session = await auth();
@@ -10,6 +12,23 @@ export async function SiteHeader() {
   const summary = userId ? await getActiveSubscriptionSummary(userId) : null;
   const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
   const isOrgActive = summary?.plan.isOrgTier ?? false;
+
+  const upcoming = userId
+    ? await prisma.tripLogistic.findFirst({
+        where: { userId, startsAt: { gte: new Date(), lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) } },
+        orderBy: { startsAt: "asc" },
+        include: { destination: { select: { slug: true } } },
+      })
+    : null;
+  const reminderItem = upcoming
+    ? {
+        id: upcoming.id,
+        type: upcoming.type,
+        title: (JSON.parse(upcoming.detailsJson) as { title: string }).title,
+        startsAt: upcoming.startsAt!.toISOString(),
+        slug: upcoming.destination.slug,
+      }
+    : null;
 
   return (
     <header
@@ -44,6 +63,8 @@ export async function SiteHeader() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-mark.svg" alt="עודד המנקד" className="h-9 w-9" />
       </Link>
+
+      <UpcomingReminderToast item={reminderItem} />
     </header>
   );
 }

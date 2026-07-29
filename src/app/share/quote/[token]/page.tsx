@@ -74,6 +74,16 @@ export default async function SharedQuotePage({ params }: { params: Promise<{ to
 
       <AcceptQuoteButton token={token} alreadyAccepted={quote.status === "accepted"} />
 
+      {quote.signatureDataUrl && quote.signedAt && (
+        <div className="flex flex-col items-center gap-1 border-t pt-4 text-center" style={{ borderColor: "#1A1A1A22" }}>
+          <p className="text-xs opacity-50">
+            נחתם ב-{quote.signedAt.toLocaleDateString("he-IL")} בשעה {quote.signedAt.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={quote.signatureDataUrl} alt="חתימה" className="h-16 opacity-80" />
+        </div>
+      )}
+
       <p className="print:hidden mt-2 text-center text-xs opacity-50">
         מסמך זה נוצר אוטומטית מתבנית מקצועית של עודד המנקד ואינו מהווה ייעוץ משפטי.
       </p>

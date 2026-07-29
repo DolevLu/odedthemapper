@@ -61,8 +61,15 @@ export async function generatePersonalizedSetup(
 
   if (pool.length === 0) return { ok: false, error: "לא נמצאו מספיק נקודות מתאימות ליעד הזה" };
 
+  const targetCount = answers.tripDays * perDay;
+  // Must-see POIs are guaranteed a spot regardless of photo status; the rest
+  // fill remaining slots, preferring ones with a photo.
+  const ranked = [...pool].sort((a, b) => {
+    if (a.isMustSee !== b.isMustSee) return Number(b.isMustSee) - Number(a.isMustSee);
+    return (b.photos.length > 0 ? 1 : 0) - (a.photos.length > 0 ? 1 : 0);
+  });
+  const chosen = ranked.slice(0, targetCount);
   const withPhoto = pool.filter((p) => p.photos.length > 0);
-  const chosen = (withPhoto.length >= answers.tripDays * perDay ? withPhoto : pool).slice(0, answers.tripDays * perDay);
 
   // Itinerary
   let itinerary = await prisma.itinerary.findUnique({
@@ -111,4 +118,15 @@ export async function generatePersonalizedSetup(
   }
 
   return { ok: true, itemCount: chosen.length, favoriteCount: favoritesPool.length };
+}
+
+// ---------- Destination trivia (the "חידונים" screen — unrelated to the
+// destination-matching quiz above, which shares the word "quiz" in Hebrew) ----------
+
+export async function submitQuizAttempt(destinationId: string, score: number, totalQuestions: number) {
+  const session = await auth();
+  if (!session?.user?.id) return;
+  await prisma.quizAttempt.create({
+    data: { userId: session.user.id, destinationId, score, totalQuestions },
+  });
 }

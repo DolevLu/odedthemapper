@@ -43,6 +43,10 @@ model Destination {
   budgets      TripBudget[]
   priceQuotes  PriceQuote[]
   albumMedia   AlbumMedia[]
+  quizQuestions QuizQuestion[]
+  quizAttempts QuizAttempt[]
+  tips         DestinationTip[]
+  itineraryTemplates ItineraryTemplate[]
 }
 
 model Area {
@@ -82,6 +86,7 @@ model PointOfInterest {
   tip               String?
   hours             String?
   wantsBooking      Boolean  @default(false)
+  isMustSee         Boolean  @default(false) // flagged as one of the destination's unmissable highlights
   createdAt         DateTime @default(now())
 
   category    Category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -143,6 +148,8 @@ model User {
   plannerProfile PlannerProfile?
   priceQuotes   PriceQuote[]
   albumMedia    AlbumMedia[]
+  quizAttempts  QuizAttempt[]
+  itineraryTemplates ItineraryTemplate[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -307,10 +314,13 @@ model TripLogistic {
   id            String   @id @default(cuid())
   userId        String
   destinationId String
-  type          String // flight | hotel
+  type          String // flight | hotel | passport | visa | insurance | vaccination | ticket | other
   detailsJson   String // JSON blob: carrier/flightNo/hotelName/etc.
   confirmationNumber String?
   imageUrl      String?
+  address       String? // free-text address, geocoded server-side into lat/lng for the map pin
+  lat           Float?
+  lng           Float?
   startsAt      DateTime?
   endsAt        DateTime?
 
@@ -382,6 +392,10 @@ model PriceQuote {
   currency           String   @default("USD")
   notes              String?
   status             String   @default("draft") // draft | sent | accepted
+  leadStatus         String   @default("lead") // lead | quoted | planning | closed_won | closed_lost — CRM pipeline stage
+  costCents          Int      @default(0) // agent's cost, for the profit/margin section
+  signatureDataUrl   String? // captured signature image (data URL) — a real signature record, not a certified legal e-sign provider
+  signedAt           DateTime?
   shareToken         String?  @unique
   acceptedAt         DateTime?
   createdAt          DateTime @default(now())
@@ -401,6 +415,55 @@ model AlbumMedia {
   type          String // photo | video
   url           String
   caption       String?
+  createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model QuizQuestion {
+  id            String @id @default(cuid())
+  destinationId String
+  category      String // history | geography | politics | sports | culture | food
+  question      String
+  options       String // JSON array of 4 strings
+  correctIndex  Int
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  id             String   @id @default(cuid())
+  userId         String
+  destinationId  String
+  score          Int
+  totalQuestions Int
+  completedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+/** Practical "before you go" tips (customs, money, transport, visa) shown on
+ * the Favorites screen, distinct from PhrasebookEntry (language) and
+ * PointOfInterest.tip (a single POI's tip). */
+model DestinationTip {
+  id            String @id @default(cuid())
+  destinationId String
+  category      String // before | customs | money | transport | visa | general
+  text          String
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+/** A saved snapshot of a client-planner itinerary's days/items, reusable as
+ * a starting point for a future client without rebuilding from scratch. */
+model ItineraryTemplate {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  name          String
+  daysJson      String // snapshot: [{dayIndex, note, items: [{customLabel, poiId, timeOfDay, note, order}]}]
   createdAt     DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

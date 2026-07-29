@@ -1,4 +1,4 @@
-const CACHE_NAME = "odedthemapper-v1";
+const CACHE_NAME = "odedthemapper-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

@@ -54,6 +54,19 @@ export function loadRoutesLibrary(): Promise<void> {
   return routesLoadPromise;
 }
 
+let visualizationLoadPromise: Promise<void> | null = null;
+
+/** The "visualization" library (HeatmapLayer) is optional — same lazy-load
+ * pattern as loadRoutesLibrary, for the same reason. */
+export function loadVisualizationLibrary(): Promise<void> {
+  if (typeof window === "undefined" || !window.google?.maps) {
+    return Promise.reject(new Error("Google Maps לא נטען"));
+  }
+  if (visualizationLoadPromise) return visualizationLoadPromise;
+  visualizationLoadPromise = google.maps.importLibrary("visualization").then(() => undefined);
+  return visualizationLoadPromise;
+}
+
 export function useGoogleMaps() {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);

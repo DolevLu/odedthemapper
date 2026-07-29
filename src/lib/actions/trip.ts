@@ -87,12 +87,34 @@ export async function setTripBudget(destinationId: string, slug: string, formDat
 
 // ---------- Logistics ----------
 
+/** Best-effort server-side geocode — the Maps API key is usually locked to
+ * HTTP referrers for client-side use, which server requests (no browser
+ * Referer header) can fail; a dedicated GOOGLE_MAPS_SERVER_API_KEY (no
+ * referrer restriction) can be set to make this reliable. Never blocks
+ * saving the logistics item — just skips the map pin on failure. */
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`
+    );
+    const body = await res.json();
+    const location = body?.results?.[0]?.geometry?.location;
+    if (!location) return null;
+    return { lat: location.lat, lng: location.lng };
+  } catch {
+    return null;
+  }
+}
+
 export async function addLogistic(destinationId: string, slug: string, formData: FormData) {
   const userId = await requireUserId();
   const type = String(formData.get("type") ?? "flight");
   const confirmationNumber = String(formData.get("confirmationNumber") ?? "") || null;
   const startsAtRaw = String(formData.get("startsAt") ?? "");
   const endsAtRaw = String(formData.get("endsAt") ?? "");
+  const address = String(formData.get("address") ?? "").trim() || null;
   const detailsJson = JSON.stringify({
     title: String(formData.get("title") ?? ""),
     notes: String(formData.get("notes") ?? ""),
@@ -100,6 +122,7 @@ export async function addLogistic(destinationId: string, slug: string, formData:
 
   const imageFile = formData.get("image") as File | null;
   const imageUrl = imageFile && imageFile.size > 0 ? await saveUploadedFile(imageFile, "logistics") : null;
+  const geo = address ? await geocodeAddress(address) : null;
 
   await prisma.tripLogistic.create({
     data: {
@@ -109,16 +132,24 @@ export async function addLogistic(destinationId: string, slug: string, formData:
       confirmationNumber,
       detailsJson,
       imageUrl,
+      address,
+      lat: geo?.lat ?? null,
+      lng: geo?.lng ?? null,
       startsAt: startsAtRaw ? new Date(startsAtRaw) : null,
       endsAt: endsAtRaw ? new Date(endsAtRaw) : null,
     },
   });
   revalidatePath(`/trip/${slug}/logistics`);
+  revalidatePath(`/trip/${slug}/map`);
 }
 
 export async function deleteLogistic(id: string, slug: string) {
+  const userId = await requireUserId();
+  const item = await prisma.tripLogistic.findUnique({ where: { id } });
+  if (!item || item.userId !== userId) return;
   await prisma.tripLogistic.delete({ where: { id } });
   revalidatePath(`/trip/${slug}/logistics`);
+  revalidatePath(`/trip/${slug}/map`);
 }
 
 // ---------- Itinerary (personal, silver tier) ----------
@@ -212,6 +243,65 @@ export async function createClientItineraryDay(destinationId: string, slug: stri
   const itinerary = await getOrCreateItinerary(userId, destinationId, "client");
   const dayCount = await prisma.itineraryDay.count({ where: { itineraryId: itinerary.id } });
   await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayCount + 1 } });
+  revalidatePath(`/trip/${slug}/client-planner`);
+}
+
+type TemplateDaySnapshot = {
+  dayIndex: number;
+  note: string | null;
+  items: { poiId: string | null; customLabel: string | null; timeOfDay: string | null; note: string | null; order: number }[];
+};
+
+/** Snapshots the client itinerary's current days/items as a reusable
+ * template — a saved starting point for a future client, not a live link to
+ * this itinerary (editing the template later won't change this trip). */
+export async function saveItineraryAsTemplate(destinationId: string, slug: string, name: string) {
+  const userId = await requireUserId();
+  const itinerary = await prisma.itinerary.findUnique({
+    where: { userId_destinationId_kind: { userId, destinationId, kind: "client" } },
+    include: { days: { orderBy: { dayIndex: "asc" }, include: { items: { orderBy: { order: "asc" } } } } },
+  });
+  if (!itinerary || itinerary.days.length === 0) return { error: "אין עדיין מסלול לשמור כתבנית" };
+
+  const snapshot: TemplateDaySnapshot[] = itinerary.days.map((d) => ({
+    dayIndex: d.dayIndex,
+    note: d.note,
+    items: d.items.map((i) => ({ poiId: i.poiId, customLabel: i.customLabel, timeOfDay: i.timeOfDay, note: i.note, order: i.order })),
+  }));
+
+  await prisma.itineraryTemplate.create({
+    data: { userId, destinationId, name: name.trim() || "תבנית ללא שם", daysJson: JSON.stringify(snapshot) },
+  });
+  revalidatePath(`/trip/${slug}/client-planner`);
+  return { ok: true };
+}
+
+/** Replaces the client itinerary's current days/items with a saved template's snapshot. */
+export async function applyItineraryTemplate(templateId: string, destinationId: string, slug: string) {
+  const userId = await requireUserId();
+  const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });
+  if (!template || template.userId !== userId) return;
+
+  const itinerary = await getOrCreateItinerary(userId, destinationId, "client");
+  await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
+
+  const snapshot = JSON.parse(template.daysJson) as TemplateDaySnapshot[];
+  for (const day of snapshot) {
+    const createdDay = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: day.dayIndex, note: day.note } });
+    for (const item of day.items) {
+      await prisma.itineraryItem.create({
+        data: { itineraryDayId: createdDay.id, poiId: item.poiId, customLabel: item.customLabel, timeOfDay: item.timeOfDay, note: item.note, order: item.order },
+      });
+    }
+  }
+  revalidatePath(`/trip/${slug}/client-planner`);
+}
+
+export async function deleteItineraryTemplate(templateId: string, slug: string) {
+  const userId = await requireUserId();
+  const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });
+  if (!template || template.userId !== userId) return;
+  await prisma.itineraryTemplate.delete({ where: { id: templateId } });
   revalidatePath(`/trip/${slug}/client-planner`);
 }
 
@@ -309,8 +399,14 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
 
   if (pois.length === 0) return { error: "לא נמצאו נקודות מתאימות לבחירה שלכם" };
 
-  const withPhoto = pois.filter((p) => p.photos.length > 0);
-  const pool = (withPhoto.length >= tripDays * perDay ? withPhoto : pois).slice(0, tripDays * perDay);
+  const targetCount = tripDays * perDay;
+  // Must-see POIs are guaranteed a spot regardless of photo status; the rest
+  // fill remaining slots, preferring ones with a photo.
+  const ranked = [...pois].sort((a, b) => {
+    if (a.isMustSee !== b.isMustSee) return Number(b.isMustSee) - Number(a.isMustSee);
+    return (b.photos.length > 0 ? 1 : 0) - (a.photos.length > 0 ? 1 : 0);
+  });
+  const pool = ranked.slice(0, targetCount);
 
   const itinerary = await getOrCreateItinerary(userId, destinationId, "personal");
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });

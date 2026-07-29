@@ -14,8 +14,52 @@ export function optimizeAcrossDays<T extends OptimizablePoint>(points: T[], numD
   if (points.length === 0) return Array.from({ length: numDays }, () => []);
   if (numDays <= 1) return [orderByNearestNeighbor(points)];
 
-  const clusters = kMeansClusters(points, numDays);
+  const clusters = orderClustersGeographically(kMeansClusters(points, numDays));
   return clusters.map((cluster) => orderByNearestNeighbor(cluster));
+}
+
+/** Re-sequences day-clusters (not the points within them) into a
+ * nearest-neighbor chain by centroid, so day 1 → day 2 → day 3 moves
+ * across the map coherently instead of jumping back and forth between
+ * unrelated parts of the city on consecutive days. */
+function orderClustersGeographically<T extends OptimizablePoint>(clusters: T[][]): T[][] {
+  const withCentroids = clusters.map((cluster) => ({
+    cluster,
+    centroid:
+      cluster.length > 0
+        ? { lat: cluster.reduce((s, p) => s + p.lat, 0) / cluster.length, lng: cluster.reduce((s, p) => s + p.lng, 0) / cluster.length }
+        : null,
+  }));
+
+  const remaining = [...withCentroids];
+  const ordered: T[][] = [];
+
+  // Start from the first non-empty cluster; empty clusters keep their slot at the end.
+  let current = remaining.find((c) => c.centroid);
+  if (!current) return clusters;
+  remaining.splice(remaining.indexOf(current), 1);
+  ordered.push(current.cluster);
+
+  while (remaining.length > 0) {
+    const candidates = remaining.filter((c) => c.centroid);
+    if (candidates.length === 0) break;
+    let nearest = candidates[0];
+    let nearestDist = Infinity;
+    for (const c of candidates) {
+      const d = haversineKm([current.centroid!.lat, current.centroid!.lng], [c.centroid!.lat, c.centroid!.lng]);
+      if (d < nearestDist) {
+        nearestDist = d;
+        nearest = c;
+      }
+    }
+    remaining.splice(remaining.indexOf(nearest), 1);
+    ordered.push(nearest.cluster);
+    current = nearest;
+  }
+
+  // Any empty clusters (fewer points than days) go last, in original order.
+  ordered.push(...remaining.map((c) => c.cluster));
+  return ordered;
 }
 
 /** Re-orders a single day's points by nearest neighbor, without reshuffling across days. */

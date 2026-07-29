@@ -28,7 +28,7 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
     title: "כלים ללקוחות",
     items: [
       { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
-      { href: "/quotes", label: "הצעת מחיר וחוזים", icon: "📄", tier: "gold" },
+      { href: "/quotes", label: "CRM — לידים והצעות מחיר", icon: "📄", tier: "gold" },
     ],
   },
   {
@@ -43,6 +43,7 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "עזרים וזיכרונות",
     items: [
+      { href: "/quiz", label: "חידונים", icon: "🧠", tier: "free" },
       { href: "/phrasebook", label: "שיחון", icon: "💬", tier: "free" },
       { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "🧳", tier: "free" },
       { href: "/album", label: "אלבום", icon: "📸", tier: "free" },

@@ -4,6 +4,7 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { getBookingRecommendations } from "@/lib/bookingRecommendations";
+import { getUpcomingHolidays } from "@/lib/holidays";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { BookableList } from "./BookableList";
 
@@ -37,9 +38,27 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   }));
 
   const recommendations = getBookingRecommendations(slug);
+  const holidays = getUpcomingHolidays(slug);
 
   return (
     <div className="flex flex-col gap-8">
+      {holidays.length > 0 && (
+        <section className="border p-5" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
+          <h2 className="mb-1 text-lg font-bold">📅 חגים וימי חג קרובים</h2>
+          <p className="mb-4 text-sm opacity-70">
+            חגים ציבוריים ביעד — שימו לב שבחגים רבים עסקים ואתרים עשויים לפעול בשעות שונות או להיות סגורים.
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {holidays.map((h) => (
+              <div key={`${h.date}-${h.name}`} className="flex items-center justify-between rounded-lg p-3" style={{ background: "var(--background)", borderRadius: "var(--radius)" }}>
+                <span className="font-semibold">{h.name}</span>
+                <span className="text-sm opacity-60">{new Date(h.date).toLocaleDateString("he-IL")}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section
         className="border p-5"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}

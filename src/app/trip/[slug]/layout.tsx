@@ -5,6 +5,7 @@ import { getAccessLevel } from "@/lib/access";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
 import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
+import { TraviChat } from "@/components/travi/TraviChat";
 
 export default async function TripLayout({
   children,
@@ -33,6 +34,8 @@ export default async function TripLayout({
         <AppSidebar currentSlug={slug} accessLevel={accessLevel} />
         <div className="min-w-0 flex-1 p-6 pb-32 sm:pb-6">{children}</div>
       </div>
+
+      {accessLevel !== "none" && <TraviChat destinationId={destination.id} slug={slug} />}
     </DestinationThemeProvider>
   );
 }

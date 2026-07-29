@@ -12,6 +12,7 @@ import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
 import { OptimizeButton } from "./OptimizeButton";
 import { ShareLink } from "../itinerary/ShareLink";
 import { PlannerBrandingForm } from "./PlannerBrandingForm";
+import { TemplateManager } from "./TemplateManager";
 
 export default async function ClientPlannerPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -24,7 +25,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
 
   const userId = session!.user!.id;
 
-  const [itinerary, pois, plannerProfile] = await Promise.all([
+  const [itinerary, pois, plannerProfile, templates] = await Promise.all([
     prisma.itinerary.findUnique({
       where: { userId_destinationId_kind: { userId, destinationId: destination.id, kind: "client" } },
       include: {
@@ -38,6 +39,11 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
     }),
     getFlatPoisForDestination(destination.id),
     prisma.plannerProfile.findUnique({ where: { userId } }),
+    prisma.itineraryTemplate.findMany({
+      where: { userId, destinationId: destination.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true },
+    }),
   ]);
 
   const poiOptions = pois.map((p) => ({ id: p.id, name: p.name, areaName: p.areaName, categoryName: p.categoryName }));
@@ -75,6 +81,8 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
       </div>
 
       <PlannerBrandingForm slug={slug} companyName={plannerProfile?.companyName ?? null} logoUrl={plannerProfile?.logoUrl ?? null} />
+
+      <TemplateManager destinationId={destination.id} slug={slug} templates={templates} hasItinerary={Boolean(itinerary && itinerary.days.length > 0)} />
 
       {itinerary && <ShareLink destinationId={destination.id} slug={slug} shareToken={itinerary.shareToken} kind="client" path="client-planner" />}
 

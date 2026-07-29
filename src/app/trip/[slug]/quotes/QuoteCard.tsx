@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { sendPriceQuote, deletePriceQuote } from "@/lib/actions/quotes";
+import { sendPriceQuote, deletePriceQuote, updateLeadStatus } from "@/lib/actions/quotes";
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   draft: { label: "טיוטה", color: "#6B7280" },
   sent: { label: "נשלח ללקוח", color: "#2563EB" },
-  accepted: { label: "אושר על ידי הלקוח", color: "#16A34A" },
+  accepted: { label: "אושר וחתום", color: "#16A34A" },
 };
+
+const LEAD_STATUS_OPTIONS = [
+  { value: "lead", label: "🌱 ליד חדש" },
+  { value: "quoted", label: "📄 בהצעת מחיר" },
+  { value: "planning", label: "🗺️ בתכנון" },
+  { value: "closed_won", label: "✅ נסגר בהצלחה" },
+  { value: "closed_lost", label: "❌ אבד" },
+];
 
 export function QuoteCard({
   quote,
@@ -18,8 +26,11 @@ export function QuoteCard({
     clientName: string;
     tripDays: number;
     totalLabel: string;
+    profitLabel: string;
     status: string;
+    leadStatus: string;
     shareToken: string | null;
+    signed: boolean;
   };
   slug: string;
 }) {
@@ -42,15 +53,33 @@ export function QuoteCard({
 
   return (
     <div className="flex flex-col gap-2 border p-4" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-bold">{quote.clientName}</h3>
-          <p className="text-xs opacity-60">{quote.tripDays} ימים · {quote.totalLabel}</p>
+          <p className="text-xs opacity-60">
+            {quote.tripDays} ימים · {quote.totalLabel} · רווח: {quote.profitLabel}
+          </p>
         </div>
-        <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: status.color }}>
-          {status.label}
-        </span>
+        <div className="flex items-center gap-2">
+          {quote.signed && <span className="text-xs" title="נחתם">✍️</span>}
+          <span className="rounded-full px-3 py-1 text-xs font-semibold text-white" style={{ background: status.color }}>
+            {status.label}
+          </span>
+        </div>
       </div>
+
+      <select
+        defaultValue={quote.leadStatus}
+        onChange={(e) => updateLeadStatus(quote.id, slug, e.target.value)}
+        className="self-start rounded-full border px-3 py-1 text-xs font-semibold"
+        style={{ borderColor: "var(--primary)" }}
+      >
+        {LEAD_STATUS_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
 
       {quote.shareToken ? (
         <div className="flex flex-wrap items-center gap-2 text-sm">
