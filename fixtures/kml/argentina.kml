@@ -1,0 +1,2648 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document id="1YH7WMMybRLcLgGFYqtE9Ff8hgECpcc_B">
+	<name>🇦🇷 ארגנטינה</name>
+	<visibility>0</visibility>
+	<StyleMap id="__managed_style_18A49B170E40DE0EB5C4">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#__managed_style_18A49B170E40DE0EB5C4_normal</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#__managed_style_18A49B170E40DE0EB5C4_highlight</styleUrl>
+		</Pair>
+	</StyleMap>
+	<gx:CascadingStyle kml:id="__managed_style_18A49B170E40DE0EB5C4_highlight">
+		<Style>
+			<IconStyle>
+				<scale>1.2</scale>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=7b1fa2&amp;id=2006&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+				<scale>0</scale>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>4.8</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+				<text><![CDATA[<h3>$[name]</h3>]]></text>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_18A49B170E40DE0EB5C4_normal">
+		<Style>
+			<IconStyle>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=7b1fa2&amp;id=2006&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+				<scale>0</scale>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>3.2</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+				<text><![CDATA[<h3>$[name]</h3>]]></text>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_0D5F844BD040DE0EB5C4_highlight">
+		<Style>
+			<IconStyle>
+				<scale>1.2</scale>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=7b1fa2&amp;id=2006&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+				<scale>0</scale>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>4.8</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<StyleMap id="__managed_style_0D5F844BD040DE0EB5C4">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4_normal</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4_highlight</styleUrl>
+		</Pair>
+	</StyleMap>
+	<gx:CascadingStyle kml:id="__managed_style_21481613E340DE0EB5C4_highlight">
+		<Style>
+			<IconStyle>
+				<scale>1.2</scale>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=1976d2&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>4.8</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_0D5F844BD040DE0EB5C4_normal">
+		<Style>
+			<IconStyle>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=7b1fa2&amp;id=2006&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+				<scale>0</scale>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>3.2</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<gx:CascadingStyle kml:id="__managed_style_21481613E340DE0EB5C4_normal">
+		<Style>
+			<IconStyle>
+				<Icon>
+					<href>https://earth.google.com/earth/document/icon?color=1976d2&amp;id=2000&amp;scale=4</href>
+				</Icon>
+				<hotSpot x="64" y="128" xunits="pixels" yunits="insetPixels"/>
+			</IconStyle>
+			<LabelStyle>
+			</LabelStyle>
+			<LineStyle>
+				<color>ff2dc0fb</color>
+				<width>3.2</width>
+			</LineStyle>
+			<PolyStyle>
+				<color>40ffffff</color>
+			</PolyStyle>
+			<BalloonStyle>
+			</BalloonStyle>
+		</Style>
+	</gx:CascadingStyle>
+	<StyleMap id="__managed_style_21481613E340DE0EB5C4">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4_normal</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4_highlight</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Folder id="593707D6D4000001">
+		<name>ארגנטינה</name>
+		<open>1</open>
+		<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+		<Folder id="593707D6D4000002">
+			<name>Ushuaia | אושואיה</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D4000003">
+				<name>Dublin‏</name>
+				<description>בר קטן וחמוד לשבת בערב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.309613,-54.8070342,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000004">
+				<name>Cervecería Grut &apos;84‏</name>
+				<description>בר מקומי שנחמד לצאת בערב אחרי יום טיול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3065,-54.8063488,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000005">
+				<name>Santos‏</name>
+				<description>בר מקומי וקטן ליציאה בערב אחרי יום טיול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3080473,-54.8080564,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000006">
+				<name>True Eureka Bakery‏</name>
+				<description>מאפיית בוקר מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3123635,-54.80544949999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000007">
+				<name>La Anónima‏</name>
+				<description>סופר גדול לקניות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3186209,-54.8100267,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000008">
+				<name>La Anónima Supermarket‏</name>
+				<description>סופר גדול לקניות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3020911,-54.80380259999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000009">
+				<name>Gualdesi‏</name>
+				<description>סופר קטן וזול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3139898,-54.8048738,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400000A">
+				<name>Hard Rock Cafe Ushuaia</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3059471,-54.8068177,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400000B">
+				<name>End of the World Sign‏</name>
+				<description>תצפית וטיילת סוף העולם</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3023646,-54.80733469999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400000C">
+				<name>Laguna Turquesa‏</name>
+				<description>לגונה טורקיזה- מסלול של 3 שעות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.143854,-54.733933,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400000D">
+				<name>Mirador Laguna 5 Hermanos‏‏‏</name>
+				<description>לגונת חמשת האחים טרק של 7-8 שעות ברמה בינונית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.1467597,-54.7604318,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400000E">
+				<name>Cascada Submarino‏</name>
+				<description>מפל הצוללת - מסלול הליכה דיי קליל בעליה מתונה כ5 שעות בסה״כ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.08389149999999,-54.7426993,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400000F">
+				<name>Laguna Esmeralda‏‏</name>
+				<description>לגונה אזמרלדה- מסלול קליל עליה מתונה של 5 שעות בסה״כ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.1296901,-54.6923736,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000010">
+				<name>Glaciar Ojo del Albino‏</name>
+				<description>קרחון העין הלבנה, המשך מסלול של לגונה אזמרלדה- תוספת של עוד 3 שעות בסה״כ ותצפית מדהימה על לגונה אזמרלדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.14214200000001,-54.67451429999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000011">
+				<name>Husky Park - Nunatak‏</name>
+				<description>פארק כלבים אסקיים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.1012188,-54.7167498,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000012">
+				<name>Laguna de los Tempanos‏‏</name>
+				<description>הלגונה הקפואה- מסלול הליכה של 5-7 שעות, רמת קושי בינוני/קשה ואפשר לשלב כיום נ וסף לטרק הכבשים </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3311254,-54.730606,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000013">
+				<name>Senda Laguna del caminante (sector Andorra)‏</name>
+				<description>נקודת תחילת  מסלולים לגונה קפואה וטרק הכבשים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.30189230000001,-54.76424569999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000014">
+				<name>Mirador Laguna del Caminante‏</name>
+				<description>לגונות טרק הכבשים, אפשר לרדת ולהכנס, מים קרירים וכיפים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.44383209999999,-54.7598435,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000015">
+				<name>Parque Nacional Tierra del Fuego‏‏</name>
+				<description>פארק לאומי, יש מספר מסלולים אפשריים, כניסה בתשלום</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.4465053,-54.83492529999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000016">
+				<name>Glaciar Martial‏</name>
+				<description>קרחון מרטיאל טרק תלול כ2-4 שעות עם תצפית מדהימה ואפשרות ללכת על קרחון</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.4056033,-54.7828585,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000017">
+				<name>Dientes de navarino‏‏</name>
+				<description>השיניים של נווארינו- טרק של 4-5 ימים מהיפים והמיוחדים שיש, מוגדר כטרק הדרומי ביותר בעולם</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-67.6709271,-54.993967,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000018">
+				<name>Tranquera Paso De La Oveja Lado Ciudad‏</name>
+				<description>התחלה או סוף טרק הכבסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.401881,-54.82358380000001,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000019">
+				<name>Doña Lupita‏</name>
+				<description>פיצרייה מעולה עם תוספות מיוחדות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.31305260000001,-54.8065971,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400001A">
+				<name>Club 1210 Ushuaia‏</name>
+				<description>בר מסעדה לערב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.31338719999999,-54.8096428,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400001B">
+				<name>Marga Taqsa‏</name>
+				<description>סוכנות אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3079053,-54.8069948,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400001C">
+				<name>Living Ushuaia‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.2644652,-54.7948493,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400001D">
+				<name>Bus-Sur‏</name>
+				<description>סוכנות אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3077141,-54.8051648,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400001E">
+				<name>Centro de Información Turística‏</name>
+				<description>לאורך הרחוב בסביבת המזח יש תחנות איסוף אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.30356209999999,-54.8076065,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400001F">
+				<name>Cafe Martinez‏</name>
+				<description>בית קפה טוב לארוחות בוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3111188,-54.8079479,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000020">
+				<name>Ana &amp; Juana - 9 de Julio‏</name>
+				<description>בית קפה לארוחות בוקר ומאפים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.30901729999999,-54.80736499999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000021">
+				<name>Krund Ushuaia‏</name>
+				<description>בר נחמד לערב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.30284020000001,-54.8047865,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000022">
+				<name>N-THOR GYM</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.3157021,-54.8073623,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D4000023">
+			<name>אל קלפטה</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D4000024">
+				<name>Perito Moreno Glacier Walkways‏</name>
+				<description>תצפית הקרחון המתנפץ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-73.0306604,-50.46885549999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000025">
+				<name>Mi Viejo‏</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.2647465,-50.338179,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000026">
+				<name>Heladería Acuarela‏</name>
+				<description>גלידרייה ומוצרי שוקולד מעולים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.26636430000001,-50.33834,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000027">
+				<name>La Lechuza Pizza y Pastas‏</name>
+				<description>מסעדה איטלקית מעולה </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.26818369999999,-50.3385261,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000028">
+				<name>La Anónima‏‏</name>
+				<description>סופר לקניות לבישולים בהוסטל</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.2615971,-50.3375814,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000029">
+				<name>Olivia Coffee Shop - Food &amp; Drinks‏‏</name>
+				<description>בית קפה ומסעדה לארוחת בוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.2652721,-50.3366243,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400002A">
+				<name>El Calafate Bus Terminal‏</name>
+				<description>תחנת אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.2451082,-50.3375761,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400002B">
+				<name>Chocolates Patagonia‏</name>
+				<description>בית קפה עם שוקו מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.26722289999999,-50.3381293,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400002C">
+				<name>Prestigio Operadores Receptivos - El Calafate‏</name>
+				<description>סוכנות נסיעות לקרחון</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.26832949999999,-50.3370821,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400002D">
+				<name>Solo Patagonia‏</name>
+				<description>סוכנות נסיעות לקרחון</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.26732629999999,-50.3386116,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400002E">
+				<name>Nina Grill &amp; Beer‏</name>
+				<description>מסעדת בשרים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.26686290000001,-50.33811119999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400002F">
+				<name>BIG PIZZA (Calafate 1)‏</name>
+				<description>פיצריה ואמפנדסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.2632887,-50.3381275,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D4000030">
+			<name>אל צ&apos;אלטן</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D4000031">
+				<name>פיץ רוי</name>
+				<description>פיץ רוי מסלול לזריחה ופארק לאומי עם עוד עשרות שבילים אפשריים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-73.043226,-49.27124599999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000032">
+				<name>Laguna Capri‏</name>
+				<description>אם אתם לא מעוניינים להגיע עד לפיץ רוי, אפשר לעצור בנקודה הזו לפקל קפה לצד לגונה נעימה יחסית, ותצפית על הפיץ רוי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.939256,-49.3038961,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000033">
+				<name>Laguna de los Tres‏</name>
+				<description>נקודת התצפית לראות את הזריחה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.9859672,-49.28042609999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000034">
+				<name>Puente sobre el Río Eléctrico‏</name>
+				<description>אם אתם לא רוצים מסלול הלוך חזור לפיץ רוי אפשר להתחיל כאן, העליה מהצד הזה מתונה יותר ויפה יותר גם בחושך אבל צריך להזמין מונית מראש בהוסטל</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.9400275,-49.226408,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000035">
+				<name>Laguna Torre Trailhead &amp; Parking Area‏</name>
+				<description>נקודת עקיפה לכניסה לשמורה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8954616,-49.3280134,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000036">
+				<name>Chorrillo del Salto‏</name>
+				<description>מפל מהמם עם לגונה קטנה ונקודה מעולה לפקק קפה עם מסלול הליכה קליל מהעיר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.9075198,-49.2954961,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000037">
+				<name>Cascadas de Solcito‏</name>
+				<description>קרחון ענק, עם לגונה שחלקים מהקרחון צפים עליה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-73.000407,-49.31859889999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000038">
+				<name>El Chalten Scr‏‏</name>
+				<description>התחנה המרכזית- לכאן ומכאן כל האוטובוסים מגיעים ויוצאים, מכאן אפשר לסגור כרטיסי אוטובוס ליעד הבא. אלו מכם שירצו לעשות קרטרה בטרמפים אני ממליץ לשלוח את אחת המוצילות לאל בולסון/ ברילוצ&apos;ה דרך Taqsa Marga</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8831046,-49.3338443,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000039">
+				<name>Delegacion Vial El Chalten‏</name>
+				<description>הריינג&apos;רים- אלו האנשים שיעזרו לכם להתכונן לטרק מעבר הרוחות ויעדכנו אתכם לגבי מזג האוויר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8833044,-49.3354436,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400003A">
+				<name>סופר</name>
+				<description>סופרמרקט זול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8858594,-49.33069459999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400003B">
+				<name>La Zorra Taproom Chaltén‏</name>
+				<description>בר מסעדה מבשלה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8920315,-49.32428120000001,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400003C">
+				<name>Panaderia Y Cafeteria &quot;Lo De Haydee&quot;‏</name>
+				<description>מאפיה עם קינוחים, אמפנדסים ושוקו קפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8868068,-49.33173710000001,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400003D">
+				<name>Monte Rojo &quot; Restaurante - Bar &quot;‏</name>
+				<description>מסעדה עם פיצות מעולות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8877955,-49.3287587,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400003E">
+				<name>B Fitz Resto‏</name>
+				<description>מסעדת בשרים מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.89096960000001,-49.32548390000001,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400003F">
+				<name>Panaderia y confiteria Que Rika‏</name>
+				<description>מאפייה עם אמפנדס מהטובים שאכלתי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.88663339999999,-49.3297127,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000040">
+				<name>Nomade Resto Bar‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8865898,-49.3297592,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000041">
+				<name>Heladería Domo Blanco‏</name>
+				<description>גלידריה חמודה מאוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.88802250000001,-49.3289991,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000042">
+				<name>PAISA High Mountain Coffee‏</name>
+				<description>בית קפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8899517,-49.3305699,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000043">
+				<name>Bandidos Patagónicos‏</name>
+				<description>מסעדת בשרים והמבורגרים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.88800259999999,-49.3283945,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000044">
+				<name>Centro de visitantes, Guardaparque Ceferino Fonzo, Parque Nacional Los Glaciares‏</name>
+				<description>נקודת יציאה למעבר הרוחות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8814273,-49.3374843,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000045">
+				<name>Laborum‏</name>
+				<description>פיצרייה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8846288,-49.3304423,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000046">
+				<name>Butch, Bar de Carnes‏</name>
+				<description>מסעדת בשרים מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.88418660000001,-49.3301309,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000047">
+				<name>Fuegia Bistro‏</name>
+				<description>מסעדה מקומית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-72.8895413,-49.3274909,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D4000048">
+			<name>אל בולסון</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D4000049">
+				<name>Plaza Pagano, Feria artesanal El Bolsón, Río Negro‏</name>
+				<description>פארק מרכזי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.53502709999999,-41.9649601,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400004A">
+				<name>Feria Regional El Bolsón‏</name>
+				<description>שוק אמנים בסופש</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5355837,-41.9659553,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400004B">
+				<name>Noah Repostería Artesanal‏</name>
+				<description>מאפיה מעולה וזולה מאוד!</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.537154,-41.9631243,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400004C">
+				<name>Jauja‏</name>
+				<description>גלידרייה </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5347807,-41.9632366,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400004D">
+				<name>Via Bariloche‏</name>
+				<description>תחנת אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5385927,-41.9625776,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400004E">
+				<name>Cervecería Nordoeste‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5340908,-41.9631809,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400004F">
+				<name>Cosecha Dorrego‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.533862,-41.962928,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000050">
+				<name>Hostel Piltri‏</name>
+				<description>הוסטל עם קמביו טוב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5316693,-41.9649315,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000051">
+				<name>Pasarela de Viamonte puente colgante‏</name>
+				<description>גשר נחמד לתצפית על הנחל</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5428127,-41.9733663,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000052">
+				<name>ירידה לנחל</name>
+				<description>נקודה שאפשר לרדת לנחל ולנוח</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5405586,-41.9606849,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000053">
+				<name>Farmacia del Pueblo‏</name>
+				<description>בית מרקחת עם קמביו טוב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5341981,-41.9686993,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000054">
+				<name>Grado 42‏</name>
+				<description>סוכנות נסיעות ונקודת איסוף של התיק מהאל צאלטן</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5358104,-41.9673506,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000055">
+				<name>Mirador - Cerro Piltriquitron‏</name>
+				<description>מסלול טיול בין פסלים מעץ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.46559240000001,-41.9768813,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000056">
+				<name>Cajón Del Azul‏</name>
+				<description>מסלול טיול יומי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.620102,-41.8531652,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000057">
+				<name>Registro de ingreso ANPRALE | Cajón del Azul y Lago Escondido‏‏</name>
+				<description>נקודת תחילת מסלול הקניון הכחול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5485118,-41.8563033,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000058">
+				<name>Lago Puelo National Park‏</name>
+				<description>לגונה יפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.61979909999999,-42.0972699,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000059">
+				<name>Hostel Onda Azul &quot;החווה&quot; - בית חם בפטגוניה</name>
+				<description>החווה הישראלית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.6106193,-42.0554907,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400005A">
+				<name>Glaciar Hielo Azul‏</name>
+				<description>הקרחון הכחול </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.6589833,-41.8862837,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400005B">
+				<name>Refugio Cerro Lindo‏‏‏</name>
+				<description>ביקטה שאפשר לישון בה בטרק הסרו לינדו, טרק לא קל אבל יפה מאוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.6409656,-41.9671946,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400005C">
+				<name>Rey Sol Reina Luna Eco- Hostel‏</name>
+				<description>החווה האיטלקית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.61117900000001,-42.0763774,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D400005D">
+			<name>ברילוצ&apos;ה</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D400005E">
+				<name>Jabad Bariloche</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3044575,-41.1370399,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400005F">
+				<name>Lavadero Brujitas Bariloche</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.314414,-41.1348217,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000060">
+				<name>Playa del Moreno Sin Viento‏</name>
+				<description>4 &quot;חופים&quot; צמודים שכל אחד מהם נותן אויירה שצת שונה , בין המפרצים ושני צידי הגשר, אפשר לשכור קיאק או סאפ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5050403,-41.0726135,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000061">
+				<name>Playa Centro‏</name>
+				<description>החוף המרכזי, לרדת קצת להכנס למים קרוב ונוח</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3116084,-41.1323,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000062">
+				<name>Oveja Negra Villegas‏</name>
+				<description>אמפנדסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3068602,-41.1347416,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000063">
+				<name>Almacén de empanadas Elflein‏</name>
+				<description>אמפנדס</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3084087,-41.1357693,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000064">
+				<name>Feria Artesanal del Centro Cívico‏</name>
+				<description>יריד מלאכת יחד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3098155,-41.1342568,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000065">
+				<name>Francisco Moreno Museum of Patagonia‏‏</name>
+				<description>מוזיאון והכיכר המרכזית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.30973229999999,-41.1333868,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000066">
+				<name>סרו   הק&quot;מ ה5אוטו</name>
+				<description>נקודת תצפית על כל האזור אפשר לעלות ברכבל ואפשר ברגל</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.37608609999999,-41.1444645,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000067">
+				<name>סרו  הק&quot;מ ה17קמפנריו</name>
+				<description>נקודת תצפית על כל האזור</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.47696860000001,-41.0753179,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000068">
+				<name>Laguna Negra shelter‏</name>
+				<description>טרק לגונה נגרה, אפשר לעשות אותו יומי ואפשר לצרף אותו יחד עם טרק סרו לופז</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5777933,-41.1367934,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000069">
+				<name>Cerro Lopez‏</name>
+				<description>טרק סרו לופז אפשר לעשות אותו יומי אבל מומלץ לחבר אותו עם לגונה נגרה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5715713,-41.0948472,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400006A">
+				<name>Jakob‏‏</name>
+				<description>טרק גייקוב, אפשר לעשות אותו יומי ומומלץ לחבר עם פריי, שימו לב שאפשר ללכת רק מפריי לג&apos;ייקוב ולא להפך</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5610324,-41.1867509,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400006B">
+				<name>Refugio Frey‏‏</name>
+				<description>טרק פריי, מומלץ לחבר אותו יחד עם גייקוב ולעשות פריי אנד גייקוב יחד, שימו לב שאפשר רק בכיוןם הזו ולא מג&apos;ייקוב לפריי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.4860681,-41.1982652,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400006C">
+				<name>Senda Laguna Toncek - Refugio Frey‏‏</name>
+				<description>נקודת תחילת המסלול &apos;4 הרפוחיו&apos; או פריי אנד ג&apos;ייקוב, שימו לב שלא תמיד אפשר לעבור בין ג&apos;ייקוב ללגונה נגרה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.4432702,-41.171403,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400006D">
+				<name>Cascada de los Duendes‏</name>
+				<description>מפל השדונים, טרקון קליל מאוד, אפשר לעלות לתצפית ואפשר להמשיך עוד ולהגיע לחוף על הלגונה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.41881669999999,-41.1822965,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400006E">
+				<name>Mirador Lago Gutierrez‏</name>
+				<description>תצפית מפל השדונים, עליה לא קשה ומשקיפה על כל האזור</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.4197853,-41.1880424,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400006F">
+				<name>Playa muñoz</name>
+				<description>חוף יפה ופסטורלי שמגיעים אליו ממפל השדונים, טרק לא קשה של 11 ק&quot;מ לכיוון</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.4335738,-41.2191207,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000070">
+				<name>טרונדור</name>
+				<description>יום סיור וטרק לקרחון, הר ולגונה מטורפת. אפשר להגיע בהשכרה של רכב או לסגור עם סוכנות ומדריך</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.8875,-41.1608333,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000071">
+				<name>Piletones del Río Manso‏</name>
+				<description>מהמקומות היותר יפים שיצא להיות, נחל שיוצר לגונה מהממת, אפשר להגיע בטרמפים ואפשר להשכיר רכב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5168977,-41.5676932,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000072">
+				<name>Rapanui‏</name>
+				<description>מקום מעולה וטעים לשוקולדים קינוחים וגלידות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.306591,-41.1337388,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000073">
+				<name>El Boliche de Alberto‏‏</name>
+				<description>משעדת בשרים מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3074359,-41.1353547,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000074">
+				<name>El Boliche de Alberto‏</name>
+				<description>מסעדה איטלקית מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3078824,-41.1357097,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000075">
+				<name>Alto El Fuego‏</name>
+				<description>מסעדת בשרים מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3114325,-41.1353418,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000076">
+				<name>La Anónima‏</name>
+				<description>סופר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3087992,-41.1351738,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000077">
+				<name>Mamuschka‏</name>
+				<description>בית קפה מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3056282,-41.1337753,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000078">
+				<name>Supermercados Todo‏</name>
+				<description>סופר מרקט קטן אבל טוב להשלמות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.31091189999999,-41.1357163,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000079">
+				<name>La Anónima‏</name>
+				<description>סופר מרקט קצת רחוק אבל גדול וטוב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.30154020000001,-41.1400169,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400007A">
+				<name>Skatepark Bariloche‏‏</name>
+				<description>מקום נחמד לשבת וטיילת חמודה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3048969,-41.1321896,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400007B">
+				<name>Terminal Autobuses Bariloche‏</name>
+				<description>טרמינל אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.2722413,-41.1305618,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400007C">
+				<name>Las Brasas Restaurant‏</name>
+				<description>מסעדה טובה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3079149,-41.1361218,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400007D">
+				<name>Manush Centro‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.31033050000001,-41.1358314,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400007E">
+				<name>Chimi Bar de Choris‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.309094,-41.1358737,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400007F">
+				<name>Lake Lacar Waterfront‏</name>
+				<description>דרך שבעת האגמים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3594379,-40.1607671,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000080">
+				<name>Playa Publica</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.592187,-40.8038894,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000081">
+				<name>Sendero a Bosque de Arrayanes</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.659897,-40.7831728,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000082">
+				<name>Río Correntoso</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.6716031,-40.7358272,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000083">
+				<name>Mirador Lago Espejo</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.7050734,-40.6426438,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000084">
+				<name>Cascadas Ñivinco</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.66351899999999,-40.4877277,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000085">
+				<name>Mirador Lago Escondido</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.57893249999999,-40.4594697,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000086">
+				<name>Mirador Del Lago Villarino</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5732083,-40.4518217,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000087">
+				<name>Mirador Lago Falkner</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.53961390000001,-40.4429867,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000088">
+				<name>Lago Meliquina</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.340058,-40.3421709,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000089">
+				<name>Cascadas del Rio Hermoso</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.4734749,-40.3546762,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400008A">
+				<name>Mirador Lago Machónico</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.4176274,-40.3324983,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400008B">
+				<name>Refugio Roca Negra‏‏</name>
+				<description>נקודת עצירה מהממת באמצע הטרק סרו לופז</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.5488874,-41.0941358,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400008C">
+				<name>Catritre</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.39884259999999,-40.1736033,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400008D">
+				<name>Pieros‏</name>
+				<description>בית קפה טוב לארוחות בוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3027799,-41.1343729,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400008E">
+				<name>León Fitness‏</name>
+				<description>חדר כושר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3035282,-41.1351814,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400008F">
+				<name>Weiss Beer &amp; Burgers‏</name>
+				<description>המבורגר ובירה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.304181,-41.1334022,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000090">
+				<name>Rudolf‏</name>
+				<description>בית קפה של קינוחים מתוקים וגלידות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3079668,-41.1337749,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000091">
+				<name>La Juana Bar Bariloche‏</name>
+				<description>בר לצאת אליו בערב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3105666,-41.1357624,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000092">
+				<name>El Molinito‏</name>
+				<description>בית קפה לארוחות בוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3123964,-41.1366416,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000093">
+				<name>Playa Bonita</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3977275,-41.1214741,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000094">
+				<name>Modo Bar &amp; Restó‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3214552,-41.1377342,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000095">
+				<name>McDonald&apos;s‏</name>
+				<description>סביב המקדונלדס יש אנשים אנשים שעושים קמביו ברחוב הראשי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.3075661,-41.1338111,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D4000096">
+			<name>כללי</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D4000097">
+				<name>מערת הידיים</name>
+				<description>ציורי קיר עתיקים של ידיים במערה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-70.6550556,-47.15544750000001,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000098">
+				<name>אקונקגואה</name>
+				<description>ההר הכי גבוה בדרום אמריקה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-70.0108675,-32.653179,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000099">
+				<name>Stone bridge‏</name>
+				<description>גשר אבנים לייד לגונה כחולה ויפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-71.0130249,-37.8849046,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400009A">
+				<name>Agrio Waterfall‏</name>
+				<description>מפל מטורף ושילוב  צבעים של כחול אדום וירוק</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-70.92454290000001,-37.8097556,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400009B">
+				<name>Varese Beach</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-57.530676,-38.0142542,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400009C">
+				<name>Balneario y Parque Público Punta Verde</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-64.91353770000001,-40.7290394,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400009D">
+				<name>Replica of the Victoria</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-67.7146577,-49.3128164,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400009E">
+				<name>קורדובה</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-64.1848176,-31.4285745,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400009F">
+				<name>נקודה 9</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-60.6561005,-32.9546893,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A0">
+				<name>El Doradillo. Puerto Madryn</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.0317175,-42.7694476,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A1">
+				<name>Museo de los Pioneros</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-69.2260021,-51.6153769,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D40000A2">
+			<name>מנדוסה</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D40000A3">
+				<name>Terminal De Ómnibus de Mendoza‏</name>
+				<description>טרמינל אוטובוסים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.83052069999999,-32.8943433,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A4">
+				<name>Galeria Tonsa‏‏</name>
+				<description>קמביו</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.83712130000001,-32.890059,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A5">
+				<name>Plaza Independencia‏</name>
+				<description>פארק מרכזי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8448326,-32.8895571,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A6">
+				<name>Carrefour Market‏</name>
+				<description>סופרמארקט</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8448484,-32.8944204,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A7">
+				<name>Monument to the Army of the Andes‏</name>
+				<description>פארק נחמד עם מסלולי הליכה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.89120680000001,-32.8887325,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A8">
+				<name>BODEGA GIECO‏</name>
+				<description>יקב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.90885369999999,-33.0187278,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000A9">
+				<name>Lago Potrerillos‏</name>
+				<description>לגונה מהממת</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-69.1738993,-32.9717295,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000AA">
+				<name>Uspallata</name>
+				<description>עיירה קטנה וחמודה עם נופים יפים מאוד מסביבה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-69.3479248,-32.5907929,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000AB">
+				<name>Inca Bridge</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-69.9111475,-32.8267238,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000AC">
+				<name>Bodega Los Toneles‏</name>
+				<description>יקב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8168848,-32.8955521,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000AD">
+				<name>Bodega MEVI</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.740872,-33.0039214,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000AE">
+				<name>Bodega Tempus Alba</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.75140519999999,-33.0018838,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000AF">
+				<name>Trapiche Estación 83‏‏‏</name>
+				<description>יין, בשר, אמפנדס, וקוקטילים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.7486193,-32.9724975,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B0">
+				<name>Maipu Bikes Rental Bikes‏</name>
+				<description>השכרת אופניים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.75540169999999,-32.9613378,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B1">
+				<name>Bodega VIAMONTE</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8850362,-33.0203842,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B2">
+				<name>DeROSE Method Chacras de Coria‏</name>
+				<description>מרכז קניות עם אטליז, מאפיות ובתי קפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8725513,-32.9808078,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B3">
+				<name>Palmares‏</name>
+				<description>מרכז קניות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8594646,-32.955373,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B4">
+				<name>Mirador gratuito Cerro Aconcagua‏</name>
+				<description>תצפית להר הכי גבוה בדרום אמריקה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-69.94036560000001,-32.822744,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B5">
+				<name>Lavandería Bubbles - Bubbles Laundry</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.84235820000001,-32.8872456,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B6">
+				<name>chiamo. Laboratorio de Café‏</name>
+				<description>בית קפה טוב לארוחות בוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.84662230000001,-32.8879624,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B7">
+				<name>El Asadito · Mendoza‏</name>
+				<description>מסעדת בשרים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8489989,-32.8887067,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B8">
+				<name>FAMIGLIA PERIN‏‏</name>
+				<description>גלידריה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8494022,-32.888618,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000B9">
+				<name>Bigalia Pizza Napolitana‏</name>
+				<description>פיצרייה מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8492012,-32.8889752,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000BA">
+				<name>Papanato Bar de Papas‏</name>
+				<description>בר מסעדה, המבורגרים פיצות אמפנדסים ועוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.85625589999999,-32.8923038,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000BB">
+				<name>Zitto Arístides‏‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.85408510000001,-32.8922769,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000BC">
+				<name>Don Aldo‏</name>
+				<description>מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.85387129999999,-32.8927469,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000BD">
+				<name>Chachingo Arístides</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.85622410000001,-32.8919084,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000BE">
+				<name>The Fit Club Cafe‏</name>
+				<description>בית קפה וקינוחים לארוחות בוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8579945,-32.8982666,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000BF">
+				<name>Vea‏</name>
+				<description>סופרמארקט גדול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.85995200000001,-32.899829,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C0">
+				<name>Parque General San Martín‏</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8700868,-32.8898095,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C1">
+				<name>Bike Fun Mendoza‏</name>
+				<description>השכרת אופניים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.79418200000001,-32.9094714,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C2">
+				<name>Katana Hostel‏</name>
+				<description>הוסטל חמד וטוב יש מכבסה באזור</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8405695,-32.8937101,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C3">
+				<name>חב&quot;ד ליובאוויטש</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-68.8449148,-32.9081978,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D40000C4">
+			<name>סלטה וחויחוי</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D40000C5">
+				<name>Chabad Lubavitch Salta - בית חב&quot;ד סלטה</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.416912,-24.789391,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C6">
+				<name>Vicario Toscano , SA, Argentina‏</name>
+				<description>עיירה קטנה של ייקבים ומסלולי טיול קלים ויומיים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.97605,-26.07308,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C7">
+				<name>Cafayate Goats S.A.‏</name>
+				<description>יקב ומסעדה מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.957629,-26.072916,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C8">
+				<name>Piattelli Vineyards‏</name>
+				<description>יקב מעולה,ברמה גבוה, ואוכל טוב </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.9981889,-26.0452016,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000C9">
+				<name>Río colorado‏</name>
+				<description>מסלול טיול של כמה שעות, מאוד קליל ויפה, הולכים לצד נחל, מפלים ובין קקטוסים ענקיים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-66.0108369,-26.0936067,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000CA">
+				<name>Bodega Amalaya &amp; Wine Bar‏</name>
+				<description>יקב מעולה מאוד עם יחס טוב</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-66.0032439,-26.0785784,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000CB">
+				<name>Black Tote Parrilla‏</name>
+				<description>מסעדה מקומית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.9746932,-26.067728,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000CC">
+				<name>Plaza 9 de Julio‏</name>
+				<description>עיירה קטנה וחמודה עם נוף מהמם מסביב, ושוק בכיכר המרכזית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-66.1619379,-25.1198452,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000CD">
+				<name>Mirador Norte</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-66.16147340000001,-25.11544049999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000CE">
+				<name>Parque temático cultural‏</name>
+				<description>הריסות עתיקות עם מבנים ובתים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-66.17753449999999,-25.1264778,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000CF">
+				<name>Info OVNI Antonio Zuleta</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-66.1714075,-25.125718,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D0">
+				<name>Vea</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4127,-24.790276,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D1">
+				<name>Vea Cencosud</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4105579,-24.7842412,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D2">
+				<name>July 9th Square‏</name>
+				<description>הכיכר המרכזית עם שוק חמוד </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4102839,-24.7892135,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D3">
+				<name>Terminal de Ómnibus de Salta‏</name>
+				<description>טרמינל אוטובוסים מרכזי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.3979159,-24.7957392,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D4">
+				<name>San Lorenzo Ravine‏</name>
+				<description>פארק נחמד לטיולים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.5045934,-24.7230919,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D5">
+				<name>Los Médanos‏</name>
+				<description>דיונות חול ענקיות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.90939969999999,-26.063921,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D6">
+				<name>Los Colorados‏‏</name>
+				<description>תצפית על נחל והר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.8254247,-26.0183456,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D7">
+				<name>El Arco‏</name>
+				<description>קשת באבן</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.83441639999999,-26.0008953,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D8">
+				<name>Ruta 68, Salta Argentina‏</name>
+				<description>הכביש שבין סלטה לקפז&apos;טה הוא אחד היפים שיש עם עשרות נקודות עניין ותצפיות לעצירה בדרך</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.7202068,-25.9390508,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000D9">
+				<name>Mirador Tres Cruces‏</name>
+				<description>תצפית 3 הצלבים, יפה עם שילוב של נחל זורם, אדמה חומה אדומה וצמחיה ירוקה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.7108547,-25.8907137,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000DA">
+				<name>The Amphitheatre‏</name>
+				<description>מסלול הליכה של 2 דקות לאמפי תיאטרון טבעי, לרוב יש בכניסה דוכנים של מלאכות בעבודת יד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.70053350000001,-25.8554396,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000DB">
+				<name>Garganta del Diablo‏</name>
+				<description>גרון הסטן מסלול הליכה של כמה דקות לתוך קניון יפיפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.70039610000001,-25.8485472,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000DC">
+				<name>Mirador del Valle‏</name>
+				<description>תצפית לעמק</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.6832399,-25.7645495,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000DD">
+				<name>Límite norte de la Quebrada Las Conchas‏</name>
+				<description>תצפית לעמק</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.6817465,-25.680975,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000DE">
+				<name>9th of July Square‏</name>
+				<description>עירה קטנה ויפה למרגלות הר צבעים, עם שוק עבודות מקומיות בכיכר המרכזית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4992599,-23.7464638,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000DF">
+				<name>Cerro de los Siete Colores Viewpoint‏‏</name>
+				<description>נקודת תצפית להר 7 הצבעים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4943693,-23.7473011,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E0">
+				<name>Quebrada de las Señoritas‏</name>
+				<description>מסלול טיול של כמה שעות בנקיק אדום ולצד קקטוסים ענקיים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.37889869999999,-23.317261,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E1">
+				<name>Salinas Grandes, Jujuy, Argentina‏</name>
+				<description>הסלאר של ארגנטינה, מדבר מלח ענק ובימים אחרי הגשם יש שכבת מים שיוצרת מראה והשתקפות מטורפת אז אם אתם לא מעוניינים להגיע לבוליביה אפשר להגיע לכאן</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.8850242,-23.5952261,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E2">
+				<name>Terminal de Ómnibus de Tilcara‏</name>
+				<description>עירה קטנה וחמודה לעצירה, מאוד אותנטית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.398639,-23.5763341,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E3">
+				<name>Garganta del Diablo‏</name>
+				<description>מסלול טיול קצר לתוך קניון ומפל</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.37459800000001,-23.5945158,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E4">
+				<name>Mirador bajo del cerro de los 14 colores‏</name>
+				<description>תצפית הר 14 הצבעים המפורסם, כדאי להיזהר ממלחת גבהים, וכשאי ללכת לאט</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.1881253,-23.2017349,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E5">
+				<name>Mercado municipal de Tilcara‏</name>
+				<description>שוק</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.39414240000001,-23.5758309,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E6">
+				<name>Ciber Tilcara - Correo Argentino - Rapi pago⁰‏</name>
+				<description>קמביו</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.3960091,-23.5765599,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E7">
+				<name>Lucifer lounge Bar‏‏</name>
+				<description>בר נחמד ומקומי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.3981282,-23.5760697,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E8">
+				<name>Pucará de Tilcara‏‏</name>
+				<description>עתיקות והריסות של עיר, מומלץ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4036763,-23.5859893,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000E9">
+				<name>Recta del Tin Tin‏</name>
+				<description>הדרך בין קאצאי לסלטה יפה אבל לא תמיד הכי נוחה לנסיעה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.9709974,-25.2113848,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000EA">
+				<name>Tienda de La Yesera‏</name>
+				<description>אמפנדס</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.75826549999999,-25.9786122,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000EB">
+				<name>Punta de Mahr‏</name>
+				<description>תצפית על אגם ענק</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4087371,-25.2890168,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000EC">
+				<name>Parque Nacional los Cardones‏</name>
+				<description>פארק קקטוסים ענקיים </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.94762780000001,-25.2343529,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000ED">
+				<name>Metrópoli‏</name>
+				<description>מועדון מסיבה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4326068,-24.8375987,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000EE">
+				<name>San Martin Park‏</name>
+				<description>פארק יפה עם צמחיה ואגם</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.40193259999999,-24.7935293,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000EF">
+				<name>Teleférico San Bernardo‏</name>
+				<description>רכבל לתצפית על העיר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.40164919999999,-24.79386209999999,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F0">
+				<name>San Bernardo&apos;s Hill‏</name>
+				<description>תצפית על העיר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.3925136,-24.7892723,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F1">
+				<name>Estación de tren Salta‏‏</name>
+				<description>רכבת שאפשר לעשות איתה נסיעות מחוץ לעיר ולראות נופים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4111784,-24.7772452,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F2">
+				<name>BienMeSabe‏</name>
+				<description>אוכל איטלקי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.4990687,-23.7473511,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F3">
+				<name>Mirador Cerro El Porito‏</name>
+				<description>תצפית להר 7 הצבעים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.5015616,-23.7457321,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F4">
+				<name>Plaza Belgrano‏</name>
+				<description>עיר מרכזית לעצירה ומנוחה ללילה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-65.2994762,-24.1858241,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D40000F5">
+			<name>בואנוס איירס</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D40000F6">
+				<name>Palacio Barolo‏</name>
+				<description>מבנה מאוד מפואר ומרשים עולה, כסף לכניסה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3858428,-34.6095914,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F7">
+				<name>San Telmo Market‏</name>
+				<description>שוק אותנטי וצבעוני, רק בשבת</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3725423,-34.6187981,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F8">
+				<name>San Telmo Fair‏</name>
+				<description>שוק מקומי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.371905,-34.6114448,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000F9">
+				<name>האובליסק של בואנוס איירס</name>
+				<description>האובליסק מואר בלילה בצבעים יפים, במיוחד אם יש אירוע מיוחד בתאריך</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.38160220000001,-34.6037037,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000FA">
+				<name>כיכר מאי</name>
+				<description>הכיכר המרכזית והגדולה עם מבנה בגוונים אדום וורוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.37228319999999,-34.6083667,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000FB">
+				<name>Plaza Mariano Moreno‏</name>
+				<description>פארק מאוד יפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3883705,-34.6095962,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000FC">
+				<name>כיכר הקונגרס</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3903334,-34.6097082,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000FD">
+				<name>לה בוקה</name>
+				<description>שכונת לה בוקה המפורסמת, רק לא להגיע בלילה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.36313369999999,-34.6344961,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000FE">
+				<name>Caminito‏</name>
+				<description>הרחוב הצבעוני</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3627819,-34.6393027,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D40000FF">
+				<name>Estadio Alberto J Armando‏‏</name>
+				<description>איצטדיון לה בוקה ואפשר להיכנס אליו</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.36475630000001,-34.6356109,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000100">
+				<name>Sonrisa de colores‏</name>
+				<description>טיילת צבעונית ותצפית על הנהר </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3608133,-34.6392577,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000101">
+				<name>Museo Conventillo El Rincon de Lucia‏</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3621884,-34.6385661,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000102">
+				<name>גשר לה בוקה</name>
+				<description>גשר לה בוקה המפורסם</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3562576,-34.6383792,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000103">
+				<name>Empanadas‏</name>
+				<description>חלון לרחוב שמוכר רק אמפנדס ומעולים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.36227819999999,-34.6392217,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000104">
+				<name>Avenida de Mayo‏</name>
+				<description>השדרה הרחבה ביותר בעולם</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3812055,-34.6090555,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000105">
+				<name>Acai teria‏</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3805417,-34.6086369,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000106">
+				<name>Café Tortoni‏</name>
+				<description>בית קפה מאוד יפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3782121,-34.6086531,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000107">
+				<name>Casa Mínima‏</name>
+				<description>הבית הקטן ביותר </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3713366,-34.6167288,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000108">
+				<name>Estatua de Mafalda‏</name>
+				<description>רחוב עם פסלים של דמויות מצוירות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3716461,-34.615832,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000109">
+				<name>גשר האישה</name>
+				<description>גשר יפה ומרשים מאוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3651612,-34.6079845,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400010A">
+				<name>השמורה האקולוגית קוסטנרה סור</name>
+				<description>שמורה אקולוגית גדולה ויפה עם גשרים על המים ומגוון בעלי חיים יפים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.351956,-34.6068644,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400010B">
+				<name>Buque Museo Fragata A.R.A. &quot;Presidente Sarmiento&quot;‏</name>
+				<description>מוזיאון ימי על ספינה מעץ</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3659104,-34.6087785,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400010C">
+				<name>Alvear Icon Hotel‏‏</name>
+				<description>בר ומסעדה, אפשר לשבת שם גם אם אתם לא אורחי המלון</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.361773,-34.610545,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400010D">
+				<name>בית הקברות לה רקולטה</name>
+				<description>בית קברות עתיק ומפואר מאוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.39295549999999,-34.5873639,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400010E">
+				<name>Centro Cultural Recoleta</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3916768,-34.5865056,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D400010F">
+				<name>Plaza Francia‏</name>
+				<description>פארק יפה להסתובבות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.393176,-34.5848217,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000110">
+				<name>המוזיאון הלאומי לאמנויות יפות</name>
+				<description>מוזיאון לאומנויות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3930044,-34.5839894,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000111">
+				<name>Facultad de Derecho (UBA)‏</name>
+				<description>אוניברסיטה עם מבנה חזותי מרשים מאוד</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.39197959999999,-34.5826299,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000112">
+				<name>Floralis Generica‏</name>
+				<description>פסל ענק של פרח שנפתח ונסגר לאורך היום</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3939805,-34.5816767,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000113">
+				<name>Recoleta Urban Mall‏</name>
+				<description>קניון מרכז קניות גדול</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3935892,-34.5891429,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000114">
+				<name>Calle florida‏</name>
+				<description>קניון מרכז קניות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3751852,-34.6025259,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000115">
+				<name>Croque Madame‏</name>
+				<description>מסעדה מפוארת</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3775062,-34.5958366,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000116">
+				<name>גלריאס פסיפיקו</name>
+				<description>קניון לקניות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3747789,-34.5992496,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D4000117">
+				<name>המגדל המונומנטאלי</name>
+				<description>מגדל השעון</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3737583,-34.5922006,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000118">
+				<name>Plaza General San Martín</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3758728,-34.5946764,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000119">
+				<name>Tres de Febrero Park‏</name>
+				<description>פארק מרכזי עם אטרקציות ומקומות להסתובב בהם</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4171029,-34.5708801,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500011A">
+				<name>Jardín Japonés‏‏‏</name>
+				<description>הגן היפני, יעד תיירותי מרכזי כניסה בתשלום</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4098358,-34.5746412,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500011B">
+				<name>המוזיאון לאמנויות לטינו-אמריקאיות</name>
+				<description>מוזיאון לאומנויות לטיניות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4033959,-34.5769032,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500011C">
+				<name>Plaza Serrano‏</name>
+				<description>רחוב עם עשרות ברים צמודים עם מוזיקה כיפית ואווירה טובה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4302089,-34.5887764,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500011D">
+				<name>Planetario Galileo Galilei‏</name>
+				<description>פלנטריום כוכבים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4116258,-34.5696763,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500011E">
+				<name>Buenos Aires Ecoparque‏</name>
+				<description>גן חיות אקולוגי </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.418573,-34.5798802,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500011F">
+				<name>Havanna‏</name>
+				<description>בית קפה עם אלפחורס מעולים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.42178060000001,-34.5813391,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000120">
+				<name>Al Galope‏‏</name>
+				<description>מסעדת בשרים כשרה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4040868,-34.6016711,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000121">
+				<name>Güerrín‏</name>
+				<description>פיצרייה ואמפנדס</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.38598199999999,-34.6041209,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000122">
+				<name>Desnivel‏</name>
+				<description>מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.37182,-34.617873,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000123">
+				<name>Casa Telma‏</name>
+				<description>בית קפה מעולה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3728157,-34.6196592,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000124">
+				<name>Javi&apos;s Parrilla Restaurant &amp; Cafeteria‏</name>
+				<description>מסעדה מקומית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3791217,-34.6128007,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000125">
+				<name>ON FIT</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3777513,-34.6077332,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000126">
+				<name>Import Coffee Company‏</name>
+				<description>בית קפה וקינוחים מעולים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.38015300000001,-34.6091036,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000127">
+				<name>Havanna‏</name>
+				<description>רשת בתי קפה שפרוסים בכל העיר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3806522,-34.6067954,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000128">
+				<name>Tostado -Obelisco‏</name>
+				<description>בית קפה לארוחות צהריים ובוקר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3808038,-34.6034861,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000129">
+				<name>Lavaya Maipu‏</name>
+				<description>מכבסה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3765324,-34.6026944,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500012A">
+				<name>Import Coffee Company‏</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3737754,-34.6030772,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500012B">
+				<name>La Panera Rosa Maipu y Av. Corrientes‏</name>
+				<description>בית קפה וקינוחים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.37643660000001,-34.6032438,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500012C">
+				<name>Santos Manjares‏</name>
+				<description>מסעדת בשרים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3803246,-34.5979072,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500012D">
+				<name>Rapanui‏</name>
+				<description>גלדריה וקינוחים מתוקים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3778146,-34.5952067,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500012E">
+				<name>Smart Fit</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3916156,-34.6077302,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500012F">
+				<name>Rapanui‏</name>
+				<description>גלדרייה וקינוחים מתוקים</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.42310819999999,-34.5879965,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000130">
+				<name>Eretz Cantina Israeli‏</name>
+				<description>מסעדה ישראלית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.427078,-34.5904724,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000131">
+				<name>Niceto Club‏‏‏‏</name>
+				<description>מועדון לילה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.43876030000001,-34.5872682,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000132">
+				<name>Dársena Norte‏</name>
+				<description>מעבורת לאורוגוואי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3665159,-34.5957642,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000133">
+				<name>Colonia Express‏</name>
+				<description>מעבורת לאורוגוואי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.36171700000001,-34.6246289,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000134">
+				<name>McDonald&apos;s Kosher‏</name>
+				<description>מקדונלדס כשר</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.4108969,-34.6032654,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000135">
+				<name>בית חב&quot;ד למטייל</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-58.3959594,-34.612676,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+		<Folder id="593707D6D5000136">
+			<name>פוארטו איגוואסו</name>
+			<styleUrl>#__managed_style_21481613E340DE0EB5C4</styleUrl>
+			<Placemark id="593707D6D5000137">
+				<name>Iguazú National Park‏</name>
+				<description>מפלי האיגוואסו</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.4546339,-25.6829476,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000138">
+				<name>Puerto Iguazu Bus Station</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5710032,-25.5984045,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000139">
+				<name>SUPER AMERICA</name>
+				<styleUrl>#__managed_style_18A49B170E40DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5748986,-25.5944484,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500013A">
+				<name>Hito Tres Fronteras (Argentina)‏</name>
+				<description>תצפית 3 הגבולות, ארגנטינה, ברזיל, פרגוואי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5907845,-25.5948314,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500013B">
+				<name>O2 Hotel Iguazú‏</name>
+				<description>מלון עם תצפית מהגג ל3 הגבולות</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.574997,-25.5941915,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500013C">
+				<name>Night Wok Iguazú‏</name>
+				<description>מסעדה סינית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.57494650000001,-25.5970676,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500013D">
+				<name>La Aripuca‏</name>
+				<description>פארק אקולוגי</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5590201,-25.6189492,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500013E">
+				<name>Restaurante La Rueda 1975‏</name>
+				<description>מסעדת בשר </description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5719654,-25.6013331,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D500013F">
+				<name>Tatu Carreta‏</name>
+				<description>מאפיה עם קינוחים ועוגות וקפה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5715524,-25.6024405,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000140">
+				<name>Cerveza Patagonia - Refugio Iguazú‏</name>
+				<description>בר מסעדה</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.574738,-25.595448,0</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id="593707D6D5000141">
+				<name>La Mamma Pastas and Salsas‏</name>
+				<description>מסעדה איטלקית</description>
+				<styleUrl>#__managed_style_0D5F844BD040DE0EB5C4</styleUrl>
+				<Point>
+					<coordinates>-54.5726758,-25.5969883,0</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+	</Folder>
+</Document>
+</kml>

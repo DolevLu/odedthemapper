@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens: DestinationThemeProvider sets --primary/--secondary/... per
+ * destination (color + shape only). Typography is intentionally NOT themed —
+ * one consistent font (Rubik) is used everywhere, site-wide.
+ */
+:root {
+  --primary: #2b2420;
+  --secondary: #5b6e4e;
+  --accent: #b5502a;
+  --background: #fbf6ee;
+  --surface: #ffffff;
+  --text: #2b2420;
+  --font-heading: "Rubik", sans-serif;
+  --font-body: "Rubik", sans-serif;
+  --font-display-latin: "Rubik", sans-serif;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-display-latin: var(--font-display-latin);
+  --radius-theme: var(--radius);
+}
+
+* {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+button:not(:disabled),
+a,
+[role="button"],
+input[type="submit"],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+@keyframes float-drift {
+  0%, 100% { transform: translateY(0) rotate(var(--float-rot, 0deg)); }
+  50% { transform: translateY(-18px) rotate(calc(var(--float-rot, 0deg) + 6deg)); }
+}
+
+.animate-float-drift {
+  animation: float-drift var(--float-duration, 6s) ease-in-out infinite;
+}
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal-in {
+  animation: reveal-up 0.6s ease-out both;
+}

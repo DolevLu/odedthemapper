@@ -1,0 +1,386 @@
+// Local dev uses SQLite for zero-setup friction. Swap provider to "postgresql"
+// (and DATABASE_URL to a Supabase/Neon connection string) for production —
+// schema intentionally avoids Postgres-only features (scalar arrays, native
+// enums) so the switch is a one-line datasource change.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Destinations & content ----------
+
+model Destination {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String?
+  status      String   @default("draft") // draft | preview | live
+  priceCents  Int      @default(15000) // 150.00 in agora/cents, currency below
+  currency    String   @default("ILS")
+  heroImage   String?
+  heroCopy    String?
+  themeConfig String // JSON: colors, font pair, shape tokens, motif image
+  continent   String   @default("europe") // europe | asia | africa | americas | oceania | middle-east
+  isBestSeller Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  areas        Area[]
+  subscriptions SubscriptionDestination[]
+  phrasebook   PhrasebookEntry[]
+  coupons      Coupon[]
+  itineraries  Itinerary[]
+  expenses     Expense[]
+  logistics    TripLogistic[]
+  kmlImports   KmlImport[]
+  budgets      TripBudget[]
+  priceQuotes  PriceQuote[]
+}
+
+model Area {
+  id            String   @id @default(cuid())
+  destinationId String
+  name          String
+  centerLat     Float?
+  centerLng     Float?
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  categories  Category[]
+}
+
+model Category {
+  id       String  @id @default(cuid())
+  areaId   String
+  name     String
+  colorHex String  @default("#888888")
+  iconKey  String  @default("pin")
+
+  area Area              @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  pois PointOfInterest[]
+}
+
+model PointOfInterest {
+  id                String   @id @default(cuid())
+  categoryId        String
+  name              String
+  lat               Float
+  lng               Float
+  geometryType      String   @default("point") // point | line | polygon
+  geometryCoords    String? // JSON array of [lng,lat] pairs for line/polygon
+  rawDescriptionHtml String?
+  address           String?
+  priceRange        String?
+  bookingUrl        String?
+  tip               String?
+  hours             String?
+  wantsBooking      Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  category    Category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tags        PoiTag[]
+  photos      PoiPhoto[]
+  favorites   Favorite[]
+  itineraryItems ItineraryItem[]
+}
+
+model PoiTag {
+  id    String @id @default(cuid())
+  poiId String
+  label String
+
+  poi PointOfInterest @relation(fields: [poiId], references: [id], onDelete: Cascade)
+}
+
+model PoiPhoto {
+  id    String @id @default(cuid())
+  poiId String
+  url   String
+
+  poi PointOfInterest @relation(fields: [poiId], references: [id], onDelete: Cascade)
+}
+
+model KmlImport {
+  id            String   @id @default(cuid())
+  destinationId String
+  fileName      String
+  rawXml        String
+  status        String   @default("pending_review") // pending_review | published
+  placemarkCount Int     @default(0)
+  createdAt     DateTime @default(now())
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+// ---------- Users, auth, subscriptions ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+
+  accounts      Account[]
+  sessions      Session[]
+  subscriptions Subscription[]
+  favorites     Favorite[]
+  itineraries   Itinerary[]
+  expenses      Expense[]
+  logistics     TripLogistic[]
+  budgets       TripBudget[]
+  packingChecks PackingCheck[]
+  plannerProfile PlannerProfile?
+  priceQuotes   PriceQuote[]
+}
+
+/** Org-tier trip planners can brand client-facing exported plans with their
+ * own company name + logo, shown alongside the Oded HaMapper branding. */
+model PlannerProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  companyName String?
+  logoUrl     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Subscription {
+  id                String   @id @default(cuid())
+  userId            String
+  planKey           String   // solo | family | org
+  billingCycle      String   // monthly | annual
+  status            String   @default("pending") // pending | active | canceled
+  cancelAtPeriodEnd Boolean  @default(false)
+  paymentSessionId  String   @unique
+  amountCents       Int
+  currency          String   @default("USD")
+  currentPeriodEnd  DateTime
+  createdAt         DateTime @default(now())
+
+  user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destinations SubscriptionDestination[]
+  members      SubscriptionMember[]
+}
+
+/** Extra seats on a Family/Org subscription. Membership is resolved by email
+ * match at access-check time (see getActiveSubscription in access.ts) rather
+ * than requiring the invited person to "claim" anything — as soon as they
+ * sign up or log in with the invited email, they get access. */
+model SubscriptionMember {
+  id            String    @id @default(cuid())
+  subscriptionId String
+  invitedEmail  String
+  createdAt     DateTime  @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, invitedEmail])
+}
+
+model SubscriptionDestination {
+  id             String @id @default(cuid())
+  subscriptionId String
+  destinationId  String
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  destination  Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, destinationId])
+}
+
+// ---------- In-app trip data ----------
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  poiId     String
+  createdAt DateTime @default(now())
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poi  PointOfInterest @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poiId])
+}
+
+model Itinerary {
+  id            String  @id @default(cuid())
+  userId        String
+  destinationId String
+  kind          String  @default("personal") // personal | client (gold-tier trip-planner tool)
+  label         String? // client/trip name, used when kind=client
+  shareToken    String? @unique // set when the owner enables a read-only client link
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  days        ItineraryDay[]
+
+  @@unique([userId, destinationId, kind])
+}
+
+model ItineraryDay {
+  id          String @id @default(cuid())
+  itineraryId String
+  dayIndex    Int
+  note        String?
+
+  itinerary Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  items     ItineraryItem[]
+}
+
+model ItineraryItem {
+  id              String  @id @default(cuid())
+  itineraryDayId  String
+  poiId           String?
+  customLabel     String? // freeform item (e.g. a side-trip/town not in the DB)
+  timeOfDay       String? // "HH:MM" free text
+  order           Int     @default(0)
+  note            String?
+
+  day ItineraryDay     @relation(fields: [itineraryDayId], references: [id], onDelete: Cascade)
+  poi PointOfInterest? @relation(fields: [poiId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  category      String
+  amountCents   Int
+  currency      String   @default("ILS")
+  note          String?
+  spentAt       DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model TripLogistic {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  type          String // flight | hotel
+  detailsJson   String // JSON blob: carrier/flightNo/hotelName/etc.
+  confirmationNumber String?
+  imageUrl      String?
+  startsAt      DateTime?
+  endsAt        DateTime?
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model TripBudget {
+  id            String @id @default(cuid())
+  userId        String
+  destinationId String
+  totalCents    Int
+  currency      String @default("ILS")
+  tripDays      Int    @default(1)
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId])
+}
+
+model PhrasebookEntry {
+  id            String @id @default(cuid())
+  destinationId String
+  localPhrase   String
+  translation   String
+  pronunciation String?
+  category      String @default("general")
+
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id            String  @id @default(cuid())
+  destinationId String? // null = global coupon, shown for every destination
+  partnerName   String
+  discountDesc  String
+  code          String?
+  url           String?
+
+  destination Destination? @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model PackingCheck {
+  id            String  @id @default(cuid())
+  userId        String
+  destinationId String
+  itemKey       String
+  checked       Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId, itemKey])
+}
+
+/** Gold-tier trip-planner tool: an itemized price quote + boilerplate service
+ * agreement, auto-assembled from a template (not a live AI call — no LLM API
+ * is configured), that a planner can send to a client for lightweight
+ * acceptance. Acceptance here is NOT a legally binding e-signature. */
+model PriceQuote {
+  id                 String   @id @default(cuid())
+  userId             String
+  destinationId      String
+  clientName         String
+  tripDays           Int
+  basePriceCents     Int
+  includesBooking    Boolean  @default(false)
+  bookingPriceCents  Int      @default(0)
+  currency           String   @default("USD")
+  notes              String?
+  status             String   @default("draft") // draft | sent | accepted
+  shareToken         String?  @unique
+  acceptedAt         DateTime?
+  createdAt          DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
