@@ -1,15 +1,17 @@
-// Local dev uses SQLite for zero-setup friction. Swap provider to "postgresql"
-// (and DATABASE_URL to a Supabase/Neon connection string) for production —
-// schema intentionally avoids Postgres-only features (scalar arrays, native
-// enums) so the switch is a one-line datasource change.
+// Postgres (Supabase, provisioned via Vercel's integration). POSTGRES_PRISMA_URL
+// is the pooled (PgBouncer) connection used at runtime; POSTGRES_URL_NON_POOLING
+// is the direct connection Prisma needs for schema pushes/migrations, which
+// can't go through a pooler. Schema intentionally avoids Postgres-only
+// features (scalar arrays, native enums) so it stays portable if needed.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 // ---------- Destinations & content ----------
