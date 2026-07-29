@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
-import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useGoogleMaps, loadRoutesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
@@ -56,6 +56,7 @@ export function MapScreen({
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
+  const [routeError, setRouteError] = useState<string | null>(null);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -86,12 +87,6 @@ export function MapScreen({
       styles: DECLUTTERED_MAP_STYLES,
     });
     infoWindowRef.current = new google.maps.InfoWindow();
-    directionsServiceRef.current = new google.maps.DirectionsService();
-    directionsRendererRef.current = new google.maps.DirectionsRenderer({
-      map: mapRef.current,
-      suppressMarkers: true,
-      polylineOptions: { strokeColor: "#4285F4", strokeWeight: 5 },
-    });
   }, [loaded, pointPois]);
 
   // Render line/polygon geometries (walking routes, districts, etc.) once.
@@ -165,8 +160,25 @@ export function MapScreen({
     openPoi(poi, marker);
   }
 
-  function drawRouteTo(poi: FlatPoi) {
-    if (!userPosition || !directionsServiceRef.current || !directionsRendererRef.current) return;
+  async function drawRouteTo(poi: FlatPoi) {
+    if (!userPosition || !mapRef.current) return;
+    setRouteError(null);
+    try {
+      await loadRoutesLibrary();
+    } catch {
+      setRouteError("מסלול ניווט אינו זמין כרגע");
+      return;
+    }
+    if (!directionsServiceRef.current) {
+      directionsServiceRef.current = new google.maps.DirectionsService();
+    }
+    if (!directionsRendererRef.current) {
+      directionsRendererRef.current = new google.maps.DirectionsRenderer({
+        map: mapRef.current,
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: "#4285F4", strokeWeight: 5 },
+      });
+    }
     setRouteToPoiId(poi.id);
     directionsServiceRef.current.route(
       {
@@ -177,6 +189,8 @@ export function MapScreen({
       (result, status) => {
         if (status === "OK" && result) {
           directionsRendererRef.current?.setDirections(result);
+        } else {
+          setRouteError("לא הצלחנו לחשב מסלול לנקודה הזו");
         }
       }
     );
@@ -276,6 +290,7 @@ export function MapScreen({
         </button>
       </div>
       {gpsError && <p className="text-xs text-red-600">{gpsError}</p>}
+      {routeError && <p className="text-xs text-red-600">{routeError}</p>}
 
       <div className="flex flex-1 gap-3 overflow-hidden">
         <div

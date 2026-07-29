@@ -26,11 +26,7 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&callback=__initGoogleMaps`;
     script.async = true;
     (window as unknown as Record<string, () => void>).__initGoogleMaps = () => {
-      Promise.all([
-        google.maps.importLibrary("maps"),
-        google.maps.importLibrary("marker"),
-        google.maps.importLibrary("routes"),
-      ])
+      Promise.all([google.maps.importLibrary("maps"), google.maps.importLibrary("marker")])
         .then(() => resolve())
         .catch(reject);
     };
@@ -39,6 +35,23 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
   });
 
   return loadPromise;
+}
+
+let routesLoadPromise: Promise<void> | null = null;
+
+/**
+ * The "routes" library (DirectionsService/DirectionsRenderer) is optional —
+ * loaded lazily on first use rather than as part of the core map bootstrap,
+ * so that a project without the Directions API enabled still gets a working
+ * map instead of Google's global "degraded map" auth-failure dialog.
+ */
+export function loadRoutesLibrary(): Promise<void> {
+  if (typeof window === "undefined" || !window.google?.maps) {
+    return Promise.reject(new Error("Google Maps לא נטען"));
+  }
+  if (routesLoadPromise) return routesLoadPromise;
+  routesLoadPromise = google.maps.importLibrary("routes").then(() => undefined);
+  return routesLoadPromise;
 }
 
 export function useGoogleMaps() {
