@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { colorForDay } from "@/lib/geo";
+import { DECLUTTERED_MAP_STYLES } from "@/lib/mapStyles";
 
 export type MapDay = {
   dayIndex: number;
@@ -38,7 +39,7 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
         zoom: 12,
         streetViewControl: false,
         fullscreenControl: false,
-        mapId: "DEMO_MAP_ID",
+        styles: DECLUTTERED_MAP_STYLES,
       });
       infoWindowRef.current = new google.maps.InfoWindow();
     }

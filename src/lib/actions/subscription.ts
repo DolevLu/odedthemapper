@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PLANS, type PlanKey } from "@/lib/plans";
+import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 
 async function requireUserId() {
   const session = await auth();
@@ -46,6 +47,40 @@ export async function cancelSubscription(subscriptionId: string) {
   if (!subscription || subscription.userId !== userId) return { error: "מנוי לא נמצא" };
 
   await prisma.subscription.update({ where: { id: subscriptionId }, data: { cancelAtPeriodEnd: true } });
+  revalidatePath("/account");
+  return { ok: true };
+}
+
+/** Swaps one destination on a Solo/Family subscription for another, once
+ * every 14 days per slot — e.g. traded Italy for Austria after two weeks. */
+export async function swapSubscriptionDestination(subscriptionId: string, oldDestinationId: string, newDestinationSlug: string) {
+  const userId = await requireUserId();
+  const subscription = await prisma.subscription.findUnique({
+    where: { id: subscriptionId },
+    include: { destinations: true },
+  });
+  if (!subscription || subscription.userId !== userId) return { error: "מנוי לא נמצא" };
+
+  const slot = subscription.destinations.find((d) => d.destinationId === oldDestinationId);
+  if (!slot) return { error: "היעד הזה לא נמצא במנוי שלכם" };
+
+  const remainingDays = daysUntilSwappable(slot.assignedAt);
+  if (remainingDays > 0) {
+    return { error: `אפשר להחליף את היעד הזה שוב בעוד ${remainingDays} ימים` };
+  }
+
+  const newDestination = await prisma.destination.findUnique({ where: { slug: newDestinationSlug } });
+  if (!newDestination) return { error: "יעד לא נמצא" };
+  if (subscription.destinations.some((d) => d.destinationId === newDestination.id)) {
+    return { error: "היעד הזה כבר במנוי שלכם" };
+  }
+
+  await prisma.$transaction([
+    prisma.subscriptionDestination.delete({ where: { id: slot.id } }),
+    prisma.subscriptionDestination.create({
+      data: { subscriptionId, destinationId: newDestination.id },
+    }),
+  ]);
   revalidatePath("/account");
   return { ok: true };
 }

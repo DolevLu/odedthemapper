@@ -6,6 +6,8 @@ export type FlatPoi = {
   lat: number;
   lng: number;
   geometryType: string;
+  /** [lng, lat] pairs for line/polygon geometries; null for points. */
+  geometryCoords: [number, number][] | null;
   areaName: string;
   categoryName: string;
   categoryColor: string;
@@ -50,6 +52,7 @@ export async function getFlatPoisForDestination(destinationId: string): Promise<
           lat: poi.lat,
           lng: poi.lng,
           geometryType: poi.geometryType,
+          geometryCoords: poi.geometryCoords ? (JSON.parse(poi.geometryCoords) as [number, number][]) : null,
           areaName: area.name,
           categoryName: category.name,
           categoryColor: category.colorHex,

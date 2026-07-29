@@ -29,6 +29,7 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
       Promise.all([
         google.maps.importLibrary("maps"),
         google.maps.importLibrary("marker"),
+        google.maps.importLibrary("routes"),
       ])
         .then(() => resolve())
         .catch(reject);

@@ -5,6 +5,8 @@ import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
+import { haversineKm } from "@/lib/geo";
 
 function infoWindowHtml(poi: FlatPoi): string {
   const photo = poi.photoUrl
@@ -19,6 +21,10 @@ function infoWindowHtml(poi: FlatPoi): string {
     <span style="opacity:.6;font-size:12px">${poi.categoryName} · ${poi.areaName}</span>
     ${description}
   </div>`;
+}
+
+function formatDistance(km: number): string {
+  return km < 1 ? `${Math.round(km * 1000)} מ׳` : `${km.toFixed(1)} ק״מ`;
 }
 
 export function MapScreen({
@@ -38,15 +44,32 @@ export function MapScreen({
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const markersByPoiId = useRef<Map<string, google.maps.Marker>>(new Map());
+  const shapesRef = useRef<(google.maps.Polygon | google.maps.Polyline)[]>([]);
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
+  const [gpsActive, setGpsActive] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
+  const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
+  const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
   const filtered = useMemo(
     () => (activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois),
     [pointPois, activeCategory]
   );
+
+  const sortedList = useMemo(() => {
+    if (!gpsActive || !userPosition) return filtered;
+    return [...filtered]
+      .map((p) => ({ ...p, distanceKm: haversineKm([userPosition.lat, userPosition.lng], [p.lat, p.lng]) }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [filtered, gpsActive, userPosition]);
 
   // Initialize the map once Google Maps is loaded.
   useEffect(() => {
@@ -60,10 +83,55 @@ export function MapScreen({
       zoom: 12,
       streetViewControl: false,
       fullscreenControl: false,
-      mapId: "DEMO_MAP_ID",
+      styles: DECLUTTERED_MAP_STYLES,
     });
     infoWindowRef.current = new google.maps.InfoWindow();
+    directionsServiceRef.current = new google.maps.DirectionsService();
+    directionsRendererRef.current = new google.maps.DirectionsRenderer({
+      map: mapRef.current,
+      suppressMarkers: true,
+      polylineOptions: { strokeColor: "#4285F4", strokeWeight: 5 },
+    });
   }, [loaded, pointPois]);
+
+  // Render line/polygon geometries (walking routes, districts, etc.) once.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    shapesRef.current.forEach((s) => s.setMap(null));
+    shapesRef.current = [];
+
+    shapePois.forEach((poi) => {
+      const path = (poi.geometryCoords ?? []).map(([lng, lat]) => ({ lat, lng }));
+      if (path.length < 2) return;
+      if (poi.geometryType === "polygon") {
+        const polygon = new google.maps.Polygon({
+          paths: path,
+          strokeColor: poi.categoryColor,
+          strokeWeight: 2,
+          fillColor: poi.categoryColor,
+          fillOpacity: 0.15,
+          map: mapRef.current!,
+        });
+        shapesRef.current.push(polygon);
+      } else {
+        const polyline = new google.maps.Polyline({
+          path,
+          strokeColor: poi.categoryColor,
+          strokeWeight: 3,
+          strokeOpacity: 0.8,
+          map: mapRef.current!,
+        });
+        shapesRef.current.push(polyline);
+      }
+    });
+  }, [loaded, shapePois]);
+
+  function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
+    setSelectedPoiId(poi.id);
+    infoWindowRef.current?.setContent(infoWindowHtml(poi));
+    infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+    if (gpsActive && userPosition) drawRouteTo(poi);
+  }
 
   // Rebuild markers whenever the filtered set changes.
   useEffect(() => {
@@ -77,26 +145,16 @@ export function MapScreen({
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
         title: poi.name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 7,
-          fillColor: poi.categoryColor,
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 1.5,
-        },
+        icon: categoryMarkerIcon(poi.categoryColor, poi.categoryName),
       });
-      marker.addListener("click", () => {
-        setSelectedPoiId(poi.id);
-        infoWindowRef.current?.setContent(infoWindowHtml(poi));
-        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
-      });
+      marker.addListener("click", () => openPoi(poi, marker));
       markersByPoiId.current.set(poi.id, marker);
       return marker;
     });
 
     clustererRef.current = new MarkerClusterer({ map: mapRef.current, markers });
-  }, [loaded, filtered]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, filtered, gpsActive, userPosition]);
 
   function focusPoi(poiId: string) {
     const poi = filtered.find((p) => p.id === poiId);
@@ -104,10 +162,73 @@ export function MapScreen({
     if (!poi || !marker || !mapRef.current) return;
     mapRef.current.panTo({ lat: poi.lat, lng: poi.lng });
     mapRef.current.setZoom(16);
-    setSelectedPoiId(poiId);
-    infoWindowRef.current?.setContent(infoWindowHtml(poi));
-    infoWindowRef.current?.open({ map: mapRef.current, anchor: marker });
+    openPoi(poi, marker);
   }
+
+  function drawRouteTo(poi: FlatPoi) {
+    if (!userPosition || !directionsServiceRef.current || !directionsRendererRef.current) return;
+    setRouteToPoiId(poi.id);
+    directionsServiceRef.current.route(
+      {
+        origin: userPosition,
+        destination: { lat: poi.lat, lng: poi.lng },
+        travelMode: google.maps.TravelMode.WALKING,
+      },
+      (result, status) => {
+        if (status === "OK" && result) {
+          directionsRendererRef.current?.setDirections(result);
+        }
+      }
+    );
+  }
+
+  function toggleGps() {
+    if (gpsActive) {
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      userMarkerRef.current?.setMap(null);
+      userMarkerRef.current = null;
+      directionsRendererRef.current?.setDirections({ routes: [] } as unknown as google.maps.DirectionsResult);
+      setRouteToPoiId(null);
+      setGpsActive(false);
+      setUserPosition(null);
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setGpsError("הדפדפן לא תומך במיקום");
+      return;
+    }
+    setGpsError(null);
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserPosition(point);
+        if (!userMarkerRef.current && mapRef.current) {
+          userMarkerRef.current = new google.maps.Marker({
+            position: point,
+            map: mapRef.current,
+            icon: currentLocationIcon(),
+            zIndex: 999,
+            title: "המיקום שלי",
+          });
+          mapRef.current.panTo(point);
+          mapRef.current.setZoom(15);
+        } else {
+          userMarkerRef.current?.setPosition(point);
+        }
+      },
+      () => setGpsError("לא הצלחנו לקבל מיקום — בדקו הרשאות מיקום בדפדפן"),
+      { enableHighAccuracy: true }
+    );
+    setGpsActive(true);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+    };
+  }, []);
 
   if (error) {
     return (
@@ -119,7 +240,7 @@ export function MapScreen({
 
   return (
     <div className="flex h-[calc(100vh-140px)] flex-col gap-3">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => setActiveCategory(null)}
           className="rounded-full border px-3 py-1 text-sm"
@@ -145,7 +266,16 @@ export function MapScreen({
             {name}
           </button>
         ))}
+
+        <button
+          onClick={toggleGps}
+          className="ms-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
+          style={{ background: gpsActive ? "#4285F4" : "var(--primary)" }}
+        >
+          📍 {gpsActive ? "עוצרים מיקום" : "המיקום שלי"}
+        </button>
       </div>
+      {gpsError && <p className="text-xs text-red-600">{gpsError}</p>}
 
       <div className="flex flex-1 gap-3 overflow-hidden">
         <div
@@ -157,7 +287,12 @@ export function MapScreen({
           className="hidden w-72 shrink-0 overflow-y-auto sm:block"
           style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)", background: "var(--surface)" }}
         >
-          {filtered.map((poi) => (
+          {gpsActive && userPosition && (
+            <p className="border-b p-2 text-center text-xs opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+              ממוין לפי קרבה אליכם
+            </p>
+          )}
+          {sortedList.map((poi) => (
             <div
               key={poi.id}
               onClick={() => focusPoi(poi.id)}
@@ -172,7 +307,11 @@ export function MapScreen({
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: poi.categoryColor }} />
                   <span className="truncate">{poi.name}</span>
                 </span>
-                <span className="ps-4 text-xs opacity-60">{poi.areaName}</span>
+                <span className="ps-4 text-xs opacity-60">
+                  {"distanceKm" in poi ? `${formatDistance((poi as unknown as { distanceKm: number }).distanceKm)} · ` : ""}
+                  {poi.areaName}
+                  {routeToPoiId === poi.id && " · 🧭 מסלול פעיל"}
+                </span>
               </span>
               <span onClick={(e) => e.stopPropagation()}>
                 <FavoriteButton poiId={poi.id} slug={slug} initialFavorited={favoritedIds.has(poi.id)} />

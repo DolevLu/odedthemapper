@@ -224,9 +224,10 @@ model SubscriptionMember {
 }
 
 model SubscriptionDestination {
-  id             String @id @default(cuid())
+  id             String   @id @default(cuid())
   subscriptionId String
   destinationId  String
+  assignedAt     DateTime @default(now()) // used to enforce the 14-day swap cooldown
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   destination  Destination  @relation(fields: [destinationId], references: [id], onDelete: Cascade)

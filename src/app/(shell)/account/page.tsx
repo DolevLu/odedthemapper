@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { getResolvedSubscriptionForAccount } from "@/lib/access";
 import { PLANS, formatUsd, type PlanKey } from "@/lib/plans";
+import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
+import { SwapDestinationButton } from "./SwapDestinationButton";
 
 export default async function AccountPage() {
   const session = await auth();
@@ -12,6 +15,16 @@ export default async function AccountPage() {
 
   const resolved = await getResolvedSubscriptionForAccount(session.user.id);
   const active = resolved?.subscription;
+  const plan = active ? PLANS[active.planKey as PlanKey] : null;
+
+  const allDestinations =
+    active && !plan?.isOrgTier
+      ? await prisma.destination.findMany({
+          where: { status: { in: ["preview", "live"] } },
+          select: { slug: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      : [];
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
@@ -36,15 +49,27 @@ export default async function AccountPage() {
           {active.destinations.length > 0 && (
             <div className="mt-4 flex flex-col gap-2">
               <p className="text-sm font-semibold">היעדים שלכם:</p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-2">
                 {active.destinations.map((d) => (
-                  <Link
-                    key={d.id}
-                    href={`/trip/${d.destination.slug}`}
-                    className="rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700"
-                  >
-                    {d.destination.name} ←
-                  </Link>
+                  <div key={d.id} className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/trip/${d.destination.slug}`}
+                      className="rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700"
+                    >
+                      {d.destination.name} ←
+                    </Link>
+                    {resolved!.isOwner && !plan?.isOrgTier && (
+                      <SwapDestinationButton
+                        subscriptionId={active.id}
+                        destinationId={d.destinationId}
+                        destinationName={d.destination.name}
+                        remainingDays={daysUntilSwappable(d.assignedAt)}
+                        candidates={allDestinations.filter(
+                          (c) => !active.destinations.some((ad) => ad.destination.slug === c.slug)
+                        )}
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

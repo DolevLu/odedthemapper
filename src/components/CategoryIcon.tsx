@@ -58,7 +58,7 @@ const ICONS: { match: RegExp; path: string }[] = [
 
 const DEFAULT_PATH = "M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5z";
 
-function pathForCategory(name: string): string {
+export function pathForCategory(name: string): string {
   const found = ICONS.find((i) => i.match.test(name));
   return found?.path ?? DEFAULT_PATH;
 }
