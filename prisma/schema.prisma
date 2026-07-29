@@ -42,6 +42,7 @@ model Destination {
   kmlImports   KmlImport[]
   budgets      TripBudget[]
   priceQuotes  PriceQuote[]
+  albumMedia   AlbumMedia[]
 }
 
 model Area {
@@ -141,6 +142,7 @@ model User {
   packingChecks PackingCheck[]
   plannerProfile PlannerProfile?
   priceQuotes   PriceQuote[]
+  albumMedia    AlbumMedia[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -383,6 +385,23 @@ model PriceQuote {
   shareToken         String?  @unique
   acceptedAt         DateTime?
   createdAt          DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+/** User-uploaded trip photos/videos for the "Album" screen — distinct from
+ * PoiPhoto (curated content shown on POI cards). Backed by Vercel Blob in
+ * production (BLOB_READ_WRITE_TOKEN); falls back to local /public/uploads
+ * in dev where that token isn't set. */
+model AlbumMedia {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  type          String // photo | video
+  url           String
+  caption       String?
+  createdAt     DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)

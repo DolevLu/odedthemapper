@@ -90,20 +90,24 @@ export default async function Home() {
         </div>
       </section>
 
-      <ScrollReveal className="mx-auto w-full max-w-6xl px-6 pb-20">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold">היעדים שלנו</h2>
-          <Link href="/destinations" className="text-sm font-semibold underline">
-            לכל היעדים ←
-          </Link>
-        </div>
-        <Suspense fallback={<DestinationsGridSkeleton />}>
-          <DestinationsGrid />
-        </Suspense>
-      </ScrollReveal>
+      <section className="relative overflow-hidden">
+        <FloatingTravelIcons variant="destinations" />
+        <ScrollReveal className="relative mx-auto w-full max-w-6xl px-6 pb-20">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-2xl font-extrabold">היעדים שלנו</h2>
+            <Link href="/destinations" className="text-sm font-semibold underline">
+              לכל היעדים ←
+            </Link>
+          </div>
+          <Suspense fallback={<DestinationsGridSkeleton />}>
+            <DestinationsGrid />
+          </Suspense>
+        </ScrollReveal>
+      </section>
 
-      <section className="px-6 pb-20">
-        <ScrollReveal className="mx-auto w-full max-w-4xl rounded-3xl border border-black/5 bg-white p-10 text-center shadow-sm">
+      <section className="relative overflow-hidden px-6 pb-20">
+        <FloatingTravelIcons variant="plans" />
+        <ScrollReveal className="relative mx-auto w-full max-w-4xl rounded-3xl border border-black/5 bg-white p-10 text-center shadow-sm">
           <h2 className="text-2xl font-extrabold">תוכנית לכל סוג מטייל</h2>
           <p className="mt-2 opacity-70">ממטייל בודד ועד ארגוני נסיעות — יש לנו תוכנית שמתאימה לכם.</p>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -127,17 +131,20 @@ export default async function Home() {
         </ScrollReveal>
       </section>
 
-      <ScrollReveal className="mx-auto w-full max-w-3xl px-6 pb-20">
-        <h2 className="mb-6 text-2xl font-extrabold">שאלות ותשובות</h2>
-        <div className="flex flex-col gap-4">
-          {FAQ.map((item) => (
-            <details key={item.q} className="rounded-2xl border border-black/10 bg-white p-4">
-              <summary className="font-semibold">{item.q}</summary>
-              <p className="mt-2 text-sm opacity-70">{item.a}</p>
-            </details>
-          ))}
-        </div>
-      </ScrollReveal>
+      <section className="relative overflow-hidden">
+        <FloatingTravelIcons variant="faq" />
+        <ScrollReveal className="relative mx-auto w-full max-w-3xl px-6 pb-20">
+          <h2 className="mb-6 text-2xl font-extrabold">שאלות ותשובות</h2>
+          <div className="flex flex-col gap-4">
+            {FAQ.map((item) => (
+              <details key={item.q} className="rounded-2xl border border-black/10 bg-white p-4">
+                <summary className="font-semibold">{item.q}</summary>
+                <p className="mt-2 text-sm opacity-70">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </ScrollReveal>
+      </section>
 
       <footer className="border-t border-black/5 px-6 py-8 text-center text-sm opacity-60">
         oded.the.mapper@gmail.com

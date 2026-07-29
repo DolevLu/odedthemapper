@@ -13,19 +13,41 @@ const TOP_ITEMS = [
   { href: "/destinations", label: "יעדים", icon: "🌍" },
 ];
 
-const DEST_ITEMS: { href: string; label: string; icon: string; tier: Tier }[] = [
-  { href: "", label: "מה עכשיו", icon: "🧭", tier: "silver" },
-  { href: "/map", label: "מפה", icon: "🗺️", tier: "silver" },
-  { href: "/itinerary", label: "מסלול", icon: "📅", tier: "silver" },
-  { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
-  { href: "/quotes", label: "הצעת מחיר וחוזים", icon: "📄", tier: "gold" },
-  { href: "/favorites", label: "מועדפים", icon: "❤️", tier: "silver" },
-  { href: "/bookable", label: "להזמנה", icon: "🎟️", tier: "silver" },
-  { href: "/logistics", label: "לוגיסטיקה", icon: "✈️", tier: "free" },
-  { href: "/expenses", label: "הוצאות", icon: "💸", tier: "free" },
-  { href: "/phrasebook", label: "שיחון", icon: "💬", tier: "free" },
-  { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "🧳", tier: "free" },
-  { href: "/gallery", label: "גלריה", icon: "🖼️", tier: "free" },
+type DestItem = { href: string; label: string; icon: string; tier: Tier };
+
+const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
+  {
+    title: "תכנון הטיול",
+    items: [
+      { href: "", label: "מה עכשיו", icon: "🧭", tier: "silver" },
+      { href: "/map", label: "מפה", icon: "🗺️", tier: "silver" },
+      { href: "/itinerary", label: "מסלול", icon: "📅", tier: "silver" },
+    ],
+  },
+  {
+    title: "כלים ללקוחות",
+    items: [
+      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
+      { href: "/quotes", label: "הצעת מחיר וחוזים", icon: "📄", tier: "gold" },
+    ],
+  },
+  {
+    title: "במהלך הטיול",
+    items: [
+      { href: "/favorites", label: "מועדפים", icon: "❤️", tier: "silver" },
+      { href: "/bookable", label: "להזמנה", icon: "🎟️", tier: "silver" },
+      { href: "/logistics", label: "לוגיסטיקה", icon: "✈️", tier: "free" },
+      { href: "/expenses", label: "הוצאות", icon: "💸", tier: "free" },
+    ],
+  },
+  {
+    title: "עזרים וזיכרונות",
+    items: [
+      { href: "/phrasebook", label: "שיחון", icon: "💬", tier: "free" },
+      { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "🧳", tier: "free" },
+      { href: "/album", label: "אלבום", icon: "📸", tier: "free" },
+    ],
+  },
 ];
 
 export function AppSidebar({
@@ -75,40 +97,49 @@ export function AppSidebar({
         <div className="my-1.5 hidden h-px bg-black/10 sm:block" />
 
         <div className="flex flex-row gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
-          {DEST_ITEMS.map((item) => {
-            const href = currentSlug ? `/trip/${currentSlug}${item.href}` : "#";
-            const active = Boolean(currentSlug) && (item.href === "" ? pathname === `/trip/${currentSlug}` : pathname.startsWith(`/trip/${currentSlug}${item.href}`));
-            const unlocked = isUnlocked(item.tier);
+          {DEST_GROUPS.map((group) => (
+            <div key={group.title} className="contents">
+              <p className="mb-1 mt-3 hidden px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0 sm:block">
+                {group.title}
+              </p>
+              {group.items.map((item) => {
+                const href = currentSlug ? `/trip/${currentSlug}${item.href}` : "#";
+                const active =
+                  Boolean(currentSlug) &&
+                  (item.href === "" ? pathname === `/trip/${currentSlug}` : pathname.startsWith(`/trip/${currentSlug}${item.href}`));
+                const unlocked = isUnlocked(item.tier);
 
-            return (
-              <Link
-                key={item.href}
-                href={href}
-                onClick={(e) => {
-                  if (!unlocked) {
-                    e.preventDefault();
-                    setLockedTier(!currentSlug ? "no-destination" : (item.tier as "silver" | "gold"));
-                  }
-                }}
-                className="flex shrink-0 items-center gap-2.5 px-4 py-1.5 text-sm font-medium sm:shrink"
-                style={{
-                  borderRadius: "999px",
-                  background: active ? "var(--primary, #7C3AED)" : "transparent",
-                  color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.background = "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span>{item.icon}</span>
-                <span className="flex-1">{item.label}</span>
-                {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
-              </Link>
-            );
-          })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={href}
+                    onClick={(e) => {
+                      if (!unlocked) {
+                        e.preventDefault();
+                        setLockedTier(!currentSlug ? "no-destination" : (item.tier as "silver" | "gold"));
+                      }
+                    }}
+                    className="flex shrink-0 items-center gap-2.5 px-4 py-1.5 text-sm font-medium sm:shrink"
+                    style={{
+                      borderRadius: "999px",
+                      background: active ? "var(--primary, #7C3AED)" : "transparent",
+                      color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) e.currentTarget.style.background = "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <span>{item.icon}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         <Link

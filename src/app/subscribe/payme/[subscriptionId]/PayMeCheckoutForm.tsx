@@ -44,8 +44,6 @@ export function PayMeCheckoutForm({
     lastName: rest.join(" "),
     email: payerEmail,
     phone: "",
-    socialId: "",
-    zipCode: "",
   });
 
   useEffect(() => {
@@ -96,8 +94,6 @@ export function PayMeCheckoutForm({
         payerLastName: form.lastName,
         payerEmail: form.email,
         payerPhone: form.phone,
-        payerSocialId: form.socialId,
-        payerZipCode: form.zipCode,
         total: {
           label: planName,
           amount: { currency, value: (amountCents / 100).toFixed(2) },
@@ -149,26 +145,11 @@ export function PayMeCheckoutForm({
         onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
         className="rounded-lg border border-black/10 px-3 py-2 text-sm"
       />
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          required
-          placeholder="טלפון"
-          value={form.phone}
-          onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-          className="rounded-lg border border-black/10 px-3 py-2 text-sm"
-        />
-        <input
-          required
-          placeholder="תעודת זהות"
-          value={form.socialId}
-          onChange={(e) => setForm((f) => ({ ...f, socialId: e.target.value }))}
-          className="rounded-lg border border-black/10 px-3 py-2 text-sm"
-        />
-      </div>
       <input
-        placeholder="מיקוד"
-        value={form.zipCode}
-        onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))}
+        required
+        placeholder="טלפון"
+        value={form.phone}
+        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
         className="rounded-lg border border-black/10 px-3 py-2 text-sm"
       />
 
