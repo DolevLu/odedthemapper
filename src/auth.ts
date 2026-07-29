@@ -46,6 +46,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  // Required behind Vercel's proxy on a custom domain — without this Auth.js
+  // won't trust the incoming Host header and every session/auth request 500s
+  // with a "server configuration" error.
+  trustHost: true,
   providers,
   callbacks: {
     async jwt({ token, user }) {
