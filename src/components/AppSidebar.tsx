@@ -51,7 +51,7 @@ export function AppSidebar({
         className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-0.5 overflow-x-auto border-t p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:static sm:z-0 sm:w-64 sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-t-0 sm:border-s sm:p-3 sm:pb-3 sm:shadow-none"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
-        <div className="flex flex-row gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
+        <div className="flex flex-row justify-center gap-1 overflow-x-auto sm:flex-col sm:justify-normal sm:overflow-visible">
           {TOP_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
@@ -113,7 +113,7 @@ export function AppSidebar({
 
         <Link
           href="/pricing"
-          className="mt-3 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+          className="mt-3 hidden items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md sm:flex"
           style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
         >
           ✨ שדרג עכשיו
