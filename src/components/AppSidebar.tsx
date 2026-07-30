@@ -99,12 +99,13 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — home/destinations pinned at top, upgrade CTA
+          pinned at bottom, only the destination nav groups scroll. */}
       <nav
-        className="hidden shrink-0 flex-col gap-0.5 border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-[60px] sm:max-h-[calc(100vh-60px)] sm:overflow-y-auto"
+        className="hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-[60px] sm:h-[calc(100vh-60px)]"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
-        <div className="flex flex-col gap-1">
+        <div className="flex shrink-0 flex-col gap-1">
           {TOP_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
@@ -125,9 +126,9 @@ export function AppSidebar({
           })}
         </div>
 
-        <div className="my-1.5 h-px bg-black/10" />
+        <div className="my-1.5 h-px shrink-0 bg-black/10" />
 
-        <div className="flex flex-col gap-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {DEST_GROUPS.map((group) => (
             <div key={group.title} className="contents">
               <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
@@ -164,7 +165,7 @@ export function AppSidebar({
 
         <Link
           href="/pricing"
-          className="mt-3 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+          className="mt-3 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
           style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
         >
           ✨ שדרג עכשיו
