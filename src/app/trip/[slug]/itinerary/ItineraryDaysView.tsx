@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { colorForDay } from "@/lib/geo";
+import { deleteItineraryDay } from "@/lib/actions/trip";
 import { AddItemToDay } from "./AddItemToDay";
 import { DayItemsList, type DayListItem } from "./DayItemsList";
 
@@ -109,6 +110,12 @@ function DayCard({
   large?: boolean;
 }) {
   const color = colorForDay(day.dayIndex - 1);
+
+  function handleDelete() {
+    if (!window.confirm(`למחוק את יום ${day.dayIndex} וכל הנקודות שבו?`)) return;
+    deleteItineraryDay(day.id, slug, path);
+  }
+
   return (
     <div
       className="flex flex-col gap-3 overflow-hidden border"
@@ -118,7 +125,15 @@ function DayCard({
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: color }}>
           {day.dayIndex}
         </span>
-        <h2 className="font-bold">יום {day.dayIndex}</h2>
+        <h2 className="flex-1 font-bold">יום {day.dayIndex}</h2>
+        <button
+          onClick={handleDelete}
+          className="shrink-0 rounded-full px-2 py-1 text-sm opacity-50 hover:opacity-100"
+          title="מחיקת היום"
+          aria-label="מחיקת היום"
+        >
+          🗑️
+        </button>
       </div>
 
       <div className="flex flex-col gap-3 px-4 pb-4">

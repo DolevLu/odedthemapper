@@ -292,24 +292,33 @@ export function MapScreen({
     };
   }, []);
 
-  // Keep isFullscreen in sync with the real fullscreen state (also covers
-  // the user exiting via the browser's own back/Esc control, not just our
-  // button), and nudge Google Maps to redraw at its new size either way.
+  // CSS-driven "fullscreen" (a fixed overlay covering the viewport) instead
+  // of the native Fullscreen API — iOS Safari doesn't support
+  // requestFullscreen() on arbitrary elements (only <video> can go native
+  // fullscreen there), so relying on it meant this only worked on Android.
+  // This approach works identically everywhere. Locks background scroll
+  // while active and nudges Google Maps to redraw at its new size.
   useEffect(() => {
-    function handleFullscreenChange() {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-      if (mapRef.current) google.maps.event.trigger(mapRef.current, "resize");
+    if (mapRef.current) google.maps.event.trigger(mapRef.current, "resize");
+    if (isFullscreen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
     }
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsFullscreen(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      mapDivRef.current?.requestFullscreen();
-    }
+    setIsFullscreen((v) => !v);
   }
 
   if (error) {
@@ -361,7 +370,13 @@ export function MapScreen({
       {routeError && <p className="text-xs text-red-600">{routeError}</p>}
 
       <div className="flex flex-1 flex-col gap-3 overflow-hidden sm:flex-row">
-        <div className="relative h-[50vh] w-full shrink-0 sm:h-auto sm:min-w-0 sm:flex-1">
+        <div
+          className={
+            isFullscreen
+              ? "fixed inset-0 z-[200] h-screen w-screen"
+              : "relative h-[50vh] w-full shrink-0 sm:h-auto sm:min-w-0 sm:flex-1"
+          }
+        >
           <div
             ref={mapDivRef}
             className="h-full w-full overflow-hidden"
@@ -369,7 +384,7 @@ export function MapScreen({
           />
           <button
             onClick={toggleFullscreen}
-            className="absolute end-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-md"
+            className="absolute start-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-md"
             style={{ background: "white", color: "var(--primary)" }}
             aria-label={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"}
             title={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"}

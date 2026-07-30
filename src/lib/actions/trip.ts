@@ -191,6 +191,25 @@ export async function createItineraryDay(destinationId: string, slug: string) {
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
+/** Deletes a day (and its items, via cascade) and renumbers the remaining
+ * days sequentially so there's no gap in the "יום N" labels. */
+export async function deleteItineraryDay(dayId: string, slug: string, path = "itinerary") {
+  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
+  if (!day) return;
+
+  await prisma.itineraryDay.delete({ where: { id: dayId } });
+
+  const remaining = await prisma.itineraryDay.findMany({
+    where: { itineraryId: day.itineraryId },
+    orderBy: { dayIndex: "asc" },
+  });
+  await prisma.$transaction(
+    remaining.map((d, i) => prisma.itineraryDay.update({ where: { id: d.id }, data: { dayIndex: i + 1 } }))
+  );
+
+  revalidatePath(`/trip/${slug}/${path}`);
+}
+
 export async function addItineraryItem(itineraryDayId: string, poiId: string, slug: string) {
   const count = await prisma.itineraryItem.count({ where: { itineraryDayId } });
   await prisma.itineraryItem.create({ data: { itineraryDayId, poiId, order: count } });
