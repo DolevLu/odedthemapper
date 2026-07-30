@@ -19,8 +19,8 @@ export const PLANS: Record<PlanKey, Plan> = {
     key: "solo",
     name: "מטייל בודד",
     audience: "למטיילים בודדים",
-    monthlyCents: 2500,
-    annualCents: 24000, // ~$20/mo effective, 2 months free
+    monthlyCents: 12500,
+    annualCents: 120000, // 20% הנחה במחויב שנתי
     destinationLimit: 1,
     seats: 1,
     isOrgTier: false,
@@ -41,8 +41,8 @@ export const PLANS: Record<PlanKey, Plan> = {
     key: "family",
     name: "משפחות ונוודים דיגיטלים",
     audience: "למשפחות או נוודים דיגיטלים",
-    monthlyCents: 7500,
-    annualCents: 72000,
+    monthlyCents: 22500,
+    annualCents: 216000,
     destinationLimit: 5,
     seats: 5,
     isOrgTier: false,
@@ -60,8 +60,8 @@ export const PLANS: Record<PlanKey, Plan> = {
     key: "org",
     name: "ארגונים ומתכנני טיולים",
     audience: "לארגונים או מתכנני טיולים",
-    monthlyCents: 19500,
-    annualCents: 187200,
+    monthlyCents: 49500,
+    annualCents: 475200,
     destinationLimit: null,
     seats: null,
     isOrgTier: true,
@@ -87,6 +87,6 @@ export function annualSavingsPercent(plan: Plan): number {
   return Math.round(((fullYear - plan.annualCents) / fullYear) * 100);
 }
 
-export function formatUsd(cents: number): string {
-  return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`;
+export function formatIls(cents: number): string {
+  return `${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)} ₪`;
 }

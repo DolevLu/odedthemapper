@@ -17,24 +17,36 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   if (accessLevel === "none") return <UpgradeRequired tier="silver" />;
 
-  const pois = await prisma.pointOfInterest.findMany({
-    where: {
-      category: {
-        area: { destinationId: destination.id },
-        name: { contains: "אטרקציות" },
+  const userId = session!.user!.id;
+
+  const [pois, favorites] = await Promise.all([
+    prisma.pointOfInterest.findMany({
+      where: {
+        category: {
+          area: { destinationId: destination.id },
+          name: { contains: "אטרקציות" },
+        },
       },
-    },
-    include: { category: { include: { area: true } } },
-    take: 200,
-  });
+      include: { category: { include: { area: true } }, photos: { take: 1 }, tags: true },
+      take: 200,
+    }),
+    prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }),
+  ]);
+
+  const favoritedIds = new Set(favorites.map((f) => f.poiId));
 
   const items = pois.map((p) => ({
     id: p.id,
     name: p.name,
     areaName: p.category.area.name,
     categoryName: p.category.name,
+    categoryColor: p.category.colorHex,
+    photoUrl: p.photos[0]?.url ?? null,
+    hours: p.hours,
+    tags: p.tags.map((t) => t.label),
     bookingUrl: p.bookingUrl,
     wantsBooking: p.wantsBooking,
+    favorited: favoritedIds.has(p.id),
   }));
 
   const recommendations = getBookingRecommendations(slug);

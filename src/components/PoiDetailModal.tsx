@@ -23,6 +23,7 @@ export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => 
           <h2 className="text-lg font-bold">{poi.name}</h2>
           {poi.description && <p className="text-sm opacity-80">{poi.description}</p>}
           {poi.address && <p className="text-xs opacity-60">📍 {poi.address}</p>}
+          {poi.hours && <p className="text-xs opacity-60">🕐 {poi.hours}</p>}
           {poi.tip && <p className="text-xs opacity-70">💡 {poi.tip}</p>}
           <button onClick={onClose} className="mt-2 self-end text-sm font-semibold underline opacity-70">
             סגירה

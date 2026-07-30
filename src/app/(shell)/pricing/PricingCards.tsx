@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANS, formatUsd, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
+import { PLANS, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
 
 export function PricingCards() {
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
@@ -62,11 +62,11 @@ export function PricingCards() {
               </div>
 
               <div>
-                <span className="text-4xl font-extrabold">{formatUsd(price)}</span>
+                <span className="text-4xl font-extrabold">{formatIls(price)}</span>
                 <span className="text-sm opacity-60"> / חודש</span>
                 {cycle === "annual" && (
                   <p className="mt-1 text-xs font-medium text-emerald-600">
-                    {annualSavingsPercent(plan)}% הנחה, מחויב שנתית ({formatUsd(plan.annualCents)})
+                    {annualSavingsPercent(plan)}% הנחה, מחויב שנתית ({formatIls(plan.annualCents)})
                   </p>
                 )}
               </div>

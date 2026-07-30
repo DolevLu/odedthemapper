@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANS, formatUsd, type PlanKey } from "@/lib/plans";
+import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
 import { PayMeCheckoutForm } from "./PayMeCheckoutForm";
 
 export default async function PayMeCheckoutPage({
@@ -30,7 +30,7 @@ export default async function PayMeCheckoutPage({
         <p className="text-center text-sm font-medium opacity-60">תשלום מאובטח דרך PayMe</p>
         <h1 className="mt-2 text-center text-2xl font-extrabold">מנוי {plan.name}</h1>
         <p className="mt-4 text-center text-4xl font-extrabold" style={{ color: "#7C3AED" }}>
-          {formatUsd(subscription.amountCents)} <span className="text-lg font-medium opacity-60">{cycleLabel}</span>
+          {formatIls(subscription.amountCents)} <span className="text-lg font-medium opacity-60">{cycleLabel}</span>
         </p>
 
         {subscription.destinations.length > 0 && (

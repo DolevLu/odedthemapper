@@ -3,8 +3,8 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { toggleFavorite } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
+import { PoiCard } from "@/components/PoiCard";
 
 const TIP_CATEGORY_LABELS: Record<string, string> = {
   money: "💰 כסף",
@@ -28,17 +28,19 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
   const [favorites, coupons, mustSee, tips] = await Promise.all([
     prisma.favorite.findMany({
       where: { userId, poi: { category: { area: { destinationId: destination.id } } } },
-      include: { poi: { include: { category: true } } },
+      include: { poi: { include: { category: { include: { area: true } }, photos: { take: 1 }, tags: true } } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.coupon.findMany({ where: { OR: [{ destinationId: destination.id }, { destinationId: null }] } }),
     prisma.pointOfInterest.findMany({
       where: { isMustSee: true, category: { area: { destinationId: destination.id } } },
-      include: { category: true, photos: { take: 1 } },
+      include: { category: { include: { area: true } }, photos: { take: 1 }, tags: true },
       take: 8,
     }),
     prisma.destinationTip.findMany({ where: { destinationId: destination.id } }),
   ]);
+
+  const favoritedIds = new Set(favorites.map((f) => f.poiId));
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,16 +52,21 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
           <p className="mb-4 text-sm opacity-60">האתרים והאטרקציות הידועים והאהובים ביותר ב{destination.name}.</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {mustSee.map((poi) => (
-              <div key={poi.id} className="overflow-hidden border" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-                {poi.photos[0] && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={poi.photos[0].url} alt="" className="h-28 w-full object-cover" loading="lazy" />
-                )}
-                <div className="p-3">
-                  <p className="text-xs opacity-60">{poi.category.name}</p>
-                  <p className="font-semibold">{poi.name}</p>
-                </div>
-              </div>
+              <PoiCard
+                key={poi.id}
+                poi={{
+                  id: poi.id,
+                  name: poi.name,
+                  areaName: poi.category.area.name,
+                  categoryName: poi.category.name,
+                  categoryColor: poi.category.colorHex,
+                  photoUrl: poi.photos[0]?.url ?? null,
+                  hours: poi.hours,
+                  tags: poi.tags.map((t) => t.label),
+                }}
+                slug={slug}
+                favorited={favoritedIds.has(poi.id)}
+              />
             ))}
           </div>
         </section>
@@ -90,20 +97,21 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {favorites.map((fav) => (
-              <div
+              <PoiCard
                 key={fav.id}
-                className="flex flex-col gap-2 border p-4"
-                style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: fav.poi.category.colorHex }} />
-                  <span className="text-xs opacity-60">{fav.poi.category.name}</span>
-                </div>
-                <h3 className="font-semibold">{fav.poi.name}</h3>
-                <form action={toggleFavorite.bind(null, fav.poiId, slug)}>
-                  <button className="text-sm underline opacity-70">הסרה ממועדפים</button>
-                </form>
-              </div>
+                poi={{
+                  id: fav.poi.id,
+                  name: fav.poi.name,
+                  areaName: fav.poi.category.area.name,
+                  categoryName: fav.poi.category.name,
+                  categoryColor: fav.poi.category.colorHex,
+                  photoUrl: fav.poi.photos[0]?.url ?? null,
+                  hours: fav.poi.hours,
+                  tags: fav.poi.tags.map((t) => t.label),
+                }}
+                slug={slug}
+                favorited
+              />
             ))}
           </div>
         )}

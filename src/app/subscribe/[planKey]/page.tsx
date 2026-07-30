@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANS, formatUsd, annualMonthlyEquivalent, type PlanKey } from "@/lib/plans";
+import { PLANS, formatIls, annualMonthlyEquivalent, type PlanKey } from "@/lib/plans";
 import { DestinationPicker } from "./DestinationPicker";
 import { OrgConfirmButton } from "./OrgConfirmButton";
 
@@ -36,7 +36,7 @@ export default async function SubscribePage({
         <p className="text-sm font-semibold opacity-60">{plan.audience}</p>
         <h1 className="mt-1 text-3xl font-extrabold">{plan.name}</h1>
         <p className="mt-2 text-lg">
-          <span className="font-extrabold">{formatUsd(price)}</span>
+          <span className="font-extrabold">{formatIls(price)}</span>
           <span className="opacity-60"> / חודש · {billingCycle === "monthly" ? "חיוב חודשי" : "חיוב שנתי"}</span>
         </p>
 

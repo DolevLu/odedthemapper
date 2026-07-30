@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PLANS, formatUsd, type PlanKey } from "@/lib/plans";
+import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
 
 export default async function AdminSubscriptionsPage() {
   const subscriptions = await prisma.subscription.findMany({
@@ -47,7 +47,7 @@ export default async function AdminSubscriptionsPage() {
                     {s.status}
                   </span>
                 </td>
-                <td className="p-3">{formatUsd(s.amountCents)}</td>
+                <td className="p-3">{formatIls(s.amountCents)}</td>
               </tr>
             ))}
             {subscriptions.length === 0 && (

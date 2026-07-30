@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
 import type { DestinationSummary } from "@/lib/data/destinations";
-import { PLANS, formatUsd } from "@/lib/plans";
+import { PLANS, formatIls } from "@/lib/plans";
 
 export function DestinationCard({ destination }: { destination: DestinationSummary }) {
   const isComingSoon = destination.status === "draft";
@@ -61,7 +61,7 @@ export function DestinationCard({ destination }: { destination: DestinationSumma
               className="rounded-full px-4 py-2 font-semibold text-white transition-transform group-hover:scale-105"
               style={{ background: isComingSoon ? "#9CA3AF" : "var(--primary)" }}
             >
-              {isComingSoon ? "בקרוב" : `מ-${formatUsd(PLANS.solo.monthlyCents)}/חודש`}
+              {isComingSoon ? "בקרוב" : `מ-${formatIls(PLANS.solo.monthlyCents)}/חודש`}
             </span>
           </div>
         </div>

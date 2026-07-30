@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getResolvedSubscriptionForAccount } from "@/lib/access";
-import { PLANS, formatUsd, type PlanKey } from "@/lib/plans";
+import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
 import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 import { getUserTravelStats } from "@/lib/stats";
 import { MemberManager } from "./MemberManager";
@@ -61,7 +61,7 @@ export default async function AccountPage() {
           <p className="text-sm font-semibold opacity-60">{PLANS[active.planKey as PlanKey].audience}</p>
           <h2 className="mt-1 text-xl font-extrabold">{PLANS[active.planKey as PlanKey].name}</h2>
           <p className="mt-2 text-sm opacity-70">
-            {formatUsd(active.amountCents)} · {active.billingCycle === "monthly" ? "חודשי" : "שנתי"} ·{" "}
+            {formatIls(active.amountCents)} · {active.billingCycle === "monthly" ? "חודשי" : "שנתי"} ·{" "}
             {active.cancelAtPeriodEnd ? "מסתיים ב-" : "מתחדש ב-"}
             {active.currentPeriodEnd.toLocaleDateString("he-IL")}
           </p>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { PLANS, formatUsd } from "@/lib/plans";
+import { PLANS, formatIls } from "@/lib/plans";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { FloatingTravelIcons } from "@/components/FloatingTravelIcons";
@@ -75,7 +75,7 @@ export default async function Home() {
               ✈️ לא בטוחים לאן? בואו נתאים לכם יעד
             </Link>
             <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-7 py-3.5 font-bold transition-transform hover:-translate-y-0.5">
-              תמחור — החל מ-{formatUsd(PLANS.solo.monthlyCents)}/חודש
+              תמחור — החל מ-{formatIls(PLANS.solo.monthlyCents)}/חודש
             </Link>
           </div>
 
@@ -116,7 +116,7 @@ export default async function Home() {
                 <p className="text-xs font-semibold opacity-60">{plan.audience}</p>
                 <p className="mt-1 text-lg font-extrabold">{plan.name}</p>
                 <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
-                  {formatUsd(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">/חודש</span>
+                  {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">/חודש</span>
                 </p>
               </div>
             ))}

@@ -15,11 +15,14 @@ const TOP_ITEMS = [
 
 type DestItem = { href: string; label: string; icon: string; tier: Tier };
 
+// The 4 destination-scoped items pinned in the mobile bottom bar — everything
+// else lives behind the hamburger menu.
+const MOBILE_PINNED_KEYS = new Set(["", "/map"]);
+
 const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "תכנון הטיול",
     items: [
-      { href: "/today", label: "היום", icon: "☀️", tier: "silver" },
       { href: "", label: "מה עכשיו", icon: "🧭", tier: "silver" },
       { href: "/map", label: "מפה", icon: "🗺️", tier: "silver" },
       { href: "/itinerary", label: "מסלול", icon: "📅", tier: "silver" },
@@ -28,7 +31,7 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "כלים ללקוחות",
     items: [
-      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
+      { href: "/client-planner", label: "תכנון מסלول ללקוח", icon: "🧑‍💼", tier: "gold" },
       { href: "/quotes", label: "CRM — לידים והצעות מחיר", icon: "📄", tier: "gold" },
     ],
   },
@@ -61,6 +64,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   function isUnlocked(tier: Tier): boolean {
     if (!currentSlug) return false;
@@ -69,20 +73,45 @@ export function AppSidebar({
     return accessLevel === "gold";
   }
 
+  function handleDestItemClick(item: DestItem, e: React.MouseEvent) {
+    if (!isUnlocked(item.tier)) {
+      e.preventDefault();
+      setLockedTier(!currentSlug ? "no-destination" : (item.tier as "silver" | "gold"));
+    } else {
+      setDrawerOpen(false);
+    }
+  }
+
+  function destHref(item: DestItem): string {
+    return currentSlug ? `/trip/${currentSlug}${item.href}` : "#";
+  }
+
+  function isDestActive(item: DestItem): boolean {
+    return (
+      Boolean(currentSlug) &&
+      (item.href === "" ? pathname === `/trip/${currentSlug}` : pathname.startsWith(`/trip/${currentSlug}${item.href}`))
+    );
+  }
+
+  const pinnedItems = DEST_GROUPS.flatMap((g) => g.items).filter((i) => MOBILE_PINNED_KEYS.has(i.href));
+  const nowItem = pinnedItems.find((i) => i.href === "");
+  const mapItem = pinnedItems.find((i) => i.href === "/map");
+
   return (
     <>
+      {/* Desktop sidebar */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-0.5 overflow-x-auto border-t p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:static sm:z-0 sm:w-64 sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-t-0 sm:border-s sm:p-3 sm:pb-3 sm:shadow-none"
+        className="hidden shrink-0 flex-col gap-0.5 border-e p-3 sm:flex sm:w-64"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
-        <div className="flex flex-row justify-center gap-1 overflow-x-auto sm:flex-col sm:justify-normal sm:overflow-visible">
+        <div className="flex flex-col gap-1">
           {TOP_ITEMS.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex shrink-0 items-center gap-3 px-4 py-2 text-sm font-semibold sm:shrink"
+                className="flex items-center gap-3 px-4 py-2 text-sm font-semibold"
                 style={{
                   borderRadius: "999px",
                   background: active ? "var(--primary, #7C3AED)" : "transparent",
@@ -96,32 +125,21 @@ export function AppSidebar({
           })}
         </div>
 
-        <div className="my-1.5 hidden h-px bg-black/10 sm:block" />
+        <div className="my-1.5 h-px bg-black/10" />
 
-        <div className="flex flex-row gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
+        <div className="flex flex-col gap-1">
           {DEST_GROUPS.map((group) => (
             <div key={group.title} className="contents">
-              <p className="mb-1 mt-3 hidden px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0 sm:block">
-                {group.title}
-              </p>
+              <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
               {group.items.map((item) => {
-                const href = currentSlug ? `/trip/${currentSlug}${item.href}` : "#";
-                const active =
-                  Boolean(currentSlug) &&
-                  (item.href === "" ? pathname === `/trip/${currentSlug}` : pathname.startsWith(`/trip/${currentSlug}${item.href}`));
+                const active = isDestActive(item);
                 const unlocked = isUnlocked(item.tier);
-
                 return (
                   <Link
                     key={item.href}
-                    href={href}
-                    onClick={(e) => {
-                      if (!unlocked) {
-                        e.preventDefault();
-                        setLockedTier(!currentSlug ? "no-destination" : (item.tier as "silver" | "gold"));
-                      }
-                    }}
-                    className="flex shrink-0 items-center gap-2.5 px-4 py-1.5 text-sm font-medium sm:shrink"
+                    href={destHref(item)}
+                    onClick={(e) => handleDestItemClick(item, e)}
+                    className="flex items-center gap-2.5 px-4 py-1.5 text-sm font-medium"
                     style={{
                       borderRadius: "999px",
                       background: active ? "var(--primary, #7C3AED)" : "transparent",
@@ -146,15 +164,131 @@ export function AppSidebar({
 
         <Link
           href="/pricing"
-          className="mt-3 hidden items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md sm:flex"
+          className="mt-3 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
           style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
         >
           ✨ שדרג עכשיו
         </Link>
       </nav>
 
+      {/* Mobile bottom bar — 5 pinned icons, native-app style */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
+        style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
+      >
+        <MobileTab href="/" icon="🏠" label="דף הבית" active={pathname === "/"} />
+        <MobileTab href="/destinations" icon="🌍" label="יעדים" active={pathname === "/destinations"} />
+        {nowItem && (
+          <MobileTab
+            href={destHref(nowItem)}
+            icon={nowItem.icon}
+            label={nowItem.label}
+            active={isDestActive(nowItem)}
+            onClick={(e) => handleDestItemClick(nowItem, e)}
+          />
+        )}
+        {mapItem && (
+          <MobileTab
+            href={destHref(mapItem)}
+            icon={mapItem.icon}
+            label={mapItem.label}
+            active={isDestActive(mapItem)}
+            onClick={(e) => handleDestItemClick(mapItem, e)}
+          />
+        )}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
+          style={{ color: "var(--text, #1a1a1a)" }}
+        >
+          <span className="text-xl leading-none">☰</span>
+          <span>עוד</span>
+        </button>
+      </nav>
+
+      {/* Mobile slide-out drawer with the rest of the nav, styled like the desktop sidebar */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-40 flex sm:hidden" onClick={() => setDrawerOpen(false)}>
+          <div className="flex-1 bg-black/40" />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-[80%] max-w-xs flex-col gap-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
+            style={{ background: "var(--background, #FBF6EE)" }}
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-bold">תפריט</span>
+              <button onClick={() => setDrawerOpen(false)} className="rounded-full px-2 py-1 text-lg opacity-60">
+                ✕
+              </button>
+            </div>
+
+            {TOP_ITEMS.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setDrawerOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 text-sm font-semibold"
+                  style={{
+                    borderRadius: "999px",
+                    background: active ? "var(--primary, #7C3AED)" : "transparent",
+                    color: active ? "white" : "var(--text, #1a1a1a)",
+                  }}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+
+            <div className="my-1.5 h-px bg-black/10" />
+
+            {DEST_GROUPS.map((group) => {
+              const items = group.items.filter((i) => !MOBILE_PINNED_KEYS.has(i.href));
+              if (items.length === 0) return null;
+              return (
+                <div key={group.title} className="contents">
+                  <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
+                  {items.map((item) => {
+                    const active = isDestActive(item);
+                    const unlocked = isUnlocked(item.tier);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={destHref(item)}
+                        onClick={(e) => handleDestItemClick(item, e)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium"
+                        style={{
+                          borderRadius: "999px",
+                          background: active ? "var(--primary, #7C3AED)" : "transparent",
+                          color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
+                        }}
+                      >
+                        <span>{item.icon}</span>
+                        <span className="flex-1">{item.label}</span>
+                        {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            <Link
+              href="/pricing"
+              onClick={() => setDrawerOpen(false)}
+              className="mt-3 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+              style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
+            >
+              ✨ שדרג עכשיו
+            </Link>
+          </div>
+        </div>
+      )}
+
       {lockedTier && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6" onClick={() => setLockedTier(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onClick={() => setLockedTier(null)}>
           <div onClick={(e) => e.stopPropagation()}>
             {lockedTier === "no-destination" ? (
               <div
@@ -175,5 +309,31 @@ export function AppSidebar({
         </div>
       )}
     </>
+  );
+}
+
+function MobileTab({
+  href,
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  active: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
+      style={{ color: active ? "var(--primary, #7C3AED)" : "var(--text, #1a1a1a)" }}
+    >
+      <span className="text-xl leading-none">{icon}</span>
+      <span className="max-w-full truncate px-0.5">{label}</span>
+    </Link>
   );
 }

@@ -15,6 +15,8 @@ export type FlatPoi = {
   priceRange: string | null;
   bookingUrl: string | null;
   tip: string | null;
+  hours: string | null;
+  tags: string[];
   photoUrl: string | null;
   description: string | null;
 };
@@ -37,7 +39,7 @@ export async function getFlatPoisForDestination(destinationId: string): Promise<
     where: { destinationId },
     include: {
       categories: {
-        include: { pois: { include: { photos: { take: 1 } } } },
+        include: { pois: { include: { photos: { take: 1 }, tags: true } } },
       },
     },
   });
@@ -60,6 +62,8 @@ export async function getFlatPoisForDestination(destinationId: string): Promise<
           priceRange: poi.priceRange,
           bookingUrl: poi.bookingUrl,
           tip: poi.tip,
+          hours: poi.hours,
+          tags: poi.tags.map((t) => t.label),
           photoUrl: poi.photos[0]?.url ?? null,
           description: extractTextDescription(poi.rawDescriptionHtml),
         });

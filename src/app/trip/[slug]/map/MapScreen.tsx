@@ -72,7 +72,6 @@ export function MapScreen({
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
-  const [sheetExpanded, setSheetExpanded] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -164,6 +163,42 @@ export function MapScreen({
     });
   }, [loaded, logisticPins]);
 
+  async function drawRouteTo(poi: FlatPoi) {
+    if (!userPosition || !mapRef.current) return;
+    setRouteError(null);
+    try {
+      await loadRoutesLibrary();
+    } catch {
+      setRouteError("מסלול ניווט אינו זמין כרגע");
+      return;
+    }
+    if (!directionsServiceRef.current) {
+      directionsServiceRef.current = new google.maps.DirectionsService();
+    }
+    if (!directionsRendererRef.current) {
+      directionsRendererRef.current = new google.maps.DirectionsRenderer({
+        map: mapRef.current,
+        suppressMarkers: true,
+        polylineOptions: { strokeColor: "#4285F4", strokeWeight: 5 },
+      });
+    }
+    setRouteToPoiId(poi.id);
+    directionsServiceRef.current.route(
+      {
+        origin: userPosition,
+        destination: { lat: poi.lat, lng: poi.lng },
+        travelMode: google.maps.TravelMode.WALKING,
+      },
+      (result, status) => {
+        if (status === "OK" && result) {
+          directionsRendererRef.current?.setDirections(result);
+        } else {
+          setRouteError("לא הצלחנו לחשב מסלול לנקודה הזו");
+        }
+      }
+    );
+  }
+
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(infoWindowHtml(poi));
@@ -201,42 +236,6 @@ export function MapScreen({
     mapRef.current.panTo({ lat: poi.lat, lng: poi.lng });
     mapRef.current.setZoom(16);
     openPoi(poi, marker);
-  }
-
-  async function drawRouteTo(poi: FlatPoi) {
-    if (!userPosition || !mapRef.current) return;
-    setRouteError(null);
-    try {
-      await loadRoutesLibrary();
-    } catch {
-      setRouteError("מסלול ניווט אינו זמין כרגע");
-      return;
-    }
-    if (!directionsServiceRef.current) {
-      directionsServiceRef.current = new google.maps.DirectionsService();
-    }
-    if (!directionsRendererRef.current) {
-      directionsRendererRef.current = new google.maps.DirectionsRenderer({
-        map: mapRef.current,
-        suppressMarkers: true,
-        polylineOptions: { strokeColor: "#4285F4", strokeWeight: 5 },
-      });
-    }
-    setRouteToPoiId(poi.id);
-    directionsServiceRef.current.route(
-      {
-        origin: userPosition,
-        destination: { lat: poi.lat, lng: poi.lng },
-        travelMode: google.maps.TravelMode.WALKING,
-      },
-      (result, status) => {
-        if (status === "OK" && result) {
-          directionsRendererRef.current?.setDirections(result);
-        } else {
-          setRouteError("לא הצלחנו לחשב מסלול לנקודה הזו");
-        }
-      }
-    );
   }
 
   function toggleGps() {
@@ -296,7 +295,7 @@ export function MapScreen({
   }
 
   return (
-    <div className="flex h-[calc(100vh-140px)] flex-col gap-3">
+    <div className="flex flex-col gap-3 sm:h-[calc(100vh-140px)]">
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => setActiveCategory(null)}
@@ -335,10 +334,10 @@ export function MapScreen({
       {gpsError && <p className="text-xs text-red-600">{gpsError}</p>}
       {routeError && <p className="text-xs text-red-600">{routeError}</p>}
 
-      <div className="relative flex flex-1 gap-3 overflow-hidden">
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden sm:flex-row">
         <div
           ref={mapDivRef}
-          className="min-w-0 flex-1 overflow-hidden"
+          className="h-[50vh] w-full shrink-0 overflow-hidden sm:h-auto sm:min-w-0 sm:flex-1"
           style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
         />
         <div
@@ -353,26 +352,15 @@ export function MapScreen({
           {sortedList.map((poi) => renderListItem(poi))}
         </div>
 
-        {/* Mobile-only: the list lives in a bottom sheet over the map instead of being hidden entirely. */}
+        {/* Mobile-only: a normal section below the map, not an overlay on top of it. */}
         <div
-          className="absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden shadow-[0_-4px_16px_rgba(0,0,0,0.12)] sm:hidden"
-          style={{
-            borderRadius: "var(--radius) var(--radius) 0 0",
-            background: "var(--surface)",
-            maxHeight: sheetExpanded ? "70%" : "84px",
-            transition: "max-height 0.25s ease",
-          }}
+          className="flex flex-col overflow-hidden sm:hidden"
+          style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)", background: "var(--surface)" }}
         >
-          <button
-            onClick={() => setSheetExpanded((v) => !v)}
-            className="flex shrink-0 flex-col items-center gap-1 py-2"
-          >
-            <span className="h-1 w-10 rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 30%, transparent)" }} />
-            <span className="text-xs font-semibold opacity-70">
-              {sheetExpanded ? "הסתרת הרשימה ▾" : `${sortedList.length} נקודות ברשימה ▴`}
-            </span>
-          </button>
-          <div className="flex-1 overflow-y-auto">
+          <p className="border-b p-2 text-center text-xs font-semibold opacity-70" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+            {sortedList.length} נקודות ברשימה
+          </p>
+          <div className="max-h-[45vh] overflow-y-auto">
             {gpsActive && userPosition && (
               <p className="border-b p-2 text-center text-xs opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
                 ממוין לפי קרבה אליכם

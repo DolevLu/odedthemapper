@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setTripStartDate, togglePackingCheck } from "@/lib/actions/trip";
 
-export function TodayScreen({
+export function TodayCard({
   destinationId,
   destinationName,
   slug,
@@ -45,7 +45,7 @@ export function TodayScreen({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Countdown / mascot card */}
       <div
         className="relative flex flex-col items-center gap-3 overflow-hidden border p-6 text-center"

@@ -2,9 +2,20 @@
 
 import { useMemo, useState } from "react";
 import type { FlatPoi } from "@/lib/data/pois";
-import { FavoriteButton } from "@/components/FavoriteButton";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { PoiDetailModal } from "@/components/PoiDetailModal";
+import { TodayCard } from "@/components/TodayCard";
+import { PoiCard } from "@/components/PoiCard";
+
+type TodayData = {
+  destinationId: string;
+  destinationName: string;
+  hasTargetDate: boolean;
+  daysUntil: number | null;
+  targetDateLabel: string | null;
+  todayDayItems: { time: string | null; label: string }[] | null;
+  bookableItems: { id: string; name: string }[];
+};
 
 function haversineKm(a: [number, number], b: [number, number]) {
   const [lat1, lng1] = a;
@@ -23,11 +34,15 @@ export function NowScreen({
   categoryNames,
   slug,
   favoritedIds,
+  scheduledPoiIds,
+  today,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
   slug: string;
   favoritedIds: Set<string>;
+  scheduledPoiIds: Set<string>;
+  today: TodayData;
 }) {
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -79,6 +94,17 @@ export function NowScreen({
 
   return (
     <div className="flex flex-col gap-6">
+      <TodayCard
+        destinationId={today.destinationId}
+        destinationName={today.destinationName}
+        slug={slug}
+        hasTargetDate={today.hasTargetDate}
+        daysUntil={today.daysUntil}
+        targetDateLabel={today.targetDateLabel}
+        todayDayItems={today.todayDayItems}
+        bookableItems={today.bookableItems}
+      />
+
       <div
         className="flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
@@ -140,37 +166,24 @@ export function NowScreen({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listForCategory.map((poi) => (
-              <div
+              <PoiCard
                 key={poi.id}
+                poi={{
+                  id: poi.id,
+                  name: poi.name,
+                  areaName: poi.areaName,
+                  categoryName: poi.categoryName,
+                  categoryColor: poi.categoryColor,
+                  photoUrl: poi.photoUrl,
+                  hours: poi.hours,
+                  tags: poi.tags,
+                  distanceKm: "distanceKm" in poi ? (poi as unknown as { distanceKm: number }).distanceKm : undefined,
+                }}
+                slug={slug}
+                favorited={favoritedIds.has(poi.id)}
+                scheduled={scheduledPoiIds.has(poi.id)}
                 onClick={() => setDetailPoi(poi)}
-                className="group cursor-pointer overflow-hidden border shadow-sm transition-shadow hover:shadow-lg"
-                style={{ borderRadius: "var(--radius)", borderColor: `color-mix(in srgb, ${poi.categoryColor} 35%, transparent)`, background: "var(--surface)" }}
-              >
-                <div className="relative aspect-[4/3] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
-                  {poi.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={poi.photoUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: poi.categoryColor }}>
-                        <CategoryIcon name={poi.categoryName} size={26} />
-                      </span>
-                    </div>
-                  )}
-                  <span className="absolute end-2 top-2" onClick={(e) => e.stopPropagation()}>
-                    <FavoriteButton poiId={poi.id} slug={slug} initialFavorited={favoritedIds.has(poi.id)} />
-                  </span>
-                  {"distanceKm" in poi && (
-                    <span className="absolute bottom-2 start-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
-                      {(poi as unknown as { distanceKm: number }).distanceKm.toFixed(1)} ק״מ
-                    </span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="truncate font-bold">{poi.name}</h3>
-                  <p className="truncate text-xs opacity-60">{poi.areaName}</p>
-                </div>
-              </div>
+              />
             ))}
           </div>
         </div>

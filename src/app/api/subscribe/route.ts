@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       status: "pending",
       paymentSessionId: `mock_${crypto.randomUUID()}`,
       amountCents,
-      currency: "USD",
+      currency: "ILS",
       currentPeriodEnd,
       destinations: plan.isOrgTier
         ? undefined
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     subscriptionId: subscription.id,
     planName: plan.name,
     amountCents,
-    currency: "USD",
+    currency: "ILS",
   });
 
   return NextResponse.json({ checkoutUrl });
