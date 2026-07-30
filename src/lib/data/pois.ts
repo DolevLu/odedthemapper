@@ -22,8 +22,13 @@ export type FlatPoi = {
 };
 
 /** Strips <img> tags and remaining HTML markup from a KML description blob,
- * leaving just the human-readable text (the photo is shown separately). */
-export function extractTextDescription(html: string | null): string | null {
+ * leaving just the human-readable text (the photo is shown separately).
+ * Capped to maxLength — every POI's description round-trips through this on
+ * every Now/Map screen load (hundreds to thousands of POIs per destination),
+ * and nothing in the UI shows more than a couple hundred characters of this
+ * generic KML-derived text anyway, so shipping the untruncated blob to the
+ * client for every single POI was pure wasted payload. */
+export function extractTextDescription(html: string | null, maxLength = 280): string | null {
   if (!html) return null;
   const withoutImages = html.replace(/<img[^>]*>/gi, "");
   const text = withoutImages
@@ -31,15 +36,38 @@ export function extractTextDescription(html: string | null): string | null {
     .replace(/<[^>]+>/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return text || null;
+  if (!text) return null;
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}…` : text;
 }
 
 export async function getFlatPoisForDestination(destinationId: string): Promise<FlatPoi[]> {
   const areas = await prisma.area.findMany({
     where: { destinationId },
-    include: {
+    select: {
+      name: true,
       categories: {
-        include: { pois: { include: { photos: { take: 1 }, tags: true } } },
+        select: {
+          name: true,
+          colorHex: true,
+          pois: {
+            select: {
+              id: true,
+              name: true,
+              lat: true,
+              lng: true,
+              geometryType: true,
+              geometryCoords: true,
+              address: true,
+              priceRange: true,
+              bookingUrl: true,
+              tip: true,
+              hours: true,
+              rawDescriptionHtml: true,
+              tags: { select: { label: true } },
+              photos: { take: 1, select: { url: true } },
+            },
+          },
+        },
       },
     },
   });

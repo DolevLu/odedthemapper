@@ -5,7 +5,7 @@ import { getAccessLevel } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NewQuoteForm } from "./NewQuoteForm";
-import { QuoteCard } from "./QuoteCard";
+import { LeadsTable } from "./LeadsTable";
 
 export default async function QuotesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -40,47 +40,43 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
 
       {quotes.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl border border-black/5 p-3 text-center" style={{ background: "var(--surface)" }}>
-            <p className="text-lg font-extrabold">{quotes.length}</p>
-            <p className="text-xs opacity-60">לידים</p>
+          <div className="rounded-2xl border-2 p-4 text-center" style={{ borderColor: "var(--primary)", background: "color-mix(in srgb, var(--primary) 8%, var(--surface))" }}>
+            <p className="text-2xl font-extrabold" style={{ color: "var(--primary)" }}>
+              ${(profitCents / 100).toFixed(0)}
+            </p>
+            <p className="text-xs opacity-70">💰 רווח כולל</p>
           </div>
-          <div className="rounded-2xl border border-black/5 p-3 text-center" style={{ background: "var(--surface)" }}>
-            <p className="text-lg font-extrabold">{closedWon}</p>
-            <p className="text-xs opacity-60">נסגרו בהצלחה</p>
-          </div>
-          <div className="rounded-2xl border border-black/5 p-3 text-center" style={{ background: "var(--surface)" }}>
-            <p className="text-lg font-extrabold">${(revenueCents / 100).toFixed(0)}</p>
+          <div className="rounded-2xl border border-black/5 p-4 text-center" style={{ background: "var(--surface)" }}>
+            <p className="text-xl font-extrabold">${(revenueCents / 100).toFixed(0)}</p>
             <p className="text-xs opacity-60">הכנסה כוללת</p>
           </div>
-          <div className="rounded-2xl border border-black/5 p-3 text-center" style={{ background: "var(--surface)" }}>
-            <p className="text-lg font-extrabold">${(profitCents / 100).toFixed(0)}</p>
-            <p className="text-xs opacity-60">רווח כולל</p>
+          <div className="rounded-2xl border border-black/5 p-4 text-center" style={{ background: "var(--surface)" }}>
+            <p className="text-xl font-extrabold">{quotes.length}</p>
+            <p className="text-xs opacity-60">לידים</p>
+          </div>
+          <div className="rounded-2xl border border-black/5 p-4 text-center" style={{ background: "var(--surface)" }}>
+            <p className="text-xl font-extrabold">{closedWon}</p>
+            <p className="text-xs opacity-60">נסגרו בהצלחה</p>
           </div>
         </div>
       )}
 
       <NewQuoteForm destinationId={destination.id} slug={slug} />
 
-      <div className="flex flex-col gap-3">
-        {quotes.length === 0 && <p className="text-sm opacity-60">עדיין לא נוצרו לידים ליעד הזה.</p>}
-        {quotes.map((q) => (
-          <QuoteCard
-            key={q.id}
-            slug={slug}
-            quote={{
-              id: q.id,
-              clientName: q.clientName,
-              tripDays: q.tripDays,
-              totalLabel: `${((q.basePriceCents + (q.includesBooking ? q.bookingPriceCents : 0)) / 100).toFixed(0)} ${q.currency}`,
-              profitLabel: `$${((q.basePriceCents + (q.includesBooking ? q.bookingPriceCents : 0) - q.costCents) / 100).toFixed(0)}`,
-              status: q.status,
-              leadStatus: q.leadStatus,
-              shareToken: q.shareToken,
-              signed: Boolean(q.signatureDataUrl),
-            }}
-          />
-        ))}
-      </div>
+      <LeadsTable
+        slug={slug}
+        leads={quotes.map((q) => ({
+          id: q.id,
+          clientName: q.clientName,
+          tripDays: q.tripDays,
+          revenueLabel: `${((q.basePriceCents + (q.includesBooking ? q.bookingPriceCents : 0)) / 100).toFixed(0)} ${q.currency}`,
+          profitLabel: `$${((q.basePriceCents + (q.includesBooking ? q.bookingPriceCents : 0) - q.costCents) / 100).toFixed(0)}`,
+          status: q.status,
+          leadStatus: q.leadStatus,
+          shareToken: q.shareToken,
+          signed: Boolean(q.signatureDataUrl),
+        }))}
+      />
     </div>
   );
 }
