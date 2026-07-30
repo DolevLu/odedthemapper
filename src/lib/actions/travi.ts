@@ -32,6 +32,9 @@ const CATEGORY_INTENTS: { keywords: string[]; categoryFragments: string[]; label
   },
 ];
 
+// Kept as reference context fed to Gemini (so it can accurately explain app
+// features even when the phrasing doesn't match any fixed keyword list) and
+// as a zero-cost fast path if Gemini is unavailable.
 const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
   { keywords: ["מסלול", "לתכנן", "לבנות מסלול", "תוכנית טיול", "לארגן את הטיול", "סדר יום"], answer: "במסך \"מסלול\" תוכלו להוסיף ימים ונקודות, לגרור ולסדר מחדש, ואפילו לבקש מהמערכת ליצור לכם מסלול אוטומטי לפי הימים והתחומי עניין שתבחרו." },
   { keywords: ["תקציב", "הוצאות", "כסף שהוצאתי", "כמה הוצאתי", "לעקוב אחרי כסף"], answer: "במסך \"הוצאות\" תוכלו לרשום הוצאות לפי יום, להגדיר תקציב כולל, ולראות כמה נשאר לכם ליום הנוכחי." },
@@ -43,15 +46,26 @@ const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
   { keywords: ["חג", "חגים", "יום חג", "אירוע קרוב"], answer: "במסך \"להזמנה\" יש לוח חגים קרובים ביעד, כדי לדעת מראש על ימים שבהם עסקים ואתרים עשויים לפעול אחרת." },
 ];
 
-// Common filler/politeness words stripped before matching, so "תוכל בבקשה
-// להגיד לי איפה יש מסעדה טובה" matches just as well as "מסעדה".
-const FILLER_WORDS = ["בבקשה", "אתה", "את", "יכול", "יכולה", "תוכל", "תוכלי", "אפשר", "אולי", "רוצה", "אני", "לי", "מה", "יש", "איפה", "תגיד", "תמליץ", "לך", "לכם"];
+// Short reference of every screen, given to Gemini as context so it can
+// answer app-usage questions accurately regardless of phrasing.
+const APP_SCREENS_REFERENCE = `
+מסכי האפליקציה הזמינים למשתמש ביעד:
+- מה עכשיו: קטגוריות נקודות עניין (מסעדות, ברים, קפה, מוזיאונים, פארקים וכו') עם מיון לפי קרבה
+- מפה: מפה אינטראקטיבית עם כל הנקודות, סינון קטגוריה, וניווט לפי מיקום נוכחי
+- מסלול: בניית מסלול יומי — הוספת נקודות לימים, גרירה לשינוי סדר, יצירת מסלול אוטומטי
+- מועדפים: נקודות ואטרקציות שסומנו בלב, כולל המלצות "אסור לפספס" וטיפים לפני הנסיעה
+- להזמנה: אטרקציות שכדאי להזמין מראש, ולוח חגים קרובים ביעד
+- לוגיסטיקה: שמירת טיסות/מלונות/מסמכים עם תזכורות, ומפת חום להמלצת שכונת לינה
+- הוצאות: מעקב הוצאות יומי מול תקציב שהוגדר
+- חידונים: שלושה חידוני טריוויה (ספורט/היסטוריה/כללי) ליעד
+- שיחון: מילים וביטויים בשפה המקומית עם הקראה קולית
+- ציוד וצ'ק ליסט: רשימת ציוד לפני טיסה
+- אלבום: העלאת תמונות/וידאו וקולאז'ים מהטיול
+`.trim();
 
+const FILLER_WORDS = ["בבקשה", "אתה", "את", "יכול", "יכולה", "תוכל", "תוכלי", "אפשר", "אולי", "רוצה", "אני", "לי", "מה", "יש", "איפה", "תגיד", "תמליץ", "לך", "לכם"];
 const FILLER_SET = new Set(FILLER_WORDS);
 
-/** Drops whole filler-word tokens (exact match only — never a substring
- * replace, which would corrupt real words that merely contain "מה"/"יש"/etc
- * as part of a longer word, e.g. "מהר"). */
 function normalize(s: string): string {
   return s
     .trim()
@@ -63,9 +77,6 @@ function normalize(s: string): string {
 
 const STOP_WORDS = new Set(["של", "עם", "את", "על", "כדי", "הכי", "טוב", "טובה", "קרוב", "קרובה", "בסביבה", "פה", "כאן"]);
 
-/** Last-resort fallback: search POI/category names directly for any
- * significant word in the message — catches things like a POI named
- * explicitly ("קולוסיאום") that no fixed intent list would anticipate. */
 async function rawSearch(destinationId: string, q: string): Promise<TraviSuggestion[]> {
   const tokens = q.split(" ").filter((t) => t.length >= 3 && !STOP_WORDS.has(t));
   if (tokens.length === 0) return [];
@@ -81,6 +92,75 @@ async function rawSearch(destinationId: string, q: string): Promise<TraviSuggest
   });
 
   return pois.map((p) => ({ id: p.id, name: p.name, categoryName: p.category.name, areaName: p.category.area.name, distanceKm: null }));
+}
+
+function matchIntentSuggestions(rawQ: string, q: string) {
+  const intent = CATEGORY_INTENTS.find((c) => c.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
+  if (!intent) return null;
+  return { intent };
+}
+
+/** Calls Gemini (gemini-2.5-flash) to compose the actual reply text. Given
+ * real POI suggestions (if any were found) plus app/FAQ context, so it can
+ * ground its answer in real data instead of inventing places, while still
+ * being able to answer general questions and understand varied phrasing
+ * that a fixed keyword list would miss. Returns null on any failure so the
+ * caller can fall back to the deterministic keyword-matching logic. */
+async function askGemini(params: {
+  message: string;
+  destinationName: string;
+  suggestions: TraviSuggestion[];
+  intentLabel: string | null;
+}): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const { message, destinationName, suggestions, intentLabel } = params;
+
+  const suggestionsBlock =
+    suggestions.length > 0
+      ? `נמצאו במאגר שלנו הנקודות הרלוונטיות הבאות ל"${intentLabel}" (רשימה אמיתית — אסור להמציא נקודות נוספות שלא ברשימה):\n${suggestions
+          .map((s) => `- ${s.name} (${s.categoryName}, ${s.areaName})`)
+          .join("\n")}`
+      : "לא נמצאו נקודות עניין רלוונטיות במאגר שלנו לשאלה הזו — אם השאלה היא על נקודת עניין/מקום ביעד, ציינו זאת בעדינות והציעו לחפש במפה; אם זו שאלה כללית (טיפ נסיעה, תרגום, ידע כללי, מזג אוויר, וכו') ענו עליה ישירות מהידע הכללי שלכם.";
+
+  const systemPrompt = `אתם "טראבי" 🧭, עוזר טיולים ידידותי בתוך אפליקציית "עודד המנקד" ליעד ${destinationName}. ענו בעברית, קצר וממוקד (2-4 משפטים לכל היותר), בטון חם וישיר.
+
+${APP_SCREENS_REFERENCE}
+
+${suggestionsBlock}
+
+כללים:
+- אם יש נקודות מהמאגר למעלה — התייחסו אליהן בשמן בתשובה באופן טבעי (הן כבר יוצגו למשתמש ככרטיסיות נפרדות, אין צורך לפרט כתובות).
+- אם השאלה עוסקת בשימוש באפליקציה — ענו לפי רשימת המסכים למעלה בלבד, אל תמציאו תכונות שלא קיימות שם.
+- אם השאלה כללית לגמרי (לא על נקודות עניין ולא על האפליקציה) — ענו ישירות מהידע הכללי שלכם בהיגיון וכנות.
+- לעולם אל תמציאו שם של מסעדה/בר/אטרקציה שלא הופיע ברשימה שסופקה.`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: "user", parts: [{ text: message }] }],
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
+        }),
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+    if (!res.ok) {
+      console.error("Gemini API error:", res.status, await res.text().catch(() => ""));
+      return null;
+    }
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+    return text?.trim() || null;
+  } catch (err) {
+    console.error("Gemini call failed:", err);
+    return null;
+  }
 }
 
 export async function askTravi(
@@ -100,45 +180,63 @@ export async function askTravi(
 
   const q = normalize(rawQ);
 
-  const faqMatch = FAQ_INTENTS.find((f) => f.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
-  if (faqMatch) return { text: faqMatch.answer, suggestions: [] };
-
-  const intent = CATEGORY_INTENTS.find((c) => c.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
-  if (intent) {
+  // Gather real, DB-grounded suggestions via the existing keyword matcher
+  // (used both as the fast path and as grounding context for Gemini).
+  let suggestions: TraviSuggestion[] = [];
+  let intentLabel: string | null = null;
+  const matched = matchIntentSuggestions(rawQ, q);
+  if (matched) {
+    intentLabel = matched.intent.label;
     const pois = await prisma.pointOfInterest.findMany({
       where: {
         geometryType: "point",
         category: {
           area: { destinationId },
-          OR: intent.categoryFragments.map((f) => ({ name: { contains: f } })),
+          OR: matched.intent.categoryFragments.map((f) => ({ name: { contains: f } })),
         },
       },
       include: { category: { include: { area: true } } },
       take: 60,
     });
-
-    if (pois.length > 0) {
-      const withDistance: TraviSuggestion[] = pois.map((p) => ({
-        id: p.id,
-        name: p.name,
-        categoryName: p.category.name,
-        areaName: p.category.area.name,
-        distanceKm: userPosition ? haversineKm([userPosition.lat, userPosition.lng], [p.lat, p.lng]) : null,
-      }));
-      const sorted = userPosition ? withDistance.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0)) : withDistance;
-
-      return {
-        text: userPosition ? `הנה ${intent.label} קרובים אליכם:` : `הנה כמה ${intent.label} מהמאגר שלנו — הפעילו מיקום כדי שאמיין לפי קרבה:`,
-        suggestions: sorted.slice(0, 5),
-      };
-    }
+    const withDistance: TraviSuggestion[] = pois.map((p) => ({
+      id: p.id,
+      name: p.name,
+      categoryName: p.category.name,
+      areaName: p.category.area.name,
+      distanceKm: userPosition ? haversineKm([userPosition.lat, userPosition.lng], [p.lat, p.lng]) : null,
+    }));
+    const sorted = userPosition ? withDistance.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0)) : withDistance;
+    suggestions = sorted.slice(0, 5);
+  } else {
+    suggestions = await rawSearch(destinationId, q);
   }
 
-  // No fixed intent matched (or matched but the category is empty for this
-  // destination) — fall back to a raw keyword search across POI/category names.
-  const fallbackResults = await rawSearch(destinationId, q);
-  if (fallbackResults.length > 0) {
-    return { text: "מצאתי כמה תוצאות שעשויות להתאים מהמאגר שלנו:", suggestions: fallbackResults };
+  const destination = await prisma.destination.findUnique({ where: { id: destinationId }, select: { name: true } });
+
+  // Gemini composes the actual reply — grounded in the real suggestions
+  // above, with app/FAQ context, and able to answer general questions or
+  // varied phrasing that the fixed keyword lists would otherwise miss.
+  const geminiText = await askGemini({
+    message,
+    destinationName: destination?.name ?? "היעד",
+    suggestions,
+    intentLabel,
+  });
+  if (geminiText) return { text: geminiText, suggestions };
+
+  // Gemini unavailable/failed — fall back to the original deterministic logic.
+  const faqMatch = FAQ_INTENTS.find((f) => f.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
+  if (faqMatch) return { text: faqMatch.answer, suggestions: [] };
+
+  if (suggestions.length > 0) {
+    return {
+      text: intentLabel
+        ? userPosition
+          ? `הנה ${intentLabel} קרובים אליכם:`
+          : `הנה כמה ${intentLabel} מהמאגר שלנו — הפעילו מיקום כדי שאמיין לפי קרבה:`
+        : "מצאתי כמה תוצאות שעשויות להתאים מהמאגר שלנו:",
+      suggestions,
+    };
   }
 
   return {
