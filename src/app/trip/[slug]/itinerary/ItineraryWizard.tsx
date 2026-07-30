@@ -35,7 +35,6 @@ export function ItineraryWizard({
     setError(null);
     const fd = new FormData();
     fd.set("tripDays", String(tripDays));
-    fd.set("perDay", "5");
     selectedCategories.forEach((c) => fd.append("categories", c));
     selectedAreas.forEach((a) => fd.append("areas", a));
 

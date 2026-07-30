@@ -387,21 +387,20 @@ export async function optimizeClientItinerary(itineraryId: string, slug: string)
 
 /**
  * Public "generate my itinerary" wizard: picks POIs matching the traveler's
- * chosen categories/areas (preferring ones with a photo), splits them across
- * the requested number of days using the same geographic optimizer as the
- * client planner, and assigns spaced-out default start times. This replaces
+ * chosen categories/areas and hands them to the shared scheduler (must-see
+ * landmarks prioritized first, 7 stops/day with a lunch + evening food slot
+ * woven in near each day's cluster — see itineraryScheduler.ts). Replaces
  * whatever personal itinerary already existed for this destination.
  */
 export async function generateItineraryFromPreferences(destinationId: string, slug: string, formData: FormData) {
-  const { optimizeAcrossDays } = await import("@/lib/routeOptimizer");
+  const { scheduleItineraryDays } = await import("@/lib/itineraryScheduler");
   const userId = await requireUserId();
 
   const tripDays = Math.max(1, Math.min(14, Number(formData.get("tripDays") ?? 3)));
-  const perDay = Math.max(2, Math.min(8, Number(formData.get("perDay") ?? 5)));
   const categories = formData.getAll("categories").map(String);
   const areas = formData.getAll("areas").map(String);
 
-  const pois = await prisma.pointOfInterest.findMany({
+  const rows = await prisma.pointOfInterest.findMany({
     where: {
       geometryType: "point",
       category: {
@@ -412,39 +411,31 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
         },
       },
     },
-    include: { photos: { take: 1 } },
-    take: 400,
+    include: { photos: { take: 1 }, category: { select: { name: true } } },
+    take: 600,
   });
 
-  if (pois.length === 0) return { error: "לא נמצאו נקודות מתאימות לבחירה שלכם" };
+  if (rows.length === 0) return { error: "לא נמצאו נקודות מתאימות לבחירה שלכם" };
 
-  const targetCount = tripDays * perDay;
-  // Must-see POIs are guaranteed a spot regardless of photo status; the rest
-  // fill remaining slots, preferring ones with a photo.
-  const ranked = [...pois].sort((a, b) => {
-    if (a.isMustSee !== b.isMustSee) return Number(b.isMustSee) - Number(a.isMustSee);
-    return (b.photos.length > 0 ? 1 : 0) - (a.photos.length > 0 ? 1 : 0);
-  });
-  const pool = ranked.slice(0, targetCount);
+  const candidates = rows.map((p) => ({
+    id: p.id,
+    lat: p.lat,
+    lng: p.lng,
+    isMustSee: p.isMustSee,
+    hasPhoto: p.photos.length > 0,
+    categoryName: p.category.name,
+  }));
 
   const itinerary = await getOrCreateItinerary(userId, destinationId, "personal");
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
 
-  const grouped = optimizeAcrossDays(
-    pool.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng })),
-    tripDays
-  );
-
+  const scheduledDays = scheduleItineraryDays(candidates, tripDays);
   for (let dayIdx = 0; dayIdx < tripDays; dayIdx++) {
     const day = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayIdx + 1 } });
-    const items = grouped[dayIdx] ?? [];
-    let minutes = 9 * 60; // start at 09:00
-    for (let order = 0; order < items.length; order++) {
-      const timeOfDay = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+    for (const stop of scheduledDays[dayIdx] ?? []) {
       await prisma.itineraryItem.create({
-        data: { itineraryDayId: day.id, poiId: items[order].id, order, timeOfDay },
+        data: { itineraryDayId: day.id, poiId: stop.poiId, order: stop.order, timeOfDay: stop.timeOfDay },
       });
-      minutes += 105; // ~1h45 per stop including travel
     }
   }
 

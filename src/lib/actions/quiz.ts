@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { hasAccessToDestination } from "@/lib/access";
-import { optimizeAcrossDays } from "@/lib/routeOptimizer";
+import { scheduleItineraryDays, TOTAL_STOPS_PER_DAY } from "@/lib/itineraryScheduler";
 import type { QuizAnswers, VibeTag } from "@/lib/destinationVibes";
 
 const VIBE_KEYWORDS: Record<VibeTag, string[]> = {
@@ -46,7 +46,6 @@ export async function generatePersonalizedSetup(
   if (!allowed) return { ok: false, error: "צריך מנוי פעיל שכולל את היעד הזה" };
 
   const keywords = Array.from(new Set(answers.vibes.flatMap((v) => VIBE_KEYWORDS[v] ?? [])));
-  const perDay = 5;
   const pool = await prisma.pointOfInterest.findMany({
     where: {
       geometryType: "point",
@@ -55,20 +54,20 @@ export async function generatePersonalizedSetup(
         OR: keywords.length > 0 ? keywords.map((k) => ({ name: { contains: k } })) : undefined,
       },
     },
-    include: { photos: { take: 1 } },
-    take: answers.tripDays * perDay * 2,
+    include: { photos: { take: 1 }, category: { select: { name: true } } },
+    take: answers.tripDays * TOTAL_STOPS_PER_DAY * 2,
   });
 
   if (pool.length === 0) return { ok: false, error: "לא נמצאו מספיק נקודות מתאימות ליעד הזה" };
 
-  const targetCount = answers.tripDays * perDay;
-  // Must-see POIs are guaranteed a spot regardless of photo status; the rest
-  // fill remaining slots, preferring ones with a photo.
-  const ranked = [...pool].sort((a, b) => {
-    if (a.isMustSee !== b.isMustSee) return Number(b.isMustSee) - Number(a.isMustSee);
-    return (b.photos.length > 0 ? 1 : 0) - (a.photos.length > 0 ? 1 : 0);
-  });
-  const chosen = ranked.slice(0, targetCount);
+  const candidates = pool.map((p) => ({
+    id: p.id,
+    lat: p.lat,
+    lng: p.lng,
+    isMustSee: p.isMustSee,
+    hasPhoto: p.photos.length > 0,
+    categoryName: p.category.name,
+  }));
   const withPhoto = pool.filter((p) => p.photos.length > 0);
 
   // Itinerary
@@ -80,18 +79,14 @@ export async function generatePersonalizedSetup(
   }
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
 
-  const grouped = optimizeAcrossDays(
-    chosen.map((p) => ({ id: p.id, lat: p.lat, lng: p.lng })),
-    answers.tripDays
-  );
+  const scheduledDays = scheduleItineraryDays(candidates, answers.tripDays);
+  let chosenCount = 0;
   for (let dayIdx = 0; dayIdx < answers.tripDays; dayIdx++) {
     const day = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayIdx + 1 } });
-    const items = grouped[dayIdx] ?? [];
-    let minutes = 9 * 60;
-    for (let order = 0; order < items.length; order++) {
-      const timeOfDay = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-      await prisma.itineraryItem.create({ data: { itineraryDayId: day.id, poiId: items[order].id, order, timeOfDay } });
-      minutes += 105;
+    const stops = scheduledDays[dayIdx] ?? [];
+    chosenCount += stops.length;
+    for (const stop of stops) {
+      await prisma.itineraryItem.create({ data: { itineraryDayId: day.id, poiId: stop.poiId, order: stop.order, timeOfDay: stop.timeOfDay } });
     }
   }
 
@@ -117,7 +112,7 @@ export async function generatePersonalizedSetup(
     });
   }
 
-  return { ok: true, itemCount: chosen.length, favoriteCount: favoritesPool.length };
+  return { ok: true, itemCount: chosenCount, favoriteCount: favoritesPool.length };
 }
 
 // ---------- Destination trivia (the "חידונים" screen — unrelated to the
