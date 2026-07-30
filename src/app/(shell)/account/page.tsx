@@ -7,6 +7,8 @@ import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
 import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 import { getUserTravelStats } from "@/lib/stats";
 import { levelForPoints } from "@/lib/gamification";
+import { getVisitedCountryCodes } from "@/lib/actions/visitedCountries";
+import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
 import { SwapDestinationButton } from "./SwapDestinationButton";
@@ -29,7 +31,10 @@ export default async function AccountPage() {
         })
       : [];
 
-  const stats = await getUserTravelStats(session.user.id);
+  const [stats, visitedCodes] = await Promise.all([
+    getUserTravelStats(session.user.id),
+    getVisitedCountryCodes(session.user.id),
+  ]);
   const level = levelForPoints(stats.totalPoints);
   const STAT_CARDS = [
     { label: "מדינות", value: stats.countriesVisited, icon: "🌍" },
@@ -58,6 +63,10 @@ export default async function AccountPage() {
       {stats.bestQuizAveragePct !== null && (
         <p className="mb-8 -mt-4 text-sm opacity-60">ממוצע הצלחה בחידונים: {stats.bestQuizAveragePct}%</p>
       )}
+
+      <div className="mb-8">
+        <VisitedCountriesMap initialVisited={visitedCodes} />
+      </div>
 
       <h2 className="mb-6 text-2xl font-extrabold">המנוי שלי</h2>
 

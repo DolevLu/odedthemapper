@@ -150,6 +150,7 @@ model User {
   albumMedia    AlbumMedia[]
   quizAttempts  QuizAttempt[]
   itineraryTemplates ItineraryTemplate[]
+  visitedCountries VisitedCountry[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -442,6 +443,21 @@ model QuizAttempt {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+/** A country the user marks as "been there" on their personal travel map —
+ * global to the user (not tied to a specific purchased destination), shown
+ * on both the quizzes screen and the profile. countryCode is ISO 3166-1
+ * alpha-2 (e.g. "IT", "JP"). */
+model VisitedCountry {
+  id          String   @id @default(cuid())
+  userId      String
+  countryCode String
+  visitedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, countryCode])
 }
 
 /** Practical "before you go" tips (customs, money, transport, visa) shown on
