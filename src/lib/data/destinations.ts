@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { ThemeConfig } from "@/lib/theme/types";
 
@@ -83,7 +84,7 @@ export async function getAllDestinations(): Promise<DestinationSummary[]> {
  * NOT fetch areas/categories/POIs — those are thousands of rows per
  * destination and no caller here ever reads them (each screen that needs POI
  * data fetches it itself via getFlatPoisForDestination or a scoped query). */
-export async function getDestinationBySlug(slug: string) {
+export const getDestinationBySlug = cache(async (slug: string) => {
   const destination = await prisma.destination.findUnique({ where: { slug } });
   if (!destination) return null;
 
@@ -91,4 +92,4 @@ export async function getDestinationBySlug(slug: string) {
     ...destination,
     theme: JSON.parse(destination.themeConfig) as ThemeConfig,
   };
-}
+});

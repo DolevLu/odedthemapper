@@ -15,10 +15,8 @@ export default async function TripLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const session = await auth();
+  const [session, destination] = await Promise.all([auth(), getDestinationBySlug(slug)]);
   if (!session?.user?.id) redirect(`/login?callbackUrl=/trip/${slug}`);
-
-  const destination = await getDestinationBySlug(slug);
   if (!destination) notFound();
 
   // Free users can now browse the whole app shell — individual screens gate

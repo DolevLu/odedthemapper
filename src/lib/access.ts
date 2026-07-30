@@ -1,9 +1,13 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/plans";
 
 /** Resolves the subscription that grants this user access — either one they
- * own directly, or one they were invited into as a seat (matched by email). */
-async function getActiveSubscription(userId: string) {
+ * own directly, or one they were invited into as a seat (matched by email).
+ * Cached per-request: this is looked up repeatedly (layout, page, header,
+ * sidebar) on every single navigation, and without dedup each call was a
+ * fresh round-trip to the database for identical data. */
+const getActiveSubscription = cache(async (userId: string) => {
   const owned = await prisma.subscription.findFirst({
     where: { userId, status: "active", currentPeriodEnd: { gt: new Date() } },
     include: { destinations: true },
@@ -23,7 +27,7 @@ async function getActiveSubscription(userId: string) {
     orderBy: { createdAt: "desc" },
   });
   return membership?.subscription ?? null;
-}
+});
 
 export async function hasAccessToDestination(userId: string, destinationId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
@@ -60,8 +64,10 @@ export async function canManageContent(userId: string): Promise<boolean> {
 export type AccessLevel = "none" | "silver" | "gold";
 
 /** silver = this destination is covered by an active subscription (or admin);
- * gold = org-tier active subscription (or admin) — unlocks the client-planner tool. */
-export async function getAccessLevel(userId: string | undefined, destinationId: string): Promise<AccessLevel> {
+ * gold = org-tier active subscription (or admin) — unlocks the client-planner tool.
+ * Cached per-request — called from both the layout and every individual
+ * trip page for the same userId+destinationId. */
+export const getAccessLevel = cache(async (userId: string | undefined, destinationId: string): Promise<AccessLevel> => {
   if (!userId) return "none";
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
   if (user?.isAdmin) return "gold";
@@ -71,7 +77,7 @@ export async function getAccessLevel(userId: string | undefined, destinationId: 
   if (PLANS[sub.planKey as keyof typeof PLANS]?.isOrgTier) return "gold";
   if (sub.destinations.some((d) => d.destinationId === destinationId)) return "silver";
   return "none";
-}
+});
 
 /** Full subscription details for the account page: owned or via a seat
  * invite, with destination names and (for the owner) the seat list so they
