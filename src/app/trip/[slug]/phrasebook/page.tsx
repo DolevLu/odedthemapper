@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
+import { DESTINATION_LOCALE } from "@/lib/localeCodes";
+import { PhraseCard } from "./PhraseCard";
 
 export default async function PhrasebookPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -8,6 +10,7 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
   if (!destination) notFound();
 
   const entries = await prisma.phrasebookEntry.findMany({ where: { destinationId: destination.id } });
+  const locale = DESTINATION_LOCALE[slug] ?? "en-US";
 
   return (
     <div>
@@ -19,17 +22,15 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
           עדיין אין ביטויים ליעד הזה. האדמין יכול להוסיף מילים וביטויים חשובים בשפה המקומית דרך פאנל הניהול.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-3">
           {entries.map((entry) => (
-            <div
+            <PhraseCard
               key={entry.id}
-              className="flex flex-col gap-1 border p-4"
-              style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-            >
-              <p className="text-lg font-semibold">{entry.localPhrase}</p>
-              <p className="text-sm opacity-70">{entry.translation}</p>
-              {entry.pronunciation && <p className="text-xs opacity-50">{entry.pronunciation}</p>}
-            </div>
+              localPhrase={entry.localPhrase}
+              translation={entry.translation}
+              pronunciation={entry.pronunciation}
+              locale={locale}
+            />
           ))}
         </div>
       )}

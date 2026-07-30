@@ -38,7 +38,7 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   }));
 
   const recommendations = getBookingRecommendations(slug);
-  const holidays = getUpcomingHolidays(slug);
+  const holidays = getUpcomingHolidays(slug).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-8">

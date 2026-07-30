@@ -1,7 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useGoogleMaps, loadVisualizationLibrary } from "@/hooks/useGoogleMaps";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+
+const CELL_SIZE_DEG = 0.008; // ~800m grid cells — roughly "neighborhood" scale
+const METERS_PER_DEGREE_LAT = 111320;
+
+type Cell = { lat: number; lng: number; count: number };
+
+/** Buckets points into a lat/lng grid and returns one entry per non-empty
+ * cell with its point count — a density map built entirely from our own
+ * POI coordinates, no external data. */
+function buildDensityGrid(points: [number, number][]): Cell[] {
+  const cells = new Map<string, Cell>();
+  for (const [lat, lng] of points) {
+    const cellLat = (Math.floor(lat / CELL_SIZE_DEG) + 0.5) * CELL_SIZE_DEG;
+    const cellLng = (Math.floor(lng / CELL_SIZE_DEG) + 0.5) * CELL_SIZE_DEG;
+    const key = `${cellLat}_${cellLng}`;
+    const existing = cells.get(key);
+    if (existing) existing.count++;
+    else cells.set(key, { lat: cellLat, lng: cellLng, count: 1 });
+  }
+  return Array.from(cells.values());
+}
+
+function colorForIntensity(t: number): string {
+  // 0 = pale yellow, 1 = deep red — a simple two-stop heat gradient.
+  const r = 255;
+  const g = Math.round(220 - t * 180);
+  const b = Math.round(120 - t * 120);
+  return `rgb(${r}, ${Math.max(g, 0)}, ${Math.max(b, 0)})`;
+}
 
 export function WhereToStayHeatmap({ points, destinationName }: { points: [number, number][]; destinationName: string }) {
   const [open, setOpen] = useState(false);
@@ -13,39 +42,38 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
   useEffect(() => {
     if (!open || !loaded || !mapDivRef.current || mapRef.current) return;
 
-    let cancelled = false;
-    loadVisualizationLibrary()
-      .then(() => {
-        if (cancelled || !mapDivRef.current) return;
-        const avgLat = points.reduce((s, p) => s + p[0], 0) / (points.length || 1);
-        const avgLng = points.reduce((s, p) => s + p[1], 0) / (points.length || 1);
+    try {
+      const grid = buildDensityGrid(points);
+      if (grid.length === 0) {
+        setError("אין מספיק נתונים כדי להציג מפת צפיפות ליעד הזה");
+        return;
+      }
 
-        mapRef.current = new google.maps.Map(mapDivRef.current, {
-          center: { lat: avgLat, lng: avgLng },
-          zoom: 12,
-          streetViewControl: false,
-          fullscreenControl: false,
+      const densest = grid.reduce((max, c) => (c.count > max.count ? c : max), grid[0]);
+      const maxCount = densest.count;
+
+      mapRef.current = new google.maps.Map(mapDivRef.current, {
+        center: { lat: densest.lat, lng: densest.lng },
+        zoom: 13,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+
+      const radiusMeters = CELL_SIZE_DEG * METERS_PER_DEGREE_LAT * 0.65;
+      grid.forEach((cell) => {
+        const intensity = cell.count / maxCount;
+        new google.maps.Circle({
+          center: { lat: cell.lat, lng: cell.lng },
+          radius: radiusMeters,
+          map: mapRef.current!,
+          strokeWeight: 0,
+          fillColor: colorForIntensity(intensity),
+          fillOpacity: 0.15 + intensity * 0.45,
         });
-
-        // The installed @types/google.maps HeatmapLayer typing is stubbed
-        // with a zero-arg constructor even though the real runtime API
-        // (per Google's docs) takes {data, map, radius} — cast around it.
-        const HeatmapLayer = google.maps.visualization.HeatmapLayer as unknown as new (opts: {
-          data: google.maps.LatLng[];
-          map: google.maps.Map;
-          radius: number;
-        }) => google.maps.visualization.HeatmapLayer;
-        new HeatmapLayer({
-          data: points.map(([lat, lng]) => new google.maps.LatLng(lat, lng)),
-          map: mapRef.current,
-          radius: 28,
-        });
-      })
-      .catch(() => setError("שכבת מפת החום אינה זמינה כרגע"));
-
-    return () => {
-      cancelled = true;
-    };
+      });
+    } catch {
+      setError("לא הצלחנו להציג את מפת הצפיפות כרגע");
+    }
   }, [open, loaded, points]);
 
   return (
@@ -69,7 +97,7 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
               <div>
                 <h2 className="text-lg font-bold">איפה כדאי ללון ב{destinationName}?</h2>
                 <p className="mt-1 text-xs opacity-60">
-                  מפת חום לפי צפיפות האטרקציות, המסעדות והברים במערכת שלנו — ריכוזים חמים בדרך כלל אומרים שהאזור תוסס, מהלך הליכה מדברים, ונוח לבסיס לינה.
+                  מפת צפיפות לפי ריכוז האטרקציות, המסעדות והברים במערכת שלנו — אזורים אדומים הם הכי תוססים ונוחים כבסיס לינה.
                 </p>
               </div>
               <button onClick={() => setOpen(false)} className="shrink-0 text-lg opacity-60">

@@ -72,6 +72,7 @@ export function MapScreen({
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -334,7 +335,7 @@ export function MapScreen({
       {gpsError && <p className="text-xs text-red-600">{gpsError}</p>}
       {routeError && <p className="text-xs text-red-600">{routeError}</p>}
 
-      <div className="flex flex-1 gap-3 overflow-hidden">
+      <div className="relative flex flex-1 gap-3 overflow-hidden">
         <div
           ref={mapDivRef}
           className="min-w-0 flex-1 overflow-hidden"
@@ -349,34 +350,67 @@ export function MapScreen({
               ממוין לפי קרבה אליכם
             </p>
           )}
-          {sortedList.map((poi) => (
-            <div
-              key={poi.id}
-              onClick={() => focusPoi(poi.id)}
-              className="flex w-full cursor-pointer items-center justify-between gap-2 border-b p-3 text-start text-sm"
-              style={{
-                borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)",
-                background: selectedPoiId === poi.id ? "var(--background)" : "transparent",
-              }}
-            >
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="flex items-center gap-2 font-medium">
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: poi.categoryColor }} />
-                  <span className="truncate">{poi.name}</span>
-                </span>
-                <span className="ps-4 text-xs opacity-60">
-                  {"distanceKm" in poi ? `${formatDistance((poi as unknown as { distanceKm: number }).distanceKm)} · ` : ""}
-                  {poi.areaName}
-                  {routeToPoiId === poi.id && " · 🧭 מסלול פעיל"}
-                </span>
-              </span>
-              <span onClick={(e) => e.stopPropagation()}>
-                <FavoriteButton poiId={poi.id} slug={slug} initialFavorited={favoritedIds.has(poi.id)} />
-              </span>
-            </div>
-          ))}
+          {sortedList.map((poi) => renderListItem(poi))}
+        </div>
+
+        {/* Mobile-only: the list lives in a bottom sheet over the map instead of being hidden entirely. */}
+        <div
+          className="absolute inset-x-0 bottom-0 z-10 flex flex-col overflow-hidden shadow-[0_-4px_16px_rgba(0,0,0,0.12)] sm:hidden"
+          style={{
+            borderRadius: "var(--radius) var(--radius) 0 0",
+            background: "var(--surface)",
+            maxHeight: sheetExpanded ? "70%" : "84px",
+            transition: "max-height 0.25s ease",
+          }}
+        >
+          <button
+            onClick={() => setSheetExpanded((v) => !v)}
+            className="flex shrink-0 flex-col items-center gap-1 py-2"
+          >
+            <span className="h-1 w-10 rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 30%, transparent)" }} />
+            <span className="text-xs font-semibold opacity-70">
+              {sheetExpanded ? "הסתרת הרשימה ▾" : `${sortedList.length} נקודות ברשימה ▴`}
+            </span>
+          </button>
+          <div className="flex-1 overflow-y-auto">
+            {gpsActive && userPosition && (
+              <p className="border-b p-2 text-center text-xs opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+                ממוין לפי קרבה אליכם
+              </p>
+            )}
+            {sortedList.map((poi) => renderListItem(poi))}
+          </div>
         </div>
       </div>
     </div>
   );
+
+  function renderListItem(poi: (typeof sortedList)[number]) {
+    return (
+      <div
+        key={poi.id}
+        onClick={() => focusPoi(poi.id)}
+        className="flex w-full cursor-pointer items-center justify-between gap-2 border-b p-3 text-start text-sm"
+        style={{
+          borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)",
+          background: selectedPoiId === poi.id ? "var(--background)" : "transparent",
+        }}
+      >
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="flex items-center gap-2 font-medium">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: poi.categoryColor }} />
+            <span className="truncate">{poi.name}</span>
+          </span>
+          <span className="ps-4 text-xs opacity-60">
+            {"distanceKm" in poi ? `${formatDistance((poi as unknown as { distanceKm: number }).distanceKm)} · ` : ""}
+            {poi.areaName}
+            {routeToPoiId === poi.id && " · 🧭 מסלול פעיל"}
+          </span>
+        </span>
+        <span onClick={(e) => e.stopPropagation()}>
+          <FavoriteButton poiId={poi.id} slug={slug} initialFavorited={favoritedIds.has(poi.id)} />
+        </span>
+      </div>
+    );
+  }
 }

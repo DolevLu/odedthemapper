@@ -5,6 +5,15 @@ import { submitQuizAttempt } from "@/lib/actions/quiz";
 
 type Question = { id: string; category: string; question: string; options: string[]; correctIndex: number };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  history: "היסטוריה",
+  geography: "גאוגרפיה",
+  politics: "פוליטיקה וחברה",
+  sports: "ספורט",
+  culture: "תרבות",
+  food: "אוכל",
+};
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -15,12 +24,22 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function QuizGame({ destinationId, questions }: { destinationId: string; questions: Question[] }) {
-  const set = useMemo(() => shuffle(questions).slice(0, 10), [questions]);
+  const [round, setRound] = useState(0);
+  const set = useMemo(() => shuffle(questions), [questions, round]);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [done, setDone] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  function retry() {
+    setRound((r) => r + 1);
+    setIndex(0);
+    setScore(0);
+    setSelected(null);
+    setDone(false);
+    setSubmitted(false);
+  }
 
   const current = set[index];
 
@@ -53,7 +72,7 @@ export function QuizGame({ destinationId, questions }: { destinationId: string; 
         </h2>
         <p className="text-sm opacity-60">{pct}% הצלחה</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={retry}
           className="mt-2 rounded-full px-5 py-2 text-sm font-semibold text-white"
           style={{ background: "var(--primary)" }}
         >
@@ -69,7 +88,7 @@ export function QuizGame({ destinationId, questions }: { destinationId: string; 
         <span>
           שאלה {index + 1} מתוך {set.length}
         </span>
-        <span>{current.category}</span>
+        <span>{CATEGORY_LABELS[current.category] ?? current.category}</span>
       </div>
       <div className="border p-5" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
         <p className="mb-4 font-semibold">{current.question}</p>
