@@ -46,19 +46,26 @@ export async function generatePersonalizedSetup(
   if (!allowed) return { ok: false, error: "צריך מנוי פעיל שכולל את היעד הזה" };
 
   const keywords = Array.from(new Set(answers.vibes.flatMap((v) => VIBE_KEYWORDS[v] ?? [])));
-  const pool = await prisma.pointOfInterest.findMany({
-    where: {
-      geometryType: "point",
-      category: {
-        area: { destinationId },
-        OR: keywords.length > 0 ? keywords.map((k) => ({ name: { contains: k } })) : undefined,
+  const [pool, hotel] = await Promise.all([
+    prisma.pointOfInterest.findMany({
+      where: {
+        geometryType: "point",
+        category: {
+          area: { destinationId },
+          OR: keywords.length > 0 ? keywords.map((k) => ({ name: { contains: k } })) : undefined,
+        },
       },
-    },
-    include: { photos: { take: 1 }, category: { select: { name: true } } },
-    take: answers.tripDays * TOTAL_STOPS_PER_DAY * 2,
-  });
+      include: { photos: { take: 1 }, category: { select: { name: true } } },
+      take: answers.tripDays * TOTAL_STOPS_PER_DAY * 2,
+    }),
+    prisma.tripLogistic.findFirst({
+      where: { userId, destinationId, type: "hotel", lat: { not: null }, lng: { not: null } },
+      orderBy: { startsAt: "asc" },
+    }),
+  ]);
 
   if (pool.length === 0) return { ok: false, error: "לא נמצאו מספיק נקודות מתאימות ליעד הזה" };
+  const hotelAnchor = hotel?.lat != null && hotel?.lng != null ? { lat: hotel.lat, lng: hotel.lng } : null;
 
   const candidates = pool.map((p) => ({
     id: p.id,
@@ -79,7 +86,7 @@ export async function generatePersonalizedSetup(
   }
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
 
-  const scheduledDays = scheduleItineraryDays(candidates, answers.tripDays);
+  const scheduledDays = scheduleItineraryDays(candidates, answers.tripDays, hotelAnchor);
   let chosenCount = 0;
   for (let dayIdx = 0; dayIdx < answers.tripDays; dayIdx++) {
     const day = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayIdx + 1 } });

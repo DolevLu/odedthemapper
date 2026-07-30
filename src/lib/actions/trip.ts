@@ -419,20 +419,26 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
   const categories = formData.getAll("categories").map(String);
   const areas = formData.getAll("areas").map(String);
 
-  const rows = await prisma.pointOfInterest.findMany({
-    where: {
-      geometryType: "point",
-      category: {
-        ...(categories.length > 0 ? { name: { in: categories } } : {}),
-        area: {
-          destinationId,
-          ...(areas.length > 0 ? { id: { in: areas } } : {}),
+  const [rows, hotel] = await Promise.all([
+    prisma.pointOfInterest.findMany({
+      where: {
+        geometryType: "point",
+        category: {
+          ...(categories.length > 0 ? { name: { in: categories } } : {}),
+          area: {
+            destinationId,
+            ...(areas.length > 0 ? { id: { in: areas } } : {}),
+          },
         },
       },
-    },
-    include: { photos: { take: 1 }, category: { select: { name: true } } },
-    take: 600,
-  });
+      include: { photos: { take: 1 }, category: { select: { name: true } } },
+      take: 600,
+    }),
+    prisma.tripLogistic.findFirst({
+      where: { userId, destinationId, type: "hotel", lat: { not: null }, lng: { not: null } },
+      orderBy: { startsAt: "asc" },
+    }),
+  ]);
 
   if (rows.length === 0) return { error: "לא נמצאו נקודות מתאימות לבחירה שלכם" };
 
@@ -444,11 +450,12 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
     hasPhoto: p.photos.length > 0,
     categoryName: p.category.name,
   }));
+  const hotelAnchor = hotel?.lat != null && hotel?.lng != null ? { lat: hotel.lat, lng: hotel.lng } : null;
 
   const itinerary = await getOrCreateItinerary(userId, destinationId, "personal");
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
 
-  const scheduledDays = scheduleItineraryDays(candidates, tripDays);
+  const scheduledDays = scheduleItineraryDays(candidates, tripDays, hotelAnchor);
   for (let dayIdx = 0; dayIdx < tripDays; dayIdx++) {
     const day = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayIdx + 1 } });
     for (const stop of scheduledDays[dayIdx] ?? []) {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
-import { colorForDay } from "@/lib/geo";
+import { colorForDay, haversineKm } from "@/lib/geo";
 import { DECLUTTERED_MAP_STYLES } from "@/lib/mapStyles";
 
 export type MapDay = {
@@ -20,12 +20,26 @@ function infoWindowHtml(p: MapDay["points"][number]): string {
   return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">${photo}<strong>${p.name}</strong>${description}</div>`;
 }
 
+/** Honest heuristic, not real transit routing: short hops are walkable,
+ * medium ones are bus-distance, long ones are more likely a metro/train. */
+function transportIconFor(distanceKm: number): string {
+  if (distanceKm < 1) return "🚶";
+  if (distanceKm < 4) return "🚌";
+  return "🚇";
+}
+
 export function DayRouteMap({ days }: { days: MapDay[] }) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<(google.maps.Marker | google.maps.Polyline)[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null);
+
+  const visibleDays = useMemo(
+    () => (activeDayIndex === null ? days : days.filter((d) => d.dayIndex === activeDayIndex)),
+    [days, activeDayIndex]
+  );
 
   useEffect(() => {
     if (!loaded || !mapDivRef.current) return;
@@ -49,7 +63,7 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
 
     const bounds = new google.maps.LatLngBounds();
 
-    days.forEach((day) => {
+    visibleDays.forEach((day) => {
       if (day.points.length === 0) return;
       const color = colorForDay(day.dayIndex - 1);
 
@@ -62,6 +76,31 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
         map: mapRef.current!,
       });
       overlaysRef.current.push(polyline);
+
+      // A small transport-mode icon at the midpoint of each hop between
+      // consecutive stops — walking/bus/metro based on distance.
+      for (let i = 0; i < day.points.length - 1; i++) {
+        const a = day.points[i];
+        const b = day.points[i + 1];
+        const distanceKm = haversineKm([a.lat, a.lng], [b.lat, b.lng]);
+        const midpoint = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
+        const transportMarker = new google.maps.Marker({
+          position: midpoint,
+          map: mapRef.current!,
+          clickable: false,
+          zIndex: 50,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 9,
+            fillColor: "white",
+            fillOpacity: 0.95,
+            strokeColor: color,
+            strokeWeight: 1.5,
+          },
+          label: { text: transportIconFor(distanceKm), fontSize: "11px" },
+        });
+        overlaysRef.current.push(transportMarker);
+      }
 
       day.points.forEach((p, idx) => {
         const marker = new google.maps.Marker({
@@ -88,7 +127,7 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
     });
 
     if (!bounds.isEmpty()) mapRef.current.fitBounds(bounds);
-  }, [loaded, days]);
+  }, [loaded, days, visibleDays]);
 
   if (error) {
     return (
@@ -98,5 +137,42 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
     );
   }
 
-  return <div ref={mapDivRef} className="h-[420px] w-full" style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }} />;
+  return (
+    <div className="flex flex-col gap-2">
+      {days.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => setActiveDayIndex(null)}
+            className="rounded-full border px-3 py-1 text-xs font-semibold"
+            style={{
+              borderColor: "var(--primary)",
+              background: activeDayIndex === null ? "var(--primary)" : "transparent",
+              color: activeDayIndex === null ? "white" : "var(--text)",
+            }}
+          >
+            כל הימים
+          </button>
+          {days.map((day) => {
+            const color = colorForDay(day.dayIndex - 1);
+            const active = activeDayIndex === day.dayIndex;
+            return (
+              <button
+                key={day.dayIndex}
+                onClick={() => setActiveDayIndex(day.dayIndex)}
+                className="rounded-full border px-3 py-1 text-xs font-semibold"
+                style={{
+                  borderColor: color,
+                  background: active ? color : "transparent",
+                  color: active ? "white" : "var(--text)",
+                }}
+              >
+                יום {day.dayIndex}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div ref={mapDivRef} className="h-[420px] w-full" style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }} />
+    </div>
+  );
 }

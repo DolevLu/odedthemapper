@@ -1,5 +1,5 @@
 import { haversineKm } from "@/lib/geo";
-import { optimizeAcrossDays } from "@/lib/routeOptimizer";
+import { optimizeAcrossDays, orderByNearestNeighbor } from "@/lib/routeOptimizer";
 
 const LUNCH_CATEGORY_MATCH = /מסעד|קפה|בראנץ/;
 const EVENING_CATEGORY_MATCH = /מסעד|בר|לילה|מועדונ/;
@@ -39,8 +39,17 @@ function takeNearestUnused(pool: SchedulablePoi[], used: Set<string>, centroid: 
  * afternoon attractions, evening food. Shared by both AI-generation entry
  * points (the itinerary wizard and the destination-matching quiz) so they
  * produce the same quality of plan.
+ *
+ * When a hotel anchor is given (from the traveler's saved logistics), each
+ * day's walking order is re-rooted to start from whichever stop is closest
+ * to the hotel, so the day's route reads as a sensible loop out from where
+ * they're actually staying instead of an arbitrary starting point.
  */
-export function scheduleItineraryDays(candidates: SchedulablePoi[], tripDays: number): ScheduledStop[][] {
+export function scheduleItineraryDays(
+  candidates: SchedulablePoi[],
+  tripDays: number,
+  hotelAnchor?: { lat: number; lng: number } | null
+): ScheduledStop[][] {
   const lunchPool = candidates.filter((p) => LUNCH_CATEGORY_MATCH.test(p.categoryName)).sort(byQuality);
   const eveningPool = candidates.filter((p) => EVENING_CATEGORY_MATCH.test(p.categoryName)).sort(byQuality);
   const attractionPool = candidates
@@ -53,7 +62,20 @@ export function scheduleItineraryDays(candidates: SchedulablePoi[], tripDays: nu
   const days: ScheduledStop[][] = [];
 
   for (let dayIdx = 0; dayIdx < tripDays; dayIdx++) {
-    const dayAttractions = attractionsByDay[dayIdx] ?? [];
+    let dayAttractions = attractionsByDay[dayIdx] ?? [];
+    if (hotelAnchor && dayAttractions.length > 1) {
+      let nearestIdx = 0;
+      let nearestDist = Infinity;
+      for (let i = 0; i < dayAttractions.length; i++) {
+        const d = haversineKm([hotelAnchor.lat, hotelAnchor.lng], [dayAttractions[i].lat, dayAttractions[i].lng]);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearestIdx = i;
+        }
+      }
+      const rooted = [dayAttractions[nearestIdx], ...dayAttractions.slice(0, nearestIdx), ...dayAttractions.slice(nearestIdx + 1)];
+      dayAttractions = orderByNearestNeighbor(rooted);
+    }
     const centroid =
       dayAttractions.length > 0
         ? {
