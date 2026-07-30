@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { startAmbientMusic } from "@/lib/ambientMusic";
 
 type Photo = { id: string; url: string };
 
@@ -82,6 +83,7 @@ export function CollageBuilder({
     setRendering(true);
     setProgress(0);
 
+    let music: ReturnType<typeof startAmbientMusic> | null = null;
     try {
       const canvas = canvasRef.current!;
       canvas.width = CANVAS_W;
@@ -101,9 +103,17 @@ export function CollageBuilder({
         )
       );
 
+      const totalDurationSec = images.length * SECONDS_PER_PHOTO;
+      music = startAmbientMusic(totalDurationSec);
+
       const stream = canvas.captureStream(FPS);
+      const audioTrack = music.destinationStream.getAudioTracks()[0];
+      if (audioTrack) stream.addTrack(audioTrack);
+
       const mimeType =
-        ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((t) => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
+        ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp9", "video/webm"].find((t) =>
+          MediaRecorder.isTypeSupported(t)
+        ) ?? "video/webm";
       const recorder = new MediaRecorder(stream, { mimeType });
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = (e) => {
@@ -139,6 +149,7 @@ export function CollageBuilder({
     } catch {
       setError("לא הצלחנו ליצור את הסרטון בדפדפן הזה — נסו תמונות אחרות או דפדפן אחר");
     } finally {
+      music?.stop();
       setRendering(false);
     }
   }
@@ -146,7 +157,7 @@ export function CollageBuilder({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs opacity-60">
-        הסרטון נוצר אוטומטית בדפדפן שלכם (אפקט זום עדין + כתוביות) מהתמונות שתבחרו — ללא צורך בהעלאה לשרת חיצוני.
+        הסרטון נוצר אוטומטית בדפדפן שלכם (אפקט זום עדין, כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו — ללא צורך בהעלאה לשרת חיצוני.
       </p>
 
       {photos.length === 0 ? (
