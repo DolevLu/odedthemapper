@@ -7,11 +7,9 @@ import { prisma } from "@/lib/prisma";
 import { createItineraryDay } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
-import { colorForDay } from "@/lib/geo";
-import { AddItemToDay } from "./AddItemToDay";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { ItineraryWizard } from "./ItineraryWizard";
-import { DayItemsList } from "./DayItemsList";
+import { ItineraryDaysView } from "./ItineraryDaysView";
 
 export default async function ItineraryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -87,34 +85,20 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
         <p className="text-sm opacity-60">עדיין אין ימים במסלול. לחצו על &quot;הוספת יום&quot; או השתמשו בבנאי האוטומטי כדי להתחיל.</p>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {itinerary?.days.map((day) => (
-          <div
-            key={day.id}
-            className="flex flex-col gap-3 border p-4"
-            style={{ borderRadius: "var(--radius)", borderColor: colorForDay(day.dayIndex - 1), borderWidth: 2, background: "var(--surface)" }}
-          >
-            <h2 className="flex items-center gap-2 font-bold">
-              <span className="h-3 w-3 rounded-full" style={{ background: colorForDay(day.dayIndex - 1) }} />
-              יום {day.dayIndex}
-            </h2>
-
-            <DayItemsList
-              dayId={day.id}
-              slug={slug}
-              path="itinerary"
-              items={day.items.map((i) => ({
-                id: i.id,
-                timeOfDay: i.timeOfDay,
-                customLabel: i.customLabel,
-                poi: i.poi ? { name: i.poi.name, photoUrl: i.poi.photos[0]?.url ?? null } : null,
-              }))}
-            />
-
-            <AddItemToDay dayId={day.id} slug={slug} pois={poiOptions} />
-          </div>
-        ))}
-      </div>
+      <ItineraryDaysView
+        slug={slug}
+        poiOptions={poiOptions}
+        days={(itinerary?.days ?? []).map((day) => ({
+          id: day.id,
+          dayIndex: day.dayIndex,
+          items: day.items.map((i) => ({
+            id: i.id,
+            timeOfDay: i.timeOfDay,
+            customLabel: i.customLabel,
+            poi: i.poi ? { name: i.poi.name, photoUrl: i.poi.photos[0]?.url ?? null } : null,
+          })),
+        }))}
+      />
 
       {mapDays.some((d) => d.points.length > 0) && <DayRouteMap days={mapDays} />}
     </div>

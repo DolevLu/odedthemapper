@@ -19,6 +19,7 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "תכנון הטיול",
     items: [
+      { href: "/today", label: "היום", icon: "☀️", tier: "silver" },
       { href: "", label: "מה עכשיו", icon: "🧭", tier: "silver" },
       { href: "/map", label: "מפה", icon: "🗺️", tier: "silver" },
       { href: "/itinerary", label: "מסלול", icon: "📅", tier: "silver" },

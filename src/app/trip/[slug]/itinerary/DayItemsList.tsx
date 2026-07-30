@@ -56,26 +56,40 @@ export function DayItemsList({
           onDragStart={() => setDragId(item.id)}
           onDragOver={(e) => e.preventDefault()}
           onDrop={() => handleDrop(item.id)}
-          className="flex cursor-grab items-center gap-3 rounded-lg border px-3 py-2 text-sm active:cursor-grabbing"
+          className="flex cursor-grab items-center gap-3 rounded-xl border p-2 text-sm shadow-sm active:cursor-grabbing"
           style={{
-            borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)",
+            borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+            background: "var(--background)",
             opacity: dragId === item.id ? 0.5 : 1,
           }}
         >
-          <span className="opacity-40" aria-hidden>
+          <span className="opacity-30" aria-hidden>
             ⠿
           </span>
-          {item.poi?.photoUrl && (
+          {item.poi?.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.poi.photoUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+            <img src={item.poi.photoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+          ) : (
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
+              📍
+            </span>
           )}
-          <span className="flex-1">
-            {item.timeOfDay && <span className="me-2 font-mono text-xs opacity-70">{item.timeOfDay}</span>}
-            {item.poi ? item.poi.name : item.customLabel}
-            {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            {item.timeOfDay && (
+              <span
+                className="w-fit rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
+                style={{ background: "var(--primary)" }}
+              >
+                {item.timeOfDay}
+              </span>
+            )}
+            <span className="truncate font-medium">
+              {item.poi ? item.poi.name : item.customLabel}
+              {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
+            </span>
           </span>
           <form action={removeItineraryItem.bind(null, item.id, slug)}>
-            <button className="opacity-50 hover:opacity-100">✕</button>
+            <button className="shrink-0 opacity-40 hover:opacity-100">✕</button>
           </form>
         </div>
       ))}

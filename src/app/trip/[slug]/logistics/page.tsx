@@ -3,19 +3,10 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { prisma } from "@/lib/prisma";
-import { addLogistic, deleteLogistic } from "@/lib/actions/trip";
+import { addLogistic } from "@/lib/actions/trip";
 import { WhereToStayHeatmap } from "./WhereToStayHeatmap";
-
-const TYPE_LABELS: Record<string, string> = {
-  flight: "✈️ טיסה",
-  hotel: "🏨 מלון",
-  ticket: "🎫 כרטיס",
-  passport: "🛂 דרכון",
-  visa: "📋 ויזה",
-  insurance: "🛡️ ביטוח נסיעות",
-  vaccination: "💉 חיסון",
-  other: "📄 אחר",
-};
+import { LogisticsList } from "./LogisticsList";
+import type { LogisticItem } from "./LogisticTicketCard";
 
 export default async function LogisticsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -33,6 +24,26 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
 
   const addAction = addLogistic.bind(null, destination.id, slug);
   const heatmapPoints: [number, number][] = pois.map((p) => [p.lat, p.lng]);
+
+  const logisticItems: LogisticItem[] = items.map((item) => {
+    const details = JSON.parse(item.detailsJson) as { title: string; notes: string };
+    const dateRange = item.startsAt
+      ? item.endsAt && item.endsAt.getTime() !== item.startsAt.getTime()
+        ? `${item.startsAt.toLocaleDateString("he-IL")} — ${item.endsAt.toLocaleDateString("he-IL")}`
+        : item.startsAt.toLocaleDateString("he-IL")
+      : null;
+    return {
+      id: item.id,
+      type: item.type,
+      title: details.title,
+      notes: details.notes,
+      confirmationNumber: item.confirmationNumber,
+      dateRange,
+      address: item.address,
+      hasMapPin: Boolean(item.lat && item.lng),
+      imageUrl: item.imageUrl,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,46 +90,7 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
         </button>
       </form>
 
-      <div className="flex flex-col gap-2">
-        {items.length === 0 && <p className="text-sm opacity-60">עדיין לא הוספתם טיסות או מלונות.</p>}
-        {items.map((item) => {
-          const details = JSON.parse(item.detailsJson) as { title: string; notes: string };
-          const dateRange = item.startsAt
-            ? item.endsAt && item.endsAt.getTime() !== item.startsAt.getTime()
-              ? `${item.startsAt.toLocaleDateString("he-IL")} — ${item.endsAt.toLocaleDateString("he-IL")}`
-              : item.startsAt.toLocaleDateString("he-IL")
-            : null;
-          return (
-            <div
-              key={item.id}
-              className="flex items-start justify-between gap-3 border p-4"
-              style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-            >
-              <div className="flex gap-3">
-                {item.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-                )}
-                <div>
-                  <p className="text-xs opacity-60">{TYPE_LABELS[item.type] ?? item.type}</p>
-                  <p className="font-semibold">{details.title}</p>
-                  {item.confirmationNumber && <p className="text-sm opacity-70">אישור: {item.confirmationNumber}</p>}
-                  {dateRange && <p className="text-sm opacity-70">{dateRange}</p>}
-                  {details.notes && <p className="text-sm opacity-70">{details.notes}</p>}
-                  {item.address && (
-                    <p className="text-xs opacity-60">
-                      📍 {item.address} {item.lat && item.lng ? "· מסומן על המפה" : ""}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <form action={deleteLogistic.bind(null, item.id, slug)}>
-                <button className="text-sm opacity-60 underline">מחיקה</button>
-              </form>
-            </div>
-          );
-        })}
-      </div>
+      <LogisticsList items={logisticItems} slug={slug} />
     </div>
   );
 }

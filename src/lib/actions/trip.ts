@@ -143,6 +143,25 @@ export async function addLogistic(destinationId: string, slug: string, formData:
   revalidatePath(`/trip/${slug}/map`);
 }
 
+/** Lets the user set a countdown target date manually from the "Today"
+ * screen when they haven't added a flight yet — stored as an ordinary
+ * TripLogistic row, same as one added via the logistics form. */
+export async function setTripStartDate(destinationId: string, slug: string, dateStr: string) {
+  const userId = await requireUserId();
+  if (!dateStr) return;
+  await prisma.tripLogistic.create({
+    data: {
+      userId,
+      destinationId,
+      type: "flight",
+      detailsJson: JSON.stringify({ title: "טיסה (תאריך יעד)", notes: "" }),
+      startsAt: new Date(dateStr),
+    },
+  });
+  revalidatePath(`/trip/${slug}`);
+  revalidatePath(`/trip/${slug}/logistics`);
+}
+
 export async function deleteLogistic(id: string, slug: string) {
   const userId = await requireUserId();
   const item = await prisma.tripLogistic.findUnique({ where: { id } });
