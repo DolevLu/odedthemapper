@@ -25,6 +25,7 @@ export type LogisticItem = {
 
 export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onDelete: () => void }) {
   const meta = TYPE_META[item.type] ?? TYPE_META.other;
+  const isPdf = item.imageUrl?.toLowerCase().endsWith(".pdf") ?? false;
 
   return (
     <div className="flex overflow-hidden shadow-sm" style={{ borderRadius: "var(--radius)" }}>
@@ -46,7 +47,19 @@ export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onD
       {/* Main details */}
       <div className="flex flex-1 items-start justify-between gap-3 p-3" style={{ background: "var(--surface)" }}>
         <div className="flex min-w-0 gap-3">
-          {item.imageUrl && (
+          {item.imageUrl && isPdf && (
+            <a
+              href={item.imageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg text-xs font-semibold"
+              style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}
+            >
+              <span className="text-lg">📄</span>
+              PDF
+            </a>
+          )}
+          {item.imageUrl && !isPdf && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
           )}

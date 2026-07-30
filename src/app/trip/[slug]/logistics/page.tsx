@@ -82,8 +82,8 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
         </div>
         <input name="notes" placeholder="הערות" className="rounded-lg border px-3 py-2 sm:col-span-2" style={{ borderColor: "var(--primary)" }} />
         <label className="text-sm sm:col-span-2">
-          <span className="mb-1 block text-xs opacity-60">תמונה (כרטיס טיסה / אישור הזמנה)</span>
-          <input name="image" type="file" accept="image/*" className="w-full text-sm" />
+          <span className="mb-1 block text-xs opacity-60">תמונה או PDF (כרטיס טיסה / אישור הזמנה)</span>
+          <input name="image" type="file" accept="image/*,application/pdf" className="w-full text-sm" />
         </label>
         <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white sm:col-span-2" style={{ background: "var(--primary)" }}>
           הוספה

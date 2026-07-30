@@ -19,6 +19,7 @@ export async function uploadAlbumMedia(destinationId: string, slug: string, form
     if (!file || file.size === 0) continue;
     const type = file.type.startsWith("video/") ? "video" : "photo";
     const url = await saveUploadedFile(file, "album");
+    if (!url) continue;
     await prisma.albumMedia.create({ data: { userId, destinationId, type, url } });
   }
 

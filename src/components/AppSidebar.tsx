@@ -31,8 +31,8 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "כלים ללקוחות",
     items: [
-      { href: "/client-planner", label: "תכנון מסלول ללקוח", icon: "🧑‍💼", tier: "gold" },
-      { href: "/quotes", label: "CRM — לידים והצעות מחיר", icon: "📄", tier: "gold" },
+      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
+      { href: "/quotes", label: "CRM", icon: "📄", tier: "gold" },
     ],
   },
   {
@@ -101,7 +101,7 @@ export function AppSidebar({
     <>
       {/* Desktop sidebar */}
       <nav
-        className="hidden shrink-0 flex-col gap-0.5 border-e p-3 sm:flex sm:w-64"
+        className="hidden shrink-0 flex-col gap-0.5 border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-[60px] sm:max-h-[calc(100vh-60px)] sm:overflow-y-auto"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
         <div className="flex flex-col gap-1">
@@ -111,7 +111,7 @@ export function AppSidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-2 text-sm font-semibold"
+                className="flex items-center gap-3 px-4 py-2 text-[15px] font-semibold"
                 style={{
                   borderRadius: "999px",
                   background: active ? "var(--primary, #7C3AED)" : "transparent",
@@ -139,7 +139,7 @@ export function AppSidebar({
                     key={item.href}
                     href={destHref(item)}
                     onClick={(e) => handleDestItemClick(item, e)}
-                    className="flex items-center gap-2.5 px-4 py-1.5 text-sm font-medium"
+                    className="flex items-center gap-2.5 px-4 py-1.5 text-[15px] font-medium"
                     style={{
                       borderRadius: "999px",
                       background: active ? "var(--primary, #7C3AED)" : "transparent",
