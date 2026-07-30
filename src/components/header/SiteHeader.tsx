@@ -40,7 +40,8 @@ export async function SiteHeader() {
       </div>
 
       <Link href="/" className="flex items-center gap-2.5 justify-self-end">
-        <span className="text-lg font-extrabold">עודד המנקד</span>
+        <span className="hidden text-lg font-extrabold sm:inline">עודד המנקד</span>
+        <span className="text-lg font-extrabold sm:hidden">טראבי</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-mark.svg" alt="עודד המנקד" className="h-9 w-9" />
       </Link>

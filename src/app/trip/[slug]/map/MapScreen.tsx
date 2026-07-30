@@ -72,6 +72,7 @@ export function MapScreen({
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -99,6 +100,11 @@ export function MapScreen({
       zoom: 12,
       streetViewControl: false,
       fullscreenControl: false,
+      // "greedy" lets a single finger pan/zoom the map immediately — Google's
+      // default "cooperative" mode demands two fingers specifically so an
+      // embedded map doesn't trap the page's scroll gesture, but that's not
+      // a concern here since the map has its own fixed-height container.
+      gestureHandling: "greedy",
       styles: DECLUTTERED_MAP_STYLES,
     });
     infoWindowRef.current = new google.maps.InfoWindow();
@@ -286,6 +292,26 @@ export function MapScreen({
     };
   }, []);
 
+  // Keep isFullscreen in sync with the real fullscreen state (also covers
+  // the user exiting via the browser's own back/Esc control, not just our
+  // button), and nudge Google Maps to redraw at its new size either way.
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+      if (mapRef.current) google.maps.event.trigger(mapRef.current, "resize");
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      mapDivRef.current?.requestFullscreen();
+    }
+  }
+
   if (error) {
     return (
       <div className="rounded-lg border p-6 text-center text-sm" style={{ borderColor: "var(--primary)" }}>
@@ -335,11 +361,22 @@ export function MapScreen({
       {routeError && <p className="text-xs text-red-600">{routeError}</p>}
 
       <div className="flex flex-1 flex-col gap-3 overflow-hidden sm:flex-row">
-        <div
-          ref={mapDivRef}
-          className="h-[50vh] w-full shrink-0 overflow-hidden sm:h-auto sm:min-w-0 sm:flex-1"
-          style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
-        />
+        <div className="relative h-[50vh] w-full shrink-0 sm:h-auto sm:min-w-0 sm:flex-1">
+          <div
+            ref={mapDivRef}
+            className="h-full w-full overflow-hidden"
+            style={{ borderRadius: isFullscreen ? 0 : "var(--radius)", border: isFullscreen ? "none" : "1px solid var(--primary)" }}
+          />
+          <button
+            onClick={toggleFullscreen}
+            className="absolute end-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-md"
+            style={{ background: "white", color: "var(--primary)" }}
+            aria-label={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"}
+            title={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"}
+          >
+            {isFullscreen ? "⤡" : "⤢"}
+          </button>
+        </div>
         <div
           className="hidden w-72 shrink-0 overflow-y-auto sm:block"
           style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)", background: "var(--surface)" }}
