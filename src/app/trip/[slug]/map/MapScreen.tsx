@@ -7,6 +7,13 @@ import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
 import { haversineKm } from "@/lib/geo";
+import { recordLocationPing } from "@/lib/actions/location";
+
+// Only persist a new trail point once the user has actually moved a bit, or
+// enough time has passed — GPS ticks arrive every ~1s and would otherwise
+// flood the DB with near-duplicate points while standing still.
+const TRAIL_MIN_DISTANCE_KM = 0.02;
+const TRAIL_MIN_INTERVAL_MS = 8000;
 
 function infoWindowHtml(poi: FlatPoi): string {
   const photo = poi.photoUrl
@@ -46,12 +53,16 @@ export function MapScreen({
   slug,
   favoritedIds,
   logisticPins = [],
+  destinationId,
+  initialTrail = [],
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
   slug: string;
   favoritedIds: Set<string>;
   logisticPins?: LogisticPin[];
+  destinationId: string;
+  initialTrail?: { lat: number; lng: number }[];
 }) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -64,6 +75,8 @@ export function MapScreen({
   const watchIdRef = useRef<number | null>(null);
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const trailPolylineRef = useRef<google.maps.Polyline | null>(null);
+  const lastTrailPointRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
@@ -73,6 +86,8 @@ export function MapScreen({
   const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [trailVisible, setTrailVisible] = useState(false);
+  const [trailPoints, setTrailPoints] = useState(initialTrail);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -141,6 +156,23 @@ export function MapScreen({
       }
     });
   }, [loaded, shapePois]);
+
+  // "Places I've been" trail — a single long-lived polyline whose path grows
+  // as new GPS points come in, toggled on/off exactly like a category layer.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    if (!trailPolylineRef.current) {
+      trailPolylineRef.current = new google.maps.Polyline({
+        path: [],
+        strokeColor: "#22C55E",
+        strokeWeight: 4,
+        strokeOpacity: 0.85,
+        map: null,
+      });
+    }
+    trailPolylineRef.current.setPath(trailPoints);
+    trailPolylineRef.current.setMap(trailVisible ? mapRef.current : null);
+  }, [loaded, trailPoints, trailVisible]);
 
   // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
   const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
@@ -244,6 +276,18 @@ export function MapScreen({
     openPoi(poi, marker);
   }
 
+  function maybeRecordTrailPoint(point: { lat: number; lng: number }) {
+    const last = lastTrailPointRef.current;
+    const now = Date.now();
+    if (last) {
+      const distKm = haversineKm([last.lat, last.lng], [point.lat, point.lng]);
+      if (distKm < TRAIL_MIN_DISTANCE_KM && now - last.time < TRAIL_MIN_INTERVAL_MS) return;
+    }
+    lastTrailPointRef.current = { ...point, time: now };
+    setTrailPoints((prev) => [...prev, point]);
+    recordLocationPing(destinationId, point.lat, point.lng).catch(() => {});
+  }
+
   function toggleGps() {
     if (gpsActive) {
       if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
@@ -279,6 +323,7 @@ export function MapScreen({
         } else {
           userMarkerRef.current?.setPosition(point);
         }
+        maybeRecordTrailPoint(point);
       },
       () => setGpsError("לא הצלחנו לקבל מיקום — בדקו הרשאות מיקום בדפדפן"),
       { enableHighAccuracy: true }
@@ -359,13 +404,31 @@ export function MapScreen({
         ))}
 
         <button
+          onClick={() => setTrailVisible((v) => !v)}
+          className="ms-auto flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold"
+          style={{
+            borderColor: "#22C55E",
+            background: trailVisible ? "#22C55E" : "transparent",
+            color: trailVisible ? "white" : "#16A34A",
+          }}
+          title="הצגת/הסתרת המקומות שכבר הייתם בהם"
+        >
+          🟢 איפה כבר הייתי
+        </button>
+
+        <button
           onClick={toggleGps}
-          className="ms-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
+          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
           style={{ background: gpsActive ? "#4285F4" : "var(--primary)" }}
         >
           📍 {gpsActive ? "עוצרים מיקום" : "המיקום שלי"}
         </button>
       </div>
+      {gpsActive && (
+        <p className="text-xs opacity-60">
+          🟢 המסלול שלכם נשמר ברקע כל עוד המסך פתוח — לחצו על &quot;איפה כבר הייתי&quot; כדי לראות אותו על המפה.
+        </p>
+      )}
       {gpsError && <p className="text-xs text-red-600">{gpsError}</p>}
       {routeError && <p className="text-xs text-red-600">{routeError}</p>}
 

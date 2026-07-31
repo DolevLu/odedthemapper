@@ -42,6 +42,7 @@ model Destination {
   kmlImports   KmlImport[]
   budgets      TripBudget[]
   priceQuotes  PriceQuote[]
+  locationPings LocationPing[]
   albumMedia   AlbumMedia[]
   quizQuestions QuizQuestion[]
   quizAttempts QuizAttempt[]
@@ -151,6 +152,7 @@ model User {
   quizAttempts  QuizAttempt[]
   itineraryTemplates ItineraryTemplate[]
   visitedCountries VisitedCountry[]
+  locationPings LocationPing[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -309,6 +311,23 @@ model Expense {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+/** One GPS point recorded while the "my location" tracker was on. Rendered
+ * on the map as a green breadcrumb trail — the streets the user has
+ * physically walked in this destination. */
+model LocationPing {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  lat           Float
+  lng           Float
+  recordedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, destinationId, recordedAt])
 }
 
 model TripLogistic {

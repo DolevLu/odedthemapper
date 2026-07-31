@@ -16,11 +16,16 @@ export default async function TripMapPage({ params }: { params: Promise<{ slug: 
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   if (accessLevel === "none") return <UpgradeRequired tier="silver" />;
 
-  const [pois, favorites, logistics] = await Promise.all([
+  const [pois, favorites, logistics, trail] = await Promise.all([
     getFlatPoisForDestination(destination.id),
     prisma.favorite.findMany({ where: { userId: session!.user!.id }, select: { poiId: true } }),
     prisma.tripLogistic.findMany({
       where: { userId: session!.user!.id, destinationId: destination.id, lat: { not: null }, lng: { not: null } },
+    }),
+    prisma.locationPing.findMany({
+      where: { userId: session!.user!.id, destinationId: destination.id },
+      orderBy: { recordedAt: "asc" },
+      select: { lat: true, lng: true },
     }),
   ]);
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
@@ -36,6 +41,14 @@ export default async function TripMapPage({ params }: { params: Promise<{ slug: 
   });
 
   return (
-    <MapScreen pois={pois} categoryNames={categoryNames} slug={slug} favoritedIds={favoritedIds} logisticPins={logisticPins} />
+    <MapScreen
+      pois={pois}
+      categoryNames={categoryNames}
+      slug={slug}
+      favoritedIds={favoritedIds}
+      logisticPins={logisticPins}
+      destinationId={destination.id}
+      initialTrail={trail}
+    />
   );
 }
