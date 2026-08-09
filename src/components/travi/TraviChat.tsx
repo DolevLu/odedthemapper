@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { askTravi, type TraviSuggestion } from "@/lib/actions/travi";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 type Message = { role: "user" | "travi"; text: string; suggestions?: TraviSuggestion[] };
 
@@ -73,15 +74,15 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
                   {m.suggestions && m.suggestions.length > 0 && (
                     <div className="mt-2 flex flex-col gap-1.5">
                       {m.suggestions.map((s) => (
-                        <Link
-                          key={s.id}
-                          href={`/trip/${slug}/map`}
-                          className="rounded-lg bg-white px-2.5 py-1.5 text-xs text-black shadow-sm"
-                        >
-                          <span className="font-semibold">{s.name}</span>
-                          <span className="opacity-60"> · {s.areaName}</span>
-                          {s.distanceKm !== null && <span className="opacity-60"> · {formatDistance(s.distanceKm)}</span>}
-                        </Link>
+                        <div key={s.id} className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-xs text-black shadow-sm">
+                          <Link href={`/trip/${slug}/map?focus=${s.id}`} className="min-w-0 flex-1">
+                            <span className="font-semibold">{s.name}</span>
+                            <span className="opacity-60"> · {s.areaName}</span>
+                            {s.distanceKm !== null && <span className="opacity-60"> · {formatDistance(s.distanceKm)}</span>}
+                            <span className="opacity-60"> · 🗺️ הראו במפה</span>
+                          </Link>
+                          <FavoriteButton poiId={s.id} slug={slug} />
+                        </div>
                       ))}
                     </div>
                   )}

@@ -2,35 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 
 const CELL_SIZE_DEG = 0.008; // ~800m grid cells — roughly "neighborhood" scale
 const METERS_PER_DEGREE_LAT = 111320;
-
-type Cell = { lat: number; lng: number; count: number };
-
-/** Buckets points into a lat/lng grid and returns one entry per non-empty
- * cell with its point count — a density map built entirely from our own
- * POI coordinates, no external data. */
-function buildDensityGrid(points: [number, number][]): Cell[] {
-  const cells = new Map<string, Cell>();
-  for (const [lat, lng] of points) {
-    const cellLat = (Math.floor(lat / CELL_SIZE_DEG) + 0.5) * CELL_SIZE_DEG;
-    const cellLng = (Math.floor(lng / CELL_SIZE_DEG) + 0.5) * CELL_SIZE_DEG;
-    const key = `${cellLat}_${cellLng}`;
-    const existing = cells.get(key);
-    if (existing) existing.count++;
-    else cells.set(key, { lat: cellLat, lng: cellLng, count: 1 });
-  }
-  return Array.from(cells.values());
-}
-
-function colorForIntensity(t: number): string {
-  // 0 = pale yellow, 1 = deep red — a simple two-stop heat gradient.
-  const r = 255;
-  const g = Math.round(220 - t * 180);
-  const b = Math.round(120 - t * 120);
-  return `rgb(${r}, ${Math.max(g, 0)}, ${Math.max(b, 0)})`;
-}
 
 export function WhereToStayHeatmap({ points, destinationName }: { points: [number, number][]; destinationName: string }) {
   const [open, setOpen] = useState(false);
@@ -43,7 +18,7 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
     if (!open || !loaded || !mapDivRef.current || mapRef.current) return;
 
     try {
-      const grid = buildDensityGrid(points);
+      const grid = buildDensityGrid(points, CELL_SIZE_DEG);
       if (grid.length === 0) {
         setError("אין מספיק נתונים כדי להציג מפת צפיפות ליעד הזה");
         return;

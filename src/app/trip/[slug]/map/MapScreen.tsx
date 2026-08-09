@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
@@ -8,12 +9,22 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
 import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
+import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
 // flood the DB with near-duplicate points while standing still.
 const TRAIL_MIN_DISTANCE_KM = 0.02;
 const TRAIL_MIN_INTERVAL_MS = 8000;
+
+// Finer grid than the logistics "where to stay" heatmap — this one is
+// viewed zoomed into a single city rather than a whole destination.
+const HEATMAP_CELL_DEG = 0.004;
+const METERS_PER_DEGREE_LAT = 111320;
+
+// Only label individual pins once zoomed in enough that a name tag per
+// marker is legible rather than overlapping clutter.
+const LABEL_ZOOM_THRESHOLD = 16;
 
 function infoWindowHtml(poi: FlatPoi): string {
   const photo = poi.photoUrl
@@ -55,6 +66,7 @@ export function MapScreen({
   logisticPins = [],
   destinationId,
   initialTrail = [],
+  homeMode = false,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
@@ -63,8 +75,14 @@ export function MapScreen({
   logisticPins?: LogisticPin[];
   destinationId: string;
   initialTrail?: { lat: number; lng: number }[];
+  /** Fullscreen "Google Maps app"-style layout used as the mobile trip home
+   * screen: floating filter pills over an edge-to-edge map instead of the
+   * category row + side/below list, with location tracking auto-started. */
+  homeMode?: boolean;
 }) {
   const { loaded, error } = useGoogleMaps();
+  const searchParams = useSearchParams();
+  const focusPoiId = searchParams.get("focus");
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const clustererRef = useRef<MarkerClusterer | null>(null);
@@ -77,6 +95,8 @@ export function MapScreen({
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
   const trailPolylineRef = useRef<google.maps.Polyline | null>(null);
   const lastTrailPointRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
+  const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
+  const autoLocationStartedRef = useRef(false);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
@@ -88,6 +108,7 @@ export function MapScreen({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [trailVisible, setTrailVisible] = useState(false);
   const [trailPoints, setTrailPoints] = useState(initialTrail);
+  const [heatmapVisible, setHeatmapVisible] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -174,6 +195,35 @@ export function MapScreen({
     trailPolylineRef.current.setMap(trailVisible ? mapRef.current : null);
   }, [loaded, trailPoints, trailVisible]);
 
+  // Density heatmap — buckets all POIs into a grid and renders yellow→red
+  // circles by concentration, replacing individual pins while active.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    heatmapCirclesRef.current.forEach((c) => c.setMap(null));
+    heatmapCirclesRef.current = [];
+    if (!heatmapVisible) return;
+
+    const points = pointPois.map((p) => [p.lat, p.lng] as [number, number]);
+    const grid = buildDensityGrid(points, HEATMAP_CELL_DEG);
+    if (grid.length === 0) return;
+    const maxCount = grid.reduce((m, c) => Math.max(m, c.count), 1);
+    const radiusMeters = HEATMAP_CELL_DEG * METERS_PER_DEGREE_LAT * 0.65;
+
+    heatmapCirclesRef.current = grid.map((cell) => {
+      const intensity = cell.count / maxCount;
+      return new google.maps.Circle({
+        center: { lat: cell.lat, lng: cell.lng },
+        radius: radiusMeters,
+        map: mapRef.current!,
+        strokeWeight: 0,
+        fillColor: colorForIntensity(intensity),
+        fillOpacity: 0.18 + intensity * 0.5,
+        clickable: false,
+        zIndex: 50,
+      });
+    });
+  }, [loaded, heatmapVisible, pointPois]);
+
   // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
   const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
   useEffect(() => {
@@ -252,6 +302,8 @@ export function MapScreen({
     markersByPoiId.current.forEach((marker) => marker.setMap(null));
     markersByPoiId.current.clear();
 
+    if (heatmapVisible) return; // the heatmap layer replaces individual pins
+
     const markers = filtered.map((poi) => {
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
@@ -265,7 +317,28 @@ export function MapScreen({
 
     clustererRef.current = new MarkerClusterer({ map: mapRef.current, markers });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, filtered, gpsActive, userPosition]);
+  }, [loaded, filtered, gpsActive, userPosition, heatmapVisible]);
+
+  // Name-tag labels for nearby pins once zoomed in — lets you scan a
+  // cluster of points at a glance instead of tapping each one.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    function updateLabels() {
+      const zoom = map.getZoom() ?? 0;
+      const bounds = map.getBounds();
+      const showLabels = zoom >= LABEL_ZOOM_THRESHOLD && !!bounds;
+      markersByPoiId.current.forEach((marker, id) => {
+        const position = marker.getPosition();
+        const poi = showLabels && position && bounds!.contains(position) ? pointPois.find((p) => p.id === id) : null;
+        marker.setLabel(poi ? { text: poi.name, color: "#1F2937", fontSize: "11px", fontWeight: "700" } : "");
+      });
+    }
+
+    const listener = map.addListener("idle", updateLabels);
+    return () => listener.remove();
+  }, [loaded, pointPois]);
 
   function focusPoi(poiId: string) {
     const poi = filtered.find((p) => p.id === poiId);
@@ -337,6 +410,31 @@ export function MapScreen({
     };
   }, []);
 
+  // Google-Maps-app-style default: on the mobile home map, location tracking
+  // just starts on its own instead of waiting for a button press.
+  useEffect(() => {
+    if (!homeMode || !loaded || autoLocationStartedRef.current) return;
+    autoLocationStartedRef.current = true;
+    toggleGps();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeMode, loaded]);
+
+  // Deep link support (?focus=<poiId>), e.g. from a Travi chat suggestion —
+  // clears any active category filter so the target POI's marker exists.
+  // Adjusts state during render (React's recommended pattern for resetting
+  // state when a prop/derived value changes) rather than in an effect.
+  const [prevFocusPoiId, setPrevFocusPoiId] = useState(focusPoiId);
+  if (focusPoiId !== prevFocusPoiId) {
+    setPrevFocusPoiId(focusPoiId);
+    if (focusPoiId) setActiveCategory(null);
+  }
+
+  useEffect(() => {
+    if (!focusPoiId || !loaded || !mapRef.current) return;
+    if (markersByPoiId.current.has(focusPoiId)) focusPoi(focusPoiId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusPoiId, loaded, filtered]);
+
   // CSS-driven "fullscreen" (a fixed overlay covering the viewport) instead
   // of the native Fullscreen API — iOS Safari doesn't support
   // requestFullscreen() on arbitrary elements (only <video> can go native
@@ -374,6 +472,73 @@ export function MapScreen({
     );
   }
 
+  if (homeMode) {
+    return (
+      <div className="fixed inset-x-0 bottom-0 top-14 z-0">
+        <div ref={mapDivRef} className="h-full w-full" />
+
+        <div className="absolute inset-x-0 top-0 z-10 flex gap-2 overflow-x-auto p-3">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
+            style={{
+              background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
+              color: activeCategory === null ? "white" : "var(--text)",
+            }}
+          >
+            הכל
+          </button>
+          {categoryNames.map((name) => (
+            <button
+              key={name}
+              onClick={() => setActiveCategory(name)}
+              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
+              style={{
+                background: activeCategory === name ? "var(--primary)" : "rgba(255,255,255,0.94)",
+                color: activeCategory === name ? "white" : "var(--text)",
+              }}
+            >
+              {name}
+            </button>
+          ))}
+          <button
+            onClick={() => setHeatmapVisible((v) => !v)}
+            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
+            style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C" }}
+          >
+            🔥 מפת חום
+          </button>
+          <button
+            onClick={() => setTrailVisible((v) => !v)}
+            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
+            style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A" }}
+          >
+            🟢 איפה כבר הייתי
+          </button>
+        </div>
+
+        {gpsError && (
+          <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{gpsError}</div>
+        )}
+
+        {userPosition && (
+          <button
+            onClick={() => {
+              mapRef.current?.panTo(userPosition);
+              mapRef.current?.setZoom(16);
+            }}
+            className="absolute bottom-24 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-lg shadow-md"
+            style={{ background: "white", color: "#4285F4" }}
+            aria-label="למקם אותי מחדש"
+            title="למקם אותי מחדש"
+          >
+            🎯
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3 sm:h-[calc(100vh-140px)]">
       <div className="flex flex-wrap items-center gap-2">
@@ -404,8 +569,21 @@ export function MapScreen({
         ))}
 
         <button
-          onClick={() => setTrailVisible((v) => !v)}
+          onClick={() => setHeatmapVisible((v) => !v)}
           className="ms-auto flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold"
+          style={{
+            borderColor: "#F97316",
+            background: heatmapVisible ? "#F97316" : "transparent",
+            color: heatmapVisible ? "white" : "#EA580C",
+          }}
+          title="מפת חום — צפיפות נקודות באזור"
+        >
+          🔥 מפת חום
+        </button>
+
+        <button
+          onClick={() => setTrailVisible((v) => !v)}
+          className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold"
           style={{
             borderColor: "#22C55E",
             background: trailVisible ? "#22C55E" : "transparent",

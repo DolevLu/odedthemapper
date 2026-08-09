@@ -56,6 +56,9 @@ export function categoryMarkerIcon(fallbackColor: string, categoryName: string, 
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new google.maps.Size(scale * 2, scale * 2),
     anchor: new google.maps.Point(scale, scale),
+    // Positions an optional marker.setLabel(...) name tag just above the pin
+    // instead of centered on top of it.
+    labelOrigin: new google.maps.Point(scale, -8),
   };
 }
 
