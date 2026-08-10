@@ -141,6 +141,7 @@ export async function addLogistic(destinationId: string, slug: string, formData:
   });
   revalidatePath(`/trip/${slug}/logistics`);
   revalidatePath(`/trip/${slug}/map`);
+  revalidatePath(`/trip/${slug}`);
 }
 
 /** Lets the user set a countdown target date manually from the "Today"
@@ -169,6 +170,7 @@ export async function deleteLogistic(id: string, slug: string) {
   await prisma.tripLogistic.delete({ where: { id } });
   revalidatePath(`/trip/${slug}/logistics`);
   revalidatePath(`/trip/${slug}/map`);
+  revalidatePath(`/trip/${slug}`);
 }
 
 // ---------- Itinerary (personal, silver tier) ----------

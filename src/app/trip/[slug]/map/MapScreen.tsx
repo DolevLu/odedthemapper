@@ -26,6 +26,10 @@ const METERS_PER_DEGREE_LAT = 111320;
 // marker is legible rather than overlapping clutter.
 const LABEL_ZOOM_THRESHOLD = 16;
 
+// Walking routes / district lines always render in the same brand purple,
+// regardless of whatever color the KML import happened to assign.
+const SHAPE_COLOR = "#7C3AED";
+
 function infoWindowHtml(poi: FlatPoi): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
@@ -66,7 +70,6 @@ export function MapScreen({
   logisticPins = [],
   destinationId,
   initialTrail = [],
-  homeMode = false,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
@@ -75,10 +78,6 @@ export function MapScreen({
   logisticPins?: LogisticPin[];
   destinationId: string;
   initialTrail?: { lat: number; lng: number }[];
-  /** Fullscreen "Google Maps app"-style layout used as the mobile trip home
-   * screen: floating filter pills over an edge-to-edge map instead of the
-   * category row + side/below list, with location tracking auto-started. */
-  homeMode?: boolean;
 }) {
   const { loaded, error } = useGoogleMaps();
   const searchParams = useSearchParams();
@@ -105,10 +104,10 @@ export function MapScreen({
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [routeToPoiId, setRouteToPoiId] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [trailVisible, setTrailVisible] = useState(false);
   const [trailPoints, setTrailPoints] = useState(initialTrail);
   const [heatmapVisible, setHeatmapVisible] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -158,9 +157,9 @@ export function MapScreen({
       if (poi.geometryType === "polygon") {
         const polygon = new google.maps.Polygon({
           paths: path,
-          strokeColor: poi.categoryColor,
+          strokeColor: SHAPE_COLOR,
           strokeWeight: 2,
-          fillColor: poi.categoryColor,
+          fillColor: SHAPE_COLOR,
           fillOpacity: 0.15,
           map: mapRef.current!,
         });
@@ -168,7 +167,7 @@ export function MapScreen({
       } else {
         const polyline = new google.maps.Polyline({
           path,
-          strokeColor: poi.categoryColor,
+          strokeColor: SHAPE_COLOR,
           strokeWeight: 3,
           strokeOpacity: 0.8,
           map: mapRef.current!,
@@ -410,14 +409,15 @@ export function MapScreen({
     };
   }, []);
 
-  // Google-Maps-app-style default: on the mobile home map, location tracking
-  // just starts on its own instead of waiting for a button press.
+  // Google-Maps-app-style default: location tracking just starts on its own
+  // instead of waiting for a button press, since this map is now the trip's
+  // home screen.
   useEffect(() => {
-    if (!homeMode || !loaded || autoLocationStartedRef.current) return;
+    if (!loaded || autoLocationStartedRef.current) return;
     autoLocationStartedRef.current = true;
     toggleGps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeMode, loaded]);
+  }, [loaded]);
 
   // Deep link support (?focus=<poiId>), e.g. from a Travi chat suggestion —
   // clears any active category filter so the target POI's marker exists.
@@ -435,35 +435,6 @@ export function MapScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusPoiId, loaded, filtered]);
 
-  // CSS-driven "fullscreen" (a fixed overlay covering the viewport) instead
-  // of the native Fullscreen API — iOS Safari doesn't support
-  // requestFullscreen() on arbitrary elements (only <video> can go native
-  // fullscreen there), so relying on it meant this only worked on Android.
-  // This approach works identically everywhere. Locks background scroll
-  // while active and nudges Google Maps to redraw at its new size.
-  useEffect(() => {
-    if (mapRef.current) google.maps.event.trigger(mapRef.current, "resize");
-    if (isFullscreen) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = prevOverflow;
-      };
-    }
-  }, [isFullscreen]);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsFullscreen(false);
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  function toggleFullscreen() {
-    setIsFullscreen((v) => !v);
-  }
-
   if (error) {
     return (
       <div className="rounded-lg border p-6 text-center text-sm" style={{ borderColor: "var(--primary)" }}>
@@ -472,196 +443,91 @@ export function MapScreen({
     );
   }
 
-  if (homeMode) {
-    return (
-      <div className="fixed inset-x-0 bottom-0 top-14 z-0">
-        <div ref={mapDivRef} className="h-full w-full" />
-
-        <div className="absolute inset-x-0 top-0 z-10 flex gap-2 overflow-x-auto p-3">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
-            style={{
-              background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
-              color: activeCategory === null ? "white" : "var(--text)",
-            }}
-          >
-            הכל
-          </button>
-          {categoryNames.map((name) => (
-            <button
-              key={name}
-              onClick={() => setActiveCategory(name)}
-              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
-              style={{
-                background: activeCategory === name ? "var(--primary)" : "rgba(255,255,255,0.94)",
-                color: activeCategory === name ? "white" : "var(--text)",
-              }}
-            >
-              {name}
-            </button>
-          ))}
-          <button
-            onClick={() => setHeatmapVisible((v) => !v)}
-            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
-            style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C" }}
-          >
-            🔥 מפת חום
-          </button>
-          <button
-            onClick={() => setTrailVisible((v) => !v)}
-            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
-            style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A" }}
-          >
-            🟢 איפה כבר הייתי
-          </button>
-        </div>
-
-        {gpsError && (
-          <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{gpsError}</div>
-        )}
-
-        {userPosition && (
-          <button
-            onClick={() => {
-              mapRef.current?.panTo(userPosition);
-              mapRef.current?.setZoom(16);
-            }}
-            className="absolute bottom-24 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-lg shadow-md"
-            style={{ background: "white", color: "#4285F4" }}
-            aria-label="למקם אותי מחדש"
-            title="למקם אותי מחדש"
-          >
-            🎯
-          </button>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-3 sm:h-[calc(100vh-140px)]">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="fixed bottom-0 top-14 start-0 end-0 z-0 sm:end-64">
+      <div ref={mapDivRef} className="h-full w-full" />
+
+      {/* top-12 clears Google's own Map/Satellite type-control button,
+       * which renders near the top of the map div and would otherwise sit
+       * directly under this row. */}
+      <div className="absolute inset-x-0 top-12 z-10 flex gap-2 overflow-x-auto p-3">
         <button
           onClick={() => setActiveCategory(null)}
-          className="rounded-full border px-3 py-1 text-sm"
+          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
           style={{
-            borderColor: "var(--primary)",
-            background: activeCategory === null ? "var(--primary)" : "transparent",
+            background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
             color: activeCategory === null ? "white" : "var(--text)",
           }}
         >
-          הכל ({pointPois.length})
+          הכל
         </button>
         {categoryNames.map((name) => (
           <button
             key={name}
             onClick={() => setActiveCategory(name)}
-            className="rounded-full border px-3 py-1 text-sm"
+            className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
             style={{
-              borderColor: "var(--primary)",
-              background: activeCategory === name ? "var(--primary)" : "transparent",
+              background: activeCategory === name ? "var(--primary)" : "rgba(255,255,255,0.94)",
               color: activeCategory === name ? "white" : "var(--text)",
             }}
           >
             {name}
           </button>
         ))}
-
         <button
           onClick={() => setHeatmapVisible((v) => !v)}
-          className="ms-auto flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold"
-          style={{
-            borderColor: "#F97316",
-            background: heatmapVisible ? "#F97316" : "transparent",
-            color: heatmapVisible ? "white" : "#EA580C",
-          }}
-          title="מפת חום — צפיפות נקודות באזור"
+          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
+          style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C" }}
         >
           🔥 מפת חום
         </button>
-
         <button
           onClick={() => setTrailVisible((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold"
-          style={{
-            borderColor: "#22C55E",
-            background: trailVisible ? "#22C55E" : "transparent",
-            color: trailVisible ? "white" : "#16A34A",
-          }}
-          title="הצגת/הסתרת המקומות שכבר הייתם בהם"
+          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
+          style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A" }}
         >
           🟢 איפה כבר הייתי
         </button>
-
-        <button
-          onClick={toggleGps}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white"
-          style={{ background: gpsActive ? "#4285F4" : "var(--primary)" }}
-        >
-          📍 {gpsActive ? "עוצרים מיקום" : "המיקום שלי"}
-        </button>
       </div>
-      {gpsActive && (
-        <p className="text-xs opacity-60">
-          🟢 המסלול שלכם נשמר ברקע כל עוד המסך פתוח — לחצו על &quot;איפה כבר הייתי&quot; כדי לראות אותו על המפה.
-        </p>
+
+      {gpsError && (
+        <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{gpsError}</div>
       )}
-      {gpsError && <p className="text-xs text-red-600">{gpsError}</p>}
-      {routeError && <p className="text-xs text-red-600">{routeError}</p>}
+      {routeError && (
+        <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{routeError}</div>
+      )}
 
-      <div className="flex flex-1 flex-col gap-3 overflow-hidden sm:flex-row">
-        <div
-          className={
-            isFullscreen
-              ? "fixed inset-0 z-[200] h-screen w-screen"
-              : "relative h-[50vh] w-full shrink-0 sm:h-auto sm:min-w-0 sm:flex-1"
-          }
+      {userPosition && (
+        <button
+          onClick={() => {
+            mapRef.current?.panTo(userPosition);
+            mapRef.current?.setZoom(16);
+          }}
+          className="absolute bottom-36 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-lg shadow-md sm:bottom-24"
+          style={{ background: "white", color: "#4285F4" }}
+          aria-label="למקם אותי מחדש"
+          title="למקם אותי מחדש"
         >
-          <div
-            ref={mapDivRef}
-            className="h-full w-full overflow-hidden"
-            style={{ borderRadius: isFullscreen ? 0 : "var(--radius)", border: isFullscreen ? "none" : "1px solid var(--primary)" }}
-          />
-          <button
-            onClick={toggleFullscreen}
-            className="absolute start-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full text-lg shadow-md"
-            style={{ background: "white", color: "var(--primary)" }}
-            aria-label={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"}
-            title={isFullscreen ? "יציאה ממסך מלא" : "מסך מלא"}
-          >
-            {isFullscreen ? "⤡" : "⤢"}
-          </button>
-        </div>
-        <div
-          className="hidden w-72 shrink-0 overflow-y-auto sm:block"
-          style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)", background: "var(--surface)" }}
-        >
-          {gpsActive && userPosition && (
-            <p className="border-b p-2 text-center text-xs opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
-              ממוין לפי קרבה אליכם
-            </p>
-          )}
-          {sortedList.map((poi) => renderListItem(poi))}
-        </div>
+          🎯
+        </button>
+      )}
 
-        {/* Mobile-only: a normal section below the map, not an overlay on top of it. */}
-        <div
-          className="flex flex-col overflow-hidden sm:hidden"
-          style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)", background: "var(--surface)" }}
+      {/* Places list — reachable by scrolling/tapping this sheet, not by
+       * dragging the map. Collapsed to a slim handle by default; expands to
+       * show the full clickable list, same behavior as the old split-view
+       * map screen's sidebar list. */}
+      <div
+        className="absolute inset-x-0 bottom-16 z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:bottom-4 sm:end-4 sm:start-auto sm:w-80 sm:rounded-2xl"
+        style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem" }}
+      >
+        <button
+          onClick={() => setListOpen((v) => !v)}
+          className="flex shrink-0 items-center justify-between gap-2 px-4 py-3 text-sm font-semibold"
         >
-          <p className="border-b p-2 text-center text-xs font-semibold opacity-70" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
-            {sortedList.length} נקודות ברשימה
-          </p>
-          <div className="max-h-[45vh] overflow-y-auto">
-            {gpsActive && userPosition && (
-              <p className="border-b p-2 text-center text-xs opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
-                ממוין לפי קרבה אליכם
-              </p>
-            )}
-            {sortedList.map((poi) => renderListItem(poi))}
-          </div>
-        </div>
+          <span>📋 {sortedList.length} נקודות ברשימה{gpsActive && userPosition ? " · ממוין לפי קרבה" : ""}</span>
+          <span className="text-xs opacity-60">{listOpen ? "▼" : "▲"}</span>
+        </button>
+        {listOpen && <div className="flex-1 overflow-y-auto overscroll-contain">{sortedList.map((poi) => renderListItem(poi))}</div>}
       </div>
     </div>
   );

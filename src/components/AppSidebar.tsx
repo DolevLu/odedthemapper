@@ -16,23 +16,17 @@ const TOP_ITEMS = [
 type DestItem = { href: string; label: string; icon: string; tier: Tier };
 
 // The 4 destination-scoped items pinned in the mobile bottom bar — everything
-// else lives behind the hamburger menu.
-const MOBILE_PINNED_KEYS = new Set(["", "/map"]);
+// else lives behind the hamburger menu. The map is now the trip home (""),
+// so the old "/map" pin moved to "/now" for the "what's now" screen.
+const MOBILE_PINNED_KEYS = new Set(["", "/now"]);
 
 const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "תכנון הטיול",
     items: [
-      { href: "", label: "מה עכשיו", icon: "🧭", tier: "silver" },
-      { href: "/map", label: "מפה", icon: "🗺️", tier: "silver" },
+      { href: "/now", label: "מה עכשיו", icon: "🧭", tier: "silver" },
+      { href: "", label: "מפה", icon: "🗺️", tier: "silver" },
       { href: "/itinerary", label: "מסלול", icon: "📅", tier: "silver" },
-    ],
-  },
-  {
-    title: "כלים ללקוחות",
-    items: [
-      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
-      { href: "/quotes", label: "CRM", icon: "📄", tier: "gold" },
     ],
   },
   {
@@ -42,6 +36,13 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
       { href: "/bookable", label: "להזמנה", icon: "🎟️", tier: "silver" },
       { href: "/logistics", label: "לוגיסטיקה", icon: "✈️", tier: "free" },
       { href: "/expenses", label: "הוצאות", icon: "💸", tier: "free" },
+    ],
+  },
+  {
+    title: "כלים ללקוחות",
+    items: [
+      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
+      { href: "/quotes", label: "CRM", icon: "📄", tier: "gold" },
     ],
   },
   {
@@ -94,8 +95,8 @@ export function AppSidebar({
   }
 
   const pinnedItems = DEST_GROUPS.flatMap((g) => g.items).filter((i) => MOBILE_PINNED_KEYS.has(i.href));
-  const nowItem = pinnedItems.find((i) => i.href === "");
-  const mapItem = pinnedItems.find((i) => i.href === "/map");
+  const mapItem = pinnedItems.find((i) => i.href === "");
+  const nowItem = pinnedItems.find((i) => i.href === "/now");
 
   return (
     <>
