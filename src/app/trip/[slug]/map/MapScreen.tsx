@@ -10,6 +10,7 @@ import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from 
 import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
+import { sunAzimuthDeg, shadedSidePath } from "@/lib/shadow";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
@@ -95,6 +96,7 @@ export function MapScreen({
   const trailPolylineRef = useRef<google.maps.Polyline | null>(null);
   const lastTrailPointRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
   const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
+  const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const autoLocationStartedRef = useRef(false);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -107,6 +109,7 @@ export function MapScreen({
   const [trailVisible, setTrailVisible] = useState(false);
   const [trailPoints, setTrailPoints] = useState(initialTrail);
   const [heatmapVisible, setHeatmapVisible] = useState(false);
+  const [shadowVisible, setShadowVisible] = useState(false);
   const [listOpen, setListOpen] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
@@ -222,6 +225,38 @@ export function MapScreen({
       });
     });
   }, [loaded, heatmapVisible, pointPois]);
+
+  // Approximate "which side of the street is shaded" — a heuristic (street
+  // bearing vs. real sun position for the map's current center/time), not a
+  // true building-height shadow simulation, since no free worldwide
+  // building-height API exists. Only covers the streets already in our data.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    shadowPolylinesRef.current.forEach((p) => p.setMap(null));
+    shadowPolylinesRef.current = [];
+    if (!shadowVisible) return;
+
+    const center = mapRef.current.getCenter();
+    if (!center) return;
+    const sunAzimuth = sunAzimuthDeg(new Date(), center.lat(), center.lng());
+
+    const linePois = shapePois.filter((poi) => poi.geometryType === "line");
+    shadowPolylinesRef.current = linePois
+      .map((poi) => {
+        const path = (poi.geometryCoords ?? []).map(([lng, lat]) => ({ lat, lng }));
+        if (path.length < 2) return null;
+        return new google.maps.Polyline({
+          path: shadedSidePath(path, sunAzimuth),
+          strokeColor: "#111111",
+          strokeWeight: 5,
+          strokeOpacity: 0.35,
+          clickable: false,
+          zIndex: 40,
+          map: mapRef.current!,
+        });
+      })
+      .filter((p): p is google.maps.Polyline => p !== null);
+  }, [loaded, shadowVisible, shapePois]);
 
   // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
   const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
@@ -487,6 +522,14 @@ export function MapScreen({
           style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A" }}
         >
           🟢 איפה כבר הייתי
+        </button>
+        <button
+          onClick={() => setShadowVisible((v) => !v)}
+          className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
+          style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151" }}
+          title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
+        >
+          🌑 צל
         </button>
       </div>
 
