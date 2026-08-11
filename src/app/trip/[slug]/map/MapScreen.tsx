@@ -479,7 +479,14 @@ export function MapScreen({
   }
 
   return (
-    <div className="fixed bottom-0 top-14 start-0 end-0 z-0 sm:end-64">
+    // Mobile: true edge-to-edge fullscreen (fixed to the viewport, below the
+    // header, no sidebar to preserve). Desktop: a normal in-flow content
+    // card next to the sidebar — position:fixed on desktop was covering the
+    // wrong region and made the sidebar look like it had disappeared.
+    <div
+      className="fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-[calc(100vh-140px)] sm:overflow-hidden sm:rounded-[var(--radius)] sm:border"
+      style={{ borderColor: "var(--primary)" }}
+    >
       <div ref={mapDivRef} className="h-full w-full" />
 
       {/* top-12 clears Google's own Map/Satellite type-control button,
