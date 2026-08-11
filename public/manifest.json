@@ -4,6 +4,7 @@
   "description": "מפות טיולים אינטראקטיביות ומדריכים אישיים לכל יעד",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#FBF6EE",
   "theme_color": "#B5502A",
   "dir": "rtl",

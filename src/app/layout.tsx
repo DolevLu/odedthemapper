@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GOOGLE_FONTS_HREF } from "@/lib/theme/fonts";
 import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       </head>
       <body className="min-h-full flex flex-col">
+        <PortraitOnlyGate />
         <Providers>{children}</Providers>
         <ServiceWorkerRegister />
       </body>

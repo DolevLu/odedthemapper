@@ -103,6 +103,13 @@ export function MapScreen({
   const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
   const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const autoLocationStartedRef = useRef(false);
+  // Mirrors of state that marker click listeners need to read fresh without
+  // forcing a full marker teardown/rebuild every time they change (markers
+  // are only created once per filtered set — rebuilding them on every GPS
+  // tick, which happens constantly now that location auto-starts, was the
+  // source of laggy panning).
+  const userPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+  const routeModeActiveRef = useRef(false);
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
@@ -119,6 +126,14 @@ export function MapScreen({
   const [shadowLoading, setShadowLoading] = useState(false);
   const [shadowError, setShadowError] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
+  const [routeModeActive, setRouteModeActive] = useState(false);
+
+  useEffect(() => {
+    userPositionRef.current = userPosition;
+  }, [userPosition]);
+  useEffect(() => {
+    routeModeActiveRef.current = routeModeActive;
+  }, [routeModeActive]);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
@@ -332,7 +347,8 @@ export function MapScreen({
   }, [loaded, logisticPins]);
 
   async function drawRouteTo(poi: FlatPoi) {
-    if (!userPosition || !mapRef.current) return;
+    const origin = userPositionRef.current;
+    if (!origin || !mapRef.current) return;
     setRouteError(null);
     try {
       await loadRoutesLibrary();
@@ -353,7 +369,7 @@ export function MapScreen({
     setRouteToPoiId(poi.id);
     directionsServiceRef.current.route(
       {
-        origin: userPosition,
+        origin,
         destination: { lat: poi.lat, lng: poi.lng },
         travelMode: google.maps.TravelMode.WALKING,
       },
@@ -367,11 +383,17 @@ export function MapScreen({
     );
   }
 
+  // Clicking a point only opens its info popup by default — a route is only
+  // drawn when route mode is explicitly on (floating button), so an ordinary
+  // click never surprises you with a walking route you didn't ask for.
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(infoWindowHtml(poi));
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
-    if (gpsActive && userPosition) drawRouteTo(poi);
+    if (routeModeActiveRef.current) {
+      if (userPositionRef.current) drawRouteTo(poi);
+      else setRouteError("אין עדיין מיקום זמין ליצירת מסלול");
+    }
   }
 
   // Rebuild markers whenever the filtered set changes.
@@ -396,8 +418,13 @@ export function MapScreen({
     });
 
     clustererRef.current = new MarkerClusterer({ map: mapRef.current, markers });
+    // gpsActive/userPosition are intentionally excluded — openPoi/drawRouteTo
+    // read them from refs, so markers don't need rebuilding on every GPS
+    // tick (that was the actual cause of laggy panning: a full marker
+    // teardown/rebuild every time the position update, which now fires
+    // constantly since location tracking auto-starts).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, filtered, gpsActive, userPosition, heatmapVisible]);
+  }, [loaded, filtered, heatmapVisible]);
 
   // Name-tag labels for nearby pins once zoomed in — lets you scan a
   // cluster of points at a glance instead of tapping each one.
@@ -596,20 +623,18 @@ export function MapScreen({
         <div className="absolute inset-x-3 top-40 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{shadowError}</div>
       )}
 
-      {userPosition && (
-        <button
-          onClick={() => {
-            mapRef.current?.panTo(userPosition);
-            mapRef.current?.setZoom(16);
-          }}
-          className="absolute bottom-36 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-lg shadow-md sm:bottom-24"
-          style={{ background: "white", color: "#4285F4" }}
-          aria-label="למקם אותי מחדש"
-          title="למקם אותי מחדש"
-        >
-          🎯
-        </button>
-      )}
+      {/* Route mode: off by default, so clicking a point just opens its
+       * info popup. Toggle this on, then click a point to draw a walking
+       * route to it. */}
+      <button
+        onClick={() => setRouteModeActive((v) => !v)}
+        className="absolute bottom-36 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-lg shadow-md sm:bottom-24"
+        style={{ background: routeModeActive ? "#4285F4" : "white", color: routeModeActive ? "white" : "#4285F4" }}
+        aria-label="מצב מסלול הליכה"
+        title={routeModeActive ? "מצב מסלול פעיל — לחצו על נקודה ליצירת מסלול" : "הפעלת מצב מסלול הליכה לנקודה"}
+      >
+        🧭
+      </button>
 
       {/* Places list — reachable by scrolling/tapping this sheet, not by
        * dragging the map. Collapsed to a slim handle by default; expands to

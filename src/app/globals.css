@@ -77,3 +77,30 @@ button:disabled {
 .reveal-in {
   animation: reveal-up 0.6s ease-out both;
 }
+
+/* Portrait-only on phones — the web has no universal orientation-lock API
+ * (iOS Safari supports none at all), so this CSS overlay is the fallback;
+ * the manifest's "orientation" hint covers installed-PWA Android, and the
+ * native Capacitor app locks it for real via AndroidManifest.xml. Gated on
+ * max-height so a desktop window in a wide-but-short shape isn't affected —
+ * only actual small/phone screens rotated to landscape trigger it. */
+.portrait-only-gate {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .portrait-only-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem;
+    background: var(--background);
+    color: var(--text);
+  }
+}
