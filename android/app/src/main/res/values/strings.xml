@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">עודד המנקד</string>
+    <string name="title_activity_main">עודד המנקד</string>
+    <string name="package_name">com.odedthemapper.travi</string>
+    <string name="custom_url_scheme">com.odedthemapper.travi</string>
+</resources>
