@@ -137,6 +137,7 @@ export function MapScreen({
   }, [routeModeActive]);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
+  const pointPoisById = useMemo(() => new Map(pointPois.map((p) => [p.id, p])), [pointPois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
   const filtered = useMemo(
     () => (activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois),
@@ -439,14 +440,17 @@ export function MapScreen({
       const showLabels = zoom >= LABEL_ZOOM_THRESHOLD && !!bounds;
       markersByPoiId.current.forEach((marker, id) => {
         const position = marker.getPosition();
-        const poi = showLabels && position && bounds!.contains(position) ? pointPois.find((p) => p.id === id) : null;
+        // O(1) lookup — with 1000+ points this ran as an O(n) .find() per
+        // marker on every drag/zoom idle event, which was the real source
+        // of the reported lag right after panning the map.
+        const poi = showLabels && position && bounds!.contains(position) ? pointPoisById.get(id) : null;
         marker.setLabel(poi ? { text: poi.name, color: "#1F2937", fontSize: "11px", fontWeight: "700" } : "");
       });
     }
 
     const listener = map.addListener("idle", updateLabels);
     return () => listener.remove();
-  }, [loaded, pointPois]);
+  }, [loaded, pointPoisById]);
 
   function focusPoi(poiId: string) {
     const poi = filtered.find((p) => p.id === poiId);
@@ -563,12 +567,16 @@ export function MapScreen({
     >
       <div ref={mapDivRef} className="h-full w-full" />
 
-      {/* top-12 clears Google's own Map/Satellite type-control button,
-       * which renders near the top of the map div and would otherwise sit
-       * directly under this row. Small arrow buttons flank the pill row as
-       * an alternative to dragging it; the row's own native scrollbar is
-       * hidden (.no-scrollbar) so it just feels like a swipeable strip. */}
-      <div className="absolute inset-x-0 top-12 z-10 flex items-center gap-1 px-2">
+      {/* Mobile: top-12 clears Google's own Map/Satellite type-control
+       * button, which renders near the top of the map div and would
+       * otherwise sit directly under this row. Desktop: instead sits
+       * beside that control on the same line — using physical left/right
+       * (not RTL start/end) since Google pins its own control to the
+       * physical top-left corner regardless of page direction. Small arrow
+       * buttons flank the pill row as an alternative to dragging it; the
+       * row's own native scrollbar is hidden (.no-scrollbar) so it just
+       * feels like a swipeable strip. */}
+      <div className="absolute inset-x-0 top-12 z-10 flex items-center gap-1 px-2 sm:inset-x-auto sm:top-2 sm:left-48 sm:right-2">
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
@@ -646,23 +654,35 @@ export function MapScreen({
 
       {/* Route mode: off by default, so clicking a point just opens its
        * info popup. Toggle this on, then click a point to draw a walking
-       * route to it. */}
-      <button
-        onClick={() => setRouteModeActive((v) => !v)}
-        className="absolute bottom-36 end-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-lg shadow-md sm:bottom-24"
-        style={{ background: routeModeActive ? "#4285F4" : "white", color: routeModeActive ? "white" : "#4285F4" }}
-        aria-label="מצב מסלול הליכה"
-        title={routeModeActive ? "מצב מסלול פעיל — לחצו על נקודה ליצירת מסלול" : "הפעלת מצב מסלול הליכה לנקודה"}
-      >
-        🧭
-      </button>
+       * route to it. group-hover drives a custom tooltip bubble instead of
+       * relying on the native title tooltip. */}
+      <div className="group absolute bottom-36 end-3 z-10 sm:bottom-6">
+        <button
+          onClick={() => setRouteModeActive((v) => !v)}
+          className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
+          style={{ background: routeModeActive ? "#4285F4" : "white", color: routeModeActive ? "white" : "#4285F4" }}
+          aria-label="מצב מסלול הליכה"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="4" cy="20" r="2" fill="currentColor" stroke="none" />
+            <circle cx="20" cy="4" r="2" fill="currentColor" stroke="none" />
+            <path d="M4 18c0-5 6-3 6-8s6-3 6-6" strokeDasharray="2.5 2.5" />
+          </svg>
+        </button>
+        <span
+          className="pointer-events-none absolute bottom-full end-0 mb-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
+          style={{ background: "#111827" }}
+        >
+          {routeModeActive ? "מצב מסלול פעיל — לחצו על נקודה" : "הפעלת מצב מסלול הליכה"}
+        </span>
+      </div>
 
       {/* Places list — reachable by scrolling/tapping this sheet, not by
        * dragging the map. Collapsed to a slim handle by default; expands to
        * show the full clickable list, same behavior as the old split-view
        * map screen's sidebar list. */}
       <div
-        className="absolute inset-x-0 bottom-16 z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:bottom-4 sm:end-4 sm:start-auto sm:w-80 sm:rounded-2xl"
+        className="absolute inset-x-0 bottom-16 z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
         style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem" }}
       >
         <button
