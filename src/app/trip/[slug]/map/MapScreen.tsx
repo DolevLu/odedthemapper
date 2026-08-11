@@ -11,6 +11,7 @@ import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 import { sunAzimuthDeg, shadedSidePath } from "@/lib/shadow";
+import { fetchStreetsInBounds, type StreetWay } from "@/lib/streetNetwork";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
@@ -26,6 +27,10 @@ const METERS_PER_DEGREE_LAT = 111320;
 // Only label individual pins once zoomed in enough that a name tag per
 // marker is legible rather than overlapping clutter.
 const LABEL_ZOOM_THRESHOLD = 16;
+
+// Below this zoom the viewport covers too much ground for a reasonable
+// Overpass query (and the map would be too cluttered with shade lines).
+const SHADOW_MIN_ZOOM = 15;
 
 // Walking routes / district lines always render in the same brand purple,
 // regardless of whatever color the KML import happened to assign.
@@ -110,6 +115,9 @@ export function MapScreen({
   const [trailPoints, setTrailPoints] = useState(initialTrail);
   const [heatmapVisible, setHeatmapVisible] = useState(false);
   const [shadowVisible, setShadowVisible] = useState(false);
+  const [shadowStreets, setShadowStreets] = useState<StreetWay[]>([]);
+  const [shadowLoading, setShadowLoading] = useState(false);
+  const [shadowError, setShadowError] = useState<string | null>(null);
   const [listOpen, setListOpen] = useState(false);
 
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
@@ -229,34 +237,72 @@ export function MapScreen({
   // Approximate "which side of the street is shaded" — a heuristic (street
   // bearing vs. real sun position for the map's current center/time), not a
   // true building-height shadow simulation, since no free worldwide
-  // building-height API exists. Only covers the streets already in our data.
+  // building-height API exists. Street geometry comes from OpenStreetMap's
+  // Overpass API for whatever's currently on screen, refreshed as you pan —
+  // Google Maps JS API has no way to enumerate the road network itself.
+  useEffect(() => {
+    if (!loaded || !mapRef.current || !shadowVisible) return;
+    const map = mapRef.current;
+
+    async function refreshStreets() {
+      const zoom = map.getZoom() ?? 0;
+      const bounds = map.getBounds();
+      if (zoom < SHADOW_MIN_ZOOM || !bounds) {
+        setShadowStreets([]);
+        setShadowError(zoom < SHADOW_MIN_ZOOM ? "התקרבו יותר כדי לראות צל רחובות" : null);
+        return;
+      }
+      setShadowLoading(true);
+      setShadowError(null);
+      try {
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const streets = await fetchStreetsInBounds({ south: sw.lat(), west: sw.lng(), north: ne.lat(), east: ne.lng() });
+        setShadowStreets(streets);
+      } catch {
+        setShadowError("לא הצלחנו לטעון רחובות — נסו שוב");
+      } finally {
+        setShadowLoading(false);
+      }
+    }
+
+    refreshStreets();
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+    const listener = map.addListener("idle", () => {
+      if (debounce) clearTimeout(debounce);
+      debounce = setTimeout(refreshStreets, 800);
+    });
+    return () => {
+      listener.remove();
+      if (debounce) clearTimeout(debounce);
+    };
+  }, [loaded, shadowVisible]);
+
+  // Renders the fetched streets as shaded-side offset lines, recomputing the
+  // sun's position each time the street set changes.
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
     shadowPolylinesRef.current.forEach((p) => p.setMap(null));
     shadowPolylinesRef.current = [];
-    if (!shadowVisible) return;
+    if (!shadowVisible || shadowStreets.length === 0) return;
 
     const center = mapRef.current.getCenter();
     if (!center) return;
     const sunAzimuth = sunAzimuthDeg(new Date(), center.lat(), center.lng());
 
-    const linePois = shapePois.filter((poi) => poi.geometryType === "line");
-    shadowPolylinesRef.current = linePois
-      .map((poi) => {
-        const path = (poi.geometryCoords ?? []).map(([lng, lat]) => ({ lat, lng }));
-        if (path.length < 2) return null;
-        return new google.maps.Polyline({
+    shadowPolylinesRef.current = shadowStreets.map(
+      (path) =>
+        new google.maps.Polyline({
           path: shadedSidePath(path, sunAzimuth),
           strokeColor: "#111111",
-          strokeWeight: 5,
+          strokeWeight: 4,
           strokeOpacity: 0.35,
           clickable: false,
           zIndex: 40,
           map: mapRef.current!,
-        });
-      })
-      .filter((p): p is google.maps.Polyline => p !== null);
-  }, [loaded, shadowVisible, shapePois]);
+        })
+    );
+  }, [loaded, shadowVisible, shadowStreets]);
 
   // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
   const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
@@ -536,7 +582,7 @@ export function MapScreen({
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151" }}
           title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
-          🌑 צל
+          🌑 {shadowVisible && shadowLoading ? "טוען..." : "צל"}
         </button>
       </div>
 
@@ -545,6 +591,9 @@ export function MapScreen({
       )}
       {routeError && (
         <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{routeError}</div>
+      )}
+      {shadowVisible && shadowError && (
+        <div className="absolute inset-x-3 top-40 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{shadowError}</div>
       )}
 
       {userPosition && (
