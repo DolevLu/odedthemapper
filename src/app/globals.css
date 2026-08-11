@@ -78,6 +78,18 @@ button:disabled {
   animation: reveal-up 0.6s ease-out both;
 }
 
+/* Hides the native scrollbar on a horizontally-scrollable strip (e.g. the
+ * map's floating filter pills) while keeping drag/swipe scrolling itself —
+ * meant to feel like dragging a strip, not a page with a visible scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Portrait-only on phones — the web has no universal orientation-lock API
  * (iOS Safari supports none at all), so this CSS overlay is the fallback;
  * the manifest's "orientation" hint covers installed-PWA Android, and the

@@ -103,6 +103,7 @@ export function MapScreen({
   const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
   const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const autoLocationStartedRef = useRef(false);
+  const pillRowRef = useRef<HTMLDivElement>(null);
   // Mirrors of state that marker click listeners need to read fresh without
   // forcing a full marker teardown/rebuild every time they change (markers
   // are only created once per filtered set — rebuilding them on every GPS
@@ -564,8 +565,19 @@ export function MapScreen({
 
       {/* top-12 clears Google's own Map/Satellite type-control button,
        * which renders near the top of the map div and would otherwise sit
-       * directly under this row. */}
-      <div className="absolute inset-x-0 top-12 z-10 flex gap-2 overflow-x-auto p-3">
+       * directly under this row. Small arrow buttons flank the pill row as
+       * an alternative to dragging it; the row's own native scrollbar is
+       * hidden (.no-scrollbar) so it just feels like a swipeable strip. */}
+      <div className="absolute inset-x-0 top-12 z-10 flex items-center gap-1 px-2">
+        <button
+          onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+          aria-label="גלילה שמאלה"
+        >
+          ‹
+        </button>
+        <div ref={pillRowRef} className="no-scrollbar flex flex-1 gap-2 overflow-x-auto scroll-smooth p-1">
         <button
           onClick={() => setActiveCategory(null)}
           className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
@@ -610,6 +622,15 @@ export function MapScreen({
           title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
           🌑 {shadowVisible && shadowLoading ? "טוען..." : "צל"}
+        </button>
+        </div>
+        <button
+          onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+          aria-label="גלילה ימינה"
+        >
+          ›
         </button>
       </div>
 
