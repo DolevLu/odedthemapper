@@ -65,8 +65,12 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
           </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {holidays.map((h) => (
-              <div key={`${h.date}-${h.name}`} className="flex items-center justify-between rounded-lg p-3" style={{ background: "var(--background)", borderRadius: "var(--radius)" }}>
-                <span className="font-semibold">{h.name}</span>
+              <div
+                key={`${h.date}-${h.name}`}
+                className="flex items-center justify-between border p-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
+                style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
+              >
+                <span className="font-semibold">🎉 {h.name}</span>
                 <span className="text-sm opacity-60">{new Date(h.date).toLocaleDateString("he-IL")}</span>
               </div>
             ))}
@@ -82,8 +86,12 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
         <p className="mb-4 text-sm opacity-70">דברים שכדאי לדעתנו לשקול להזמין מראש ביעד הזה.</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {recommendations.map((rec) => (
-            <div key={rec.title} className="rounded-lg p-3" style={{ background: "var(--background)", borderRadius: "var(--radius)" }}>
-              <p className="font-semibold">{rec.title}</p>
+            <div
+              key={rec.title}
+              className="border p-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
+              style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
+            >
+              <p className="font-semibold">✨ {rec.title}</p>
               <p className="text-sm opacity-70">{rec.note}</p>
             </div>
           ))}

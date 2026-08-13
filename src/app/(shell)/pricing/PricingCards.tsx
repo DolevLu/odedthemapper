@@ -31,7 +31,7 @@ export function PricingCards() {
           return (
             <div
               key={plan.key}
-              className="relative flex flex-col gap-5 rounded-3xl border p-8"
+              className="game-pop-in group relative flex flex-col gap-5 rounded-3xl border p-8 transition-transform duration-300 hover:-translate-y-2"
               style={{
                 borderColor: plan.highlighted ? "#7C3AED" : "rgba(0,0,0,0.08)",
                 background: plan.highlighted ? "linear-gradient(180deg, #FAF5FF, #FFFFFF)" : "white",
@@ -40,10 +40,10 @@ export function PricingCards() {
             >
               {plan.highlighted && (
                 <span
-                  className="absolute -top-3 right-8 rounded-full px-3 py-1 text-xs font-bold text-white"
+                  className="absolute -top-3 right-8 rounded-full px-3 py-1 text-xs font-bold text-white transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110"
                   style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
                 >
-                  הכי פופולרי
+                  ⭐ הכי פופולרי
                 </span>
               )}
               <div>
