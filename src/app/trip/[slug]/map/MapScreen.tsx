@@ -610,13 +610,14 @@ export function MapScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusPoiId, loaded, filtered]);
 
-  // Preview-mode controls stay visible (grayed) but redirect to login instead
-  // of doing anything, so an anonymous visitor can see what's there without
-  // being able to actually use it.
+  // Preview-mode controls stay visible (grayed) but route to the pricing
+  // page instead of doing anything — anonymous visitors see what upgrading
+  // unlocks before being asked to create an account, rather than being sent
+  // straight to a login form.
   function previewGate(action: () => void) {
     return () => {
       if (preview) {
-        router.push(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}`)}`);
+        router.push("/pricing");
         return;
       }
       action();
@@ -648,11 +649,11 @@ export function MapScreen({
           className="pointer-events-none absolute inset-x-0 bottom-16 z-30 flex justify-center px-3 sm:bottom-4"
         >
           <Link
-            href={`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}`)}`}
+            href="/pricing"
             className="pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
             style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
           >
-            🔓 תצוגה מקדימה — התחברו או הירשמו כדי לפתוח את כל התכונות
+            🔓 תצוגה מקדימה — שדרגו את החבילה כדי לפתוח את כל התכונות
           </Link>
         </div>
       )}

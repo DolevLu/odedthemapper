@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
 
@@ -66,7 +66,6 @@ export function AppSidebar({
   isLoggedIn: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -84,13 +83,11 @@ export function AppSidebar({
   function handleDestItemClick(item: DestItem, e: React.MouseEvent) {
     if (!isUnlocked(item)) {
       e.preventDefault();
-      if (!currentSlug) {
-        setLockedTier("no-destination");
-      } else if (!isLoggedIn) {
-        router.push(`/login?callbackUrl=${encodeURIComponent(destHref(item))}`);
-      } else {
-        setLockedTier(item.tier as "silver" | "gold");
-      }
+      // Anonymous and logged-in-but-unpaid visitors see the same "upgrade
+      // your package" popup (which links to /pricing) — anonymous visitors
+      // aren't sent straight to /login, since they need to see what they'd
+      // be unlocking before being asked to create an account.
+      setLockedTier(!currentSlug ? "no-destination" : (item.tier as "silver" | "gold"));
     } else {
       setDrawerOpen(false);
     }

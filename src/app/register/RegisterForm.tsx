@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
-export function LoginForm() {
+export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,10 +20,24 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "שגיאה בהרשמה");
+      setLoading(false);
+      return;
+    }
+
     const result = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
     if (result?.error) {
-      setError("אימייל או סיסמה שגויים");
+      setError("ההרשמה הצליחה, אך ההתחברות נכשלה — נסו להתחבר ידנית");
       return;
     }
     router.push(callbackUrl);
@@ -31,9 +46,17 @@ export function LoginForm() {
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-6 py-16">
-      <h1 className="text-2xl font-bold">התחברות</h1>
+      <h1 className="text-2xl font-bold">הרשמה</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input
+          type="text"
+          required
+          placeholder="שם מלא"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="rounded-lg border border-black/15 px-4 py-2"
+        />
         <input
           type="email"
           required
@@ -45,7 +68,8 @@ export function LoginForm() {
         <input
           type="password"
           required
-          placeholder="סיסמה"
+          minLength={8}
+          placeholder="סיסמה (8+ תווים)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="rounded-lg border border-black/15 px-4 py-2"
@@ -56,16 +80,16 @@ export function LoginForm() {
           disabled={loading}
           className="rounded-lg bg-black px-4 py-2 font-semibold text-white disabled:opacity-50"
         >
-          {loading ? "מתחבר..." : "התחברות"}
+          {loading ? "נרשם..." : "הרשמה"}
         </button>
       </form>
 
       <GoogleSignInButton callbackUrl={callbackUrl} />
 
       <p className="text-sm opacity-70">
-        אין לך חשבון?{" "}
-        <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-semibold underline">
-          הרשמה
+        כבר יש לך חשבון?{" "}
+        <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-semibold underline">
+          התחברות
         </Link>
       </p>
     </div>

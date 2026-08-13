@@ -17,7 +17,7 @@ export default async function SubscribePage({
   if (!(planKey in PLANS)) notFound();
 
   const session = await auth();
-  if (!session?.user?.id) redirect(`/login?callbackUrl=/subscribe/${planKey}${cycle ? `?cycle=${cycle}` : ""}`);
+  if (!session?.user?.id) redirect(`/register?callbackUrl=${encodeURIComponent(`/subscribe/${planKey}${cycle ? `?cycle=${cycle}` : ""}`)}`);
 
   const plan = PLANS[planKey as PlanKey];
   const billingCycle = cycle === "annual" ? "annual" : "monthly";
