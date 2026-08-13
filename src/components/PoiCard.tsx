@@ -104,34 +104,34 @@ export function PoiCard({
           background: "var(--surface)",
         }}
       >
-        <div className="relative aspect-[4/3] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
+        <div className="relative aspect-[4/1] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
           {poi.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={poi.photoUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: poi.categoryColor }}>
-                <CategoryIcon name={poi.categoryName} size={26} />
+              <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: poi.categoryColor }}>
+                <CategoryIcon name={poi.categoryName} size={18} />
               </span>
             </div>
           )}
-          <span className="absolute end-2 top-2" onClick={(e) => e.stopPropagation()}>
+          <span className="absolute end-1.5 top-1.5" onClick={(e) => e.stopPropagation()}>
             <FavoriteButton poiId={poi.id} slug={slug} initialFavorited={favorited} />
           </span>
           {poi.distanceKm !== undefined && (
-            <span className="absolute bottom-2 start-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium text-white">
+            <span className="absolute bottom-1 start-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
               {poi.distanceKm.toFixed(1)} ק״מ
             </span>
           )}
         </div>
-        <div className="flex flex-col gap-1.5 p-3">
-          <h3 className="flex items-center gap-1.5 truncate font-bold">
-            <CategoryIcon name={poi.categoryName} size={14} />
+        <div className="flex flex-col gap-0.5 p-2">
+          <h3 className="flex items-center gap-1 truncate text-sm font-bold leading-tight">
+            <CategoryIcon name={poi.categoryName} size={12} />
             {poi.name}
           </h3>
-          <p className="truncate text-xs opacity-60">{poi.areaName}</p>
+          <p className="truncate text-[10px] leading-tight opacity-60">{poi.areaName}</p>
           {(tag || poi.hours || scheduled !== undefined) && (
-            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+            <div className="flex flex-wrap items-center gap-1">
               {tag && <Badge>{STATUS_TAG_MATCH.test(tag) ? `🌱 ${tag}` : tag}</Badge>}
               {poi.hours && <Badge>🕐 {poi.hours}</Badge>}
               {scheduled !== undefined && <SchedulePill scheduled={scheduled} />}
