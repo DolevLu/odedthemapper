@@ -63,6 +63,35 @@
 /* A thin wavy "trail" line down the itinerary's stop list — a squiggle tile
  * repeated vertically and colored via mask so it follows each destination's
  * theme accent, rather than a flat straight connector. */
+/* Hand-drawn/scrapbook accents reused across POI cards, the album, and
+ * itinerary — nothing sits perfectly straight or grid-aligned, matching the
+ * playful illustrated reference look rather than a stiff SaaS grid. */
+.hand-card {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+}
+.hand-card:hover {
+  transform: rotate(0deg) !important;
+}
+
+.washi-tape {
+  position: absolute;
+  top: -8px;
+  left: 14px;
+  width: 46px;
+  height: 18px;
+  transform: rotate(-7deg);
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--accent) 55%, white),
+    color-mix(in srgb, var(--accent) 55%, white) 4px,
+    color-mix(in srgb, var(--accent) 30%, white) 4px,
+    color-mix(in srgb, var(--accent) 30%, white) 8px
+  );
+  opacity: 0.85;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+}
+
 .route-connector-line {
   width: 12px;
   background-color: var(--accent);
