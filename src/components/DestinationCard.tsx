@@ -12,7 +12,7 @@ export function DestinationCard({ destination }: { destination: DestinationSumma
       <Link
         href={isComingSoon ? "#" : `/trip/${destination.slug}`}
         aria-disabled={isComingSoon}
-        className="group flex h-full flex-col overflow-hidden border transition-shadow hover:shadow-xl"
+        className="game-pop-in group flex h-full flex-col overflow-hidden border transition-all duration-300 hover:-translate-y-1.5 hover:rotate-[-0.5deg] hover:shadow-xl"
         style={{
           borderRadius: "1.25rem",
           borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
@@ -41,7 +41,7 @@ export function DestinationCard({ destination }: { destination: DestinationSumma
           </span>
           {destination.isBestSeller && (
             <span
-              className="absolute start-3 top-3 rounded-full px-3 py-1 text-xs font-extrabold text-white shadow-md"
+              className="absolute start-3 top-3 rounded-full px-3 py-1 text-xs font-extrabold text-white shadow-md transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110"
               style={{ background: "linear-gradient(135deg, #F59E0B, #DC2626)" }}
             >
               🔥 BEST SELLER

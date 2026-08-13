@@ -130,18 +130,22 @@ export function NowScreen({
 
       {!activeCategory ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {categorySummary.map((cat) => (
+          {categorySummary.map((cat, i) => (
             <button
               key={cat.name}
               onClick={() => setActiveCategory(cat.name)}
-              className="flex flex-col items-center gap-2 border p-5 text-center transition-transform hover:-translate-y-0.5 hover:shadow-md"
+              className="game-pop-in group flex flex-col items-center gap-2 border p-5 text-center transition-transform hover:-translate-y-1 hover:shadow-md hover:rotate-1"
               style={{
                 borderRadius: "var(--radius)",
                 borderColor: `color-mix(in srgb, ${cat.color} 30%, transparent)`,
                 background: `color-mix(in srgb, ${cat.color} 12%, var(--surface))`,
+                animationDelay: `${Math.min(i, 10) * 40}ms`,
               }}
             >
-              <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-sm" style={{ background: cat.color }}>
+              <span
+                className="flex h-16 w-16 items-center justify-center rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
+                style={{ background: cat.color }}
+              >
                 <CategoryIcon name={cat.name} size={32} />
               </span>
               <span className="font-bold">{cat.name}</span>

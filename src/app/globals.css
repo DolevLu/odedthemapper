@@ -181,6 +181,17 @@ a.rounded-full:active {
   transform: scale(1.25) rotate(-8deg);
 }
 
+/* A soft, colored glow on focus for every text input/select/textarea in the
+ * app — replaces the browser's flat default outline with something that
+ * matches the destination's theme accent, without changing each form's own
+ * border styling (which stays as each form already set it). */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
 /* A rounder, friendlier scrollbar (Chromium/WebKit) — thin default browser
  * scrollbars read as generic-app, not as part of this world. Firefox falls
  * back to its own thin/auto scrollbar via scrollbar-width below. */
