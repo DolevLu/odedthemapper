@@ -130,7 +130,7 @@ export function AppSidebar({
                   color: active ? "white" : "var(--text, #1a1a1a)",
                 }}
               >
-                <span className="text-lg">{item.icon}</span>
+                <span className="icon-pop text-lg">{item.icon}</span>
                 <span>{item.label}</span>
               </Link>
             );
@@ -164,7 +164,7 @@ export function AppSidebar({
                       if (!active) e.currentTarget.style.background = "transparent";
                     }}
                   >
-                    <span>{item.icon}</span>
+                    <span className="icon-pop">{item.icon}</span>
                     <span className="flex-1">{item.label}</span>
                     {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                   </Link>
@@ -248,7 +248,7 @@ export function AppSidebar({
                     color: active ? "white" : "var(--text, #1a1a1a)",
                   }}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="icon-pop text-lg">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               );
@@ -277,7 +277,7 @@ export function AppSidebar({
                           color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
                         }}
                       >
-                        <span>{item.icon}</span>
+                        <span className="icon-pop">{item.icon}</span>
                         <span className="flex-1">{item.label}</span>
                         {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                       </Link>
@@ -359,7 +359,7 @@ function MobileTab({
       className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
       style={{ color: active ? "var(--primary, #7C3AED)" : "var(--text, #1a1a1a)" }}
     >
-      <span className="text-xl leading-none">{icon}</span>
+      <span className={`icon-pop text-xl leading-none ${active ? "game-pop-in" : ""}`}>{icon}</span>
       <span className="max-w-full truncate px-0.5">{label}</span>
     </Link>
   );

@@ -110,6 +110,100 @@ body {
   background: var(--background);
   color: var(--text);
   font-family: var(--font-body);
+  /* A very soft dot-grid texture behind every screen — the "board game
+   * table" touch that makes flat sections feel less like a bare SaaS page,
+   * without competing with actual content (barely visible, fixed so it
+   * doesn't scroll-jitter on long pages). */
+  background-image: radial-gradient(color-mix(in srgb, var(--primary) 14%, transparent) 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-attachment: fixed;
+}
+
+/* --- Playful/game-like interaction layer -------------------------------
+ * Applied broadly via the class patterns already used for every button and
+ * pill site-wide (`rounded-full`), so this cascades across every screen
+ * without having to touch each one individually. */
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.85) translateY(6px); }
+  60% { opacity: 1; transform: scale(1.03) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.game-pop-in {
+  animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes idle-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-3px) rotate(3deg); }
+}
+
+.site-logo {
+  animation: idle-bob 3.2s ease-in-out infinite;
+  transform-origin: 60% 90%;
+}
+.site-logo:hover {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+/* Solid-filled pill buttons (primary CTAs across the whole app) get a
+ * sticker-like lift on hover and a satisfying squash on press. Scoped to
+ * actual clickable elements — not every rounded-full span/badge — so
+ * static pills (status tags, category chips as plain <span>s) are untouched. */
+button.rounded-full:not(:disabled),
+a.rounded-full {
+  transform-origin: center;
+}
+button.rounded-full:not(:disabled):hover,
+a.rounded-full:hover {
+  transform: translateY(-2px) scale(1.035);
+  filter: brightness(1.04);
+}
+button.rounded-full:not(:disabled):active,
+a.rounded-full:active {
+  transform: scale(0.94);
+}
+
+/* Emoji/icon glyphs (nav icons, category icons) get a little life on hover
+ * instead of sitting completely static. */
+.icon-pop {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.icon-pop:hover {
+  transform: scale(1.25) rotate(-8deg);
+}
+
+/* A rounder, friendlier scrollbar (Chromium/WebKit) — thin default browser
+ * scrollbars read as generic-app, not as part of this world. Firefox falls
+ * back to its own thin/auto scrollbar via scrollbar-width below. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary) 40%, transparent) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 35%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 55%, transparent);
+  background-clip: padding-box;
 }
 
 h1, h2, h3, h4, h5, h6 {

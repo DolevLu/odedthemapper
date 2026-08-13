@@ -43,7 +43,7 @@ export async function SiteHeader() {
         <span className="hidden text-lg font-extrabold sm:inline">עודד המנקד</span>
         <span className="text-lg font-extrabold sm:hidden">טראבי</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-mark.svg" alt="עודד המנקד" className="h-9 w-9" />
+        <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-9 w-9" />
       </Link>
     </header>
   );
