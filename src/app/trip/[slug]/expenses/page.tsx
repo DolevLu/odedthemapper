@@ -58,7 +58,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
       >
         <form action={budgetAction} className="flex flex-wrap items-end gap-3">
           <label className="text-xs opacity-60">
-            תקציב כולל ($)
+            תקציב כולל (₪)
             <input
               name="totalBudget"
               type="number"
@@ -86,11 +86,11 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
         </form>
 
         <div className="mt-5 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-          <Stat label="סה״כ הוצאות" value={`$${total.toFixed(0)}`} />
-          <Stat label="תקציב כולל" value={totalBudget !== null ? `$${totalBudget.toFixed(0)}` : "—"} />
+          <Stat label="סה״כ הוצאות" value={`₪${total.toFixed(0)}`} />
+          <Stat label="תקציב כולל" value={totalBudget !== null ? `₪${totalBudget.toFixed(0)}` : "—"} />
           <Stat
             label="נשאר בתקציב"
-            value={remaining !== null ? `$${remaining.toFixed(0)}` : "—"}
+            value={remaining !== null ? `₪${remaining.toFixed(0)}` : "—"}
             warn={remaining !== null && remaining < 0}
           />
           <DailyRemaining dailyBudget={dailyBudget} spentByDay={spentByDay} />
@@ -109,7 +109,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
             </option>
           ))}
         </select>
-        <input name="amount" type="number" step="0.01" min="0" placeholder="סכום $" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+        <input name="amount" type="number" step="0.01" min="0" placeholder="סכום ₪" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
         <input name="spentAt" type="date" defaultValue={todayKey} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
         <input name="note" placeholder="הערה" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
         <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white" style={{ background: "var(--primary)" }}>
@@ -125,7 +125,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
             <div key={key}>
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-sm font-bold opacity-70">{new Date(key).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}</h3>
-                <span className="text-sm font-semibold">${dayTotal.toFixed(0)}</span>
+                <span className="text-sm font-semibold">₪{dayTotal.toFixed(0)}</span>
               </div>
               <div className="flex flex-col gap-2">
                 {dayExpenses.map((e) => (
@@ -135,7 +135,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
                     style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
                   >
                     <div>
-                      <span className="font-semibold">${(e.amountCents / 100).toFixed(0)}</span>
+                      <span className="font-semibold">₪{(e.amountCents / 100).toFixed(0)}</span>
                       <span className="ms-2 text-sm opacity-60">
                         {e.category}
                         {e.note ? ` · ${e.note}` : ""}

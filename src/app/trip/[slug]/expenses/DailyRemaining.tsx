@@ -40,7 +40,7 @@ export function DailyRemaining({
         </select>
       </label>
       <div className="mt-1 text-lg font-extrabold" style={{ color: remaining !== null && remaining < 0 ? "#DC2626" : "var(--primary)" }}>
-        {remaining !== null ? `$${remaining.toFixed(0)}` : "—"}
+        {remaining !== null ? `₪${remaining.toFixed(0)}` : "—"}
       </div>
     </div>
   );
