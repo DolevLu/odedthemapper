@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
@@ -21,7 +21,10 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
 
   const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
-  if (accessLevel === "none") return <UpgradeRequired tier="silver" />;
+  if (accessLevel === "none") {
+    if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}/favorites`)}`);
+    return <UpgradeRequired tier="silver" />;
+  }
 
   const userId = session!.user!.id;
 

@@ -3,6 +3,7 @@ import { GOOGLE_FONTS_HREF } from "@/lib/theme/fonts";
 import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
+import { PromoDrawer } from "@/components/PromoDrawer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <PortraitOnlyGate />
         <Providers>{children}</Providers>
+        <PromoDrawer />
         <ServiceWorkerRegister />
       </body>
     </html>

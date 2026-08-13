@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
@@ -16,20 +16,21 @@ export default async function TripLayout({
 }) {
   const { slug } = await params;
   const [session, destination] = await Promise.all([auth(), getDestinationBySlug(slug)]);
-  if (!session?.user?.id) redirect(`/login?callbackUrl=/trip/${slug}`);
   if (!destination) notFound();
 
-  // Free users can now browse the whole app shell — individual screens gate
-  // themselves by tier (see AppSidebar + UpgradeRequired) instead of a hard
+  // Anonymous visitors can browse the shell too — free categories work fully,
+  // the map renders a reduced/read-only preview, and everything else gates
+  // itself per-screen (see AppSidebar + UpgradeRequired) rather than a hard
   // redirect away from the destination entirely.
-  const accessLevel = await getAccessLevel(session.user.id, destination.id);
+  const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
+  const isLoggedIn = Boolean(session?.user?.id);
 
   return (
     <DestinationThemeProvider theme={destination.theme} as="main" className="flex min-h-screen flex-1 flex-col">
       <SiteHeader />
 
       <div className="flex flex-1 flex-col sm:flex-row">
-        <AppSidebar currentSlug={slug} accessLevel={accessLevel} />
+        <AppSidebar currentSlug={slug} accessLevel={accessLevel} isLoggedIn={isLoggedIn} />
         <div className="min-w-0 flex-1 p-6 pb-32 sm:pb-6">{children}</div>
       </div>
 

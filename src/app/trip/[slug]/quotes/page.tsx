@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
@@ -14,7 +14,10 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
 
   const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
-  if (accessLevel !== "gold") return <UpgradeRequired tier="gold" />;
+  if (accessLevel !== "gold") {
+    if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}/quotes`)}`);
+    return <UpgradeRequired tier="gold" />;
+  }
 
   const userId = session!.user!.id;
 

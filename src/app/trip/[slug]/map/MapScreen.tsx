@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
@@ -40,7 +41,7 @@ const SHAPE_COLOR = "#7C3AED";
 const INFO_ACTION_BTN_STYLE =
   "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
 
-function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean): string {
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, preview: boolean): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
@@ -49,8 +50,11 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean)
     : "";
   // Plain data-attributed buttons, not React — Google's InfoWindow content is
   // an HTML string, so clicks are wired up separately via the "domready"
-  // event (see the infoWindow "domready" listener below).
-  const actions = `<div style="display:flex;gap:6px;margin-top:8px">
+  // event (see the infoWindow "domready" listener below). In preview mode
+  // the popup is informational only — no personal-data actions to gate.
+  const actions = preview
+    ? ""
+    : `<div style="display:flex;gap:6px;margin-top:8px">
     <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
     <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה"}</button>
   </div>`;
@@ -88,6 +92,7 @@ export function MapScreen({
   logisticPins = [],
   destinationId,
   initialTrail = [],
+  preview = false,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
@@ -96,7 +101,13 @@ export function MapScreen({
   logisticPins?: LogisticPin[];
   destinationId: string;
   initialTrail?: { lat: number; lng: number }[];
+  /** Anonymous/unsubscribed visitors: the map itself still renders (pan/zoom/
+   * markers all work), but every control that reads or writes personal data —
+   * filters, layers, route mode, the POI list, favoriting — is grayed out and
+   * routes to login instead of functioning. */
+  preview?: boolean;
 }) {
+  const router = useRouter();
   const { loaded, error } = useGoogleMaps();
   const searchParams = useSearchParams();
   const focusPoiId = searchParams.get("focus");
@@ -437,7 +448,9 @@ export function MapScreen({
   // click never surprises you with a walking route you didn't ask for.
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
     setSelectedPoiId(poi.id);
-    infoWindowRef.current?.setContent(infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id)));
+    infoWindowRef.current?.setContent(
+      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), preview)
+    );
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
       if (userPositionRef.current) drawRouteTo(poi);
@@ -575,11 +588,11 @@ export function MapScreen({
   // instead of waiting for a button press, since this map is now the trip's
   // home screen.
   useEffect(() => {
-    if (!loaded || autoLocationStartedRef.current) return;
+    if (!loaded || preview || autoLocationStartedRef.current) return;
     autoLocationStartedRef.current = true;
     toggleGps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
+  }, [loaded, preview]);
 
   // Deep link support (?focus=<poiId>), e.g. from a Travi chat suggestion —
   // clears any active category filter so the target POI's marker exists.
@@ -596,6 +609,20 @@ export function MapScreen({
     if (markersByPoiId.current.has(focusPoiId)) focusPoi(focusPoiId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusPoiId, loaded, filtered]);
+
+  // Preview-mode controls stay visible (grayed) but redirect to login instead
+  // of doing anything, so an anonymous visitor can see what's there without
+  // being able to actually use it.
+  function previewGate(action: () => void) {
+    return () => {
+      if (preview) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}`)}`);
+        return;
+      }
+      action();
+    };
+  }
+  const previewDim: React.CSSProperties = preview ? { opacity: 0.45, filter: "grayscale(1)" } : {};
 
   if (error) {
     return (
@@ -616,6 +643,20 @@ export function MapScreen({
     >
       <div ref={mapDivRef} className="h-full w-full" />
 
+      {preview && (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-16 z-30 flex justify-center px-3 sm:bottom-4"
+        >
+          <Link
+            href={`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}`)}`}
+            className="pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
+            style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+          >
+            🔓 תצוגה מקדימה — התחברו או הירשמו כדי לפתוח את כל התכונות
+          </Link>
+        </div>
+      )}
+
       {/* Mobile: top-12 clears Google's own Map/Satellite type-control
        * button, which renders near the top of the map div and would
        * otherwise sit directly under this row. Desktop: instead sits
@@ -627,7 +668,7 @@ export function MapScreen({
        * feels like a swipeable strip. */}
       <div className="absolute inset-x-0 top-12 z-10 flex items-center gap-1 px-2 sm:inset-x-auto sm:top-2 sm:left-48 sm:right-2">
         <button
-          onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+          onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
           aria-label="גלילה שמאלה"
@@ -636,11 +677,12 @@ export function MapScreen({
         </button>
         <div ref={pillRowRef} className="no-scrollbar flex flex-1 gap-2 overflow-x-auto scroll-smooth p-1">
         <button
-          onClick={() => setActiveCategory(null)}
+          onClick={previewGate(() => setActiveCategory(null))}
           className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
           style={{
             background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
             color: activeCategory === null ? "white" : "var(--text)",
+            ...previewDim,
           }}
         >
           הכל
@@ -648,41 +690,42 @@ export function MapScreen({
         {categoryNames.map((name) => (
           <button
             key={name}
-            onClick={() => setActiveCategory(name)}
+            onClick={previewGate(() => setActiveCategory(name))}
             className="shrink-0 rounded-full px-3 py-1.5 text-sm font-medium shadow-md"
             style={{
               background: activeCategory === name ? "var(--primary)" : "rgba(255,255,255,0.94)",
               color: activeCategory === name ? "white" : "var(--text)",
+              ...previewDim,
             }}
           >
             {name}
           </button>
         ))}
         <button
-          onClick={() => setHeatmapVisible((v) => !v)}
+          onClick={previewGate(() => setHeatmapVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
-          style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C" }}
+          style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C", ...previewDim }}
         >
           🔥 מפת חום
         </button>
         <button
-          onClick={() => setTrailVisible((v) => !v)}
+          onClick={previewGate(() => setTrailVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
-          style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A" }}
+          style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A", ...previewDim }}
         >
           🟢 איפה כבר הייתי
         </button>
         <button
-          onClick={() => setShadowVisible((v) => !v)}
+          onClick={previewGate(() => setShadowVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-md"
-          style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151" }}
+          style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
           title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
           🌑 {shadowVisible && shadowLoading ? "טוען..." : "צל"}
         </button>
         </div>
         <button
-          onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+          onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
           aria-label="גלילה ימינה"
@@ -707,9 +750,9 @@ export function MapScreen({
        * relying on the native title tooltip. */}
       <div className="group absolute bottom-36 end-3 z-10 sm:bottom-6">
         <button
-          onClick={() => setRouteModeActive((v) => !v)}
+          onClick={previewGate(() => setRouteModeActive((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
-          style={{ background: routeModeActive ? "#4285F4" : "white", color: routeModeActive ? "white" : "#4285F4" }}
+          style={{ background: routeModeActive ? "#4285F4" : "white", color: routeModeActive ? "white" : "#4285F4", ...previewDim }}
           aria-label="מצב מסלול הליכה"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -732,10 +775,10 @@ export function MapScreen({
        * map screen's sidebar list. */}
       <div
         className="absolute inset-x-0 bottom-16 z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
-        style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem" }}
+        style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem", ...previewDim }}
       >
         <button
-          onClick={() => setListOpen((v) => !v)}
+          onClick={previewGate(() => setListOpen((v) => !v))}
           className="flex shrink-0 items-center justify-between gap-2 px-4 py-3 text-sm font-semibold"
         >
           <span>📋 {sortedList.length} נקודות ברשימה{gpsActive && userPosition ? " · ממוין לפי קרבה" : ""}</span>

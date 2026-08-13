@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { resolvePromoDiscount } from "@/lib/promoCodes";
 
 export function OrgConfirmButton({ billingCycle }: { billingCycle: "monthly" | "annual" }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const promoDiscount = resolvePromoDiscount(promoCode);
 
   async function handleSubmit() {
     setLoading(true);
@@ -14,7 +17,7 @@ export function OrgConfirmButton({ billingCycle }: { billingCycle: "monthly" | "
     const res = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planKey: "org", billingCycle, destinationIds: [] }),
+      body: JSON.stringify({ planKey: "org", billingCycle, destinationIds: [], promoCode: promoCode || undefined }),
     });
     const body = await res.json();
     setLoading(false);
@@ -26,7 +29,19 @@ export function OrgConfirmButton({ billingCycle }: { billingCycle: "monthly" | "
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-medium opacity-70">
+        קוד קופון (אופציונלי)
+        <input
+          value={promoCode}
+          onChange={(e) => setPromoCode(e.target.value)}
+          placeholder="למשל TRAVI15"
+          className="mt-1 block w-full rounded-xl border border-black/10 px-3 py-2 font-normal"
+        />
+        {promoDiscount > 0 && (
+          <span className="mt-1 block text-xs font-semibold text-emerald-600">✓ הנחה של {Math.round(promoDiscount * 100)}% תחול בתשלום</span>
+        )}
+      </label>
       <button
         onClick={handleSubmit}
         disabled={loading}

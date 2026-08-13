@@ -4,7 +4,6 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { getAccessLevel } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { MapScreen } from "./map/MapScreen";
 
 export default async function TripHomePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -14,19 +13,27 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
 
   const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
-  if (accessLevel === "none") return <UpgradeRequired tier="silver" />;
+  const userId = session?.user?.id;
+
+  // Anonymous/unsubscribed visitors get a reduced, read-only map preview
+  // instead of being blocked outright — there's no personal data (favorites,
+  // logistics, GPS trail) to load for them, so those queries are simply
+  // skipped rather than crashing on a missing userId.
+  const isFullAccess = accessLevel !== "none";
 
   const [pois, favorites, logisticPinRows, trail] = await Promise.all([
     getFlatPoisForDestination(destination.id),
-    prisma.favorite.findMany({ where: { userId: session!.user!.id }, select: { poiId: true } }),
-    prisma.tripLogistic.findMany({
-      where: { userId: session!.user!.id, destinationId: destination.id, lat: { not: null }, lng: { not: null } },
-    }),
-    prisma.locationPing.findMany({
-      where: { userId: session!.user!.id, destinationId: destination.id },
-      orderBy: { recordedAt: "asc" },
-      select: { lat: true, lng: true },
-    }),
+    isFullAccess && userId ? prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }) : Promise.resolve([]),
+    isFullAccess && userId
+      ? prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id, lat: { not: null }, lng: { not: null } } })
+      : Promise.resolve([]),
+    isFullAccess && userId
+      ? prisma.locationPing.findMany({
+          where: { userId, destinationId: destination.id },
+          orderBy: { recordedAt: "asc" },
+          select: { lat: true, lng: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
@@ -50,6 +57,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
       logisticPins={logisticPins}
       destinationId={destination.id}
       initialTrail={trail}
+      preview={!isFullAccess}
     />
   );
 }

@@ -11,10 +11,10 @@ export default async function PackingPage({ params }: { params: Promise<{ slug: 
   if (!destination) notFound();
 
   const session = await auth();
-  const userId = session!.user!.id;
+  const userId = session?.user?.id;
 
   const [checks, coupons, bookablePois] = await Promise.all([
-    prisma.packingCheck.findMany({ where: { userId, destinationId: destination.id } }),
+    userId ? prisma.packingCheck.findMany({ where: { userId, destinationId: destination.id } }) : Promise.resolve([]),
     prisma.coupon.findMany({ where: { destinationId: null } }),
     prisma.pointOfInterest.findMany({
       where: { wantsBooking: true, category: { area: { destinationId: destination.id } } },

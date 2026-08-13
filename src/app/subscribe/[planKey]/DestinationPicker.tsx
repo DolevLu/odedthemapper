@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PlanKey } from "@/lib/plans";
+import { resolvePromoDiscount } from "@/lib/promoCodes";
 
 type DestOption = { id: string; slug: string; name: string; tagline: string | null };
 
@@ -23,6 +24,8 @@ export function DestinationPicker({
   const [selected, setSelected] = useState<string[]>(preselectId ? [preselectId] : []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const promoDiscount = resolvePromoDiscount(promoCode);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -42,7 +45,7 @@ export function DestinationPicker({
     const res = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planKey, billingCycle, destinationIds: selected }),
+      body: JSON.stringify({ planKey, billingCycle, destinationIds: selected, promoCode: promoCode || undefined }),
     });
     const body = await res.json();
     setLoading(false);
@@ -87,6 +90,19 @@ export function DestinationPicker({
           );
         })}
       </div>
+      <label className="text-sm font-medium opacity-70">
+        קוד קופון (אופציונלי)
+        <input
+          value={promoCode}
+          onChange={(e) => setPromoCode(e.target.value)}
+          placeholder="למשל TRAVI15"
+          className="mt-1 block w-full rounded-xl border border-black/10 px-3 py-2 font-normal"
+        />
+        {promoDiscount > 0 && (
+          <span className="mt-1 block text-xs font-semibold text-emerald-600">✓ הנחה של {Math.round(promoDiscount * 100)}% תחול בתשלום</span>
+        )}
+      </label>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button
         onClick={handleSubmit}

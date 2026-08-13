@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { addExpense, deleteExpense, setTripBudget } from "@/lib/actions/trip";
+import { LoginPromptBanner } from "@/components/LoginPromptBanner";
 import { DailyRemaining } from "./DailyRemaining";
 
 const CATEGORIES = ["אוכל", "תחבורה", "לינה", "אטרקציות", "קניות", "אחר"];
@@ -17,15 +18,14 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
   if (!destination) notFound();
 
   const session = await auth();
-  const userId = session!.user!.id;
+  const userId = session?.user?.id;
 
-  const [expenses, budget] = await Promise.all([
-    prisma.expense.findMany({
-      where: { userId, destinationId: destination.id },
-      orderBy: { spentAt: "desc" },
-    }),
-    prisma.tripBudget.findUnique({ where: { userId_destinationId: { userId, destinationId: destination.id } } }),
-  ]);
+  const [expenses, budget] = userId
+    ? await Promise.all([
+        prisma.expense.findMany({ where: { userId, destinationId: destination.id }, orderBy: { spentAt: "desc" } }),
+        prisma.tripBudget.findUnique({ where: { userId_destinationId: { userId, destinationId: destination.id } } }),
+      ])
+    : [[], null];
 
   const total = expenses.reduce((sum, e) => sum + e.amountCents, 0) / 100;
   const groups = new Map<string, typeof expenses>();
@@ -56,34 +56,38 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
         className="border p-5"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
-        <form action={budgetAction} className="flex flex-wrap items-end gap-3">
-          <label className="text-xs opacity-60">
-            תקציב כולל (₪)
-            <input
-              name="totalBudget"
-              type="number"
-              step="1"
-              min="0"
-              defaultValue={budget ? budget.totalCents / 100 : ""}
-              className="mt-1 block w-32 rounded-lg border px-3 py-2"
-              style={{ borderColor: "var(--primary)" }}
-            />
-          </label>
-          <label className="text-xs opacity-60">
-            מספר ימי טיול
-            <input
-              name="tripDays"
-              type="number"
-              min="1"
-              defaultValue={budget?.tripDays ?? 1}
-              className="mt-1 block w-24 rounded-lg border px-3 py-2"
-              style={{ borderColor: "var(--primary)" }}
-            />
-          </label>
-          <button type="submit" className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: "var(--primary)" }}>
-            שמירת תקציב
-          </button>
-        </form>
+        {userId ? (
+          <form action={budgetAction} className="flex flex-wrap items-end gap-3">
+            <label className="text-xs opacity-60">
+              תקציב כולל (₪)
+              <input
+                name="totalBudget"
+                type="number"
+                step="1"
+                min="0"
+                defaultValue={budget ? budget.totalCents / 100 : ""}
+                className="mt-1 block w-32 rounded-lg border px-3 py-2"
+                style={{ borderColor: "var(--primary)" }}
+              />
+            </label>
+            <label className="text-xs opacity-60">
+              מספר ימי טיול
+              <input
+                name="tripDays"
+                type="number"
+                min="1"
+                defaultValue={budget?.tripDays ?? 1}
+                className="mt-1 block w-24 rounded-lg border px-3 py-2"
+                style={{ borderColor: "var(--primary)" }}
+              />
+            </label>
+            <button type="submit" className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: "var(--primary)" }}>
+              שמירת תקציב
+            </button>
+          </form>
+        ) : (
+          <LoginPromptBanner slug={slug} path="/expenses" message="התחברו כדי להגדיר תקציב ולעקוב אחרי ההוצאות שלכם" />
+        )}
 
         <div className="mt-5 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
           <Stat label="סה״כ הוצאות" value={`₪${total.toFixed(0)}`} />
@@ -97,25 +101,27 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
         </div>
       </div>
 
-      <form
-        action={addAction}
-        className="grid grid-cols-1 gap-3 border p-4 sm:grid-cols-5"
-        style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-      >
-        <select name="category" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }}>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <input name="amount" type="number" step="0.01" min="0" placeholder="סכום ₪" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-        <input name="spentAt" type="date" defaultValue={todayKey} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-        <input name="note" placeholder="הערה" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-        <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white" style={{ background: "var(--primary)" }}>
-          הוספה
-        </button>
-      </form>
+      {userId && (
+        <form
+          action={addAction}
+          className="grid grid-cols-1 gap-3 border p-4 sm:grid-cols-5"
+          style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
+        >
+          <select name="category" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }}>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <input name="amount" type="number" step="0.01" min="0" placeholder="סכום ₪" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="spentAt" type="date" defaultValue={todayKey} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="note" placeholder="הערה" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white" style={{ background: "var(--primary)" }}>
+            הוספה
+          </button>
+        </form>
+      )}
 
       <div className="flex flex-col gap-5">
         {sortedDays.map((key) => {

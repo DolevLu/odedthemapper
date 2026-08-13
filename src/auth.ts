@@ -44,7 +44,10 @@ providers.push(
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
+  // 90 days instead of Auth.js's 30-day default — "log in once and stay
+  // logged in" for a travel app people open sporadically over a whole trip,
+  // not something they sign into daily.
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 90 },
   pages: { signIn: "/login" },
   // Required behind Vercel's proxy on a custom domain — without this Auth.js
   // won't trust the incoming Host header and every session/auth request 500s

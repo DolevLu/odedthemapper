@@ -25,7 +25,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     <div className="flex min-h-screen flex-1 flex-col">
       <SiteHeader />
       <div className="flex flex-1 flex-col sm:flex-row">
-        <AppSidebar currentSlug={currentSlug} accessLevel={accessLevel} />
+        <AppSidebar currentSlug={currentSlug} accessLevel={accessLevel} isLoggedIn={Boolean(session?.user?.id)} />
         <div className="min-w-0 flex-1 pb-32 sm:pb-0">{children}</div>
       </div>
     </div>

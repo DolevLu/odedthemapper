@@ -4,11 +4,13 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { paymentProvider } from "@/lib/payments";
 import { PLANS, type PlanKey } from "@/lib/plans";
+import { resolvePromoDiscount } from "@/lib/promoCodes";
 
 const SubscribeSchema = z.object({
   planKey: z.enum(["solo", "family", "org"]),
   billingCycle: z.enum(["monthly", "annual"]),
   destinationIds: z.array(z.string()).default([]),
+  promoCode: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "בקשה לא תקינה" }, { status: 400 });
   }
 
-  const { planKey, billingCycle, destinationIds } = parsed.data;
+  const { planKey, billingCycle, destinationIds, promoCode } = parsed.data;
   const plan = PLANS[planKey as PlanKey];
 
   if (!plan.isOrgTier) {
@@ -35,7 +37,9 @@ export async function POST(request: Request) {
     }
   }
 
-  const amountCents = billingCycle === "monthly" ? plan.monthlyCents : plan.annualCents;
+  const baseAmountCents = billingCycle === "monthly" ? plan.monthlyCents : plan.annualCents;
+  const discount = resolvePromoDiscount(promoCode);
+  const amountCents = discount > 0 ? Math.round(baseAmountCents * (1 - discount)) : baseAmountCents;
   const periodDays = billingCycle === "monthly" ? 30 : 365;
   const currentPeriodEnd = new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000);
 

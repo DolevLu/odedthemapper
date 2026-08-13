@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
 
@@ -59,25 +59,38 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
 export function AppSidebar({
   currentSlug,
   accessLevel,
+  isLoggedIn,
 }: {
   currentSlug: string | null;
   accessLevel: "none" | "silver" | "gold";
+  isLoggedIn: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  function isUnlocked(tier: Tier): boolean {
+  // The map gets a reduced/read-only preview for anonymous visitors (see
+  // MapScreen's `preview` prop), so it isn't actually locked for them the
+  // way other silver items are — it just quietly degrades instead.
+  function isUnlocked(item: DestItem): boolean {
     if (!currentSlug) return false;
-    if (tier === "free") return true;
-    if (tier === "silver") return accessLevel === "silver" || accessLevel === "gold";
+    if (item.tier === "free") return true;
+    if (!isLoggedIn && item.href === "") return true;
+    if (item.tier === "silver") return accessLevel === "silver" || accessLevel === "gold";
     return accessLevel === "gold";
   }
 
   function handleDestItemClick(item: DestItem, e: React.MouseEvent) {
-    if (!isUnlocked(item.tier)) {
+    if (!isUnlocked(item)) {
       e.preventDefault();
-      setLockedTier(!currentSlug ? "no-destination" : (item.tier as "silver" | "gold"));
+      if (!currentSlug) {
+        setLockedTier("no-destination");
+      } else if (!isLoggedIn) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(destHref(item))}`);
+      } else {
+        setLockedTier(item.tier as "silver" | "gold");
+      }
     } else {
       setDrawerOpen(false);
     }
@@ -135,7 +148,7 @@ export function AppSidebar({
               <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
               {group.items.map((item) => {
                 const active = isDestActive(item);
-                const unlocked = isUnlocked(item.tier);
+                const unlocked = isUnlocked(item);
                 return (
                   <Link
                     key={item.href}
@@ -254,7 +267,7 @@ export function AppSidebar({
                   <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
                   {items.map((item) => {
                     const active = isDestActive(item);
-                    const unlocked = isUnlocked(item.tier);
+                    const unlocked = isUnlocked(item);
                     return (
                       <Link
                         key={item.href}
@@ -291,7 +304,14 @@ export function AppSidebar({
 
       {lockedTier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onClick={() => setLockedTier(null)}>
-          <div onClick={(e) => e.stopPropagation()}>
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setLockedTier(null)}
+              className="absolute -top-3 end-[-0.75rem] flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg shadow-md"
+              aria-label="סגירה"
+            >
+              ✕
+            </button>
             {lockedTier === "no-destination" ? (
               <div
                 className="mx-auto flex max-w-md flex-col items-center gap-4 border p-8 text-center"
@@ -300,7 +320,15 @@ export function AppSidebar({
                 <span className="text-4xl">🌍</span>
                 <h2 className="text-lg font-bold">בחרו יעד קודם</h2>
                 <p className="text-sm opacity-70">כדי לגשת למסך הזה, בחרו קודם יעד מתוך &quot;יעדים&quot;.</p>
-                <Link href="/destinations" className="rounded-full px-6 py-3 font-bold text-white" style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}>
+                {/* Also closes the popup on click — AppSidebar lives in the persistent
+                 * shell layout, not unmounted on route change, so without this the
+                 * popup stayed rendered on top of the destinations page after navigating. */}
+                <Link
+                  href="/destinations"
+                  onClick={() => setLockedTier(null)}
+                  className="rounded-full px-6 py-3 font-bold text-white"
+                  style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+                >
                   לבחירת יעד
                 </Link>
               </div>
