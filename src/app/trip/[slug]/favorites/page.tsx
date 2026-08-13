@@ -50,7 +50,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
             ⭐ המומלצים שלנו — אסור לפספס
           </h2>
           <p className="mb-4 text-sm opacity-60">האתרים והאטרקציות הידועים והאהובים ביותר ב{destination.name}.</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
             {mustSee.map((poi) => (
               <PoiCard
                 key={poi.id}
@@ -95,7 +95,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
         {favorites.length === 0 ? (
           <p className="text-sm opacity-60">עדיין לא שמרתם נקודות מועדפות. סמנו נקודות במפה כדי לראות אותן כאן.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
             {favorites.map((fav) => (
               <PoiCard
                 key={fav.id}
