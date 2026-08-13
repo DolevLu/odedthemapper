@@ -82,7 +82,11 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {tips.map((tip) => (
-              <div key={tip.id} className="border p-4" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
+              <div
+                key={tip.id}
+                className="game-pop-in border p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
+                style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
+              >
                 <p className="mb-1 text-xs font-semibold opacity-60">{TIP_CATEGORY_LABELS[tip.category] ?? tip.category}</p>
                 <p className="text-sm">{tip.text}</p>
               </div>
@@ -131,14 +135,20 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
             {coupons.map((c) => (
               <div
                 key={c.id}
-                className="flex flex-col gap-1 border p-4"
+                className="game-pop-in group flex flex-col gap-1 border p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
                 style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
               >
-                <h3 className="font-semibold">{c.partnerName}</h3>
+                <h3 className="font-semibold">🎁 {c.partnerName}</h3>
                 <p className="text-sm opacity-70">{c.discountDesc}</p>
                 {c.code && <p className="text-sm font-mono">קוד: {c.code}</p>}
                 {c.url && (
-                  <a href={c.url} target="_blank" rel="noreferrer" className="text-sm font-semibold underline" style={{ color: "var(--primary)" }}>
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-semibold underline transition-transform duration-200 group-hover:translate-x-[-2px]"
+                    style={{ color: "var(--primary)" }}
+                  >
                     לפרטים והטבה ←
                   </a>
                 )}
