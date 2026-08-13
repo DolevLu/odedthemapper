@@ -38,6 +38,42 @@ export async function createPriceQuote(destinationId: string, slug: string, form
   revalidatePath(`/trip/${slug}/quotes`);
 }
 
+/** Lightweight "add a row" for the CRM table — just a client name, so a lead
+ * can be logged the moment you hear about it. Pricing (basePrice etc.)
+ * starts at 0 and is filled in later via updateLeadDetails, unlike
+ * createPriceQuote's full form which requires a real price up front. */
+export async function createQuickLead(destinationId: string, slug: string, clientName: string) {
+  const userId = await requireUserId();
+  const name = clientName.trim();
+  if (!name) return;
+  await prisma.priceQuote.create({
+    data: { userId, destinationId, clientName: name, tripDays: 1, basePriceCents: 0, costCents: 0, includesBooking: false, bookingPriceCents: 0 },
+  });
+  revalidatePath(`/trip/${slug}/quotes`);
+}
+
+/** Inline spreadsheet-style edits from the CRM table — only the fields
+ * actually changed are passed, each independently validated/clamped. */
+export async function updateLeadDetails(
+  id: string,
+  slug: string,
+  fields: { clientName?: string; tripDays?: number; basePrice?: number; costPrice?: number }
+) {
+  const userId = await requireUserId();
+  const quote = await prisma.priceQuote.findUnique({ where: { id } });
+  if (!quote || quote.userId !== userId) return;
+
+  const data: Record<string, string | number> = {};
+  if (fields.clientName !== undefined && fields.clientName.trim()) data.clientName = fields.clientName.trim();
+  if (fields.tripDays !== undefined && Number.isFinite(fields.tripDays)) data.tripDays = Math.max(1, fields.tripDays);
+  if (fields.basePrice !== undefined && Number.isFinite(fields.basePrice)) data.basePriceCents = Math.max(0, Math.round(fields.basePrice * 100));
+  if (fields.costPrice !== undefined && Number.isFinite(fields.costPrice)) data.costCents = Math.max(0, Math.round(fields.costPrice * 100));
+  if (Object.keys(data).length === 0) return;
+
+  await prisma.priceQuote.update({ where: { id }, data });
+  revalidatePath(`/trip/${slug}/quotes`);
+}
+
 export async function deletePriceQuote(id: string, slug: string) {
   const userId = await requireUserId();
   const quote = await prisma.priceQuote.findUnique({ where: { id } });

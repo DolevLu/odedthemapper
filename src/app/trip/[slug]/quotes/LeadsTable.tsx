@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { sendPriceQuote, deletePriceQuote, updateLeadStatus } from "@/lib/actions/quotes";
+import { useState, useTransition } from "react";
+import { sendPriceQuote, deletePriceQuote, updateLeadStatus, createQuickLead, updateLeadDetails } from "@/lib/actions/quotes";
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   draft: { label: "טיוטה", color: "#6B7280" },
@@ -21,6 +21,9 @@ export type Lead = {
   id: string;
   clientName: string;
   tripDays: number;
+  basePrice: number;
+  costPrice: number;
+  currency: string;
   revenueLabel: string;
   profitLabel: string;
   status: string;
@@ -29,11 +32,7 @@ export type Lead = {
   signed: boolean;
 };
 
-export function LeadsTable({ leads, slug }: { leads: Lead[]; slug: string }) {
-  if (leads.length === 0) {
-    return <p className="text-sm opacity-60">עדיין לא נוצרו לידים ליעד הזה — הוסיפו אחד בטופס למעלה.</p>;
-  }
-
+export function LeadsTable({ leads, slug, destinationId }: { leads: Lead[]; slug: string; destinationId: string }) {
   return (
     <div className="overflow-x-auto border" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)" }}>
       <table className="w-full min-w-[720px] border-collapse text-sm">
@@ -52,17 +51,108 @@ export function LeadsTable({ leads, slug }: { leads: Lead[]; slug: string }) {
           {leads.map((lead) => (
             <LeadRow key={lead.id} lead={lead} slug={slug} />
           ))}
+          <QuickAddRow slug={slug} destinationId={destinationId} />
         </tbody>
       </table>
+      {leads.length === 0 && (
+        <p className="border-t p-3 text-sm opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+          עדיין לא נוצרו לידים ליעד הזה — הוסיפו ליד מהיר למטה, או השתמשו בטופס למעלה להצעת מחיר מלאה.
+        </p>
+      )}
     </div>
+  );
+}
+
+/** A spreadsheet-style "add a row" — just a client name, so a lead can be
+ * logged the moment you hear about it, without stopping to fill in pricing
+ * (that can be edited inline right in the table afterwards). */
+function QuickAddRow({ slug, destinationId }: { slug: string; destinationId: string }) {
+  const [name, setName] = useState("");
+  const [, startTransition] = useTransition();
+
+  function submit() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setName("");
+    startTransition(() => {
+      createQuickLead(destinationId, slug, trimmed);
+    });
+  }
+
+  return (
+    <tr className="border-t" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+      <td className="p-3" colSpan={7}>
+        <div className="flex items-center gap-2">
+          <span className="text-base opacity-50">➕</span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+            }}
+            placeholder="שם לקוח חדש — הוספת שורת ליד מהירה..."
+            className="flex-1 rounded-lg border border-dashed bg-transparent px-3 py-1.5 text-sm"
+            style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" }}
+          />
+          <button
+            onClick={submit}
+            disabled={!name.trim()}
+            className="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            style={{ background: "var(--primary)" }}
+          >
+            הוספת ליד
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/** Blur-to-save inline edit, matching how a spreadsheet cell behaves —
+ * no separate "edit mode" toggle needed. */
+function EditableCell({
+  value,
+  onSave,
+  type = "text",
+  className = "",
+  width,
+}: {
+  value: string | number;
+  onSave: (next: string) => void;
+  type?: "text" | "number";
+  className?: string;
+  width?: string;
+}) {
+  const [draft, setDraft] = useState(String(value));
+
+  return (
+    <input
+      type={type}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        if (draft !== String(value) && draft.trim() !== "") onSave(draft);
+        else setDraft(String(value));
+      }}
+      className={`rounded border border-transparent bg-transparent px-1 py-0.5 hover:border-black/10 focus:border-black/20 focus:bg-white/60 focus:outline-none ${className}`}
+      style={{ width }}
+      min={type === "number" ? 0 : undefined}
+    />
   );
 }
 
 function LeadRow({ lead, slug }: { lead: Lead; slug: string }) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [, startTransition] = useTransition();
   const status = STATUS_LABEL[lead.status] ?? STATUS_LABEL.draft;
   const url = lead.shareToken && typeof window !== "undefined" ? `${window.location.origin}/share/quote/${lead.shareToken}` : "";
+
+  function saveField(fields: Parameters<typeof updateLeadDetails>[2]) {
+    startTransition(() => {
+      updateLeadDetails(lead.id, slug, fields);
+    });
+  }
 
   async function handleSend() {
     setLoading(true);
@@ -79,16 +169,23 @@ function LeadRow({ lead, slug }: { lead: Lead; slug: string }) {
   return (
     <tr className="border-t" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
       <td className="p-3 font-semibold">
-        {lead.clientName}
+        <EditableCell value={lead.clientName} onSave={(v) => saveField({ clientName: v })} width="9rem" />
         {lead.signed && (
           <span className="ms-1.5 text-xs" title="נחתם">
             ✍️
           </span>
         )}
       </td>
-      <td className="p-3 opacity-70">{lead.tripDays}</td>
-      <td className="p-3 opacity-70">{lead.revenueLabel}</td>
-      <td className="p-3 font-semibold" style={{ color: "var(--primary)" }}>
+      <td className="p-3 opacity-70">
+        <EditableCell type="number" value={lead.tripDays} onSave={(v) => saveField({ tripDays: Number(v) })} width="3.5rem" />
+      </td>
+      <td className="p-3 opacity-70">
+        <span className="inline-flex items-center gap-1">
+          <EditableCell type="number" value={lead.basePrice} onSave={(v) => saveField({ basePrice: Number(v) })} width="4.5rem" />
+          {lead.currency}
+        </span>
+      </td>
+      <td className="p-3 font-semibold" style={{ color: "var(--primary)" }} title="ערכו את מחיר תכנון המסלול/העלות לעדכון הרווח">
         {lead.profitLabel}
       </td>
       <td className="p-3">
@@ -119,7 +216,8 @@ function LeadRow({ lead, slug }: { lead: Lead; slug: string }) {
           ) : (
             <button
               onClick={handleSend}
-              disabled={loading}
+              disabled={loading || lead.basePrice <= 0}
+              title={lead.basePrice <= 0 ? "הוסיפו מחיר תכנון לפני שליחת הצעה" : undefined}
               className="rounded-full border px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
               style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
             >

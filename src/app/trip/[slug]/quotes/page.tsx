@@ -65,10 +65,14 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
 
       <LeadsTable
         slug={slug}
+        destinationId={destination.id}
         leads={quotes.map((q) => ({
           id: q.id,
           clientName: q.clientName,
           tripDays: q.tripDays,
+          basePrice: q.basePriceCents / 100,
+          costPrice: q.costCents / 100,
+          currency: q.currency,
           revenueLabel: `${((q.basePriceCents + (q.includesBooking ? q.bookingPriceCents : 0)) / 100).toFixed(0)} ${q.currency}`,
           profitLabel: `$${((q.basePriceCents + (q.includesBooking ? q.bookingPriceCents : 0) - q.costCents) / 100).toFixed(0)}`,
           status: q.status,
