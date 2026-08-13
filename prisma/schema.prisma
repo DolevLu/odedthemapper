@@ -44,6 +44,7 @@ model Destination {
   priceQuotes  PriceQuote[]
   locationPings LocationPing[]
   albumMedia   AlbumMedia[]
+  albumSettings AlbumSettings[]
   quizQuestions QuizQuestion[]
   quizAttempts QuizAttempt[]
   tips         DestinationTip[]
@@ -149,6 +150,7 @@ model User {
   plannerProfile PlannerProfile?
   priceQuotes   PriceQuote[]
   albumMedia    AlbumMedia[]
+  albumSettings AlbumSettings[]
   quizAttempts  QuizAttempt[]
   itineraryTemplates ItineraryTemplate[]
   visitedCountries VisitedCountry[]
@@ -435,10 +437,29 @@ model AlbumMedia {
   type          String // photo | video
   url           String
   caption       String?
+  dayIndex      Int? // which trip day this belongs to, for day-grouped album layouts
   createdAt     DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+/** One row per user+destination — the digital album's look (template,
+ * background) and freeform day/section titles, plus a share token so the
+ * PDF-export page can render it without exposing the editor itself. */
+model AlbumSettings {
+  id              String  @id @default(cuid())
+  userId          String
+  destinationId   String
+  templateKey     String  @default("polaroid") // polaroid | timeline | postcard
+  backgroundColor String?
+  daysJson        String? // { [dayIndex]: { title, subtitle } }
+  shareToken      String? @unique
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId])
 }
 
 model QuizQuestion {

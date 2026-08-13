@@ -4,11 +4,38 @@ import { useRef, useState } from "react";
 import { startAmbientMusic } from "@/lib/ambientMusic";
 
 type Photo = { id: string; url: string };
+type TransitionMode = "zoom" | "fade" | "slide";
 
 const CANVAS_W = 960;
 const CANVAS_H = 540;
-const SECONDS_PER_PHOTO = 2.2;
 const FPS = 30;
+const MIN_SECONDS_PER_PHOTO = 1;
+const MAX_SECONDS_PER_PHOTO = 6;
+const DEFAULT_SECONDS_PER_PHOTO = 2.5;
+// How much of each photo's own display time is spent transitioning into the
+// next one — only used for "fade"/"slide" (zoom keeps the original hard cut).
+const TRANSITION_OVERLAP_FRACTION = 0.25;
+
+const TRANSITION_OPTIONS: { key: TransitionMode; label: string; hint: string }[] = [
+  { key: "zoom", label: "🔍 זום (Ken Burns)", hint: "זום עדין בתוך כל תמונה, חיתוך ישיר בין תמונות" },
+  { key: "fade", label: "🌫️ מעבר חלק (Fade)", hint: "תמונות עומדות, דהייה הדרגתית ביניהן" },
+  { key: "slide", label: "➡️ החלקה (Slide)", hint: "תמונה חדשה מחליקה פנימה" },
+];
+
+function drawImageCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
+  const imgRatio = img.width / img.height;
+  const canvasRatio = w / h;
+  let drawW: number;
+  let drawH: number;
+  if (imgRatio > canvasRatio) {
+    drawH = h;
+    drawW = drawH * imgRatio;
+  } else {
+    drawW = w;
+    drawH = drawW / imgRatio;
+  }
+  ctx.drawImage(img, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH);
+}
 
 function drawKenBurnsFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement, t: number, w: number, h: number) {
   const scale = 1 + 0.14 * t;
@@ -30,6 +57,69 @@ function drawKenBurnsFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement,
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(img, x, y, drawW, drawH);
 }
+
+/** Draws one output frame for `images[photoIndex]` at its own local progress
+ * `localT` (0..1). For "fade"/"slide", the tail end of each photo's window
+ * blends into the next photo; "zoom" keeps the original Ken-Burns-only, hard
+ * cut behavior. */
+function renderFrame(
+  ctx: CanvasRenderingContext2D,
+  images: HTMLImageElement[],
+  photoIndex: number,
+  localT: number,
+  mode: TransitionMode,
+  w: number,
+  h: number
+) {
+  const curr = images[photoIndex];
+  const next = images[photoIndex + 1];
+
+  if (mode === "zoom") {
+    drawKenBurnsFrame(ctx, curr, localT, w, h);
+    return;
+  }
+
+  const inTransition = Boolean(next) && localT > 1 - TRANSITION_OVERLAP_FRACTION;
+  if (!inTransition) {
+    drawKenBurnsFrame(ctx, curr, 0, w, h);
+    return;
+  }
+
+  const blendT = (localT - (1 - TRANSITION_OVERLAP_FRACTION)) / TRANSITION_OVERLAP_FRACTION;
+  if (mode === "fade") {
+    drawKenBurnsFrame(ctx, curr, 0, w, h);
+    ctx.save();
+    ctx.globalAlpha = blendT;
+    drawImageCover(ctx, next!, w, h);
+    ctx.restore();
+  } else {
+    const shift = blendT * w;
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(-shift, 0);
+    drawImageCover(ctx, curr, w, h);
+    ctx.restore();
+    ctx.save();
+    ctx.translate(w - shift, 0);
+    drawImageCover(ctx, next!, w, h);
+    ctx.restore();
+  }
+}
+
+/** Real MP4 (H.264) is tried first — supported by Safari's MediaRecorder —
+ * so the download is genuinely MP4 there; everywhere else (Chrome, Firefox)
+ * falls back to WebM, since browsers can't be made to produce MP4 without a
+ * much heavier client-side transcoder (e.g. ffmpeg.wasm). The UI is honest
+ * about which one you actually got rather than mislabeling a WebM as MP4. */
+const MIME_CANDIDATES = [
+  "video/mp4;codecs=avc1",
+  "video/mp4",
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm;codecs=vp9",
+  "video/webm",
+];
 
 function drawCaption(ctx: CanvasRenderingContext2D, text: string, w: number, h: number) {
   const barH = 44;
@@ -55,7 +145,10 @@ export function CollageBuilder({
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoExt, setVideoExt] = useState<"mp4" | "webm">("webm");
   const [error, setError] = useState<string | null>(null);
+  const [transitionMode, setTransitionMode] = useState<TransitionMode>("zoom");
+  const [secondsPerPhoto, setSecondsPerPhoto] = useState(DEFAULT_SECONDS_PER_PHOTO);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   function toggle(id: string) {
@@ -103,17 +196,16 @@ export function CollageBuilder({
         )
       );
 
-      const totalDurationSec = images.length * SECONDS_PER_PHOTO;
+      const totalDurationSec = images.length * secondsPerPhoto;
       music = startAmbientMusic(totalDurationSec);
 
       const stream = canvas.captureStream(FPS);
       const audioTrack = music.destinationStream.getAudioTracks()[0];
       if (audioTrack) stream.addTrack(audioTrack);
 
-      const mimeType =
-        ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm;codecs=vp9", "video/webm"].find((t) =>
-          MediaRecorder.isTypeSupported(t)
-        ) ?? "video/webm";
+      const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
+      const ext: "mp4" | "webm" = mimeType.startsWith("video/mp4") ? "mp4" : "webm";
+      setVideoExt(ext);
       const recorder = new MediaRecorder(stream, { mimeType });
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = (e) => {
@@ -124,16 +216,16 @@ export function CollageBuilder({
       });
       recorder.start();
 
-      const framesPerPhoto = Math.round(SECONDS_PER_PHOTO * FPS);
+      const framesPerPhoto = Math.round(secondsPerPhoto * FPS);
       const totalFrames = images.length * framesPerPhoto;
       let frame = 0;
       const frameDurationMs = 1000 / FPS;
 
-      for (const img of images) {
+      for (let photoIndex = 0; photoIndex < images.length; photoIndex++) {
         for (let f = 0; f < framesPerPhoto; f++) {
           const t = f / framesPerPhoto;
           const start = performance.now();
-          drawKenBurnsFrame(ctx, img, t, CANVAS_W, CANVAS_H);
+          renderFrame(ctx, images, photoIndex, t, transitionMode, CANVAS_W, CANVAS_H);
           drawCaption(ctx, `✈️ ${destinationName} · עודד המנקד`, CANVAS_W, CANVAS_H);
           frame++;
           setProgress(Math.round((frame / totalFrames) * 100));
@@ -157,8 +249,44 @@ export function CollageBuilder({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs opacity-60">
-        הסרטון נוצר אוטומטית בדפדפן שלכם (אפקט זום עדין, כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו — ללא צורך בהעלאה לשרת חיצוני.
+        הסרטון נוצר אוטומטית בדפדפן שלכם (כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו — ללא צורך בהעלאה לשרת חיצוני.
       </p>
+
+      <div className="flex flex-col gap-3 border p-3" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
+        <div>
+          <p className="mb-1.5 text-xs font-semibold opacity-70">אפקט מעבר בין תמונות</p>
+          <div className="flex flex-wrap gap-2">
+            {TRANSITION_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                title={opt.hint}
+                onClick={() => setTransitionMode(opt.key)}
+                className="rounded-full border px-3 py-1.5 text-sm font-semibold"
+                style={{
+                  borderColor: "var(--primary)",
+                  background: transitionMode === opt.key ? "var(--primary)" : "transparent",
+                  color: transitionMode === opt.key ? "white" : "var(--text)",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="flex items-center gap-3 text-xs font-semibold opacity-70">
+          משך כל תמונה — {secondsPerPhoto.toFixed(1)} שנ&apos;
+          <input
+            type="range"
+            min={MIN_SECONDS_PER_PHOTO}
+            max={MAX_SECONDS_PER_PHOTO}
+            step={0.5}
+            value={secondsPerPhoto}
+            onChange={(e) => setSecondsPerPhoto(Number(e.target.value))}
+            className="flex-1"
+          />
+        </label>
+      </div>
 
       {photos.length === 0 ? (
         <p className="text-sm opacity-50">אין עדיין תמונות ליצירת קולאז׳ — העלו קודם כמה תמונות בטאב &quot;העלאה&quot;.</p>
@@ -209,12 +337,17 @@ export function CollageBuilder({
           <video src={videoUrl} controls className="max-w-full" style={{ borderRadius: "var(--radius)" }} />
           <a
             href={videoUrl}
-            download={`${slug}-collage.webm`}
+            download={`${slug}-collage.${videoExt}`}
             className="rounded-full px-4 py-2 text-sm font-semibold text-white"
             style={{ background: "var(--primary)" }}
           >
-            הורדת הסרטון
+            הורדת הסרטון ({videoExt.toUpperCase()})
           </a>
+          {videoExt === "webm" && (
+            <p className="text-[11px] opacity-50">
+              הדפדפן הזה יודע להקליט WebM בלבד (נגן בכל מקום, גם ברשתות חברתיות) — ב-Safari הקובץ יורד כ-MP4 אמיתי.
+            </p>
+          )}
         </div>
       )}
     </div>

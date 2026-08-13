@@ -2,16 +2,23 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteAlbumMedia } from "@/lib/actions/album";
+import { deleteAlbumMedia, setAlbumMediaDay } from "@/lib/actions/album";
 import type { AlbumMediaItem } from "./AlbumScreen";
 
-export function AlbumGrid({ media, slug }: { media: AlbumMediaItem[]; slug: string }) {
+export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]; slug: string; dayOptions: number[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   function handleDelete(id: string) {
     startTransition(async () => {
       await deleteAlbumMedia(id, slug);
+      router.refresh();
+    });
+  }
+
+  function handleDayChange(id: string, value: string) {
+    startTransition(async () => {
+      await setAlbumMediaDay(id, slug, value ? Number(value) : null);
       router.refresh();
     });
   }
@@ -43,6 +50,20 @@ export function AlbumGrid({ media, slug }: { media: AlbumMediaItem[]; slug: stri
               ▶ וידאו
             </span>
           )}
+          <select
+            value={item.dayIndex ?? ""}
+            onChange={(e) => handleDayChange(item.id, e.target.value)}
+            disabled={pending}
+            className="absolute bottom-1.5 end-1.5 rounded-md border-0 bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white"
+            title="שיוך לפי יום בטיול — לחלוקת האלבום הדיגיטלי"
+          >
+            <option value="">ללא יום</option>
+            {dayOptions.map((d) => (
+              <option key={d} value={d}>
+                יום {d}
+              </option>
+            ))}
+          </select>
         </div>
       ))}
     </div>
