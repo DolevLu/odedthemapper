@@ -104,7 +104,7 @@ export function PoiCard({
           background: "var(--surface)",
         }}
       >
-        <div className="relative aspect-[4/1] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
+        <div className="relative aspect-[2.5/1] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
           {poi.photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={poi.photoUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
