@@ -6,6 +6,7 @@ import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { toggleFavorite, toggleWantsBooking } from "@/lib/actions/trip";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
 import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
@@ -36,18 +37,29 @@ const SHADOW_MIN_ZOOM = 15;
 // regardless of whatever color the KML import happened to assign.
 const SHAPE_COLOR = "#7C3AED";
 
-function infoWindowHtml(poi: FlatPoi): string {
+const INFO_ACTION_BTN_STYLE =
+  "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
+
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
   const description = poi.description
     ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${poi.description.slice(0, 220)}</div>`
     : "";
+  // Plain data-attributed buttons, not React — Google's InfoWindow content is
+  // an HTML string, so clicks are wired up separately via the "domready"
+  // event (see the infoWindow "domready" listener below).
+  const actions = `<div style="display:flex;gap:6px;margin-top:8px">
+    <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
+    <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה"}</button>
+  </div>`;
   return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
     ${photo}
     <strong>${poi.name}</strong><br/>
     <span style="opacity:.6;font-size:12px">${poi.categoryName} · ${poi.areaName}</span>
     ${description}
+    ${actions}
   </div>`;
 }
 
@@ -111,6 +123,11 @@ export function MapScreen({
   // source of laggy panning).
   const userPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   const routeModeActiveRef = useRef(false);
+  // Drive the info window's plain-HTML favorite/booking buttons — kept as
+  // refs (not state) since toggling them is a direct DOM update, not a
+  // React re-render, and the "domready" handler below is registered once.
+  const favoritedIdsRef = useRef<Set<string>>(new Set(favoritedIds));
+  const wantsBookingIdsRef = useRef<Set<string>>(new Set(pois.filter((p) => p.wantsBooking).map((p) => p.id)));
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
@@ -171,7 +188,37 @@ export function MapScreen({
       styles: DECLUTTERED_MAP_STYLES,
     });
     infoWindowRef.current = new google.maps.InfoWindow();
-  }, [loaded, pointPois]);
+
+    // Wires up the plain-HTML favorite/booking buttons inside the info
+    // window's content — fires on every open() (Maps rebuilds the content
+    // DOM node each time), so registering it once here is enough.
+    google.maps.event.addListener(infoWindowRef.current, "domready", () => {
+      const favBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-fav-btn]");
+      if (favBtn) {
+        favBtn.onclick = (e) => {
+          e.stopPropagation();
+          const poiId = favBtn.getAttribute("data-poi-id")!;
+          const nowFavorited = !favoritedIdsRef.current.has(poiId);
+          if (nowFavorited) favoritedIdsRef.current.add(poiId);
+          else favoritedIdsRef.current.delete(poiId);
+          favBtn.textContent = nowFavorited ? "❤️ מועדפים" : "🤍 מועדפים";
+          toggleFavorite(poiId, slug);
+        };
+      }
+      const bookBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-book-btn]");
+      if (bookBtn) {
+        bookBtn.onclick = (e) => {
+          e.stopPropagation();
+          const poiId = bookBtn.getAttribute("data-poi-id")!;
+          const nowWants = !wantsBookingIdsRef.current.has(poiId);
+          if (nowWants) wantsBookingIdsRef.current.add(poiId);
+          else wantsBookingIdsRef.current.delete(poiId);
+          bookBtn.textContent = nowWants ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה";
+          toggleWantsBooking(poiId, slug);
+        };
+      }
+    });
+  }, [loaded, pointPois, slug]);
 
   // Render line/polygon geometries (walking routes, districts, etc.) once.
   useEffect(() => {
@@ -390,7 +437,7 @@ export function MapScreen({
   // click never surprises you with a walking route you didn't ask for.
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
     setSelectedPoiId(poi.id);
-    infoWindowRef.current?.setContent(infoWindowHtml(poi));
+    infoWindowRef.current?.setContent(infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id)));
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
       if (userPositionRef.current) drawRouteTo(poi);

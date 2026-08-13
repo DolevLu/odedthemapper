@@ -19,6 +19,7 @@ export type FlatPoi = {
   tags: string[];
   photoUrl: string | null;
   description: string | null;
+  wantsBooking: boolean;
 };
 
 /** Strips <img> tags and remaining HTML markup from a KML description blob,
@@ -63,6 +64,7 @@ export async function getFlatPoisForDestination(destinationId: string): Promise<
               tip: true,
               hours: true,
               rawDescriptionHtml: true,
+              wantsBooking: true,
               tags: { select: { label: true } },
               photos: { take: 1, select: { url: true } },
             },
@@ -94,6 +96,7 @@ export async function getFlatPoisForDestination(destinationId: string): Promise<
           tags: poi.tags.map((t) => t.label),
           photoUrl: poi.photos[0]?.url ?? null,
           description: extractTextDescription(poi.rawDescriptionHtml),
+          wantsBooking: poi.wantsBooking,
         });
       }
     }

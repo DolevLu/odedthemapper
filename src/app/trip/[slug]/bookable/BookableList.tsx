@@ -18,8 +18,14 @@ export type BookablePoi = {
   favorited: boolean;
 };
 
+// Above this many items in a single unfiltered category list, cap the
+// render so the page doesn't choke on a destination with thousands of POIs
+// — picking a category (or a smaller destination) shows everything.
+const UNFILTERED_CAP = 60;
+
 export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string }) {
   const [items, setItems] = useState(pois);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   function toggle(id: string) {
@@ -31,6 +37,9 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
 
   const wanted = items.filter((p) => p.wantsBooking);
   const rest = items.filter((p) => !p.wantsBooking);
+  const categoryNames = Array.from(new Set(items.map((p) => p.categoryName))).sort();
+  const filteredRest = activeCategory ? rest.filter((p) => p.categoryName === activeCategory) : rest;
+  const visibleRest = activeCategory ? filteredRest : filteredRest.slice(0, UNFILTERED_CAP);
 
   return (
     <div className="flex flex-col gap-8">
@@ -49,10 +58,44 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
 
       <section>
         <h2 className="mb-3 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          כל האטרקציות ({rest.length})
+          כל האטרקציות ({filteredRest.length})
         </h2>
+        {categoryNames.length > 1 && (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className="rounded-full border px-3 py-1 text-xs font-semibold"
+              style={{
+                borderColor: "var(--primary)",
+                background: activeCategory === null ? "var(--primary)" : "transparent",
+                color: activeCategory === null ? "white" : "var(--text)",
+              }}
+            >
+              הכל
+            </button>
+            {categoryNames.map((name) => (
+              <button
+                key={name}
+                onClick={() => setActiveCategory(name)}
+                className="rounded-full border px-3 py-1 text-xs font-semibold"
+                style={{
+                  borderColor: "var(--primary)",
+                  background: activeCategory === name ? "var(--primary)" : "transparent",
+                  color: activeCategory === name ? "white" : "var(--text)",
+                }}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+        {!activeCategory && filteredRest.length > UNFILTERED_CAP && (
+          <p className="mb-2 text-xs opacity-50">
+            מציג {UNFILTERED_CAP} מתוך {filteredRest.length} — בחרו קטגוריה כדי לראות את כולן.
+          </p>
+        )}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {rest.slice(0, 60).map((poi) => (
+          {visibleRest.map((poi) => (
             <Row key={poi.id} poi={poi} slug={slug} onToggle={toggle} />
           ))}
         </div>
