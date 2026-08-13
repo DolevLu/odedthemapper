@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { colorForDay } from "@/lib/geo";
 import { deleteItineraryDay } from "@/lib/actions/trip";
 import { AddItemToDay } from "./AddItemToDay";
@@ -22,6 +22,18 @@ export function ItineraryDaysView({
 }) {
   const [mode, setMode] = useState<"grid" | "focused">("grid");
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const autoModeAppliedRef = useRef(false);
+
+  // Desktop defaults to the single-day focused view (paired side-by-side with
+  // the route map by the page) since planning one day at a time next to its
+  // route reads far better than a wall of day cards; mobile keeps the
+  // existing "all days" grid default. Only applied once on mount so it never
+  // fights a manual toggle afterwards.
+  useEffect(() => {
+    if (autoModeAppliedRef.current) return;
+    autoModeAppliedRef.current = true;
+    if (window.matchMedia("(min-width: 1024px)").matches) setMode("focused");
+  }, []);
 
   if (days.length === 0) return null;
 
@@ -29,7 +41,7 @@ export function ItineraryDaysView({
   const focusedDay = days[clampedIndex];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 lg:h-full lg:min-h-0">
       <div className="flex justify-end gap-1">
         <button
           onClick={() => setMode("grid")}
@@ -62,7 +74,7 @@ export function ItineraryDaysView({
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
           <div className="flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}>
             <button
               onClick={() => setFocusedIndex((i) => Math.max(0, i - 1))}
@@ -89,7 +101,11 @@ export function ItineraryDaysView({
               ›
             </button>
           </div>
-          <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} large />
+          {/* Independently scrollable on desktop so a long day's stop list
+           * doesn't push this column taller than the route map beside it. */}
+          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pe-1">
+            <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} large />
+          </div>
         </div>
       )}
     </div>

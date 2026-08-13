@@ -231,6 +231,14 @@ export async function removeItineraryItem(itemId: string, slug: string) {
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
+/** Saves a traveler's freeform personal note under a single itinerary stop
+ * (e.g. "get here before 9am to skip the line"). No revalidatePath — the
+ * input already shows what was typed, and refetching mid-edit would fight
+ * the debounced autosave. */
+export async function setItineraryItemNote(itemId: string, note: string) {
+  await prisma.itineraryItem.update({ where: { id: itemId }, data: { note: note.trim() || null } });
+}
+
 /**
  * Persists a new item order within a day after a drag-and-drop reorder.
  * The day's existing time-of-day values (sorted) are reassigned to the new

@@ -28,7 +28,7 @@ function transportIconFor(distanceKm: number): string {
   return "🚇";
 }
 
-export function DayRouteMap({ days }: { days: MapDay[] }) {
+export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fillHeight?: boolean }) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -138,7 +138,7 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={fillHeight ? "flex h-full min-h-0 flex-col gap-2" : "flex flex-col gap-2"}>
       {days.length > 1 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <button
@@ -172,7 +172,11 @@ export function DayRouteMap({ days }: { days: MapDay[] }) {
           })}
         </div>
       )}
-      <div ref={mapDivRef} className="h-[420px] w-full" style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }} />
+      <div
+        ref={mapDivRef}
+        className={fillHeight ? "w-full flex-1 min-h-0" : "h-[420px] w-full"}
+        style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
+      />
     </div>
   );
 }

@@ -444,7 +444,9 @@ export function MapScreen({
         // marker on every drag/zoom idle event, which was the real source
         // of the reported lag right after panning the map.
         const poi = showLabels && position && bounds!.contains(position) ? pointPoisById.get(id) : null;
-        marker.setLabel(poi ? { text: poi.name, color: "#1F2937", fontSize: "11px", fontWeight: "700" } : "");
+        marker.setLabel(
+          poi ? { text: poi.name, color: "#FFFFFF", fontSize: "11px", fontWeight: "700", className: "poi-marker-label" } : ""
+        );
       });
     }
 

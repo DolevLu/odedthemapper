@@ -85,22 +85,38 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
         <p className="text-sm opacity-60">עדיין אין ימים במסלול. לחצו על &quot;הוספת יום&quot; או השתמשו בבנאי האוטומטי כדי להתחיל.</p>
       )}
 
-      <ItineraryDaysView
-        slug={slug}
-        poiOptions={poiOptions}
-        days={(itinerary?.days ?? []).map((day) => ({
-          id: day.id,
-          dayIndex: day.dayIndex,
-          items: day.items.map((i) => ({
-            id: i.id,
-            timeOfDay: i.timeOfDay,
-            customLabel: i.customLabel,
-            poi: i.poi ? { name: i.poi.name, photoUrl: i.poi.photos[0]?.url ?? null } : null,
-          })),
-        }))}
-      />
+      {/* Desktop: itinerary (narrower, tall) beside the route map, same
+       * height, side-by-side instead of stacked — planning a day next to its
+       * route reads much better than scrolling between two stacked blocks.
+       * `dir="rtl"` on <html> makes flex-row's first child (the itinerary)
+       * render on the physical right, matching the requested layout.
+       * Mobile keeps the original stacked order untouched (no lg: classes
+       * apply below 1024px). */}
+      <div className="flex flex-col gap-6 lg:h-[calc(100vh-260px)] lg:min-h-[480px] lg:flex-row lg:items-stretch">
+        <div className="lg:min-h-0 lg:w-[420px] lg:shrink-0">
+          <ItineraryDaysView
+            slug={slug}
+            poiOptions={poiOptions}
+            days={(itinerary?.days ?? []).map((day) => ({
+              id: day.id,
+              dayIndex: day.dayIndex,
+              items: day.items.map((i) => ({
+                id: i.id,
+                timeOfDay: i.timeOfDay,
+                customLabel: i.customLabel,
+                note: i.note,
+                poi: i.poi ? { name: i.poi.name, photoUrl: i.poi.photos[0]?.url ?? null } : null,
+              })),
+            }))}
+          />
+        </div>
 
-      {mapDays.some((d) => d.points.length > 0) && <DayRouteMap days={mapDays} />}
+        {mapDays.some((d) => d.points.length > 0) && (
+          <div className="lg:min-h-0 lg:flex-1">
+            <DayRouteMap days={mapDays} fillHeight />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
