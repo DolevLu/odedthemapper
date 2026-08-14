@@ -134,11 +134,14 @@ function DayCard({
 
   return (
     <div
-      className="flex flex-col gap-3 overflow-hidden border"
+      className={`game-pop-in group flex flex-col gap-3 overflow-hidden border transition-transform duration-200 ${large ? "" : "hover:-translate-y-1 hover:rotate-[-0.3deg] hover:shadow-md"}`}
       style={{ borderRadius: "var(--radius)", borderColor: color, borderWidth: 2, background: "var(--surface)" }}
     >
       <div className={`flex items-center gap-2 px-4 pt-4 ${large ? "" : ""}`}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: color }}>
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
+          style={{ background: color }}
+        >
           {day.dayIndex}
         </span>
         <h2 className="flex-1 font-bold">יום {day.dayIndex}</h2>

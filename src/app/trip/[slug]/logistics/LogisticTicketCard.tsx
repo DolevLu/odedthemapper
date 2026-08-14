@@ -28,13 +28,16 @@ export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onD
   const isPdf = item.imageUrl?.toLowerCase().endsWith(".pdf") ?? false;
 
   return (
-    <div className="flex overflow-hidden shadow-sm" style={{ borderRadius: "var(--radius)" }}>
+    <div
+      className="game-pop-in group flex overflow-hidden shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.3deg] hover:shadow-md"
+      style={{ borderRadius: "var(--radius)" }}
+    >
       {/* Stub */}
       <div
         className="relative flex w-20 shrink-0 flex-col items-center justify-center gap-1 p-2 text-center text-white"
         style={{ background: meta.color }}
       >
-        <span className="text-2xl">{meta.icon}</span>
+        <span className="inline-block text-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">{meta.icon}</span>
         <span className="text-[10px] font-semibold leading-tight">{meta.label}</span>
       </div>
 
