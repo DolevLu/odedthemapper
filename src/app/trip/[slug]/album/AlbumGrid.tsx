@@ -29,13 +29,17 @@ export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-      {media.map((item) => (
-        <div key={item.id} className="group relative aspect-square overflow-hidden" style={{ borderRadius: "var(--radius)" }}>
+      {media.map((item, i) => (
+        <div
+          key={item.id}
+          className="game-pop-in group relative aspect-square overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          style={{ borderRadius: "var(--radius)", animationDelay: `${Math.min(i, 12) * 30}ms` }}
+        >
           {item.type === "video" ? (
-            <video src={item.url} className="h-full w-full object-cover" muted />
+            <video src={item.url} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" muted />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <img src={item.url} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
           )}
           <button
             onClick={() => handleDelete(item.id)}
