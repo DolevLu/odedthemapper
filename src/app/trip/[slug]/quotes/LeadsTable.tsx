@@ -167,7 +167,10 @@ function LeadRow({ lead, slug }: { lead: Lead; slug: string }) {
   }
 
   return (
-    <tr className="border-t" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+    <tr
+      className="group border-t transition-colors duration-150 hover:bg-black/[0.03]"
+      style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
+    >
       <td className="p-3 font-semibold">
         <EditableCell value={lead.clientName} onSave={(v) => saveField({ clientName: v })} width="9rem" />
         {lead.signed && (
@@ -203,7 +206,10 @@ function LeadRow({ lead, slug }: { lead: Lead; slug: string }) {
         </select>
       </td>
       <td className="p-3">
-        <span className="rounded-full px-2.5 py-1 text-xs font-semibold text-white" style={{ background: status.color }}>
+        <span
+          className="inline-block rounded-full px-2.5 py-1 text-xs font-semibold text-white transition-transform duration-200 group-hover:scale-105"
+          style={{ background: status.color }}
+        >
           {status.label}
         </span>
       </td>
