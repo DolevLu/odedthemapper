@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
-import { getVisitedCountryCodes } from "@/lib/actions/visitedCountries";
+import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedCountries";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { QuizPicker } from "./QuizPicker";
 
@@ -14,9 +14,10 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   const session = await auth();
   const userId = session?.user?.id;
 
-  const [questions, visitedCodes] = await Promise.all([
+  const [questions, visitedCodes, photosByCountry] = await Promise.all([
     prisma.quizQuestion.findMany({ where: { destinationId: destination.id } }),
     userId ? getVisitedCountryCodes(userId) : Promise.resolve([]),
+    userId ? getCountryPhotos(userId) : Promise.resolve({}),
   ]);
 
   return (
@@ -44,7 +45,7 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
         )}
       </div>
 
-      <VisitedCountriesMap initialVisited={visitedCodes} slug={slug} />
+      <VisitedCountriesMap initialVisited={visitedCodes} photosByCountry={photosByCountry} slug={slug} />
     </div>
   );
 }

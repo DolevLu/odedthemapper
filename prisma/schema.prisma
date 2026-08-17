@@ -158,6 +158,7 @@ model User {
   locationPings LocationPing[]
   phrasebookProgress PhrasebookProgress[]
   savedMapPins SavedMapPin[]
+  countryPhotos CountryPhoto[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -352,6 +353,21 @@ model SavedMapPin {
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, destinationId, placeId])
+}
+
+/** A photo manually attached to a visited country on the profile/quizzes
+ * world map (as opposed to a destination album photo, which is auto-merged
+ * in alongside these at read time — see resolveCountryPhotos()). */
+model CountryPhoto {
+  id          String   @id @default(cuid())
+  userId      String
+  countryCode String
+  url         String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, countryCode])
 }
 
 model TripLogistic {

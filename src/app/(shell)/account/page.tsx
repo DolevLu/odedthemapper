@@ -7,7 +7,7 @@ import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
 import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 import { getUserTravelStats } from "@/lib/stats";
 import { levelForPoints } from "@/lib/gamification";
-import { getVisitedCountryCodes } from "@/lib/actions/visitedCountries";
+import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedCountries";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
@@ -31,9 +31,10 @@ export default async function AccountPage() {
         })
       : [];
 
-  const [stats, visitedCodes] = await Promise.all([
+  const [stats, visitedCodes, photosByCountry] = await Promise.all([
     getUserTravelStats(session.user.id),
     getVisitedCountryCodes(session.user.id),
+    getCountryPhotos(session.user.id),
   ]);
   const level = levelForPoints(stats.totalPoints);
   const STAT_CARDS = [
@@ -65,7 +66,7 @@ export default async function AccountPage() {
       )}
 
       <div className="mb-8">
-        <VisitedCountriesMap initialVisited={visitedCodes} />
+        <VisitedCountriesMap initialVisited={visitedCodes} photosByCountry={photosByCountry} />
       </div>
 
       <h2 className="mb-6 text-2xl font-extrabold">המנוי שלי</h2>
