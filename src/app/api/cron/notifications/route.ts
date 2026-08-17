@@ -4,7 +4,9 @@ import { sendPushToUser } from "@/lib/push";
 
 // Most airlines open online check-in 24-48h before departure — 24h is a
 // conservative window that still lands well inside that range for almost
-// every carrier, checked hourly by the cron schedule in vercel.json.
+// every carrier. Checked once daily (see vercel.json) rather than hourly:
+// Vercel's Hobby plan caps cron jobs at once/day, and daily is plenty given
+// the 24h window and the once-per-day budget-alert cap below.
 const CHECKIN_WINDOW_HOURS = 24;
 const BUDGET_ALERT_THRESHOLD = 0.9;
 
@@ -15,7 +17,7 @@ function todayStart(): Date {
 }
 
 /**
- * Hourly cron target (see vercel.json) — sends two kinds of push
+ * Daily cron target (see vercel.json) — sends two kinds of push
  * notifications: flight check-in reminders (TripLogistic.startsAt inside the
  * next 24h, never sent twice thanks to checkinNotifiedAt) and budget alerts
  * (spending crossed 90% of TripBudget.totalCents, at most once per day
