@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { awardReferralCreditIfEligible } from "@/lib/referral";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ subscriptionId: string }> }) {
   const session = await auth();
@@ -16,6 +17,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ su
   }
 
   await prisma.subscription.update({ where: { id: subscription.id }, data: { status: "active" } });
+  await awardReferralCreditIfEligible(subscription.userId);
 
   return NextResponse.json({ ok: true });
 }

@@ -1,20 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { REFERRAL_STORAGE_KEY } from "@/lib/referralStorage";
 
 export function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const refCode = searchParams.get("ref");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Stashed in sessionStorage so it survives the full-page redirect round
+  // trip through Google OAuth — <ReferralClaimer/> (mounted app-wide) picks
+  // it up once the user lands back authenticated, regardless of which page
+  // that turns out to be.
+  useEffect(() => {
+    if (refCode) sessionStorage.setItem(REFERRAL_STORAGE_KEY, refCode);
+  }, [refCode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +34,7 @@ export function RegisterForm() {
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, ref: refCode ?? undefined }),
     });
 
     if (!res.ok) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PLANS, type PlanKey } from "@/lib/plans";
+import { awardReferralCreditIfEligible } from "@/lib/referral";
 
 const ChargeSchema = z.object({
   subscriptionId: z.string(),
@@ -87,5 +88,6 @@ export async function POST(request: Request) {
   }
 
   await prisma.subscription.update({ where: { id: subscription.id }, data: { status: "active" } });
+  await awardReferralCreditIfEligible(subscription.userId);
   return NextResponse.json({ ok: true });
 }

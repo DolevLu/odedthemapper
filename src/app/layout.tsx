@@ -4,6 +4,7 @@ import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
 import { PromoDrawer } from "@/components/PromoDrawer";
+import { ReferralClaimer } from "@/components/ReferralClaimer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +32,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <PortraitOnlyGate />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ReferralClaimer />
+        </Providers>
         <PromoDrawer />
         <ServiceWorkerRegister />
       </body>

@@ -9,11 +9,14 @@ import { getUserTravelStats } from "@/lib/stats";
 import { levelForPoints } from "@/lib/gamification";
 import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedCountries";
 import { syncLevelCredits } from "@/lib/credits";
+import { getReferralStats } from "@/lib/referral";
+import { REFERRAL_REWARD_CENTS } from "@/lib/referralConstants";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
 import { SwapDestinationButton } from "./SwapDestinationButton";
 import { LevelCard } from "./LevelCard";
+import { ReferralCard } from "./ReferralCard";
 
 export default async function AccountPage() {
   const session = await auth();
@@ -32,11 +35,12 @@ export default async function AccountPage() {
         })
       : [];
 
-  const [stats, visitedCodes, photosByCountry, credits] = await Promise.all([
+  const [stats, visitedCodes, photosByCountry, credits, referral] = await Promise.all([
     getUserTravelStats(session.user.id),
     getVisitedCountryCodes(session.user.id),
     getCountryPhotos(session.user.id),
     syncLevelCredits(session.user.id),
+    getReferralStats(session.user.id),
   ]);
   const level = levelForPoints(stats.totalPoints);
   const creditDiscountPct = plan ? Math.min(100, Math.round((credits.creditCents / plan.monthlyCents) * 100)) : null;
@@ -54,6 +58,8 @@ export default async function AccountPage() {
       <h1 className="mb-4 text-2xl font-extrabold">הפרופיל שלי</h1>
 
       <LevelCard level={level} totalPoints={stats.totalPoints} creditCents={credits.creditCents} creditDiscountPct={creditDiscountPct} />
+
+      <ReferralCard code={referral.code} referredCount={referral.referredCount} rewardIls={REFERRAL_REWARD_CENTS / 100} />
 
       <div className="mb-8 grid grid-cols-3 gap-3">
         {STAT_CARDS.map((s) => (
