@@ -48,13 +48,26 @@ export async function getCountryPhotos(userId: string): Promise<Record<string, C
   return result;
 }
 
-export async function uploadCountryPhoto(countryCode: string, formData: FormData) {
+/** Open to every logged-in user for any country in the world — not gated by
+ * having a paid subscription to a matching destination, since this is just
+ * a personal travel scrapbook, not destination content. Uploading a photo
+ * also marks that country visited (if it wasn't already), since adding a
+ * photo from a place implies you were there — one less manual step. */
+export async function uploadCountryPhoto(countryCode: string, formData: FormData, slug?: string) {
   const userId = await requireUserId();
   const file = formData.get("photo") as File | null;
   if (!file || file.size === 0) return;
   const url = await saveUploadedFile(file, "country-photos");
   if (!url) return;
-  await prisma.countryPhoto.create({ data: { userId, countryCode, url } });
+  await Promise.all([
+    prisma.countryPhoto.create({ data: { userId, countryCode, url } }),
+    prisma.visitedCountry.upsert({
+      where: { userId_countryCode: { userId, countryCode } },
+      update: {},
+      create: { userId, countryCode },
+    }),
+  ]);
+  if (slug) revalidatePath(`/trip/${slug}/quiz`);
   revalidatePath("/account");
 }
 

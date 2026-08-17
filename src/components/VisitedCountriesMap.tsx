@@ -216,16 +216,14 @@ export function VisitedCountriesMap({
                 <span className="min-w-0 flex-1 truncate">{country.name}</span>
                 {isVisited && <span style={{ color: "var(--primary)" }}>✓</span>}
               </button>
-              {isVisited && (
-                <button
-                  onClick={() => setManagingCode(country.code)}
-                  className="shrink-0 rounded-lg border px-1.5 py-1.5 text-xs"
-                  style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
-                  title="הוספת/ניהול תמונות"
-                >
-                  📷
-                </button>
-              )}
+              <button
+                onClick={() => setManagingCode(country.code)}
+                className="shrink-0 rounded-lg border px-1.5 py-1.5 text-xs"
+                style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
+                title="הוספת/ניהול תמונות"
+              >
+                📷
+              </button>
             </div>
           );
         })}
@@ -236,6 +234,8 @@ export function VisitedCountriesMap({
           code={managingCode}
           countryName={WORLD_COUNTRIES.find((c) => c.code === managingCode)?.name ?? managingCode}
           photos={photosByCountry[managingCode] ?? []}
+          slug={slug}
+          onUploaded={() => setVisited((prev) => new Set(prev).add(managingCode))}
           onClose={() => setManagingCode(null)}
         />
       )}
@@ -247,18 +247,23 @@ function CountryPhotoManager({
   code,
   countryName,
   photos,
+  slug,
+  onUploaded,
   onClose,
 }: {
   code: string;
   countryName: string;
   photos: CountryPhoto[];
+  slug?: string;
+  onUploaded: () => void;
   onClose: () => void;
 }) {
   const [pending, startTransition] = useTransition();
 
   function handleUpload(formData: FormData) {
     startTransition(async () => {
-      await uploadCountryPhoto(code, formData);
+      await uploadCountryPhoto(code, formData, slug);
+      onUploaded();
     });
   }
 
