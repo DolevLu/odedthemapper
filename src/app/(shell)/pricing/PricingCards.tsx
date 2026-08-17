@@ -20,7 +20,7 @@ export function PricingCards() {
               boxShadow: cycle === c ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
             }}
           >
-            {c === "monthly" ? "חודשי" : "שנתי · חסכו עד 20%"}
+            {c === "monthly" ? "חודשי" : "שנתי · חסכו עד 25%"}
           </button>
         ))}
       </div>

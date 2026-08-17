@@ -139,6 +139,14 @@ model User {
   isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
 
+  // Gamification: level-up subscription credits (see lib/credits.ts). The
+  // level itself is always recomputed live from current stats — these three
+  // fields exist only to detect a real level-up event (so credit is awarded
+  // exactly once per level gained) and to track the monthly earning window.
+  highestLevelReached    Int      @default(1)
+  subscriptionCreditCents Int     @default(0)
+  creditsMonthKey        String?
+
   accounts      Account[]
   sessions      Session[]
   subscriptions Subscription[]

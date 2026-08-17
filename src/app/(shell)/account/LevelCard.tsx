@@ -1,6 +1,18 @@
 import type { LevelInfo } from "@/lib/gamification";
+import { formatIls } from "@/lib/plans";
 
-export function LevelCard({ level, totalPoints }: { level: LevelInfo; totalPoints: number }) {
+export function LevelCard({
+  level,
+  totalPoints,
+  creditCents = 0,
+  creditDiscountPct,
+}: {
+  level: LevelInfo;
+  totalPoints: number;
+  creditCents?: number;
+  /** Credit as a % of the active plan's monthly price; null if no active plan. */
+  creditDiscountPct?: number | null;
+}) {
   return (
     <div
       className="game-pop-in mb-8 flex flex-col gap-3 rounded-3xl border border-black/5 bg-white p-6"
@@ -38,6 +50,27 @@ export function LevelCard({ level, totalPoints }: { level: LevelInfo; totalPoint
           {level.pointsIntoLevel} / {level.pointsForNextLevel} נקודות לרמה {level.level + 1}
         </p>
       </div>
+
+      {creditCents > 0 && (
+        <div
+          className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+          style={{ background: "color-mix(in srgb, #22C55E 12%, white)" }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎟️</span>
+            <div>
+              <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
+                {formatIls(creditCents)} קרדיט לחידוש הבא
+              </p>
+              <p className="text-xs opacity-60">
+                {creditDiscountPct !== null && creditDiscountPct !== undefined
+                  ? `שווה ל-${creditDiscountPct}% הנחה על החיוב החודשי שלכם`
+                  : "נצבר מעליית רמות — מתחדש בכל חודש"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

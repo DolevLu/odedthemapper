@@ -17,34 +17,78 @@ const CLUSTER_LAYOUT = [
   { x: 14, y: 16, r: -5 },
 ];
 
-/** Builds a small "photo pile" marker icon — up to 4 scrapbook-style tilted
- * thumbnails clipped to rounded squares. Embeds the actual photo URLs as
- * <image> hrefs inside an SVG data URI; the browser paints the marker <img>
- * itself so the referenced photos just load and render, no canvas/blob work
- * needed (and no cross-origin pixel access happens, so CORS isn't a concern
- * here — it's a plain image paint, not a read-back). */
-function photoClusterIcon(photos: CountryPhoto[]): google.maps.Icon {
-  const size = 76;
-  const c = size / 2;
-  const thumbs = photos.slice(0, 4);
-  const images = thumbs
-    .map((p, i) => {
-      const { x, y, r } = CLUSTER_LAYOUT[i];
-      const s = 30;
-      return `<g transform="translate(${c + x - s / 2} ${c + y - s / 2}) rotate(${r} ${s / 2} ${s / 2})">
-        <clipPath id="clip${i}"><rect width="${s}" height="${s}" rx="6" /></clipPath>
-        <rect width="${s}" height="${s}" rx="6" fill="white" />
-        <image href="${p.url}" width="${s}" height="${s}" clip-path="url(#clip${i})" preserveAspectRatio="xMidYMid slice" />
-        <rect width="${s}" height="${s}" rx="6" fill="none" stroke="white" stroke-width="2" />
-      </g>`;
-    })
-    .join("");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${images}</svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(size, size),
-    anchor: new google.maps.Point(c, c),
-  };
+const CLUSTER_SIZE = 76;
+const THUMB_SIZE = 30;
+
+/** A small "photo pile" overlay — up to 4 scrapbook-style tilted thumbnails
+ * as real DOM <img> elements positioned over the map. A marker's `icon` can
+ * only be a single flat image (an SVG data: URI with <image href="..."> tags
+ * pointing at external photos does NOT render them — browsers refuse to
+ * fetch external resources referenced from inside a data: URI SVG used as an
+ * <img> src, as a tracking/CORS-bypass mitigation), so this uses a real
+ * google.maps.OverlayView positioned each frame instead. Must be defined
+ * inside a function called after the Maps JS API has loaded, since it
+ * extends google.maps.OverlayView. */
+function createPhotoClusterOverlay(
+  map: google.maps.Map,
+  position: google.maps.LatLngLiteral,
+  photos: CountryPhoto[],
+  title: string,
+  onClick: () => void
+): google.maps.OverlayView {
+  class PhotoClusterOverlay extends google.maps.OverlayView {
+    div: HTMLDivElement | null = null;
+
+    onAdd() {
+      const div = document.createElement("div");
+      div.style.position = "absolute";
+      div.style.width = `${CLUSTER_SIZE}px`;
+      div.style.height = `${CLUSTER_SIZE}px`;
+      div.style.cursor = "pointer";
+      div.title = title;
+
+      photos.slice(0, 4).forEach((p, i) => {
+        const { x, y, r } = CLUSTER_LAYOUT[i];
+        const img = document.createElement("img");
+        img.src = p.url;
+        img.alt = "";
+        img.style.position = "absolute";
+        img.style.left = `${CLUSTER_SIZE / 2 + x - THUMB_SIZE / 2}px`;
+        img.style.top = `${CLUSTER_SIZE / 2 + y - THUMB_SIZE / 2}px`;
+        img.style.width = `${THUMB_SIZE}px`;
+        img.style.height = `${THUMB_SIZE}px`;
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "6px";
+        img.style.border = "2px solid white";
+        img.style.boxShadow = "0 1px 4px rgba(0,0,0,0.45)";
+        img.style.transform = `rotate(${r}deg)`;
+        div.appendChild(img);
+      });
+
+      div.addEventListener("click", onClick);
+      this.div = div;
+      this.getPanes()?.overlayMouseTarget.appendChild(div);
+    }
+
+    draw() {
+      if (!this.div) return;
+      const projection = this.getProjection();
+      const point = projection?.fromLatLngToDivPixel(new google.maps.LatLng(position));
+      if (point) {
+        this.div.style.left = `${point.x - CLUSTER_SIZE / 2}px`;
+        this.div.style.top = `${point.y - CLUSTER_SIZE / 2}px`;
+      }
+    }
+
+    onRemove() {
+      this.div?.remove();
+      this.div = null;
+    }
+  }
+
+  const overlay = new PhotoClusterOverlay();
+  overlay.setMap(map);
+  return overlay;
 }
 
 export function VisitedCountriesMap({
@@ -60,6 +104,7 @@ export function VisitedCountriesMap({
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const [visited, setVisited] = useState<Set<string>>(new Set(initialVisited));
   const [query, setQuery] = useState("");
   const [managingCode, setManagingCode] = useState<string | null>(null);
@@ -83,19 +128,29 @@ export function VisitedCountriesMap({
     const zoom = mapRef.current.getZoom() ?? 1;
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+    overlaysRef.current.forEach((o) => o.setMap(null));
+    overlaysRef.current = [];
 
     for (const country of WORLD_COUNTRIES) {
       if (!visited.has(country.code)) continue;
       const photos = photosByCountry[country.code] ?? [];
       const useCluster = zoom >= PHOTO_CLUSTER_ZOOM && photos.length > 0;
-      const marker = new google.maps.Marker({
-        position: { lat: country.lat, lng: country.lng },
-        map: mapRef.current,
-        title: country.name,
-        ...(useCluster ? { icon: photoClusterIcon(photos) } : { label: { text: flagEmoji(country.code), fontSize: "16px" } }),
-      });
-      marker.addListener("click", () => setManagingCode(country.code));
-      markersRef.current.push(marker);
+      const position = { lat: country.lat, lng: country.lng };
+
+      if (useCluster) {
+        overlaysRef.current.push(
+          createPhotoClusterOverlay(mapRef.current, position, photos, country.name, () => setManagingCode(country.code))
+        );
+      } else {
+        const marker = new google.maps.Marker({
+          position,
+          map: mapRef.current,
+          title: country.name,
+          label: { text: flagEmoji(country.code), fontSize: "16px" },
+        });
+        marker.addListener("click", () => setManagingCode(country.code));
+        markersRef.current.push(marker);
+      }
     }
   }
 

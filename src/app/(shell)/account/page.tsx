@@ -8,6 +8,7 @@ import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 import { getUserTravelStats } from "@/lib/stats";
 import { levelForPoints } from "@/lib/gamification";
 import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedCountries";
+import { syncLevelCredits } from "@/lib/credits";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
@@ -31,12 +32,14 @@ export default async function AccountPage() {
         })
       : [];
 
-  const [stats, visitedCodes, photosByCountry] = await Promise.all([
+  const [stats, visitedCodes, photosByCountry, credits] = await Promise.all([
     getUserTravelStats(session.user.id),
     getVisitedCountryCodes(session.user.id),
     getCountryPhotos(session.user.id),
+    syncLevelCredits(session.user.id),
   ]);
   const level = levelForPoints(stats.totalPoints);
+  const creditDiscountPct = plan ? Math.min(100, Math.round((credits.creditCents / plan.monthlyCents) * 100)) : null;
   const STAT_CARDS = [
     { label: "מדינות", value: stats.countriesVisited, icon: "🌍" },
     { label: "מסמכים שמורים", value: stats.documentsCount, icon: "📄" },
@@ -50,7 +53,7 @@ export default async function AccountPage() {
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
       <h1 className="mb-4 text-2xl font-extrabold">הפרופיל שלי</h1>
 
-      <LevelCard level={level} totalPoints={stats.totalPoints} />
+      <LevelCard level={level} totalPoints={stats.totalPoints} creditCents={credits.creditCents} creditDiscountPct={creditDiscountPct} />
 
       <div className="mb-8 grid grid-cols-3 gap-3">
         {STAT_CARDS.map((s) => (
