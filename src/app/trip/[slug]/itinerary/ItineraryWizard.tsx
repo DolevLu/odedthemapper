@@ -19,8 +19,10 @@ export function ItineraryWizard({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(!hasExistingDays);
+  const [mode, setMode] = useState<"filters" | "freeText">("filters");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [freeText, setFreeText] = useState("");
   const [tripDays, setTripDays] = useState(3);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -35,8 +37,12 @@ export function ItineraryWizard({
     setError(null);
     const fd = new FormData();
     fd.set("tripDays", String(tripDays));
-    selectedCategories.forEach((c) => fd.append("categories", c));
-    selectedAreas.forEach((a) => fd.append("areas", a));
+    if (mode === "freeText") {
+      fd.set("freeText", freeText.trim());
+    } else {
+      selectedCategories.forEach((c) => fd.append("categories", c));
+      selectedAreas.forEach((a) => fd.append("areas", a));
+    }
 
     const result = await generateItineraryFromPreferences(destinationId, slug, fd);
     setLoading(false);
@@ -67,46 +73,79 @@ export function ItineraryWizard({
     >
       <h2 className="font-bold">כמה שאלות ונבנה לכם מסלול</h2>
 
-      <div>
-        <p className="mb-2 text-sm font-semibold">מה אתם אוהבים?</p>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((c) => (
-            <button
-              key={c}
-              onClick={() => toggle(selectedCategories, setSelectedCategories, c)}
-              className="rounded-full border px-3 py-1 text-sm"
-              style={{
-                borderColor: "var(--primary)",
-                background: selectedCategories.includes(c) ? "var(--primary)" : "transparent",
-                color: selectedCategories.includes(c) ? "white" : "var(--text)",
-              }}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-1 self-start rounded-full bg-black/5 p-1">
+        <button
+          onClick={() => setMode("filters")}
+          className="rounded-full px-3 py-1 text-xs font-semibold"
+          style={{ background: mode === "filters" ? "var(--primary)" : "transparent", color: mode === "filters" ? "white" : "var(--text)" }}
+        >
+          🏷️ סינונים
+        </button>
+        <button
+          onClick={() => setMode("freeText")}
+          className="rounded-full px-3 py-1 text-xs font-semibold"
+          style={{ background: mode === "freeText" ? "var(--primary)" : "transparent", color: mode === "freeText" ? "white" : "var(--text)" }}
+        >
+          ✍️ תיאור חופשי
+        </button>
       </div>
 
-      {areas.length > 1 && (
+      {mode === "freeText" ? (
         <div>
-          <p className="mb-2 text-sm font-semibold">אזורים (אופציונלי — ריק = הכל)</p>
-          <div className="flex flex-wrap gap-2">
-            {areas.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => toggle(selectedAreas, setSelectedAreas, a.id)}
-                className="rounded-full border px-3 py-1 text-sm"
-                style={{
-                  borderColor: "var(--primary)",
-                  background: selectedAreas.includes(a.id) ? "var(--primary)" : "transparent",
-                  color: selectedAreas.includes(a.id) ? "white" : "var(--text)",
-                }}
-              >
-                {a.name}
-              </button>
-            ))}
-          </div>
+          <p className="mb-2 text-sm font-semibold">ספרו לנו מה אתם אוהבים</p>
+          <textarea
+            value={freeText}
+            onChange={(e) => setFreeText(e.target.value)}
+            placeholder="למשל: אני אוהב אוכל טוב ומוזיאונים, פחות מעניין אותי קניות..."
+            rows={3}
+            className="w-full rounded-lg border p-3 text-sm"
+            style={{ borderColor: "var(--primary)" }}
+          />
         </div>
+      ) : (
+        <>
+          <div>
+            <p className="mb-2 text-sm font-semibold">מה אתם אוהבים?</p>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => toggle(selectedCategories, setSelectedCategories, c)}
+                  className="rounded-full border px-3 py-1 text-sm"
+                  style={{
+                    borderColor: "var(--primary)",
+                    background: selectedCategories.includes(c) ? "var(--primary)" : "transparent",
+                    color: selectedCategories.includes(c) ? "white" : "var(--text)",
+                  }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {areas.length > 1 && (
+            <div>
+              <p className="mb-2 text-sm font-semibold">אזורים (אופציונלי — ריק = הכל)</p>
+              <div className="flex flex-wrap gap-2">
+                {areas.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => toggle(selectedAreas, setSelectedAreas, a.id)}
+                    className="rounded-full border px-3 py-1 text-sm"
+                    style={{
+                      borderColor: "var(--primary)",
+                      background: selectedAreas.includes(a.id) ? "var(--primary)" : "transparent",
+                      color: selectedAreas.includes(a.id) ? "white" : "var(--text)",
+                    }}
+                  >
+                    {a.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <label className="flex items-center gap-2 text-sm font-semibold">
@@ -127,7 +166,7 @@ export function ItineraryWizard({
       <div className="flex gap-2">
         <button
           onClick={handleGenerate}
-          disabled={loading}
+          disabled={loading || (mode === "freeText" && freeText.trim().length === 0)}
           className="rounded-full px-5 py-2.5 font-semibold text-white disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         >

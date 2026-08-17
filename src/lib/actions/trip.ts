@@ -425,6 +425,58 @@ export async function optimizeClientItinerary(itineraryId: string, slug: string)
   revalidatePath(`/trip/${slug}/client-planner`);
 }
 
+/** Lets the itinerary wizard accept a free-text description ("אני אוהב אוכל
+ * טוב ומוזיאונים, פחות קניות") instead of forcing category checkboxes — asks
+ * Gemini to pick the matching category names from the destination's actual
+ * list (so it can never invent a category that doesn't exist), falling back
+ * to a plain substring match if Gemini is unavailable/fails. Returns an
+ * empty array (meaning "no restriction, use everything") if nothing matched
+ * rather than generating an empty itinerary. */
+async function resolveCategoriesFromFreeText(freeText: string, availableCategories: string[]): Promise<string[]> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [
+                {
+                  text: `בהינתן תיאור חופשי של מטייל וסוגי הקטגוריות הזמינות ביעד, החזירו אך ורק מערך JSON (ללא טקסט נוסף) של שמות הקטגוריות הרלוונטיות מתוך הרשימה הנתונה בדיוק כפי שהן כתובות. אם שום קטגוריה לא ברורה מהתיאור, החזירו מערך ריק []. קטגוריות זמינות: ${JSON.stringify(availableCategories)}`,
+                },
+              ],
+            },
+            contents: [{ role: "user", parts: [{ text: freeText }] }],
+            generationConfig: { maxOutputTokens: 256, temperature: 0.2 },
+          }),
+          signal: AbortSignal.timeout(12000),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const match = text?.match(/\[[\s\S]*\]/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          if (Array.isArray(parsed)) {
+            const valid = parsed.filter((c): c is string => typeof c === "string" && availableCategories.includes(c));
+            if (valid.length > 0) return valid;
+          }
+        }
+      }
+    } catch {
+      // fall through to the keyword fallback below
+    }
+  }
+
+  const lower = freeText.toLowerCase();
+  const matched = availableCategories.filter((c) => lower.includes(c.toLowerCase()) || c.toLowerCase().includes(lower));
+  return matched;
+}
+
 /**
  * Public "generate my itinerary" wizard: picks POIs matching the traveler's
  * chosen categories/areas and hands them to the shared scheduler (must-see
@@ -437,8 +489,14 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
   const userId = await requireUserId();
 
   const tripDays = Math.max(1, Math.min(14, Number(formData.get("tripDays") ?? 3)));
-  const categories = formData.getAll("categories").map(String);
+  let categories = formData.getAll("categories").map(String);
   const areas = formData.getAll("areas").map(String);
+  const freeText = String(formData.get("freeText") ?? "").trim();
+
+  if (freeText && categories.length === 0) {
+    const allCategoryNames = await prisma.category.findMany({ where: { area: { destinationId } }, select: { name: true } });
+    categories = await resolveCategoriesFromFreeText(freeText, [...new Set(allCategoryNames.map((c) => c.name))]);
+  }
 
   const [rows, hotel] = await Promise.all([
     prisma.pointOfInterest.findMany({
