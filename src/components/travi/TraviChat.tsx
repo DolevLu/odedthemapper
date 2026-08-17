@@ -45,9 +45,15 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
 
   return (
     <>
+      {/* Mobile: bottom-16 lines this button up with the map's collapsed
+       * points-list bar (which sits at the same offset) instead of floating
+       * separately higher up and eating extra map height — a floating
+       * action button overlapping a bottom sheet's corner is standard
+       * mobile-map UI (Google Maps/Waze do the same). Desktop keeps its own
+       * position, clear of the sidebar. */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-52 right-4 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-72"
+        className="fixed bottom-16 right-4 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-72"
         style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         aria-label="טראבי — עוזר הטיול"
       >
@@ -55,7 +61,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
       </button>
 
       {open && (
-        <div className="fixed bottom-72 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24 sm:right-72">
+        <div className="fixed bottom-32 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24 sm:right-72">
           <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}>
             <span className="font-bold">💬 טראבי</span>
             <button onClick={() => setOpen(false)} className="text-lg opacity-80 hover:opacity-100">

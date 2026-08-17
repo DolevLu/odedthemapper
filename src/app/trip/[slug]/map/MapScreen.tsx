@@ -796,49 +796,43 @@ export function MapScreen({
         </div>
       )}
 
-      {/* Our own compact Map/Satellite toggle, replacing Google's native
-       * control — always physical top-left regardless of page direction
-       * (matches where Google's own control used to sit), nudged down
-       * slightly on mobile so it clears the status bar/notch area without
-       * covering too much map. */}
-      <div className="absolute left-2 top-6 z-10 flex gap-1 rounded-full bg-white/95 p-0.5 text-xs font-semibold shadow-md sm:left-2 sm:top-2 sm:text-sm">
-        <button
-          onClick={() => setMapType("roadmap")}
-          className="rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5"
-          style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
-        >
-          מפה
-        </button>
-        <button
-          onClick={() => setMapType("satellite")}
-          className="rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5"
-          style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
-        >
-          לוויין
-        </button>
-      </div>
-
-      {/* Mobile: top-16 gives our (now smaller) Map/Satellite toggle above a
-       * clear gap instead of sitting flush against it. Desktop: sits beside
-       * that control on the same line — using physical left/right (not RTL
-       * start/end) since our toggle is pinned to the physical top-left
-       * corner regardless of page direction. Small arrow buttons flank the
-       * pill row as an alternative to dragging it; the row's own native
-       * scrollbar is hidden (.no-scrollbar) so it just feels like a
-       * swipeable strip. */}
-      <div className="absolute inset-x-0 top-16 z-10 flex items-center gap-1 px-2 sm:inset-x-auto sm:top-2 sm:left-48 sm:right-2">
+      {/* One single row for both breakpoints: our own compact Map/Satellite
+       * toggle (replacing Google's native control) sits shrink-0 at the
+       * physical left, and the filter-pill strip fills the remaining width
+       * right beside it — merged onto the same line so together they take
+       * only one row's worth of height off the top of the map instead of
+       * two stacked rows. Small arrow buttons flank the pill strip as an
+       * alternative to dragging it; the strip's own native scrollbar is
+       * hidden (.no-scrollbar) so it just feels like a swipeable strip. */}
+      <div className="absolute inset-x-0 top-6 z-10 flex items-center gap-1 px-2 sm:top-2">
+        <div className="flex shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:text-xs">
+          <button
+            onClick={() => setMapType("roadmap")}
+            className="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1"
+            style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
+          >
+            מפה
+          </button>
+          <button
+            onClick={() => setMapType("satellite")}
+            className="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1"
+            style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
+          >
+            לוויין
+          </button>
+        </div>
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md sm:h-7 sm:w-7"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
           aria-label="גלילה שמאלה"
         >
           ‹
         </button>
-        <div ref={pillRowRef} className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto scroll-smooth p-1 sm:gap-2">
+        <div ref={pillRowRef} className="no-scrollbar flex flex-1 gap-1 overflow-x-auto scroll-smooth p-1">
         <button
           onClick={previewGate(() => setActiveCategory(null))}
-          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
           style={{
             background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
             color: activeCategory === null ? "white" : "var(--text)",
@@ -851,7 +845,7 @@ export function MapScreen({
           <button
             key={name}
             onClick={previewGate(() => setActiveCategory(name))}
-            className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+            className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
             style={{
               background: activeCategory === name ? "var(--primary)" : "rgba(255,255,255,0.94)",
               color: activeCategory === name ? "white" : "var(--text)",
@@ -863,21 +857,21 @@ export function MapScreen({
         ))}
         <button
           onClick={previewGate(() => setHeatmapVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
           style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C", ...previewDim }}
         >
           🔥 מפת חום
         </button>
         <button
           onClick={previewGate(() => setTrailVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
           style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A", ...previewDim }}
         >
           🟢 איפה כבר הייתי
         </button>
         <button
           onClick={previewGate(() => setShadowVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
           title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
@@ -890,7 +884,7 @@ export function MapScreen({
         </div>
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md sm:h-7 sm:w-7"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
           aria-label="גלילה ימינה"
         >
