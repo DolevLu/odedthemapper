@@ -21,7 +21,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
   // skipped rather than crashing on a missing userId.
   const isFullAccess = accessLevel !== "none";
 
-  const [pois, favorites, logisticPinRows, trail] = await Promise.all([
+  const [pois, favorites, logisticPinRows, trail, savedMapPins] = await Promise.all([
     getFlatPoisForDestination(destination.id),
     isFullAccess && userId ? prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }) : Promise.resolve([]),
     isFullAccess && userId
@@ -33,6 +33,9 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
           orderBy: { recordedAt: "asc" },
           select: { lat: true, lng: true },
         })
+      : Promise.resolve([]),
+    isFullAccess && userId
+      ? prisma.savedMapPin.findMany({ where: { userId, destinationId: destination.id } })
       : Promise.resolve([]),
   ]);
 
@@ -57,6 +60,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
       logisticPins={logisticPins}
       destinationId={destination.id}
       initialTrail={trail}
+      savedPins={savedMapPins}
       preview={!isFullAccess}
     />
   );

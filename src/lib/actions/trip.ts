@@ -37,6 +37,31 @@ export async function togglePackingCheck(destinationId: string, itemKey: string,
   revalidatePath(`/trip/${slug}/packing`);
 }
 
+// ---------- Map: personal saved Google-Maps pins ----------
+
+/** Saves a place picked from Google's own POI layer onto the map — personal
+ * to this user+destination only, never written into the shared destination
+ * dataset other customers see. */
+export async function saveMapPin(
+  destinationId: string,
+  slug: string,
+  place: { placeId: string; name: string; lat: number; lng: number }
+) {
+  const userId = await requireUserId();
+  await prisma.savedMapPin.upsert({
+    where: { userId_destinationId_placeId: { userId, destinationId, placeId: place.placeId } },
+    update: {},
+    create: { userId, destinationId, placeId: place.placeId, name: place.name, lat: place.lat, lng: place.lng },
+  });
+  revalidatePath(`/trip/${slug}`);
+}
+
+export async function deleteSavedMapPin(id: string, slug: string) {
+  const userId = await requireUserId();
+  await prisma.savedMapPin.deleteMany({ where: { id, userId } });
+  revalidatePath(`/trip/${slug}`);
+}
+
 export async function togglePhrasebookKnown(entryId: string, slug: string) {
   const userId = await requireUserId();
   const existing = await prisma.phrasebookProgress.findUnique({ where: { userId_entryId: { userId, entryId } } });

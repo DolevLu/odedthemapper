@@ -14,8 +14,11 @@ const DEG = 180 / Math.PI;
 type LatLng = { lat: number; lng: number };
 
 /** NOAA's simplified solar position formulas — accurate enough for a UX
- * heuristic, not survey-grade. Returns degrees, 0 = north, 90 = east. */
-export function sunAzimuthDeg(date: Date, latDeg: number, lngDeg: number): number {
+ * heuristic, not survey-grade. Returns both azimuth (0=north, 90=east) and
+ * elevation (degrees above the horizon; <=0 means the sun hasn't risen yet
+ * or has already set) for the given real date/time and location, so callers
+ * can tell "which side is shaded" apart from "is it even daytime." */
+export function sunPosition(date: Date, latDeg: number, lngDeg: number): { azimuthDeg: number; elevationDeg: number } {
   const start = Date.UTC(date.getUTCFullYear(), 0, 1);
   const dayOfYear =
     Math.floor((Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) - start) / 86400000) + 1;
@@ -50,7 +53,13 @@ export function sunAzimuthDeg(date: Date, latDeg: number, lngDeg: number): numbe
   cosAzimuth = Math.min(1, Math.max(-1, cosAzimuth));
   let azimuth = Math.acos(cosAzimuth) * DEG;
   if (hourAngleDeg > 0) azimuth = 360 - azimuth;
-  return azimuth;
+  return { azimuthDeg: azimuth, elevationDeg: 90 - zenith * DEG };
+}
+
+/** @deprecated kept for call sites that only need the azimuth — prefer
+ * sunPosition() when elevation (is-it-daytime) also matters. */
+export function sunAzimuthDeg(date: Date, latDeg: number, lngDeg: number): number {
+  return sunPosition(date, latDeg, lngDeg).azimuthDeg;
 }
 
 function bearingDeg(a: LatLng, b: LatLng): number {

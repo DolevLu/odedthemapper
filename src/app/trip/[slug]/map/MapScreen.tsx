@@ -4,15 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
-import { useGoogleMaps, loadRoutesLibrary } from "@/hooks/useGoogleMaps";
+import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { toggleFavorite, toggleWantsBooking } from "@/lib/actions/trip";
+import { toggleFavorite, toggleWantsBooking, saveMapPin, deleteSavedMapPin } from "@/lib/actions/trip";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
 import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
-import { sunAzimuthDeg, shadedSidePath } from "@/lib/shadow";
+import { sunPosition, shadedSidePath } from "@/lib/shadow";
 import { fetchStreetsInBounds, type StreetWay } from "@/lib/streetNetwork";
 
 // Only persist a new trail point once the user has actually moved a bit, or
@@ -92,6 +92,7 @@ export function MapScreen({
   logisticPins = [],
   destinationId,
   initialTrail = [],
+  savedPins = [],
   preview = false,
 }: {
   pois: FlatPoi[];
@@ -101,6 +102,9 @@ export function MapScreen({
   logisticPins?: LogisticPin[];
   destinationId: string;
   initialTrail?: { lat: number; lng: number }[];
+  /** Places a paying user chose to "save to the map" from Google's own POI
+   * layer — personal to them, rendered as extra markers only on their map. */
+  savedPins?: { id: string; placeId: string; name: string; lat: number; lng: number }[];
   /** Anonymous/unsubscribed visitors: the map itself still renders (pan/zoom/
    * markers all work), but every control that reads or writes personal data —
    * filters, layers, route mode, the POI list, favoriting — is grayed out and
@@ -125,6 +129,10 @@ export function MapScreen({
   const lastTrailPointRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
   const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
   const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
+  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+  const savedPinMarkersRef = useRef<google.maps.Marker[]>([]);
+  const showGooglePoisRef = useRef(false);
+  const previewRef = useRef(preview);
   const autoLocationStartedRef = useRef(false);
   const pillRowRef = useRef<HTMLDivElement>(null);
   // Mirrors of state that marker click listeners need to read fresh without
@@ -154,8 +162,18 @@ export function MapScreen({
   const [shadowStreets, setShadowStreets] = useState<StreetWay[]>([]);
   const [shadowLoading, setShadowLoading] = useState(false);
   const [shadowError, setShadowError] = useState<string | null>(null);
+  const [shadowIsNight, setShadowIsNight] = useState(false);
+  const [shadowTick, setShadowTick] = useState(0);
   const [listOpen, setListOpen] = useState(false);
   const [routeModeActive, setRouteModeActive] = useState(false);
+  const [showGooglePois, setShowGooglePois] = useState(false);
+
+  useEffect(() => {
+    showGooglePoisRef.current = showGooglePois;
+  }, [showGooglePois]);
+  useEffect(() => {
+    previewRef.current = preview;
+  }, [preview]);
 
   useEffect(() => {
     userPositionRef.current = userPosition;
@@ -228,8 +246,104 @@ export function MapScreen({
           toggleWantsBooking(poiId, slug);
         };
       }
+      const saveBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-save-pin-btn]");
+      if (saveBtn) {
+        saveBtn.onclick = (e) => {
+          e.stopPropagation();
+          saveBtn.disabled = true;
+          saveBtn.textContent = "✓ נשמר למפה שלי";
+          saveMapPin(destinationId, slug, {
+            placeId: saveBtn.getAttribute("data-place-id")!,
+            name: saveBtn.getAttribute("data-place-name")!,
+            lat: Number(saveBtn.getAttribute("data-place-lat")),
+            lng: Number(saveBtn.getAttribute("data-place-lng")),
+          });
+        };
+      }
+      const deletePinBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-delete-pin-btn]");
+      if (deletePinBtn) {
+        deletePinBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteSavedMapPin(deletePinBtn.getAttribute("data-pin-id")!, slug);
+          infoWindowRef.current?.close();
+        };
+      }
     });
-  }, [loaded, pointPois, slug]);
+
+    // Clicking one of Google's own native POI icons (only visible when the
+    // "show map tags" layer is toggled on) — offers to save it into this
+    // user's personal pin layer instead of opening Google's own info card.
+    // Only paying users can ever get here: previewGate() stops anonymous/
+    // unsubscribed visitors from turning the layer on in the first place.
+    google.maps.event.addListener(mapRef.current, "click", (e: google.maps.IconMouseEvent) => {
+      if (!e.placeId || !showGooglePoisRef.current || previewRef.current) return;
+      e.stop();
+      loadPlacesLibrary()
+        .then(() => {
+          if (!placesServiceRef.current && mapRef.current) {
+            placesServiceRef.current = new google.maps.places.PlacesService(mapRef.current);
+          }
+          placesServiceRef.current?.getDetails(
+            { placeId: e.placeId!, fields: ["name", "geometry"] },
+            (place, status) => {
+              if (status !== google.maps.places.PlacesServiceStatus.OK || !place?.geometry?.location) return;
+              const lat = place.geometry.location.lat();
+              const lng = place.geometry.location.lng();
+              const name = place.name ?? "מקום ללא שם";
+              infoWindowRef.current?.setContent(
+                `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
+                  <strong>${name}</strong>
+                  <div style="margin-top:8px">
+                    <button data-save-pin-btn data-place-id="${e.placeId}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">💾 שמירה למפה</button>
+                  </div>
+                </div>`
+              );
+              infoWindowRef.current?.setPosition({ lat, lng });
+              infoWindowRef.current?.open({ map: mapRef.current! });
+            }
+          );
+        })
+        .catch(() => {});
+    });
+  }, [loaded, pointPois, slug, destinationId]);
+
+  // Toggles Google's own POI/business icons on top of our own markers —
+  // default off (DECLUTTERED_MAP_STYLES) so our pins don't compete with
+  // Google's, switchable on to browse + save places we don't have curated.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    mapRef.current.setOptions({ styles: showGooglePois ? [] : DECLUTTERED_MAP_STYLES });
+  }, [loaded, showGooglePois]);
+
+  // Renders this user's personal saved-pin layer (places they saved off the
+  // native Google POI layer) as small bookmark-styled markers.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    savedPinMarkersRef.current.forEach((m) => m.setMap(null));
+    savedPinMarkersRef.current = [];
+
+    savedPins.forEach((pin) => {
+      const marker = new google.maps.Marker({
+        position: { lat: pin.lat, lng: pin.lng },
+        map: mapRef.current!,
+        label: { text: "📌", fontSize: "16px" },
+        title: pin.name,
+        zIndex: 600,
+      });
+      marker.addListener("click", () => {
+        infoWindowRef.current?.setContent(
+          `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
+            <strong>📌 ${pin.name}</strong>
+            <div style="margin-top:8px">
+              <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">🗑️ הסרה מהמפה שלי</button>
+            </div>
+          </div>`
+        );
+        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+      });
+      savedPinMarkersRef.current.push(marker);
+    });
+  }, [loaded, savedPins]);
 
   // Render line/polygon geometries (walking routes, districts, etc.) once.
   useEffect(() => {
@@ -363,21 +477,35 @@ export function MapScreen({
 
     const center = mapRef.current.getCenter();
     if (!center) return;
-    const sunAzimuth = sunAzimuthDeg(new Date(), center.lat(), center.lng());
+    const { azimuthDeg, elevationDeg } = sunPosition(new Date(), center.lat(), center.lng());
+    // Below the horizon, there's no sun to cast a shadow on one particular
+    // sidewalk — every street is uniformly in the dark, so draw the streets
+    // themselves rather than an arbitrarily-picked "shaded side" offset line.
+    const isNight = elevationDeg <= 0;
+    setShadowIsNight(isNight);
 
     shadowPolylinesRef.current = shadowStreets.map(
       (path) =>
         new google.maps.Polyline({
-          path: shadedSidePath(path, sunAzimuth),
+          path: isNight ? path : shadedSidePath(path, azimuthDeg),
           strokeColor: "#111111",
-          strokeWeight: 4,
-          strokeOpacity: 0.35,
+          strokeWeight: isNight ? 5 : 4,
+          strokeOpacity: isNight ? 0.5 : 0.35,
           clickable: false,
           zIndex: 40,
           map: mapRef.current!,
         })
     );
-  }, [loaded, shadowVisible, shadowStreets]);
+  }, [loaded, shadowVisible, shadowStreets, shadowTick]);
+
+  // Recomputes the sun position on a timer while the layer is open, so the
+  // shaded side actually rotates through the day instead of freezing at
+  // whatever moment the layer happened to be toggled on.
+  useEffect(() => {
+    if (!shadowVisible) return;
+    const id = setInterval(() => setShadowTick((t) => t + 1), 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [shadowVisible]);
 
   // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
   const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
@@ -722,7 +850,11 @@ export function MapScreen({
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
           title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
-          🌑 {shadowVisible && shadowLoading ? "טוען..." : "צל"}
+          {shadowVisible && shadowLoading
+            ? "🌑 טוען..."
+            : shadowVisible && shadowIsNight
+              ? "🌙 לילה — הכל מוצל"
+              : "🌑 צל"}
         </button>
         </div>
         <button
@@ -767,6 +899,31 @@ export function MapScreen({
           style={{ background: "#111827" }}
         >
           {routeModeActive ? "מצב מסלול פעיל — לחצו על נקודה" : "הפעלת מצב מסלול הליכה"}
+        </span>
+      </div>
+
+      {/* Toggles Google's own POI/business tags on top of our own markers —
+       * off by default so our pins don't compete with Google's; only paying
+       * users can turn it on (previewGate routes anon/free visitors to
+       * pricing instead). Mirrors the route-mode button's position/style on
+       * the opposite side. */}
+      <div className="group absolute bottom-36 start-3 z-10 sm:bottom-6">
+        <button
+          onClick={previewGate(() => setShowGooglePois((v) => !v))}
+          className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
+          style={{ background: showGooglePois ? "#4285F4" : "white", color: showGooglePois ? "white" : "#4285F4", ...previewDim }}
+          aria-label="הצגת תגיות גוגל מפות"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.59 13.41 12 22l-8.59-8.59a2 2 0 0 1 0-2.82l7.17-7.17a2 2 0 0 1 2.82 0l7.19 7.17a2 2 0 0 1 0 2.82Z" />
+            <circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+        <span
+          className="pointer-events-none absolute bottom-full start-0 mb-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
+          style={{ background: "#111827" }}
+        >
+          {showGooglePois ? "לחצו על מקום כדי לשמור למפה שלכם" : "הצגת תגיות גוגל מפות"}
         </span>
       </div>
 

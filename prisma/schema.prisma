@@ -49,6 +49,7 @@ model Destination {
   quizAttempts QuizAttempt[]
   tips         DestinationTip[]
   itineraryTemplates ItineraryTemplate[]
+  savedMapPins SavedMapPin[]
 }
 
 model Area {
@@ -156,6 +157,7 @@ model User {
   visitedCountries VisitedCountry[]
   locationPings LocationPing[]
   phrasebookProgress PhrasebookProgress[]
+  savedMapPins SavedMapPin[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -331,6 +333,25 @@ model LocationPing {
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
 
   @@index([userId, destinationId, recordedAt])
+}
+
+/** A Google-Maps place a paying user chose to "save to the map" from the
+ * native Google POI layer (toggled on via MapScreen) — personal to that
+ * user+destination only, never shared into the shared destination dataset. */
+model SavedMapPin {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  placeId       String
+  name          String
+  lat           Float
+  lng           Float
+  createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId, placeId])
 }
 
 model TripLogistic {

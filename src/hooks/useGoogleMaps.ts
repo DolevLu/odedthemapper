@@ -7,6 +7,7 @@ declare global {
     google?: typeof google;
     __googleMapsLoadPromise?: Promise<void>;
     __googleMapsRoutesPromise?: Promise<void>;
+    __googleMapsPlacesPromise?: Promise<void>;
   }
 }
 
@@ -59,6 +60,18 @@ export function loadRoutesLibrary(): Promise<void> {
   if (window.__googleMapsRoutesPromise) return window.__googleMapsRoutesPromise;
   window.__googleMapsRoutesPromise = google.maps.importLibrary("routes").then(() => undefined);
   return window.__googleMapsRoutesPromise;
+}
+
+/** The "places" library (PlacesService) is optional — only needed when a
+ * paying customer taps a native Google POI icon to save it to their personal
+ * map layer, so it's loaded lazily on first use like the routes library. */
+export function loadPlacesLibrary(): Promise<void> {
+  if (typeof window === "undefined" || !window.google?.maps) {
+    return Promise.reject(new Error("Google Maps לא נטען"));
+  }
+  if (window.__googleMapsPlacesPromise) return window.__googleMapsPlacesPromise;
+  window.__googleMapsPlacesPromise = google.maps.importLibrary("places").then(() => undefined);
+  return window.__googleMapsPlacesPromise;
 }
 
 export function useGoogleMaps() {
