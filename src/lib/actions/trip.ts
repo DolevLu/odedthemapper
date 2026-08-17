@@ -94,6 +94,12 @@ export async function addExpense(destinationId: string, slug: string, formData: 
   const isForeign = currency !== "ILS";
   const { amountCentsIls } = await convertToILS(amount, currency);
 
+  // Splitting: the payer (this user) picked other group members to share
+  // the cost with — everyone's share is equal, and only the OTHER
+  // participants get an ExpenseSplit row (their share is what they owe the
+  // payer; the payer's own share is implicit, not a debt to themselves).
+  const splitWith = formData.getAll("splitWith").map(String).filter(Boolean);
+
   await prisma.expense.create({
     data: {
       userId,
@@ -103,6 +109,16 @@ export async function addExpense(destinationId: string, slug: string, formData: 
       note,
       spentAt: dateRaw ? new Date(dateRaw) : new Date(),
       ...(isForeign ? { originalAmountCents: Math.round(amount * 100), originalCurrency: currency } : {}),
+      ...(splitWith.length > 0
+        ? {
+            splits: {
+              create: splitWith.map((participantId) => ({
+                userId: participantId,
+                shareCents: Math.round(amountCentsIls / (splitWith.length + 1)),
+              })),
+            },
+          }
+        : {}),
     },
   });
   revalidatePath(`/trip/${slug}/expenses`);

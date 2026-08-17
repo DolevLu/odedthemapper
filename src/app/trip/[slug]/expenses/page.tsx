@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { addExpense, deleteExpense, setTripBudget } from "@/lib/actions/trip";
 import { LoginPromptBanner } from "@/components/LoginPromptBanner";
 import { CURRENCIES } from "@/lib/exchangeRates";
+import { getGroupMembers } from "@/lib/access";
+import { getSettleUpSummary } from "@/lib/costSplitting";
 import { DailyRemaining } from "./DailyRemaining";
 
 const CATEGORIES = ["אוכל", "תחבורה", "לינה", "אטרקציות", "קניות", "אחר"];
@@ -21,12 +23,14 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
   const session = await auth();
   const userId = session?.user?.id;
 
-  const [expenses, budget] = userId
+  const [expenses, budget, groupMembers, settleUp] = userId
     ? await Promise.all([
         prisma.expense.findMany({ where: { userId, destinationId: destination.id }, orderBy: { spentAt: "desc" } }),
         prisma.tripBudget.findUnique({ where: { userId_destinationId: { userId, destinationId: destination.id } } }),
+        getGroupMembers(userId),
+        getSettleUpSummary(userId, destination.id),
       ])
-    : [[], null];
+    : [[], null, [], []];
 
   const total = expenses.reduce((sum, e) => sum + e.amountCents, 0) / 100;
   const groups = new Map<string, typeof expenses>();
@@ -130,7 +134,36 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
           <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white" style={{ background: "var(--primary)" }}>
             הוספה
           </button>
+
+          {groupMembers.length > 0 && (
+            <div className="col-span-full flex flex-wrap items-center gap-2 border-t pt-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+              <span className="text-xs font-semibold opacity-60">💰 פיצול ההוצאה עם:</span>
+              {groupMembers.map((m) => (
+                <label key={m.id} className="flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs" style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}>
+                  <input type="checkbox" name="splitWith" value={m.id} />
+                  {m.name ?? m.email}
+                </label>
+              ))}
+            </div>
+          )}
         </form>
+      )}
+
+      {settleUp.length > 0 && (
+        <div
+          className="flex flex-col gap-2 border p-4"
+          style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
+        >
+          <h2 className="text-sm font-bold">🤝 התחשבנות עם חברי הקבוצה</h2>
+          {settleUp.map((e) => (
+            <div key={e.userId} className="flex items-center justify-between text-sm">
+              <span>{e.name}</span>
+              <span className="font-semibold" style={{ color: e.netCents > 0 ? "#16A34A" : "#DC2626" }}>
+                {e.netCents > 0 ? `חייב/ת לכם ₪${(e.netCents / 100).toFixed(0)}` : `אתם חייבים ₪${(Math.abs(e.netCents) / 100).toFixed(0)}`}
+              </span>
+            </div>
+          ))}
+        </div>
       )}
 
       <div className="flex flex-col gap-5">

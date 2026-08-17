@@ -107,6 +107,25 @@ export async function getResolvedSubscriptionForAccount(userId: string) {
   return { subscription: membership.subscription, isOwner: false };
 }
 
+/** Other members sharing this user's active subscription (owner + invited
+ * seats who've actually signed up) — used to offer "split this expense
+ * with" choices. Excludes the caller themselves. */
+export async function getGroupMembers(userId: string): Promise<{ id: string; name: string | null; email: string }[]> {
+  const sub = await getActiveSubscription(userId);
+  if (!sub) return [];
+  const full = await prisma.subscription.findUnique({
+    where: { id: sub.id },
+    select: { userId: true, members: { select: { invitedEmail: true } } },
+  });
+  if (!full) return [];
+  const emails = full.members.map((m) => m.invitedEmail);
+  const users = await prisma.user.findMany({
+    where: { OR: [{ id: full.userId }, { email: { in: emails } }] },
+    select: { id: true, name: true, email: true },
+  });
+  return users.filter((u) => u.id !== userId);
+}
+
 export async function getActiveSubscriptionSummary(userId: string) {
   const sub = await getActiveSubscription(userId);
   if (!sub) return null;
