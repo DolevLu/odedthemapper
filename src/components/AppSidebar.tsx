@@ -48,6 +48,7 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "עזרים וזיכרונות",
     items: [
+      { href: "/weather", label: "מזג אוויר", icon: "🌤️", tier: "free" },
       { href: "/quiz", label: "חידונים", icon: "🧠", tier: "free" },
       { href: "/phrasebook", label: "שיחון", icon: "💬", tier: "free" },
       { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "🧳", tier: "free" },
