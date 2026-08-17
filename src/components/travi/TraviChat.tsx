@@ -47,17 +47,17 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
     <>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-20 right-4 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6"
+        className="fixed bottom-52 right-4 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-72"
         style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         aria-label="טראבי — עוזר הטיול"
       >
-        🧭
+        💬
       </button>
 
       {open && (
-        <div className="fixed bottom-36 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24">
+        <div className="fixed bottom-72 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24 sm:right-72">
           <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}>
-            <span className="font-bold">🧭 טראבי</span>
+            <span className="font-bold">💬 טראבי</span>
             <button onClick={() => setOpen(false)} className="text-lg opacity-80 hover:opacity-100">
               ✕
             </button>

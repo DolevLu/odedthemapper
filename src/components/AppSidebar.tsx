@@ -190,15 +190,6 @@ export function AppSidebar({
       >
         <MobileTab href="/" icon="🏠" label="דף הבית" active={pathname === "/"} />
         <MobileTab href="/destinations" icon="🌍" label="יעדים" active={pathname === "/destinations"} />
-        {nowItem && (
-          <MobileTab
-            href={destHref(nowItem)}
-            icon={nowItem.icon}
-            label={nowItem.label}
-            active={isDestActive(nowItem)}
-            onClick={(e) => handleDestItemClick(nowItem, e)}
-          />
-        )}
         {mapItem && (
           <MobileTab
             href={destHref(mapItem)}
@@ -206,6 +197,15 @@ export function AppSidebar({
             label={mapItem.label}
             active={isDestActive(mapItem)}
             onClick={(e) => handleDestItemClick(mapItem, e)}
+          />
+        )}
+        {nowItem && (
+          <MobileTab
+            href={destHref(nowItem)}
+            icon={nowItem.icon}
+            label={nowItem.label}
+            active={isDestActive(nowItem)}
+            onClick={(e) => handleDestItemClick(nowItem, e)}
           />
         )}
         <button

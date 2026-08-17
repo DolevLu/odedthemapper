@@ -27,7 +27,7 @@ export async function SiteHeader() {
         {!isOrgActive && (
           <Link
             href="/pricing"
-            className="rounded-full px-4 py-1.5 text-sm font-bold text-white shadow-sm"
+            className="whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold text-white shadow-sm sm:px-4 sm:py-1.5 sm:text-sm"
             style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
           >
             ✨ שדרג

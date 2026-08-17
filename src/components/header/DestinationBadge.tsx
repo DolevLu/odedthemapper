@@ -12,9 +12,9 @@ export function DestinationBadge() {
   if (!info) return null;
 
   return (
-    <span className="flex items-center gap-2 text-sm font-semibold">
-      <span className="text-lg">{info.flag}</span>
-      <span>{info.name}</span>
+    <span className="-translate-x-1 flex flex-col items-center gap-0 text-xs font-semibold sm:translate-x-0 sm:flex-row sm:gap-2 sm:text-sm">
+      <span className="text-base leading-none sm:text-lg">{info.flag}</span>
+      <span className="leading-tight">{info.name}</span>
     </span>
   );
 }

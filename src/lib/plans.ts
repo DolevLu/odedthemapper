@@ -20,7 +20,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     name: "מטייל בודד",
     audience: "למטיילים בודדים",
     monthlyCents: 12500,
-    annualCents: 120000, // 20% הנחה במחויב שנתי
+    annualCents: 112500, // 25% הנחה במחויב שנתי
     destinationLimit: 1,
     seats: 1,
     isOrgTier: false,
@@ -42,7 +42,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     name: "משפחות ונוודים דיגיטלים",
     audience: "למשפחות או נוודים דיגיטלים",
     monthlyCents: 22500,
-    annualCents: 216000,
+    annualCents: 202500, // 25% הנחה במחויב שנתי
     destinationLimit: 5,
     seats: 5,
     isOrgTier: false,
@@ -61,7 +61,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     name: "ארגונים ומתכנני טיולים",
     audience: "לארגונים או מתכנני טיולים",
     monthlyCents: 49500,
-    annualCents: 475200,
+    annualCents: 445500, // 25% הנחה במחויב שנתי
     destinationLimit: null,
     seats: null,
     isOrgTier: true,
