@@ -451,13 +451,20 @@ export async function optimizeClientItinerary(itineraryId: string, slug: string)
 }
 
 /** Lets the itinerary wizard accept a free-text description ("אני אוהב אוכל
- * טוב ומוזיאונים, פחות קניות") instead of forcing category checkboxes — asks
- * Gemini to pick the matching category names from the destination's actual
- * list (so it can never invent a category that doesn't exist), falling back
- * to a plain substring match if Gemini is unavailable/fails. Returns an
- * empty array (meaning "no restriction, use everything") if nothing matched
- * rather than generating an empty itinerary. */
-async function resolveCategoriesFromFreeText(freeText: string, availableCategories: string[]): Promise<string[]> {
+ * טוב ומוזיאונים, פחות קניות" or "רק בפראג עצמה, בלי לצאת מהעיר") instead of
+ * forcing category/area checkboxes — asks Gemini to pick the matching
+ * category AND area names from the destination's actual lists (so it can
+ * never invent one that doesn't exist, and so an explicit "stay in the city
+ * itself" request actually excludes any separate road-trip/day-trip area
+ * rather than silently mixing every area's POIs together), falling back to a
+ * plain substring match if Gemini is unavailable/fails. Both returned
+ * arrays are empty (meaning "no restriction") when nothing in the text
+ * implies a restriction, rather than risking an empty itinerary. */
+async function resolveFreeTextIntent(
+  freeText: string,
+  availableCategories: string[],
+  availableAreas: string[]
+): Promise<{ categories: string[]; areas: string[] }> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (apiKey) {
     try {
@@ -470,7 +477,7 @@ async function resolveCategoriesFromFreeText(freeText: string, availableCategori
             system_instruction: {
               parts: [
                 {
-                  text: `בהינתן תיאור חופשי של מטייל וסוגי הקטגוריות הזמינות ביעד, החזירו אך ורק מערך JSON (ללא טקסט נוסף) של שמות הקטגוריות הרלוונטיות מתוך הרשימה הנתונה בדיוק כפי שהן כתובות. אם שום קטגוריה לא ברורה מהתיאור, החזירו מערך ריק []. קטגוריות זמינות: ${JSON.stringify(availableCategories)}`,
+                  text: `בהינתן תיאור חופשי של מטייל, רשימת הקטגוריות הזמינות ביעד, ורשימת האזורים/הערים הזמינות ביעד (חלק מהיעדים כוללים גם אזור "Road Trip" נפרד לטיולי יום/יציאות מהעיר המרכזית, בנוסף לעיר עצמה) — החזירו אך ורק אובייקט JSON (ללא טקסט נוסף) בצורה {"categories": [...], "areas": [...]}, עם שמות בדיוק כפי שהם כתובים ברשימות הנתונות. בשדה categories: הקטגוריות הרלוונטיות לתחומי העניין שתוארו, או מערך ריק אם לא צוין דבר. בשדה areas: אם המטייל ציין באופן מפורש שהוא רוצה להישאר רק בעיר/אזור מסוים ולא לצאת ממנו (למשל "רק בפראג עצמה", "בתוך העיר בלבד", "בלי לצאת מהעיר", "בלי road trip") — החזירו רק את שם האזור הראשי המתאים (בדרך כלל שם העיר, לא "Road Trip"). אם לא צוינה הגבלה על אזור, החזירו מערך ריק. קטגוריות זמינות: ${JSON.stringify(availableCategories)}. אזורים זמינים: ${JSON.stringify(availableAreas)}`,
                 },
               ],
             },
@@ -483,13 +490,16 @@ async function resolveCategoriesFromFreeText(freeText: string, availableCategori
       if (res.ok) {
         const data = await res.json();
         const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        const match = text?.match(/\[[\s\S]*\]/);
+        const match = text?.match(/\{[\s\S]*\}/);
         if (match) {
           const parsed = JSON.parse(match[0]);
-          if (Array.isArray(parsed)) {
-            const valid = parsed.filter((c): c is string => typeof c === "string" && availableCategories.includes(c));
-            if (valid.length > 0) return valid;
-          }
+          const categories = Array.isArray(parsed?.categories)
+            ? parsed.categories.filter((c: unknown): c is string => typeof c === "string" && availableCategories.includes(c))
+            : [];
+          const areas = Array.isArray(parsed?.areas)
+            ? parsed.areas.filter((a: unknown): a is string => typeof a === "string" && availableAreas.includes(a))
+            : [];
+          if (categories.length > 0 || areas.length > 0) return { categories, areas };
         }
       }
     } catch {
@@ -498,8 +508,10 @@ async function resolveCategoriesFromFreeText(freeText: string, availableCategori
   }
 
   const lower = freeText.toLowerCase();
-  const matched = availableCategories.filter((c) => lower.includes(c.toLowerCase()) || c.toLowerCase().includes(lower));
-  return matched;
+  return {
+    categories: availableCategories.filter((c) => lower.includes(c.toLowerCase()) || c.toLowerCase().includes(lower)),
+    areas: availableAreas.filter((a) => a.toLowerCase() !== "road trip" && lower.includes(a.toLowerCase())),
+  };
 }
 
 /**
@@ -515,12 +527,21 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
 
   const tripDays = Math.max(1, Math.min(14, Number(formData.get("tripDays") ?? 3)));
   let categories = formData.getAll("categories").map(String);
-  const areas = formData.getAll("areas").map(String);
+  let areas = formData.getAll("areas").map(String);
   const freeText = String(formData.get("freeText") ?? "").trim();
 
-  if (freeText && categories.length === 0) {
-    const allCategoryNames = await prisma.category.findMany({ where: { area: { destinationId } }, select: { name: true } });
-    categories = await resolveCategoriesFromFreeText(freeText, [...new Set(allCategoryNames.map((c) => c.name))]);
+  if (freeText && categories.length === 0 && areas.length === 0) {
+    const [allCategoryNames, allAreas] = await Promise.all([
+      prisma.category.findMany({ where: { area: { destinationId } }, select: { name: true } }),
+      prisma.area.findMany({ where: { destinationId }, select: { id: true, name: true } }),
+    ]);
+    const resolved = await resolveFreeTextIntent(
+      freeText,
+      [...new Set(allCategoryNames.map((c) => c.name))],
+      allAreas.map((a) => a.name)
+    );
+    categories = resolved.categories;
+    areas = allAreas.filter((a) => resolved.areas.includes(a.name)).map((a) => a.id);
   }
 
   const [rows, hotel] = await Promise.all([
