@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { colorForDay } from "@/lib/geo";
 import { deleteItineraryDay } from "@/lib/actions/trip";
 import { AddItemToDay } from "./AddItemToDay";
@@ -20,20 +20,13 @@ export function ItineraryDaysView({
   poiOptions: PoiOption[];
   path?: string;
 }) {
-  const [mode, setMode] = useState<"grid" | "focused">("grid");
+  // Defaults to the single-day focused view everywhere (desktop pairs it
+  // side-by-side with the route map; mobile pairs it with the route map
+  // stacked underneath) — planning one day at a time next to its route
+  // reads far better than a wall of day cards on any screen size. A manual
+  // toggle to "all days" is still one tap away.
+  const [mode, setMode] = useState<"grid" | "focused">("focused");
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const autoModeAppliedRef = useRef(false);
-
-  // Desktop defaults to the single-day focused view (paired side-by-side with
-  // the route map by the page) since planning one day at a time next to its
-  // route reads far better than a wall of day cards; mobile keeps the
-  // existing "all days" grid default. Only applied once on mount so it never
-  // fights a manual toggle afterwards.
-  useEffect(() => {
-    if (autoModeAppliedRef.current) return;
-    autoModeAppliedRef.current = true;
-    if (window.matchMedia("(min-width: 1024px)").matches) setMode("focused");
-  }, []);
 
   if (days.length === 0) return null;
 

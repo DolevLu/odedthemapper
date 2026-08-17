@@ -138,7 +138,7 @@ export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fill
   }
 
   return (
-    <div className={fillHeight ? "flex h-full min-h-0 flex-col gap-2" : "flex flex-col gap-2"}>
+    <div className={fillHeight ? "flex h-[380px] min-h-0 flex-col gap-2 lg:h-full" : "flex flex-col gap-2"}>
       {days.length > 1 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <button
