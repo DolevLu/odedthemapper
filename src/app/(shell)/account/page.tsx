@@ -11,6 +11,8 @@ import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedC
 import { syncLevelCredits } from "@/lib/credits";
 import { getReferralStats } from "@/lib/referral";
 import { REFERRAL_REWARD_CENTS } from "@/lib/referralConstants";
+import { getFinishedTrips, getTripWrappedStats } from "@/lib/tripWrapped";
+import { TripWrappedSection } from "./TripWrappedSection";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { MemberManager } from "./MemberManager";
 import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
@@ -35,13 +37,22 @@ export default async function AccountPage() {
         })
       : [];
 
-  const [stats, visitedCodes, photosByCountry, credits, referral] = await Promise.all([
+  const [stats, visitedCodes, photosByCountry, credits, referral, finishedTrips] = await Promise.all([
     getUserTravelStats(session.user.id),
     getVisitedCountryCodes(session.user.id),
     getCountryPhotos(session.user.id),
     syncLevelCredits(session.user.id),
     getReferralStats(session.user.id),
+    getFinishedTrips(session.user.id),
   ]);
+  const wrappedTrips = await Promise.all(
+    finishedTrips.map(async (t) => ({
+      destinationId: t.destinationId,
+      destinationName: t.destinationName,
+      flag: t.flag,
+      stats: await getTripWrappedStats(session.user.id, t.destinationId),
+    }))
+  );
   const level = levelForPoints(stats.totalPoints);
   const creditDiscountPct = plan ? Math.min(100, Math.round((credits.creditCents / plan.monthlyCents) * 100)) : null;
   const STAT_CARDS = [
@@ -60,6 +71,8 @@ export default async function AccountPage() {
       <LevelCard level={level} totalPoints={stats.totalPoints} creditCents={credits.creditCents} creditDiscountPct={creditDiscountPct} />
 
       <ReferralCard code={referral.code} referredCount={referral.referredCount} rewardIls={REFERRAL_REWARD_CENTS / 100} />
+
+      <TripWrappedSection trips={wrappedTrips} />
 
       <div className="mb-8 grid grid-cols-3 gap-3">
         {STAT_CARDS.map((s) => (
