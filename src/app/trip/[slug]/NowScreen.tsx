@@ -10,6 +10,7 @@ import { PoiCard } from "@/components/PoiCard";
 type TodayData = {
   destinationId: string;
   destinationName: string;
+  heroImage: string | null;
   hasTargetDate: boolean;
   daysUntil: number | null;
   targetDateLabel: string | null;
@@ -97,6 +98,7 @@ export function NowScreen({
       <TodayCard
         destinationId={today.destinationId}
         destinationName={today.destinationName}
+        heroImage={today.heroImage}
         slug={slug}
         hasTargetDate={today.hasTargetDate}
         daysUntil={today.daysUntil}

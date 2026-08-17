@@ -39,7 +39,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col" style={{ background: "#FBF6EE" }}>
-      <section className="relative overflow-hidden px-6 py-20 text-center">
+      <section className="relative overflow-hidden px-6 py-10 text-center sm:py-20">
         <FloatingTravelIcons />
         <div
           className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[820px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"

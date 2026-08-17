@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
+import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
 
 type Tier = "free" | "silver" | "gold";
 
@@ -114,9 +115,14 @@ export function AppSidebar({
       {/* Desktop sidebar — home/destinations pinned at top, upgrade CTA
           pinned at bottom, only the destination nav groups scroll. */}
       <nav
-        className="hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-[60px] sm:h-[calc(100vh-60px)]"
+        className="app-sidebar-desktop hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-[60px] sm:h-[calc(100vh-60px)]"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
+        <div className="mb-1 flex shrink-0 items-center justify-between px-1">
+          <span className="text-xs font-bold uppercase tracking-wide opacity-45">תפריט</span>
+          <FocusModeCollapseButton />
+        </div>
+
         <div className="flex shrink-0 flex-col gap-1">
           {TOP_ITEMS.map((item) => {
             const active = pathname === item.href;

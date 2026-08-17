@@ -8,6 +8,7 @@ import { setTripStartDate, togglePackingCheck } from "@/lib/actions/trip";
 export function TodayCard({
   destinationId,
   destinationName,
+  heroImage,
   slug,
   hasTargetDate,
   daysUntil,
@@ -17,6 +18,7 @@ export function TodayCard({
 }: {
   destinationId: string;
   destinationName: string;
+  heroImage: string | null;
   slug: string;
   hasTargetDate: boolean;
   daysUntil: number | null;
@@ -46,61 +48,80 @@ export function TodayCard({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Countdown / mascot card */}
+      {/* Countdown / mascot card — a faded hero photo of the destination
+       * (Colosseum for Italy, Eiffel Tower for France, etc. — whatever the
+       * destination's own heroImage is) sits behind the content as texture,
+       * not competing with it: low opacity, plus a fade-to-surface gradient
+       * so text stays fully legible regardless of the photo's brightness. */}
       <div
         className="relative flex flex-col items-center gap-3 overflow-hidden border p-6 text-center"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
-        <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          {destinationName} מחכה לנו
-        </h1>
-        <div className="flex items-center gap-2 text-4xl">
-          <span className="inline-block animate-float-drift" style={{ ["--float-duration" as string]: "4s", ["--float-rot" as string]: "-6deg" }}>
-            🧑‍🦱
-          </span>
-          <span className="text-2xl">🎒</span>
-          <span className="inline-block animate-float-drift" style={{ ["--float-duration" as string]: "4.5s", ["--float-rot" as string]: "6deg" }}>
-            🧑
-          </span>
-          <span className="text-2xl">✈️</span>
-        </div>
-
-        {daysUntil !== null ? (
+        {heroImage && (
           <>
-            <p className="text-5xl font-extrabold" style={{ color: "var(--primary)" }}>
-              {daysUntil} ימים
-            </p>
-            <p className="text-sm opacity-60">עד ההמראה · {targetDateLabel}</p>
+            <div
+              className="absolute inset-0"
+              style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.16 }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(180deg, transparent 0%, var(--surface) 90%)" }}
+            />
           </>
-        ) : hasTargetDate ? (
-          <p className="text-lg font-bold" style={{ color: "var(--primary)" }}>
-            ✈️ הטיול כבר כאן — תיהנו!
-          </p>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-sm opacity-70">עדיין לא הוגדר תאריך טיסה — הוסיפו טיסה בלוגיסטיקה, או קבעו כאן תאריך יעד:</p>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dateInput}
-                onChange={(e) => setDateInput(e.target.value)}
-                className="rounded-lg border px-3 py-2 text-sm"
-                style={{ borderColor: "var(--primary)" }}
-              />
-              <button
-                onClick={saveDate}
-                disabled={pending || !dateInput}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                style={{ background: "var(--primary)" }}
-              >
-                שמירה
-              </button>
-            </div>
-            <Link href={`/trip/${slug}/logistics`} className="text-xs underline opacity-60">
-              או הוסיפו כרטיס טיסה בלוגיסטיקה
-            </Link>
-          </div>
         )}
+
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+            {destinationName} מחכה לנו
+          </h1>
+          <div className="flex items-center gap-2 text-4xl">
+            <span className="inline-block animate-float-drift" style={{ ["--float-duration" as string]: "4s", ["--float-rot" as string]: "-6deg" }}>
+              🧑‍🦱
+            </span>
+            <span className="text-2xl">🎒</span>
+            <span className="inline-block animate-float-drift" style={{ ["--float-duration" as string]: "4.5s", ["--float-rot" as string]: "6deg" }}>
+              🧑
+            </span>
+            <span className="text-2xl">✈️</span>
+          </div>
+
+          {daysUntil !== null ? (
+            <>
+              <p className="text-5xl font-extrabold" style={{ color: "var(--primary)" }}>
+                {daysUntil} ימים
+              </p>
+              <p className="text-sm opacity-60">עד ההמראה · {targetDateLabel}</p>
+            </>
+          ) : hasTargetDate ? (
+            <p className="text-lg font-bold" style={{ color: "var(--primary)" }}>
+              ✈️ הטיול כבר כאן — תיהנו!
+            </p>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm opacity-70">עדיין לא הוגדר תאריך טיסה — הוסיפו טיסה בלוגיסטיקה, או קבעו כאן תאריך יעד:</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateInput}
+                  onChange={(e) => setDateInput(e.target.value)}
+                  className="rounded-lg border px-3 py-2 text-sm"
+                  style={{ borderColor: "var(--primary)" }}
+                />
+                <button
+                  onClick={saveDate}
+                  disabled={pending || !dateInput}
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  style={{ background: "var(--primary)" }}
+                >
+                  שמירה
+                </button>
+              </div>
+              <Link href={`/trip/${slug}/logistics`} className="text-xs underline opacity-60">
+                או הוסיפו כרטיס טיסה בלוגיסטיקה
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Today's itinerary, if mid-trip */}

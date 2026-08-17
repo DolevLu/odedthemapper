@@ -79,6 +79,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
       today={{
         destinationId: destination.id,
         destinationName: destination.name,
+        heroImage: destination.heroImage,
         hasTargetDate: Boolean(tripStart),
         daysUntil,
         targetDateLabel: tripStart ? tripStart.toLocaleDateString("he-IL") : null,

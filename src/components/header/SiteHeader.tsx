@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { getActiveSubscriptionSummary } from "@/lib/access";
+import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
 import { ProfileMenu } from "./ProfileMenu";
 import { DestinationBadge } from "./DestinationBadge";
 
@@ -13,7 +14,7 @@ export async function SiteHeader() {
 
   return (
     <header
-      className="sticky top-0 z-30 px-6 py-3 backdrop-blur"
+      className="site-header-bar sticky top-0 z-30 px-6 py-3 backdrop-blur"
       style={{
         display: "grid",
         gridTemplateColumns: "1fr auto 1fr",
@@ -23,6 +24,7 @@ export async function SiteHeader() {
       }}
     >
       <div className="flex items-center gap-2 justify-self-start">
+        <FocusModeCollapseButton />
         <ProfileMenu isLoggedIn={Boolean(session?.user)} name={session?.user?.name ?? null} planLabel={planLabel} />
         {!isOrgActive && (
           <Link

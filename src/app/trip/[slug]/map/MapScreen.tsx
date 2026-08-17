@@ -777,7 +777,7 @@ export function MapScreen({
     // card next to the sidebar — position:fixed on desktop was covering the
     // wrong region and made the sidebar look like it had disappeared.
     <div
-      className="fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-[calc(100vh-140px)] sm:overflow-hidden sm:rounded-[var(--radius)] sm:border"
+      className="map-screen-container fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-[calc(100vh-140px)] sm:overflow-hidden sm:rounded-[var(--radius)] sm:border"
       style={{ borderColor: "var(--primary)" }}
     >
       <div ref={mapDivRef} className="h-full w-full" />
@@ -801,10 +801,16 @@ export function MapScreen({
        * physical left, and the filter-pill strip fills the remaining width
        * right beside it — merged onto the same line so together they take
        * only one row's worth of height off the top of the map instead of
-       * two stacked rows. Small arrow buttons flank the pill strip as an
-       * alternative to dragging it; the strip's own native scrollbar is
-       * hidden (.no-scrollbar) so it just feels like a swipeable strip. */}
-      <div className="absolute inset-x-0 top-6 z-10 flex items-center gap-1 px-2 sm:top-2">
+       * two stacked rows. `dir="ltr"` pins the toggle as the visually
+       * leftmost item with the filters flowing to its right regardless of
+       * the page's own RTL direction (a plain RTL flex row would put the
+       * first DOM child — the toggle — on the right instead); the Hebrew
+       * pill labels still render correctly since dir only affects layout
+       * order, not a leaf element's own text shaping. Small arrow buttons
+       * flank the pill strip as an alternative to dragging it; the strip's
+       * own native scrollbar is hidden (.no-scrollbar) so it just feels
+       * like a swipeable strip. */}
+      <div dir="ltr" className="absolute inset-x-0 top-6 z-10 flex items-center gap-1 px-2 sm:top-2">
         <div className="flex shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:text-xs">
           <button
             onClick={() => setMapType("roadmap")}
@@ -829,7 +835,7 @@ export function MapScreen({
         >
           ‹
         </button>
-        <div ref={pillRowRef} className="no-scrollbar flex flex-1 gap-1 overflow-x-auto scroll-smooth p-1">
+        <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1 overflow-x-auto scroll-smooth p-1">
         <button
           onClick={previewGate(() => setActiveCategory(null))}
           className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
@@ -956,8 +962,14 @@ export function MapScreen({
        * dragging the map. Collapsed to a slim handle by default; expands to
        * show the full clickable list, same behavior as the old split-view
        * map screen's sidebar list. */}
+      {/* Mobile bottom offset matches the mobile nav's own real height
+       * (~56px of tab content/padding) PLUS env(safe-area-inset-bottom) —
+       * the nav pads itself for the home-indicator/gesture-bar area on
+       * notched phones, so a flat px offset here left a visible gap on
+       * exactly those devices. This sits it flush against the nav on any
+       * device instead. */}
       <div
-        className="absolute inset-x-0 bottom-16 z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
+        className="absolute inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
         style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem", ...previewDim }}
       >
         <button

@@ -264,6 +264,23 @@ button:disabled {
   display: none;
 }
 
+/* Focus mode (see hooks/useFocusMode.ts + FocusModeCollapseButton/
+ * FocusModeExitButton) — collapses the header + desktop sidebar so a
+ * page's main content (the map, most notably) can fill the whole viewport.
+ * Desktop-only: mobile has no persistent sidebar to hide and its header is
+ * already minimal, so the trigger buttons themselves only render at sm+. */
+@media (min-width: 640px) {
+  :root[data-focus-mode="true"] .site-header-bar,
+  :root[data-focus-mode="true"] .app-sidebar-desktop {
+    display: none !important;
+  }
+  :root[data-focus-mode="true"] .map-screen-container {
+    height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+
 /* Portrait-only on phones — the web has no universal orientation-lock API
  * (iOS Safari supports none at all), so this CSS overlay is the fallback;
  * the manifest's "orientation" hint covers installed-PWA Android, and the

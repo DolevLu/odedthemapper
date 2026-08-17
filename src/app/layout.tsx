@@ -5,6 +5,7 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
 import { PromoDrawer } from "@/components/PromoDrawer";
 import { ReferralClaimer } from "@/components/ReferralClaimer";
+import { FocusModeExitButton } from "@/components/FocusModeExitButton";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function RootLayout({
           <ReferralClaimer />
         </Providers>
         <PromoDrawer />
+        <FocusModeExitButton />
         <ServiceWorkerRegister />
       </body>
     </html>
