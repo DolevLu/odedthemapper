@@ -112,33 +112,42 @@ export default async function AccountPage() {
           )}
           {!resolved!.isOwner && <p className="mt-1 text-xs opacity-60">אתם מוזמנים למנוי הזה כמשתמש נוסף.</p>}
 
-          {active.destinations.length > 0 && (
-            <div className="mt-4 flex flex-col gap-2">
-              <p className="text-sm font-semibold">היעדים שלכם:</p>
-              <div className="flex flex-col gap-2">
-                {active.destinations.map((d) => (
-                  <div key={d.id} className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/trip/${d.destination.slug}`}
-                      className="rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700"
-                    >
-                      {d.destination.name} ←
-                    </Link>
-                    {resolved!.isOwner && !plan?.isOrgTier && (
-                      <SwapDestinationButton
-                        subscriptionId={active.id}
-                        destinationId={d.destinationId}
-                        destinationName={d.destination.name}
-                        remainingDays={daysUntilSwappable(d.assignedAt)}
-                        candidates={allDestinations.filter(
-                          (c) => !active.destinations.some((ad) => ad.destination.slug === c.slug)
-                        )}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
+          {plan?.isOrgTier ? (
+            <div className="mt-4">
+              <p className="text-sm font-semibold">🌍 גישה מלאה לכל היעדים במערכת — ללא הגבלה</p>
+              <Link href="/destinations" className="mt-1 inline-block text-sm font-medium underline" style={{ color: "var(--primary)" }}>
+                עיון בכל היעדים ←
+              </Link>
             </div>
+          ) : (
+            active.destinations.length > 0 && (
+              <div className="mt-4 flex flex-col gap-2">
+                <p className="text-sm font-semibold">היעדים שלכם:</p>
+                <div className="flex flex-col gap-2">
+                  {active.destinations.map((d) => (
+                    <div key={d.id} className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/trip/${d.destination.slug}`}
+                        className="rounded-full bg-purple-50 px-3 py-1 text-sm font-medium text-purple-700"
+                      >
+                        {d.destination.name} ←
+                      </Link>
+                      {resolved!.isOwner && (
+                        <SwapDestinationButton
+                          subscriptionId={active.id}
+                          destinationId={d.destinationId}
+                          destinationName={d.destination.name}
+                          remainingDays={daysUntilSwappable(d.assignedAt)}
+                          candidates={allDestinations.filter(
+                            (c) => !active.destinations.some((ad) => ad.destination.slug === c.slug)
+                          )}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
           )}
           {PLANS[active.planKey as PlanKey].isOrgTier && resolved!.isOwner && (
             <Link href="/admin" className="mt-4 inline-block text-sm font-semibold underline">
