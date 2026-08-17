@@ -155,6 +155,7 @@ model User {
   itineraryTemplates ItineraryTemplate[]
   visitedCountries VisitedCountry[]
   locationPings LocationPing[]
+  phrasebookProgress PhrasebookProgress[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -373,6 +374,20 @@ model PhrasebookEntry {
   category      String @default("general")
 
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  progress    PhrasebookProgress[]
+}
+
+/** Marks a phrasebook entry as "known" by a given user — lets the phrasebook
+ * screen show a check + progress count instead of being a flat word list. */
+model PhrasebookProgress {
+  id      String @id @default(cuid())
+  userId  String
+  entryId String
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry PhrasebookEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entryId])
 }
 
 model Coupon {

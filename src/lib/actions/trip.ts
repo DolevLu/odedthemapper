@@ -37,6 +37,17 @@ export async function togglePackingCheck(destinationId: string, itemKey: string,
   revalidatePath(`/trip/${slug}/packing`);
 }
 
+export async function togglePhrasebookKnown(entryId: string, slug: string) {
+  const userId = await requireUserId();
+  const existing = await prisma.phrasebookProgress.findUnique({ where: { userId_entryId: { userId, entryId } } });
+  if (existing) {
+    await prisma.phrasebookProgress.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.phrasebookProgress.create({ data: { userId, entryId } });
+  }
+  revalidatePath(`/trip/${slug}/phrasebook`);
+}
+
 export async function toggleWantsBooking(poiId: string, slug: string) {
   const poi = await prisma.pointOfInterest.findUniqueOrThrow({ where: { id: poiId } });
   await prisma.pointOfInterest.update({ where: { id: poiId }, data: { wantsBooking: !poi.wantsBooking } });
