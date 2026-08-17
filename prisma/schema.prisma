@@ -147,6 +147,16 @@ model User {
   subscriptionCreditCents Int     @default(0)
   creditsMonthKey        String?
 
+  // Referral program (see lib/referral.ts): a short shareable code (lazily
+  // generated on first profile visit), who referred this user (if anyone),
+  // and when the referral reward was granted (guards against double-paying
+  // credit if the reward-check ever runs twice for the same user).
+  referralCode       String?   @unique
+  referredByUserId   String?
+  referralRewardedAt DateTime?
+  referredBy User?  @relation("Referrals", fields: [referredByUserId], references: [id])
+  referrals  User[] @relation("Referrals")
+
   accounts      Account[]
   sessions      Session[]
   subscriptions Subscription[]
@@ -167,6 +177,8 @@ model User {
   phrasebookProgress PhrasebookProgress[]
   savedMapPins SavedMapPin[]
   countryPhotos CountryPhoto[]
+  pushSubscriptions PushSubscription[]
+  expenseSplits ExpenseSplit[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -318,13 +330,49 @@ model Expense {
   userId        String
   destinationId String
   category      String
-  amountCents   Int
+  amountCents   Int      // always the ILS amount — every budget/total calc assumes this
   currency      String   @default("ILS")
   note          String?
   spentAt       DateTime @default(now())
 
+  // Set only when the expense was entered in a foreign currency: the
+  // original entered amount/currency, kept for display transparency
+  // ("₪45 · הומר מ-€11"), while amountCents/currency above stay the
+  // ILS-converted source of truth every existing calc already relies on.
+  originalAmountCents Int?
+  originalCurrency    String?
+
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  splits      ExpenseSplit[]
+}
+
+/** One row per participant (other than the payer) on a shared expense —
+ * lets a family/group subscription split a cost and see who owes whom
+ * (settle-up math lives in lib/costSplitting.ts, not persisted). */
+model ExpenseSplit {
+  id         String  @id @default(cuid())
+  expenseId  String
+  userId     String
+  shareCents Int
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+}
+
+/** A browser's Web Push subscription (see lib/push.ts) — one row per
+ * device/browser a user has granted notification permission on. */
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /** One GPS point recorded while the "my location" tracker was on. Rendered
@@ -391,6 +439,9 @@ model TripLogistic {
   lng           Float?
   startsAt      DateTime?
   endsAt        DateTime?
+  // Set once a flight check-in push has actually been sent for this entry,
+  // so the notification cron never sends the same reminder twice.
+  checkinNotifiedAt DateTime?
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
@@ -403,6 +454,9 @@ model TripBudget {
   totalCents    Int
   currency      String @default("ILS")
   tripDays      Int    @default(1)
+  // Last time a "you're close to/over budget" push was sent — at most one
+  // per calendar day, checked/set by the notification cron.
+  lastAlertedAt DateTime?
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)

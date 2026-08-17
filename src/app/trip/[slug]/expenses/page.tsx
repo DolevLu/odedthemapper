@@ -4,6 +4,7 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { addExpense, deleteExpense, setTripBudget } from "@/lib/actions/trip";
 import { LoginPromptBanner } from "@/components/LoginPromptBanner";
+import { CURRENCIES } from "@/lib/exchangeRates";
 import { DailyRemaining } from "./DailyRemaining";
 
 const CATEGORIES = ["אוכל", "תחבורה", "לינה", "אטרקציות", "קניות", "אחר"];
@@ -114,7 +115,16 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
               </option>
             ))}
           </select>
-          <input name="amount" type="number" step="0.01" min="0" placeholder="סכום ₪" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <div className="flex gap-1">
+            <input name="amount" type="number" step="0.01" min="0" placeholder="סכום" required className="min-w-0 flex-1 rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+            <select name="currency" defaultValue="ILS" className="shrink-0 rounded-lg border px-2 py-2 text-sm" style={{ borderColor: "var(--primary)" }} title="ההוצאה תומר אוטומטית לשקלים">
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code}
+                </option>
+              ))}
+            </select>
+          </div>
           <input name="spentAt" type="date" defaultValue={todayKey} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
           <input name="note" placeholder="הערה" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
           <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white" style={{ background: "var(--primary)" }}>
@@ -142,6 +152,11 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
                   >
                     <div>
                       <span className="font-semibold">₪{(e.amountCents / 100).toFixed(0)}</span>
+                      {e.originalCurrency && e.originalAmountCents != null && (
+                        <span className="ms-1 text-xs opacity-50">
+                          (הומר מ-{(e.originalAmountCents / 100).toFixed(2)} {e.originalCurrency})
+                        </span>
+                      )}
                       <span className="ms-2 text-sm opacity-60">
                         {e.category}
                         {e.note ? ` · ${e.note}` : ""}

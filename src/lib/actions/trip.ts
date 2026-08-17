@@ -85,18 +85,24 @@ export async function addExpense(destinationId: string, slug: string, formData: 
   const userId = await requireUserId();
   const category = String(formData.get("category") ?? "אחר");
   const amount = Number(formData.get("amount") ?? 0);
+  const currency = String(formData.get("currency") ?? "ILS");
   const note = String(formData.get("note") ?? "") || null;
   const dateRaw = String(formData.get("spentAt") ?? "");
   if (!Number.isFinite(amount) || amount <= 0) return;
+
+  const { convertToILS } = await import("@/lib/exchangeRates");
+  const isForeign = currency !== "ILS";
+  const { amountCentsIls } = await convertToILS(amount, currency);
 
   await prisma.expense.create({
     data: {
       userId,
       destinationId,
       category,
-      amountCents: Math.round(amount * 100),
+      amountCents: amountCentsIls,
       note,
       spentAt: dateRaw ? new Date(dateRaw) : new Date(),
+      ...(isForeign ? { originalAmountCents: Math.round(amount * 100), originalCurrency: currency } : {}),
     },
   });
   revalidatePath(`/trip/${slug}/expenses`);
