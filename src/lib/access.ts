@@ -126,6 +126,19 @@ export async function getGroupMembers(userId: string): Promise<{ id: string; nam
   return users.filter((u) => u.id !== userId);
 }
 
+/** Deterministic pick of "one of the user's destinations" — same input
+ * always yields the same slug (so the sidebar/shell doesn't jump between
+ * destinations on every page load), but which one varies per user rather
+ * than always defaulting to the first in the list. Used to give paying
+ * users (especially org-tier, who aren't tied to any single destination) a
+ * real destination context outside of /trip/[slug] pages. */
+export function pickDefaultDestinationSlug(userId: string, slugs: string[]): string | null {
+  if (slugs.length === 0) return null;
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) hash = (hash * 31 + userId.charCodeAt(i)) >>> 0;
+  return slugs[hash % slugs.length];
+}
+
 /** Resolves the userId whose "personal" Itinerary this user should read and
  * write — the subscription owner's id when on a family/org plan, so every
  * co-traveler ends up sharing the literal same Itinerary row (and can vote

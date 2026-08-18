@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { getResolvedSubscriptionForAccount, getAccessLevel } from "@/lib/access";
-import { PLANS, type PlanKey } from "@/lib/plans";
+import { getUserPurchasedSlugs, pickDefaultDestinationSlug, getAccessLevel } from "@/lib/access";
+import { getAllDestinations, getDestinationBySlug } from "@/lib/data/destinations";
 import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 
@@ -9,15 +9,24 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   let currentSlug: string | null = null;
   let accessLevel: "none" | "silver" | "gold" = "none";
 
+  // Paying users get a real destination context even here (home/destinations/
+  // account, outside any /trip/[slug] page) so the sidebar's categories show
+  // as unlocked instead of demanding they pick a destination first — their
+  // one purchased destination, or (family/org tier with several) a
+  // deterministic pick among the ones they have access to. Excludes "draft"
+  // destinations only — getUserPurchasedSlugs' org-tier branch returns every
+  // destination regardless of status, and "draft" is the one status that
+  // means no content/not purchasable yet (see DestinationCard's isComingSoon).
   if (session?.user?.id) {
-    const resolved = await getResolvedSubscriptionForAccount(session.user.id);
-    const plan = resolved ? PLANS[resolved.subscription.planKey as PlanKey] : null;
-    // Org tier isn't tied to one destination, so there's nothing meaningful
-    // to pin the sidebar to outside of a specific /trip/[slug] page.
-    const firstDestination = resolved && !plan?.isOrgTier ? resolved.subscription.destinations[0]?.destination : null;
-    if (firstDestination) {
-      currentSlug = firstDestination.slug;
-      accessLevel = await getAccessLevel(session.user.id, firstDestination.id);
+    const [slugs, allDestinations] = await Promise.all([getUserPurchasedSlugs(session.user.id), getAllDestinations()]);
+    const bookableSlugs = new Set(allDestinations.filter((d) => d.status !== "draft").map((d) => d.slug));
+    const picked = pickDefaultDestinationSlug(session.user.id, slugs.filter((s) => bookableSlugs.has(s)));
+    if (picked) {
+      const destination = await getDestinationBySlug(picked);
+      if (destination) {
+        currentSlug = picked;
+        accessLevel = await getAccessLevel(session.user.id, destination.id);
+      }
     }
   }
 
