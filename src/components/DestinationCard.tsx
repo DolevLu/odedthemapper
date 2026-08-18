@@ -25,6 +25,8 @@ export function DestinationCard({ destination }: { destination: DestinationSumma
             <img
               src={thumb}
               alt={destination.name}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (

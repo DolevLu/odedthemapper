@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
 export type FlatPoi = {
@@ -41,7 +42,24 @@ export function extractTextDescription(html: string | null, maxLength = 280): st
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}…` : text;
 }
 
+/** This is the single heaviest, most-repeated query in the whole app — up to
+ * ~2000+ POIs (with tags + a photo each) for large destinations, and it's
+ * called fresh by Map, Now, Itinerary, Logistics, and Client-planner on
+ * every single navigation between those screens, even though the content
+ * only ever changes via an admin KML upload. Wrapped in Next's Data Cache
+ * (unstable_cache), tagged per destination so `revalidateTag` in the admin
+ * content actions (uploadKml/deleteDestinationContent) invalidates it
+ * immediately on a real change, with a 1h time-based revalidate as a safety
+ * net for any edit path that doesn't go through those actions. This is the
+ * main fix behind "switching between screens feels slow." */
 export async function getFlatPoisForDestination(destinationId: string): Promise<FlatPoi[]> {
+  return unstable_cache(() => fetchFlatPoisForDestination(destinationId), [`flat-pois-${destinationId}`], {
+    tags: [`pois-${destinationId}`],
+    revalidate: 3600,
+  })();
+}
+
+async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatPoi[]> {
   const areas = await prisma.area.findMany({
     where: { destinationId },
     select: {

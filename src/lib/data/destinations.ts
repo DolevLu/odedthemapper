@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import type { ThemeConfig } from "@/lib/theme/types";
 
@@ -42,7 +43,19 @@ async function getHeroPhotos(destinationId: string, take = 6): Promise<string[]>
   return anyPhotos.map((p) => p.url);
 }
 
+/** Homepage + /destinations listing — every card's POI/area counts require
+ * walking the same nested areas→categories→POIs tree as getFlatPoisForDestination,
+ * across ALL ~30 destinations, on every visit. Cached the same way (tagged
+ * "destinations-list", invalidated by the admin content actions) since this
+ * is the very first thing an anonymous visitor's browser has to wait on. */
 export async function getAllDestinations(): Promise<DestinationSummary[]> {
+  return unstable_cache(fetchAllDestinations, ["all-destinations"], {
+    tags: ["destinations-list"],
+    revalidate: 3600,
+  })();
+}
+
+async function fetchAllDestinations(): Promise<DestinationSummary[]> {
   const destinations = await prisma.destination.findMany({
     orderBy: { name: "asc" },
     include: {

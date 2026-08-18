@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { importKmlToDestination } from "@/lib/kml/importToDb";
@@ -21,6 +21,8 @@ export async function deleteDestinationContent(destinationId: string, slug: stri
   await requireContentManager();
   await prisma.area.deleteMany({ where: { destinationId } });
   await prisma.kmlImport.deleteMany({ where: { destinationId } });
+  revalidateTag(`pois-${destinationId}`, "max");
+  revalidateTag("destinations-list", "max");
   revalidatePath(`/admin/destinations/${slug}`);
   revalidatePath(`/trip/${slug}`);
 }
@@ -55,6 +57,8 @@ export async function uploadKml(destinationId: string, slug: string, formData: F
     await prisma.destination.update({ where: { id: destinationId }, data: { status: "preview" } });
   }
 
+  revalidateTag(`pois-${destinationId}`, "max");
+  revalidateTag("destinations-list", "max");
   revalidatePath(`/admin/destinations/${slug}`);
   revalidatePath("/");
   revalidatePath(`/trip/${slug}`);
@@ -69,6 +73,7 @@ export async function updateDestinationMeta(destinationId: string, slug: string,
     where: { id: destinationId },
     data: { status, tagline },
   });
+  revalidateTag("destinations-list", "max");
   revalidatePath(`/admin/destinations/${slug}`);
   revalidatePath("/admin");
   revalidatePath("/");
