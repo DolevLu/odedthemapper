@@ -126,6 +126,17 @@ export async function getGroupMembers(userId: string): Promise<{ id: string; nam
   return users.filter((u) => u.id !== userId);
 }
 
+/** Resolves the userId whose "personal" Itinerary this user should read and
+ * write — the subscription owner's id when on a family/org plan, so every
+ * co-traveler ends up sharing the literal same Itinerary row (and can vote
+ * on/edit the same days and stops) instead of each building their own
+ * private copy. Falls back to the user themselves when they own the
+ * subscription or have none. */
+export const resolveItineraryOwnerId = cache(async (userId: string): Promise<string> => {
+  const sub = await getActiveSubscription(userId);
+  return sub?.userId ?? userId;
+});
+
 export async function getActiveSubscriptionSummary(userId: string) {
   const sub = await getActiveSubscription(userId);
   if (!sub) return null;

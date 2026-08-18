@@ -162,6 +162,7 @@ model User {
   subscriptions Subscription[]
   favorites     Favorite[]
   itineraries   Itinerary[]
+  itineraryItemVotes ItineraryItemVote[]
   expenses      Expense[]
   logistics     TripLogistic[]
   budgets       TripBudget[]
@@ -321,8 +322,26 @@ model ItineraryItem {
   order           Int     @default(0)
   note            String?
 
-  day ItineraryDay     @relation(fields: [itineraryDayId], references: [id], onDelete: Cascade)
-  poi PointOfInterest? @relation(fields: [poiId], references: [id], onDelete: Cascade)
+  day   ItineraryDay        @relation(fields: [itineraryDayId], references: [id], onDelete: Cascade)
+  poi   PointOfInterest?    @relation(fields: [poiId], references: [id], onDelete: Cascade)
+  votes ItineraryItemVote[]
+}
+
+/** One like/dislike per co-traveler per itinerary item — lets everyone
+ * sharing a family/org subscription weigh in on a shared itinerary (see
+ * resolveItineraryOwnerId in access.ts) so the group can see at a glance
+ * which stops are unpopular and worth cutting. */
+model ItineraryItemVote {
+  id              String   @id @default(cuid())
+  itineraryItemId String
+  userId          String
+  value           Int // 1 = like, -1 = dislike
+  createdAt       DateTime @default(now())
+
+  item ItineraryItem @relation(fields: [itineraryItemId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itineraryItemId, userId])
 }
 
 model Expense {

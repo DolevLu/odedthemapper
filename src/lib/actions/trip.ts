@@ -4,11 +4,22 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { saveUploadedFile } from "@/lib/uploads";
+import { resolveItineraryOwnerId } from "@/lib/access";
 
 async function requireUserId() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("יש להתחבר");
   return session.user.id;
+}
+
+/** The acting user's id resolved to whichever family/org co-traveler owns
+ * the shared "personal" itinerary (see resolveItineraryOwnerId) — every
+ * mutation that creates/looks up that itinerary should key off this instead
+ * of the raw session userId, so the whole group ends up editing one shared
+ * plan rather than each building a private copy. */
+async function requirePersonalItineraryOwnerId() {
+  const userId = await requireUserId();
+  return resolveItineraryOwnerId(userId);
 }
 
 export async function toggleFavorite(poiId: string, slug: string) {
@@ -244,10 +255,131 @@ async function getOrCreateItinerary(userId: string, destinationId: string, kind:
 }
 
 export async function createItineraryDay(destinationId: string, slug: string) {
-  const userId = await requireUserId();
-  const itinerary = await getOrCreateItinerary(userId, destinationId, "personal");
+  const ownerId = await requirePersonalItineraryOwnerId();
+  const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
   const dayCount = await prisma.itineraryDay.count({ where: { itineraryId: itinerary.id } });
   await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayCount + 1 } });
+  revalidatePath(`/trip/${slug}/itinerary`);
+}
+
+/** Tops the shared itinerary up to at least `dayCount` days (creating any
+ * missing ones, never removing extra ones) — used by the swipe-builder setup
+ * step so day pills 1..N already exist before the deck starts. Returns the
+ * itinerary id so the client can immediately show N day options. */
+export async function ensureItineraryDayCount(destinationId: string, dayCount: number, slug: string) {
+  const ownerId = await requirePersonalItineraryOwnerId();
+  const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
+  const existing = await prisma.itineraryDay.count({ where: { itineraryId: itinerary.id } });
+  const toCreate = Math.max(0, Math.min(30, dayCount) - existing);
+  if (toCreate > 0) {
+    await prisma.$transaction(
+      Array.from({ length: toCreate }, (_, i) =>
+        prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: existing + i + 1 } })
+      )
+    );
+  }
+  revalidatePath(`/trip/${slug}/itinerary`);
+  return { itineraryId: itinerary.id };
+}
+
+/** Adds a swiped-right card to a specific day of the shared itinerary — a
+ * real POI (poiId) when it came from our own database, or a freeform
+ * customLabel when it came from the AI-suggestion fallback (those have no
+ * matching POI row, so no map pin — same limitation as any other custom
+ * itinerary item). */
+export async function addSwipedItineraryItem(
+  destinationId: string,
+  dayIndex: number,
+  poiId: string | null,
+  customLabel: string | null,
+  slug: string
+) {
+  const ownerId = await requirePersonalItineraryOwnerId();
+  const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
+  let day = await prisma.itineraryDay.findFirst({ where: { itineraryId: itinerary.id, dayIndex } });
+  if (!day) day = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex } });
+
+  const count = await prisma.itineraryItem.count({ where: { itineraryDayId: day.id } });
+  await prisma.itineraryItem.create({
+    data: {
+      itineraryDayId: day.id,
+      order: count,
+      ...(poiId ? { poiId } : { customLabel: (customLabel ?? "אטרקציה").slice(0, 120) }),
+    },
+  });
+  revalidatePath(`/trip/${slug}/itinerary`);
+}
+
+/** Asks Gemini for a handful of extra tourist-recommended spots for this
+ * destination (optionally narrowed to the chosen category names) to keep the
+ * swipe deck going once our own POI database for that filter is exhausted.
+ * Best-effort: no API key or a failed/malformed response just yields no
+ * extra cards rather than erroring the whole builder. No coordinates are
+ * requested (an LLM's guess at lat/lng for a lesser-known spot is unreliable
+ * enough to risk a wrong map pin) — these become customLabel items if added. */
+export async function fetchAiSuggestedPois(
+  destinationName: string,
+  categories: string[],
+  excludeNames: string[]
+): Promise<{ name: string; description: string }[]> {
+  await requireUserId();
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const categoryHint = categories.length > 0 ? `בתחומי העניין: ${categories.join(", ")}` : "בכל תחום";
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [
+              {
+                text: `הציעו עד 8 אטרקציות/מקומות אמיתיים ומומלצים ל${destinationName} ${categoryHint}, שאינם ברשימת השמות הבאה שכבר קיימת: ${JSON.stringify(excludeNames.slice(0, 200))}. החזירו אך ורק JSON בצורה [{"name": "...", "description": "..."}], עם description קצר (עד 25 מילים) בעברית שמסביר למה זה שווה ביקור. אל תמציאו מקומות שלא קיימים באמת.`,
+              },
+            ],
+          },
+          contents: [{ role: "user", parts: [{ text: `הצעות נוספות ל${destinationName}` }] }],
+          generationConfig: { maxOutputTokens: 800, temperature: 0.4 },
+        }),
+        signal: AbortSignal.timeout(15000),
+      }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const match = text?.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const parsed = JSON.parse(match[0]);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter(
+        (p): p is { name: string; description: string } =>
+          p && typeof p.name === "string" && typeof p.description === "string"
+      )
+      .slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
+/** Toggle-style like/dislike, one per user per item — clicking the same
+ * value again clears your vote instead of doubling up. Counts are shown to
+ * everyone sharing the itinerary so the group can spot unpopular stops. */
+export async function voteItineraryItem(itemId: string, value: 1 | -1, slug: string) {
+  const userId = await requireUserId();
+  const existing = await prisma.itineraryItemVote.findUnique({
+    where: { itineraryItemId_userId: { itineraryItemId: itemId, userId } },
+  });
+  if (existing && existing.value === value) {
+    await prisma.itineraryItemVote.delete({ where: { id: existing.id } });
+  } else if (existing) {
+    await prisma.itineraryItemVote.update({ where: { id: existing.id }, data: { value } });
+  } else {
+    await prisma.itineraryItemVote.create({ data: { itineraryItemId: itemId, userId, value } });
+  }
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
@@ -599,7 +731,8 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
   }));
   const hotelAnchor = hotel?.lat != null && hotel?.lng != null ? { lat: hotel.lat, lng: hotel.lng } : null;
 
-  const itinerary = await getOrCreateItinerary(userId, destinationId, "personal");
+  const ownerId = await resolveItineraryOwnerId(userId);
+  const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
 
   const scheduledDays = scheduleItineraryDays(candidates, tripDays, hotelAnchor);

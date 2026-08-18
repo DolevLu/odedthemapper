@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote } from "@/lib/actions/trip";
+import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, voteItineraryItem } from "@/lib/actions/trip";
 
 export type DayListItem = {
   id: string;
@@ -9,7 +9,15 @@ export type DayListItem = {
   customLabel: string | null;
   note: string | null;
   poi: { name: string; photoUrl: string | null } | null;
+  likeCount: number;
+  dislikeCount: number;
+  myVote: -1 | 0 | 1;
 };
+
+// How far left an item must be dragged (px) before releasing it deletes the
+// stop — mirrors the swipe-builder's own reject threshold so the gesture
+// feels consistent across the two screens.
+const SWIPE_DELETE_THRESHOLD = 90;
 
 // Debounced rather than saved on every keystroke, so typing a note doesn't
 // fire a server action per character.
@@ -35,6 +43,9 @@ export function DayItemsList({
   );
   const noteSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const [, startTransition] = useTransition();
+  const [swipeX, setSwipeX] = useState<Record<string, number>>({});
+  const swipingId = useRef<string | null>(null);
+  const swipeStartX = useRef(0);
 
   // Keep `order`/`notes` in sync with `items` when the server sends a fresh list
   // (React's documented pattern for adjusting state during render, in place
@@ -125,6 +136,39 @@ export function DayItemsList({
     }
   }
 
+  // Horizontal drag-left-to-delete on the item card itself (mobile's
+  // equivalent of the swipe-builder's reject gesture). Ignores drags that
+  // start on the reorder handle, note textarea, delete button, or vote
+  // buttons via the `data-no-swipe` marker on those elements.
+  function handleSwipePointerDown(itemId: string, e: React.PointerEvent) {
+    if ((e.target as HTMLElement).closest("[data-no-swipe]")) return;
+    swipingId.current = itemId;
+    swipeStartX.current = e.clientX;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function handleSwipePointerMove(itemId: string, e: React.PointerEvent) {
+    if (swipingId.current !== itemId) return;
+    const delta = Math.min(0, e.clientX - swipeStartX.current);
+    setSwipeX((prev) => ({ ...prev, [itemId]: delta }));
+  }
+
+  function handleSwipePointerEnd(itemId: string) {
+    if (swipingId.current !== itemId) return;
+    swipingId.current = null;
+    const delta = swipeX[itemId] ?? 0;
+    if (delta < -SWIPE_DELETE_THRESHOLD) {
+      removeItineraryItem(itemId, slug);
+    }
+    setSwipeX((prev) => ({ ...prev, [itemId]: 0 }));
+  }
+
+  function handleVote(itemId: string, value: 1 | -1) {
+    startTransition(() => {
+      voteItineraryItem(itemId, value, slug);
+    });
+  }
+
   if (items.length === 0) return <p className="text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
 
   return (
@@ -149,67 +193,117 @@ export function DayItemsList({
             )}
           </div>
 
-          <div
-            ref={(el) => {
-              if (el) itemRefs.current.set(item.id, el);
-              else itemRefs.current.delete(item.id);
-            }}
-            className="flex flex-1 items-start gap-3 rounded-xl border p-2 text-sm shadow-sm"
-            style={{
-              borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
-              background: "var(--background)",
-              opacity: dragId === item.id ? 0.6 : 1,
-            }}
-          >
-            <span
-              onPointerDown={(e) => handlePointerDown(item.id, e)}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              className="shrink-0 cursor-grab touch-none select-none px-1 pt-2 text-lg opacity-50 active:cursor-grabbing"
-              aria-label="גרירה לשינוי סדר"
+          <div className="relative flex-1 overflow-hidden rounded-xl">
+            {/* Revealed behind the card as it's dragged left — mirrors the
+             * delete affordance so the gesture reads clearly before release. */}
+            <div
+              className="absolute inset-0 flex items-center justify-start rounded-xl px-4 text-lg"
+              style={{ background: "#DC2626", color: "white", opacity: Math.min(1, -(swipeX[item.id] ?? 0) / SWIPE_DELETE_THRESHOLD) }}
+              aria-hidden
             >
-              ⠿
-            </span>
-            {item.poi?.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.poi.photoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
-            ) : (
+              🗑️
+            </div>
+            <div
+              ref={(el) => {
+                if (el) itemRefs.current.set(item.id, el);
+                else itemRefs.current.delete(item.id);
+              }}
+              onPointerDown={(e) => handleSwipePointerDown(item.id, e)}
+              onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
+              onPointerUp={() => handleSwipePointerEnd(item.id)}
+              onPointerCancel={() => handleSwipePointerEnd(item.id)}
+              className="relative flex items-start gap-3 rounded-xl border p-2 text-sm shadow-sm touch-pan-y"
+              style={{
+                borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
+                background: "var(--background)",
+                opacity: dragId === item.id ? 0.6 : 1,
+                transform: `translateX(${swipeX[item.id] ?? 0}px)`,
+                transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
+              }}
+            >
               <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg"
-                style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+                data-no-swipe
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  handlePointerDown(item.id, e);
+                }}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                className="shrink-0 cursor-grab touch-none select-none px-1 pt-2 text-lg opacity-50 active:cursor-grabbing"
+                aria-label="גרירה לשינוי סדר"
               >
-                📍
+                ⠿
               </span>
-            )}
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              {item.timeOfDay && (
+              {item.poi?.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.poi.photoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+              ) : (
                 <span
-                  className="w-fit rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
-                  style={{ background: "var(--primary)" }}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg"
+                  style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
                 >
-                  {item.timeOfDay}
+                  📍
                 </span>
               )}
-              <span className="truncate font-medium">
-                {item.poi ? item.poi.name : item.customLabel}
-                {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                {item.timeOfDay && (
+                  <span
+                    className="w-fit rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
+                    style={{ background: "var(--primary)" }}
+                  >
+                    {item.timeOfDay}
+                  </span>
+                )}
+                <span className="truncate font-medium">
+                  {item.poi ? item.poi.name : item.customLabel}
+                  {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
+                </span>
+                <textarea
+                  data-no-swipe
+                  value={notes[item.id] ?? ""}
+                  onChange={(e) => {
+                    handleNoteChange(item.id, e.target.value);
+                    e.currentTarget.style.height = "auto";
+                    e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+                  }}
+                  placeholder="✎ הוספת הערה אישית..."
+                  rows={1}
+                  className="mt-0.5 w-full resize-none rounded-md border-0 bg-transparent px-1.5 py-1 text-xs leading-snug opacity-80 outline-none placeholder:opacity-40 focus:bg-white/60 focus:opacity-100"
+                />
+                <span data-no-swipe className="mt-0.5 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleVote(item.id, 1)}
+                    className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold"
+                    style={{
+                      background: item.myVote === 1 ? "color-mix(in srgb, #16A34A 20%, transparent)" : "transparent",
+                      color: item.myVote === 1 ? "#16A34A" : "var(--text)",
+                      opacity: item.myVote === 1 ? 1 : 0.5,
+                    }}
+                    aria-label="לייק"
+                  >
+                    👍 {item.likeCount > 0 && item.likeCount}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleVote(item.id, -1)}
+                    className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold"
+                    style={{
+                      background: item.myVote === -1 ? "color-mix(in srgb, #DC2626 20%, transparent)" : "transparent",
+                      color: item.myVote === -1 ? "#DC2626" : "var(--text)",
+                      opacity: item.myVote === -1 ? 1 : 0.5,
+                    }}
+                    aria-label="דיסלייק"
+                  >
+                    👎 {item.dislikeCount > 0 && item.dislikeCount}
+                  </button>
+                </span>
               </span>
-              <textarea
-                value={notes[item.id] ?? ""}
-                onChange={(e) => {
-                  handleNoteChange(item.id, e.target.value);
-                  e.currentTarget.style.height = "auto";
-                  e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
-                }}
-                placeholder="✎ הוספת הערה אישית..."
-                rows={1}
-                className="mt-0.5 w-full resize-none rounded-md border-0 bg-transparent px-1.5 py-1 text-xs leading-snug opacity-80 outline-none placeholder:opacity-40 focus:bg-white/60 focus:opacity-100"
-              />
-            </span>
-            <form action={removeItineraryItem.bind(null, item.id, slug)}>
-              <button className="shrink-0 pt-2 opacity-40 hover:opacity-100">✕</button>
-            </form>
+              <form data-no-swipe action={removeItineraryItem.bind(null, item.id, slug)}>
+                <button className="shrink-0 pt-2 opacity-40 hover:opacity-100">✕</button>
+              </form>
+            </div>
           </div>
         </div>
       ))}

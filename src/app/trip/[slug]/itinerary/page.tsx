@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination, extractTextDescription } from "@/lib/data/pois";
-import { getAccessLevel } from "@/lib/access";
+import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { createItineraryDay } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
@@ -24,14 +25,20 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
   }
 
   const userId = session!.user!.id;
+  const ownerId = await resolveItineraryOwnerId(userId);
 
   const [itinerary, pois, areas] = await Promise.all([
     prisma.itinerary.findUnique({
-      where: { userId_destinationId_kind: { userId, destinationId: destination.id, kind: "personal" } },
+      where: { userId_destinationId_kind: { userId: ownerId, destinationId: destination.id, kind: "personal" } },
       include: {
         days: {
           orderBy: { dayIndex: "asc" },
-          include: { items: { orderBy: { order: "asc" }, include: { poi: { include: { photos: { take: 1 } } } } } },
+          include: {
+            items: {
+              orderBy: { order: "asc" },
+              include: { poi: { include: { photos: { take: 1 } } }, votes: { select: { userId: true, value: true } } },
+            },
+          },
         },
       },
     }),
@@ -63,6 +70,13 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">📅 מתכנן מסלול יומי</h1>
         <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/trip/${slug}/itinerary/builder`}
+            className="game-pop-in rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+            style={{ background: "linear-gradient(135deg, #F472B6, #F59E0B)" }}
+          >
+            🔥 בנו מסלול במצב טינדר
+          </Link>
           <form action={createDayAction}>
             <button
               type="submit"
@@ -109,6 +123,9 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
                 customLabel: i.customLabel,
                 note: i.note,
                 poi: i.poi ? { name: i.poi.name, photoUrl: i.poi.photos[0]?.url ?? null } : null,
+                likeCount: i.votes.filter((v) => v.value === 1).length,
+                dislikeCount: i.votes.filter((v) => v.value === -1).length,
+                myVote: (i.votes.find((v) => v.userId === userId)?.value ?? 0) as -1 | 0 | 1,
               })),
             }))}
           />
