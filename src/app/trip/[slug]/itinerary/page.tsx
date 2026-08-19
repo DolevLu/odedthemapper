@@ -1,14 +1,14 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination, extractTextDescription } from "@/lib/data/pois";
 import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { createItineraryDay } from "@/lib/actions/trip";
+import { listItineraryTemplates } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
 import { ExportPdfButton } from "./ExportPdfButton";
+import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ItineraryDaysView } from "./ItineraryDaysView";
 
@@ -27,7 +27,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
   const userId = session!.user!.id;
   const ownerId = await resolveItineraryOwnerId(userId);
 
-  const [itinerary, pois, areas] = await Promise.all([
+  const [itinerary, pois, areas, templates] = await Promise.all([
     prisma.itinerary.findUnique({
       where: { userId_destinationId_kind: { userId: ownerId, destinationId: destination.id, kind: "personal" } },
       include: {
@@ -44,11 +44,11 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
     }),
     getFlatPoisForDestination(destination.id),
     prisma.area.findMany({ where: { destinationId: destination.id }, select: { id: true, name: true } }),
+    listItineraryTemplates(destination.id, "personal"),
   ]);
 
   const poiOptions = pois.map((p) => ({ id: p.id, name: p.name, areaName: p.areaName, categoryName: p.categoryName }));
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
-  const createDayAction = createItineraryDay.bind(null, destination.id, slug);
   const hasExistingDays = Boolean(itinerary && itinerary.days.length > 0);
 
   const mapDays: MapDay[] = (itinerary?.days ?? []).map((day) => ({
@@ -69,23 +69,8 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">📅 מתכנן מסלול יומי</h1>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/trip/${slug}/itinerary/builder`}
-            className="game-pop-in rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
-            style={{ background: "linear-gradient(135deg, #F472B6, #F59E0B)" }}
-          >
-            🔥 בנו מסלול במצב טינדר
-          </Link>
-          <form action={createDayAction}>
-            <button
-              type="submit"
-              className="rounded-full px-4 py-2 text-sm font-semibold text-white"
-              style={{ background: "var(--primary)" }}
-            >
-              + הוספת יום
-            </button>
-          </form>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <ItineraryTopBar destinationId={destination.id} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
           {hasExistingDays && <ExportPdfButton destinationId={destination.id} slug={slug} />}
         </div>
       </div>

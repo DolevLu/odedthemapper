@@ -2,73 +2,55 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addSwipedItineraryItem, ensureItineraryDayCount, fetchAiSuggestedPois } from "@/lib/actions/trip";
+import {
+  addSwipedItineraryItem,
+  ensureItineraryDayCount,
+  fetchAiSuggestedPois,
+  buildSwipeDeck,
+  type SwipeDeckCard,
+} from "@/lib/actions/trip";
+import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
 
-type PoiCard = {
-  poiId: string;
-  name: string;
-  categoryName: string;
-  areaName: string;
-  photoUrl: string | null;
-  description: string | null;
-  tags: string[];
-  isMustSee: boolean;
-};
-
-type DeckCard = {
+type DeckCard = Omit<SwipeDeckCard, "poiId" | "areaName"> & {
   key: string;
   poiId: string | null;
-  name: string;
-  categoryName: string;
   areaName: string | null;
-  photoUrl: string | null;
-  description: string | null;
-  tags: string[];
-  isMustSee: boolean;
   isAiSuggested?: boolean;
 };
 
-const SWIPE_COMMIT_THRESHOLD = 110;
-
-function buildDeck(cards: PoiCard[], categories: string[], excludePoiIds: string[]): DeckCard[] {
-  const excludeSet = new Set(excludePoiIds);
-  const filtered = cards.filter(
-    (c) => !excludeSet.has(c.poiId) && (categories.length === 0 || categories.includes(c.categoryName))
-  );
-  // Deterministic "popularity" ordering in lieu of real visitor-rating data:
-  // must-see landmarks first, then whatever has the richest curated tags.
-  const sorted = [...filtered].sort((a, b) => {
-    if (a.isMustSee !== b.isMustSee) return a.isMustSee ? -1 : 1;
-    return b.tags.length - a.tags.length;
-  });
-  return sorted.map((c) => ({ key: c.poiId, ...c }));
-}
+const SWIPE_COMMIT_THRESHOLD = 100;
+const DAY_ITEM_CAP = 10;
 
 export function SwipeBuilder({
   destinationId,
   destinationName,
   slug,
   categories,
-  cards,
   excludePoiIds,
   initialDayCount,
+  hasExistingDays,
+  existingDayItemCounts,
 }: {
   destinationId: string;
   destinationName: string;
   slug: string;
   categories: string[];
-  cards: PoiCard[];
   excludePoiIds: string[];
   initialDayCount: number;
+  hasExistingDays: boolean;
+  existingDayItemCounts: number[];
 }) {
   const router = useRouter();
+  const { requestConfirm, modal: confirmModal } = useSaveOrDiscardFlow(destinationId, slug);
   const [step, setStep] = useState<"setup" | "swipe">("setup");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [dayCount, setDayCount] = useState(initialDayCount);
   const [dayTotal, setDayTotal] = useState(initialDayCount);
+  const [dayCounts, setDayCounts] = useState<number[]>(existingDayItemCounts);
   const [deck, setDeck] = useState<DeckCard[]>([]);
   const [index, setIndex] = useState(0);
   const [pendingCard, setPendingCard] = useState<DeckCard | null>(null);
+  const [dayPickError, setDayPickError] = useState<string | null>(null);
   const [aiLoading, startAiTransition] = useTransition();
   const [, startTransition] = useTransition();
   const [starting, startStartTransition] = useTransition();
@@ -77,19 +59,38 @@ export function SwipeBuilder({
     setSelectedCategories((prev) => (prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]));
   }
 
-  function handleStart() {
+  function beginBuild() {
     startStartTransition(async () => {
       await ensureItineraryDayCount(destinationId, dayCount, slug);
+      const freshDeck = await buildSwipeDeck(destinationId, selectedCategories, excludePoiIds);
       setDayTotal(dayCount);
-      setDeck(buildDeck(cards, selectedCategories, excludePoiIds));
+      setDayCounts((prev) => Array.from({ length: dayCount }, (_, i) => prev[i] ?? 0));
+      setDeck(freshDeck.map((c) => ({ ...c, key: c.poiId })));
       setIndex(0);
       setStep("swipe");
     });
   }
 
+  function handleStart() {
+    requestConfirm(hasExistingDays, beginBuild);
+  }
+
   function commitAdd(card: DeckCard, dayIndex: number) {
-    startTransition(() => {
-      addSwipedItineraryItem(destinationId, dayIndex, card.poiId, card.isAiSuggested ? card.name : null, slug);
+    startTransition(async () => {
+      const result = await addSwipedItineraryItem(
+        destinationId,
+        dayIndex,
+        card.poiId,
+        card.isAiSuggested ? card.name : null,
+        slug
+      );
+      if (result && "error" in result) {
+        setDayPickError(result.error);
+        return;
+      }
+      setDayCounts((prev) => prev.map((c, i) => (i === dayIndex - 1 ? c + 1 : c)));
+      setPendingCard(null);
+      setIndex((i) => i + 1);
     });
   }
 
@@ -98,18 +99,13 @@ export function SwipeBuilder({
   }
 
   function handleAccept(card: DeckCard) {
+    setDayPickError(null);
     setPendingCard(card);
-  }
-
-  function pickDay(dayIndex: number) {
-    if (pendingCard) commitAdd(pendingCard, dayIndex);
-    setPendingCard(null);
-    setIndex((i) => i + 1);
   }
 
   function requestMoreFromAi() {
     startAiTransition(async () => {
-      const excludeNames = [...deck.map((c) => c.name), ...cards.map((c) => c.name)];
+      const excludeNames = [...deck.map((c) => c.name)];
       const suggestions = await fetchAiSuggestedPois(destinationName, selectedCategories, excludeNames);
       const newCards: DeckCard[] = suggestions.map((s) => ({
         key: `ai-${s.name}-${Math.random().toString(36).slice(2)}`,
@@ -192,23 +188,31 @@ export function SwipeBuilder({
         >
           {starting ? "טוען…" : "🚀 בואו נתחיל!"}
         </button>
+
+        {confirmModal}
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-4">
-      <div className="flex w-full items-center justify-between">
-        <span className="text-xs opacity-60">
-          {exhausted ? "סוף הכרטיסיות" : `כרטיס ${index + 1} מתוך ${deck.length}`}
-        </span>
+    // Fixed to fill the viewport below the header (same pattern as the map
+    // screen) instead of flowing in-page — a fixed-height card + button row
+    // that doesn't need scrolling to reach the ❤️/✕ controls was the fix for
+    // both "have to scroll to see like/dislike" and a mis-tap on the mobile
+    // bottom nav underneath registering as an accidental exit to the map.
+    <div
+      className="fixed inset-x-0 bottom-0 top-14 z-10 flex flex-col items-center gap-3 px-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-4 sm:relative sm:inset-auto sm:bottom-auto sm:top-auto sm:h-[calc(100vh-160px)] sm:pb-4"
+      style={{ background: "var(--background)" }}
+    >
+      <div className="flex w-full max-w-md items-center justify-between">
+        <span className="text-xs opacity-60">{exhausted ? "סוף הכרטיסיות" : `כרטיס ${index + 1} מתוך ${deck.length}`}</span>
         <button onClick={() => router.push(`/trip/${slug}/itinerary`)} className="text-2xl opacity-50 hover:opacity-100" aria-label="סגירה">
           ✕
         </button>
       </div>
 
       {exhausted ? (
-        <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <p className="text-2xl">🎉</p>
           <p className="font-semibold">עברתם על כל הנקודות בקטגוריות שבחרתם</p>
           <button
@@ -228,32 +232,38 @@ export function SwipeBuilder({
           </button>
         </div>
       ) : (
-        <SwipeCardStack current={current} next={next} onAccept={handleAccept} onReject={handleReject} />
+        <div className="flex min-h-0 w-full max-w-md flex-1 flex-col justify-center gap-4">
+          <SwipeCardStack current={current} next={next} onAccept={handleAccept} onReject={handleReject} />
+        </div>
       )}
 
       {pendingCard && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setPendingCard(null)}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl p-5"
-            style={{ background: "var(--surface)" }}
-          >
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl p-5" style={{ background: "var(--surface)" }}>
             <p className="mb-3 text-center font-bold">לאיזה יום להוסיף את &quot;{pendingCard.name}&quot;?</p>
+            {dayPickError && <p className="mb-2 text-center text-xs font-semibold text-red-600">{dayPickError}</p>}
             <div className="flex flex-wrap justify-center gap-2">
-              {Array.from({ length: dayTotal }, (_, i) => i + 1).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => pickDay(d)}
-                  className="rounded-full px-4 py-2 text-sm font-bold text-white"
-                  style={{ background: "var(--primary)" }}
-                >
-                  יום {d}
-                </button>
-              ))}
+              {Array.from({ length: dayTotal }, (_, i) => i + 1).map((d) => {
+                const count = dayCounts[d - 1] ?? 0;
+                const full = count >= DAY_ITEM_CAP;
+                return (
+                  <button
+                    key={d}
+                    onClick={() => !full && commitAdd(pendingCard, d)}
+                    disabled={full}
+                    className="rounded-full px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+                    style={{ background: full ? "#9CA3AF" : "var(--primary)" }}
+                  >
+                    יום {d} {full ? "(מלא)" : `(${count}/${DAY_ITEM_CAP})`}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       )}
+
+      {confirmModal}
     </div>
   );
 }
@@ -289,7 +299,7 @@ function SwipeCardStack({
       setDragX(0);
       if (direction === "right") onAccept(current);
       else onReject();
-    }, 160);
+    }, 140);
   }
   function handlePointerUp() {
     if (!dragging) return;
@@ -300,30 +310,32 @@ function SwipeCardStack({
   }
 
   const rotate = dragX / 18;
-  const hint = dragX > 40 ? "right" : dragX < -40 ? "left" : null;
+  const hint = dragX > 30 ? "right" : dragX < -30 ? "left" : null;
 
   return (
-    <div className="relative h-[500px] w-full">
-      {next && (
-        <div className="absolute inset-0" style={{ transform: "scale(0.94) translateY(12px)", opacity: 0.6 }}>
-          <CardFace card={next} />
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="relative min-h-0 flex-1">
+        {next && (
+          <div className="absolute inset-0" style={{ transform: "scale(0.94) translateY(10px)", opacity: 0.6 }}>
+            <CardFace card={next} />
+          </div>
+        )}
+        <div
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="absolute inset-0 cursor-grab touch-none select-none active:cursor-grabbing"
+          style={{
+            transform: `translateX(${dragX}px) rotate(${rotate}deg)`,
+            transition: dragging ? "none" : "transform 0.22s ease",
+          }}
+        >
+          <CardFace card={current} hint={hint} />
         </div>
-      )}
-      <div
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className="absolute inset-0 cursor-grab touch-none select-none active:cursor-grabbing"
-        style={{
-          transform: `translateX(${dragX}px) rotate(${rotate}deg)`,
-          transition: dragging ? "none" : "transform 0.25s ease",
-        }}
-      >
-        <CardFace card={current} hint={hint} />
       </div>
 
-      <div className="absolute inset-x-0 -bottom-2 flex translate-y-full justify-center gap-6 pt-4">
+      <div className="flex shrink-0 justify-center gap-6">
         <button
           onClick={() => commit("left")}
           className="flex h-14 w-14 items-center justify-center rounded-full text-2xl shadow-lg"
@@ -359,7 +371,7 @@ function CardFace({ card, hint }: { card: DeckCard; hint?: "left" | "right" | nu
       className="flex h-full flex-col overflow-hidden rounded-3xl border shadow-xl"
       style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
     >
-      <div className="relative h-64 shrink-0">
+      <div className="relative h-[45%] shrink-0">
         {card.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={card.photoUrl} alt="" className="h-full w-full object-cover" draggable={false} />
@@ -371,13 +383,13 @@ function CardFace({ card, hint }: { card: DeckCard; hint?: "left" | "right" | nu
             🗺️
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
-        <span className="absolute bottom-3 right-4 text-xl font-extrabold text-white drop-shadow">{card.name}</span>
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+        <span className="absolute bottom-2 right-4 text-lg font-extrabold text-white drop-shadow">{card.name}</span>
         {hint && (
           <span
-            className="absolute top-4 rounded-lg border-4 px-3 py-1 text-xl font-extrabold uppercase"
+            className="absolute top-3 rounded-lg border-4 px-2.5 py-0.5 text-lg font-extrabold uppercase"
             style={{
-              [hint === "right" ? "left" : "right"]: "1rem",
+              [hint === "right" ? "left" : "right"]: "0.75rem",
               borderColor: hint === "right" ? "#16A34A" : "#DC2626",
               color: hint === "right" ? "#16A34A" : "#DC2626",
               transform: `rotate(${hint === "right" ? "-12deg" : "12deg"})`,
@@ -388,7 +400,7 @@ function CardFace({ card, hint }: { card: DeckCard; hint?: "left" | "right" | nu
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto p-3.5">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full px-2 py-1 font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
             {card.categoryName}

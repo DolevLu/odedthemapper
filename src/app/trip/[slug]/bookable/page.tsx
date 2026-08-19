@@ -58,20 +58,20 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   return (
     <div className="flex flex-col gap-8">
       {holidays.length > 0 && (
-        <section className="border p-5" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-          <h2 className="mb-1 text-lg font-bold">📅 חגים וימי חג קרובים</h2>
-          <p className="mb-4 text-sm opacity-70">
-            חגים ציבוריים ביעד — שימו לב שבחגים רבים עסקים ואתרים עשויים לפעול בשעות שונות או להיות סגורים.
+        <section className="border p-3 sm:p-5" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
+          <h2 className="mb-0.5 text-sm font-bold sm:text-lg">📅 חגים וימי חג קרובים</h2>
+          <p className="mb-2 text-xs opacity-70 sm:mb-4 sm:text-sm">
+            שימו לב שבחגים רבים עסקים ואתרים עשויים לפעול בשעות שונות או להיות סגורים.
           </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2">
             {holidays.map((h) => (
               <div
                 key={`${h.date}-${h.name}`}
-                className="flex items-center justify-between border p-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
+                className="flex items-center justify-between gap-2 border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.5deg] sm:p-3 sm:text-base"
                 style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
               >
-                <span className="font-semibold">🎉 {h.name}</span>
-                <span className="text-sm opacity-60">{new Date(h.date).toLocaleDateString("he-IL")}</span>
+                <span className="truncate font-semibold">🎉 {h.name}</span>
+                <span className="shrink-0 text-[11px] opacity-60 sm:text-sm">{new Date(h.date).toLocaleDateString("he-IL")}</span>
               </div>
             ))}
           </div>
@@ -79,20 +79,20 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
       )}
 
       <section
-        className="border p-5"
+        className="border p-3 sm:p-5"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
-        <h1 className="mb-1 text-xl font-bold">🎟️ המלצות מה כדאי להזמין שלנו</h1>
-        <p className="mb-4 text-sm opacity-70">דברים שכדאי לדעתנו לשקול להזמין מראש ביעד הזה.</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <h1 className="mb-0.5 text-base font-bold sm:text-xl">🎟️ המלצות מה כדאי להזמין שלנו</h1>
+        <p className="mb-2 text-xs opacity-70 sm:mb-4 sm:text-sm">דברים שכדאי לדעתנו לשקול להזמין מראש ביעד הזה.</p>
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-3">
           {recommendations.map((rec) => (
             <div
               key={rec.title}
-              className="border p-3 transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
+              className="border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg] sm:p-3 sm:text-base"
               style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
             >
               <p className="font-semibold">✨ {rec.title}</p>
-              <p className="text-sm opacity-70">{rec.note}</p>
+              <p className="text-[11px] opacity-70 sm:text-sm">{rec.note}</p>
             </div>
           ))}
         </div>

@@ -962,14 +962,14 @@ export function MapScreen({
        * dragging the map. Collapsed to a slim handle by default; expands to
        * show the full clickable list, same behavior as the old split-view
        * map screen's sidebar list. */}
-      {/* Mobile bottom offset matches the mobile nav's own real height
-       * (~56px of tab content/padding) PLUS env(safe-area-inset-bottom) —
-       * the nav pads itself for the home-indicator/gesture-bar area on
-       * notched phones, so a flat px offset here left a visible gap on
-       * exactly those devices. This sits it flush against the nav on any
-       * device instead. */}
+      {/* Mobile bottom offset uses --mobile-nav-height, the bottom nav's own
+       * *measured* height (see AppSidebar's ResizeObserver) rather than a
+       * hardcoded guess — env(safe-area-inset-bottom) is already included
+       * in that measurement since it's real padding inside the nav, so it
+       * isn't added again here. This sits the list flush against the nav on
+       * any device, with no gap and no overlap. */}
       <div
-        className="absolute inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
+        className="absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
         style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem", ...previewDim }}
       >
         <button

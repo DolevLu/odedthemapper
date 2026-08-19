@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
@@ -16,10 +16,14 @@ const TOP_ITEMS = [
 
 type DestItem = { href: string; label: string; icon: string; tier: Tier };
 
-// The 4 destination-scoped items pinned in the mobile bottom bar — everything
-// else lives behind the hamburger menu. The map is now the trip home (""),
-// so the old "/map" pin moved to "/now" for the "what's now" screen.
-const MOBILE_PINNED_KEYS = new Set(["", "/now"]);
+// The destination-scoped items pinned in the mobile bottom bar — everything
+// else lives behind the hamburger menu. Without a destination context,
+// "Destinations" fills one of the pinned slots (there's nothing destination-
+// scoped to show yet); once a destination is active (chosen, or a paying
+// user's default — see the shell layout), it swaps out for "Itinerary" and
+// "Destinations" moves into the hamburger drawer instead.
+const MOBILE_PINNED_KEYS_NO_DEST = new Set(["", "/now"]);
+const MOBILE_PINNED_KEYS_WITH_DEST = new Set(["", "/now", "/itinerary"]);
 
 const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
@@ -70,6 +74,22 @@ export function AppSidebar({
   const pathname = usePathname();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
+
+  // Publishes the mobile bottom nav's real rendered height as a CSS variable
+  // so anything that needs to sit flush against it (the map screen's points
+  // list, most notably) can reference the actual height instead of a
+  // hardcoded guess that silently drifts out of sync whenever the nav's own
+  // content changes.
+  useEffect(() => {
+    const el = mobileNavRef.current;
+    if (!el) return;
+    const setVar = () => document.documentElement.style.setProperty("--mobile-nav-height", `${el.offsetHeight}px`);
+    setVar();
+    const observer = new ResizeObserver(setVar);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [currentSlug]);
 
   // The map gets a reduced/read-only preview for anonymous visitors (see
   // MapScreen's `preview` prop), so it isn't actually locked for them the
@@ -106,9 +126,12 @@ export function AppSidebar({
     );
   }
 
-  const pinnedItems = DEST_GROUPS.flatMap((g) => g.items).filter((i) => MOBILE_PINNED_KEYS.has(i.href));
+  const hasDestContext = Boolean(currentSlug);
+  const pinnedKeys = hasDestContext ? MOBILE_PINNED_KEYS_WITH_DEST : MOBILE_PINNED_KEYS_NO_DEST;
+  const pinnedItems = DEST_GROUPS.flatMap((g) => g.items).filter((i) => pinnedKeys.has(i.href));
   const mapItem = pinnedItems.find((i) => i.href === "");
   const nowItem = pinnedItems.find((i) => i.href === "/now");
+  const itineraryItem = pinnedItems.find((i) => i.href === "/itinerary");
 
   return (
     <>
@@ -192,11 +215,21 @@ export function AppSidebar({
 
       {/* Mobile bottom bar — 5 pinned icons, native-app style */}
       <nav
+        ref={mobileNavRef}
         className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
         <MobileTab href="/" icon="🏠" label="דף הבית" active={pathname === "/"} />
-        <MobileTab href="/destinations" icon="🌍" label="יעדים" active={pathname === "/destinations"} />
+        {!hasDestContext && <MobileTab href="/destinations" icon="🌍" label="יעדים" active={pathname === "/destinations"} />}
+        {hasDestContext && nowItem && (
+          <MobileTab
+            href={destHref(nowItem)}
+            icon={nowItem.icon}
+            label={nowItem.label}
+            active={isDestActive(nowItem)}
+            onClick={(e) => handleDestItemClick(nowItem, e)}
+          />
+        )}
         {mapItem && (
           <MobileTab
             href={destHref(mapItem)}
@@ -206,7 +239,16 @@ export function AppSidebar({
             onClick={(e) => handleDestItemClick(mapItem, e)}
           />
         )}
-        {nowItem && (
+        {hasDestContext && itineraryItem && (
+          <MobileTab
+            href={destHref(itineraryItem)}
+            icon={itineraryItem.icon}
+            label={itineraryItem.label}
+            active={isDestActive(itineraryItem)}
+            onClick={(e) => handleDestItemClick(itineraryItem, e)}
+          />
+        )}
+        {!hasDestContext && nowItem && (
           <MobileTab
             href={destHref(nowItem)}
             icon={nowItem.icon}
@@ -264,7 +306,7 @@ export function AppSidebar({
             <div className="my-1.5 h-px bg-black/10" />
 
             {DEST_GROUPS.map((group) => {
-              const items = group.items.filter((i) => !MOBILE_PINNED_KEYS.has(i.href));
+              const items = group.items.filter((i) => !pinnedKeys.has(i.href));
               if (items.length === 0) return null;
               return (
                 <div key={group.title} className="contents">

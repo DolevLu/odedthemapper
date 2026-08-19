@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
+import { prisma } from "@/lib/prisma";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
 import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -24,6 +25,15 @@ export default async function TripLayout({
   // redirect away from the destination entirely.
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   const isLoggedIn = Boolean(session?.user?.id);
+
+  // Remembers "the destination they chose" for the shell's default-context
+  // fallback ((shell)/layout.tsx) — this layout only re-runs when the slug
+  // itself changes (not on every screen switch within the same
+  // destination), so this naturally fires once per real destination switch
+  // rather than on every navigation.
+  if (session?.user?.id) {
+    await prisma.user.update({ where: { id: session.user.id }, data: { defaultDestinationSlug: slug } }).catch(() => {});
+  }
 
   return (
     <DestinationThemeProvider theme={destination.theme} as="main" className="flex min-h-screen flex-1 flex-col">

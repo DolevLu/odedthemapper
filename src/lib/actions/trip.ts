@@ -287,27 +287,113 @@ export async function ensureItineraryDayCount(destinationId: string, dayCount: n
  * customLabel when it came from the AI-suggestion fallback (those have no
  * matching POI row, so no map pin — same limitation as any other custom
  * itinerary item). */
+const SWIPE_DAY_ITEM_CAP = 10;
+const SWIPE_DAY_START_MIN = 9 * 60; // 09:00
+const SWIPE_DAY_STEP_MIN = 90; // 1.5h per stop, a reasonable default pace
+const SWIPE_DAY_END_MIN = 21 * 60; // 21:00 — never auto-schedule later than this
+
+/** Picks a plausible next time slot for a newly swiped-in stop, continuing
+ * on from whatever the day's last-ordered item is already scheduled at
+ * (or a flat per-slot default if nothing has a time yet) — so a day built
+ * entirely through swiping still reads like a real day plan instead of
+ * every stop landing at the same time. */
+function nextSwipeTimeSlot(existing: { order: number; timeOfDay: string | null }[]): string {
+  const last = [...existing].sort((a, b) => b.order - a.order)[0];
+  let minutes: number;
+  if (last?.timeOfDay) {
+    const [h, m] = last.timeOfDay.split(":").map(Number);
+    minutes = h * 60 + m + SWIPE_DAY_STEP_MIN;
+  } else {
+    minutes = SWIPE_DAY_START_MIN + existing.length * SWIPE_DAY_STEP_MIN;
+  }
+  minutes = Math.min(minutes, SWIPE_DAY_END_MIN);
+  const hh = Math.floor(minutes / 60).toString().padStart(2, "0");
+  const mm = (minutes % 60).toString().padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 export async function addSwipedItineraryItem(
   destinationId: string,
   dayIndex: number,
   poiId: string | null,
   customLabel: string | null,
   slug: string
-) {
+): Promise<{ ok: true } | { error: string }> {
   const ownerId = await requirePersonalItineraryOwnerId();
   const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
   let day = await prisma.itineraryDay.findFirst({ where: { itineraryId: itinerary.id, dayIndex } });
   if (!day) day = await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex } });
 
-  const count = await prisma.itineraryItem.count({ where: { itineraryDayId: day.id } });
+  const existing = await prisma.itineraryItem.findMany({
+    where: { itineraryDayId: day.id },
+    select: { order: true, timeOfDay: true },
+  });
+  if (existing.length >= SWIPE_DAY_ITEM_CAP) {
+    return { error: `יום ${dayIndex} כבר מלא (מקסימום ${SWIPE_DAY_ITEM_CAP} נקודות ליום) — בחרו יום אחר` };
+  }
+
   await prisma.itineraryItem.create({
     data: {
       itineraryDayId: day.id,
-      order: count,
+      order: existing.length,
+      timeOfDay: nextSwipeTimeSlot(existing),
       ...(poiId ? { poiId } : { customLabel: (customLabel ?? "אטרקציה").slice(0, 120) }),
     },
   });
   revalidatePath(`/trip/${slug}/itinerary`);
+  return { ok: true };
+}
+
+export type SwipeDeckCard = {
+  poiId: string;
+  name: string;
+  categoryName: string;
+  areaName: string;
+  photoUrl: string | null;
+  description: string | null;
+  tags: string[];
+  isMustSee: boolean;
+};
+
+// Enough cards for a long swiping session without shipping a destination's
+// entire POI set (some run 1000-2000+) to the client just for the deck.
+const SWIPE_DECK_MAX_CARDS = 80;
+
+/** Builds the swipe deck on demand (called once the builder's setup step is
+ * submitted) instead of the page shipping every one of a destination's POIs
+ * to the browser up front — for a big destination that upfront payload was
+ * the actual cause of the builder feeling slow to open. Filters to the
+ * chosen categories (all, if none chosen), excludes POIs already in the
+ * itinerary, and orders by the same must-see-first / tag-richness heuristic
+ * used as a stand-in for real popularity data. */
+export async function buildSwipeDeck(
+  destinationId: string,
+  categories: string[],
+  excludePoiIds: string[]
+): Promise<SwipeDeckCard[]> {
+  await requireUserId();
+  const { getFlatPoisForDestination, extractTextDescription } = await import("@/lib/data/pois");
+  const pois = await getFlatPoisForDestination(destinationId);
+  const excludeSet = new Set(excludePoiIds);
+
+  const filtered = pois.filter(
+    (p) => !excludeSet.has(p.id) && (categories.length === 0 || categories.includes(p.categoryName))
+  );
+  filtered.sort((a, b) => {
+    if (a.isMustSee !== b.isMustSee) return a.isMustSee ? -1 : 1;
+    return b.tags.length - a.tags.length;
+  });
+
+  return filtered.slice(0, SWIPE_DECK_MAX_CARDS).map((p) => ({
+    poiId: p.id,
+    name: p.name,
+    categoryName: p.categoryName,
+    areaName: p.areaName,
+    photoUrl: p.photoUrl,
+    description: extractTextDescription(p.description, 160),
+    tags: p.tags,
+    isMustSee: p.isMustSee,
+  }));
 }
 
 /** Asks Gemini for a handful of extra tourist-recommended spots for this
@@ -490,16 +576,24 @@ type TemplateDaySnapshot = {
   items: { poiId: string | null; customLabel: string | null; timeOfDay: string | null; note: string | null; order: number }[];
 };
 
-/** Snapshots the client itinerary's current days/items as a reusable
- * template — a saved starting point for a future client, not a live link to
- * this itinerary (editing the template later won't change this trip). */
-export async function saveItineraryAsTemplate(destinationId: string, slug: string, name: string) {
-  const userId = await requireUserId();
+/** Snapshots an itinerary's current days/items as a reusable template — a
+ * saved starting point (for a future client, or one of a paying user's own
+ * saved trip plans), not a live link to this itinerary (editing the
+ * template later won't change the itinerary it was saved from). Shared
+ * "personal" itineraries save under the group's resolved owner id, same as
+ * the itinerary itself, so every co-traveler sees the same saved list. */
+export async function saveItineraryAsTemplate(
+  destinationId: string,
+  slug: string,
+  name: string,
+  kind: "personal" | "client" = "client"
+) {
+  const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
   const itinerary = await prisma.itinerary.findUnique({
-    where: { userId_destinationId_kind: { userId, destinationId, kind: "client" } },
+    where: { userId_destinationId_kind: { userId, destinationId, kind } },
     include: { days: { orderBy: { dayIndex: "asc" }, include: { items: { orderBy: { order: "asc" } } } } },
   });
-  if (!itinerary || itinerary.days.length === 0) return { error: "אין עדיין מסלול לשמור כתבנית" };
+  if (!itinerary || itinerary.days.length === 0) return { error: "אין עדיין מסלול לשמור" };
 
   const snapshot: TemplateDaySnapshot[] = itinerary.days.map((d) => ({
     dayIndex: d.dayIndex,
@@ -508,19 +602,46 @@ export async function saveItineraryAsTemplate(destinationId: string, slug: strin
   }));
 
   await prisma.itineraryTemplate.create({
-    data: { userId, destinationId, name: name.trim() || "תבנית ללא שם", daysJson: JSON.stringify(snapshot) },
+    data: { userId, destinationId, kind, name: name.trim() || "מסלול ללא שם", daysJson: JSON.stringify(snapshot) },
   });
-  revalidatePath(`/trip/${slug}/client-planner`);
+  revalidatePath(`/trip/${slug}/${kind === "personal" ? "itinerary" : "client-planner"}`);
   return { ok: true };
 }
 
-/** Replaces the client itinerary's current days/items with a saved template's snapshot. */
-export async function applyItineraryTemplate(templateId: string, destinationId: string, slug: string) {
-  const userId = await requireUserId();
-  const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });
-  if (!template || template.userId !== userId) return;
+/** The saved-itinerary list for the version-switcher dropdown. */
+export async function listItineraryTemplates(destinationId: string, kind: "personal" | "client" = "client") {
+  const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
+  return prisma.itineraryTemplate.findMany({
+    where: { userId, destinationId, kind },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true, createdAt: true },
+  });
+}
 
-  const itinerary = await getOrCreateItinerary(userId, destinationId, "client");
+/** Clears the active itinerary's days without saving anything — the
+ * "delete and start fresh" branch of the builder's save-or-discard prompt.
+ * Also used as the "make room" step before writing a picked template's
+ * snapshot (applyItineraryTemplate does this itself too; harmless if run
+ * twice on an already-empty itinerary). */
+export async function clearActiveItineraryDays(destinationId: string, slug: string, kind: "personal" | "client" = "personal") {
+  const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
+  const itinerary = await getOrCreateItinerary(userId, destinationId, kind);
+  await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
+  revalidatePath(`/trip/${slug}/${kind === "personal" ? "itinerary" : "client-planner"}`);
+}
+
+/** Replaces the client itinerary's current days/items with a saved template's snapshot. */
+export async function applyItineraryTemplate(
+  templateId: string,
+  destinationId: string,
+  slug: string,
+  kind: "personal" | "client" = "client"
+) {
+  const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
+  const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });
+  if (!template || template.userId !== userId || template.kind !== kind) return;
+
+  const itinerary = await getOrCreateItinerary(userId, destinationId, kind);
   await prisma.itineraryDay.deleteMany({ where: { itineraryId: itinerary.id } });
 
   const snapshot = JSON.parse(template.daysJson) as TemplateDaySnapshot[];
@@ -532,15 +653,15 @@ export async function applyItineraryTemplate(templateId: string, destinationId: 
       });
     }
   }
-  revalidatePath(`/trip/${slug}/client-planner`);
+  revalidatePath(`/trip/${slug}/${kind === "personal" ? "itinerary" : "client-planner"}`);
 }
 
-export async function deleteItineraryTemplate(templateId: string, slug: string) {
-  const userId = await requireUserId();
+export async function deleteItineraryTemplate(templateId: string, slug: string, kind: "personal" | "client" = "client") {
+  const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
   const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });
   if (!template || template.userId !== userId) return;
   await prisma.itineraryTemplate.delete({ where: { id: templateId } });
-  revalidatePath(`/trip/${slug}/client-planner`);
+  revalidatePath(`/trip/${slug}/${kind === "personal" ? "itinerary" : "client-planner"}`);
 }
 
 export async function addClientItineraryItem(itineraryDayId: string, slug: string, formData: FormData) {

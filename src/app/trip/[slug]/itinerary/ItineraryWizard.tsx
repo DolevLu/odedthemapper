@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { generateItineraryFromPreferences } from "@/lib/actions/trip";
+import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
 
 export function ItineraryWizard({
   destinationId,
@@ -18,6 +19,7 @@ export function ItineraryWizard({
   hasExistingDays: boolean;
 }) {
   const router = useRouter();
+  const { requestConfirm, modal: confirmModal } = useSaveOrDiscardFlow(destinationId, slug);
   const [open, setOpen] = useState(!hasExistingDays);
   const [mode, setMode] = useState<"filters" | "freeText">("filters");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -32,7 +34,7 @@ export function ItineraryWizard({
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
   }
 
-  async function handleGenerate() {
+  async function actuallyGenerate() {
     setLoading(true);
     setError(null);
     const fd = new FormData();
@@ -54,15 +56,22 @@ export function ItineraryWizard({
     startTransition(() => router.refresh());
   }
 
+  function handleGenerate() {
+    requestConfirm(hasExistingDays, actuallyGenerate);
+  }
+
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="self-start rounded-full px-4 py-2 text-sm font-semibold text-white"
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
-      >
-        🤖 בנו לי מסלול אוטומטית
-      </button>
+      <>
+        <button
+          onClick={() => setOpen(true)}
+          className="game-pop-in self-start rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
+          style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+        >
+          ✨ צרו מסלול AI
+        </button>
+        {confirmModal}
+      </>
     );
   }
 
@@ -170,7 +179,7 @@ export function ItineraryWizard({
           className="rounded-full px-5 py-2.5 font-semibold text-white disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         >
-          {loading ? "בונה מסלול..." : "✨ בנו לי מסלול"}
+          {loading ? "בונה מסלול..." : "✨ צרו מסלול AI"}
         </button>
         {hasExistingDays && (
           <button onClick={() => setOpen(false)} className="rounded-full px-5 py-2.5 text-sm font-semibold opacity-70">
@@ -178,7 +187,7 @@ export function ItineraryWizard({
           </button>
         )}
       </div>
-      {hasExistingDays && <p className="text-xs opacity-50">שימו לב: זה יחליף את הימים הקיימים במסלול.</p>}
+      {confirmModal}
     </div>
   );
 }

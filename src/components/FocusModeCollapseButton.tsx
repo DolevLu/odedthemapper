@@ -15,7 +15,7 @@ export function FocusModeCollapseButton({ className = "" }: { className?: string
       title="הסתרת תפריטים והגדלת המסך"
       aria-label="הסתרת תפריטים והגדלת המסך"
     >
-      ›
+      ‹
     </button>
   );
 }

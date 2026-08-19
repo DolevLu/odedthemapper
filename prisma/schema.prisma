@@ -147,6 +147,12 @@ model User {
   subscriptionCreditCents Int     @default(0)
   creditsMonthKey        String?
 
+  // The last destination this user actually browsed (updated by
+  // trip/[slug]/layout.tsx) — preferred over the deterministic random pick
+  // as the shell's default destination context (see (shell)/layout.tsx),
+  // so "the destination they chose" sticks instead of drifting.
+  defaultDestinationSlug String?
+
   // Referral program (see lib/referral.ts): a short shareable code (lazily
   // generated on first profile visit), who referred this user (if anyone),
   // and when the referral reward was granted (guards against double-paying
@@ -652,6 +658,7 @@ model ItineraryTemplate {
   userId        String
   destinationId String
   name          String
+  kind          String   @default("client") // personal | client — keeps the two builders' saved-itinerary lists separate
   daysJson      String // snapshot: [{dayIndex, note, items: [{customLabel, poiId, timeOfDay, note, order}]}]
   createdAt     DateTime @default(now())
 
