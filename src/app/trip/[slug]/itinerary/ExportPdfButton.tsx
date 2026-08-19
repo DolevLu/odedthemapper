@@ -17,8 +17,8 @@ export function ExportPdfButton({ destinationId, slug }: { destinationId: string
     <button
       onClick={handleClick}
       disabled={loading}
-      className="rounded-full border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-      style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+      className="rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm disabled:opacity-50"
+      style={{ borderColor: "var(--primary)", color: "var(--primary)", background: "var(--surface)" }}
     >
       {loading ? "מכין..." : "🖨️ PDF"}
     </button>

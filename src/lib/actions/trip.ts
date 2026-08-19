@@ -538,6 +538,40 @@ export async function reorderItineraryDay(dayId: string, orderedItemIds: string[
   revalidatePath(`/trip/${slug}/${path}`);
 }
 
+/** Moves a stop to a different day directly from the map's marker popup —
+ * appended at the end of the target day with an auto-assigned time (same
+ * nextSwipeTimeSlot heuristic the swipe builder uses), so a day built partly
+ * by dragging pins around still ends up with a sensible time-ordered plan.
+ * Same 10-stops/day cap as the swipe builder, for the same reason. */
+export async function moveItineraryItemToDay(
+  itemId: string,
+  newDayIndex: number,
+  slug: string,
+  path = "itinerary"
+): Promise<{ ok: true } | { error: string }> {
+  const item = await prisma.itineraryItem.findUnique({ where: { id: itemId }, include: { day: true } });
+  if (!item) return { error: "הנקודה לא נמצאה" };
+  if (item.day.dayIndex === newDayIndex) return { ok: true };
+
+  let targetDay = await prisma.itineraryDay.findFirst({ where: { itineraryId: item.day.itineraryId, dayIndex: newDayIndex } });
+  if (!targetDay) targetDay = await prisma.itineraryDay.create({ data: { itineraryId: item.day.itineraryId, dayIndex: newDayIndex } });
+
+  const existing = await prisma.itineraryItem.findMany({
+    where: { itineraryDayId: targetDay.id },
+    select: { order: true, timeOfDay: true },
+  });
+  if (existing.length >= SWIPE_DAY_ITEM_CAP) {
+    return { error: `יום ${newDayIndex} כבר מלא (מקסימום ${SWIPE_DAY_ITEM_CAP} נקודות ליום)` };
+  }
+
+  await prisma.itineraryItem.update({
+    where: { id: itemId },
+    data: { itineraryDayId: targetDay.id, order: existing.length, timeOfDay: nextSwipeTimeSlot(existing) },
+  });
+  revalidatePath(`/trip/${slug}/${path}`);
+  return { ok: true };
+}
+
 // ---------- Planner branding (gold tier) ----------
 
 export async function savePlannerProfile(slug: string, formData: FormData) {

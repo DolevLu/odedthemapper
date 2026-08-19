@@ -14,11 +14,22 @@ export function ItineraryDaysView({
   slug,
   poiOptions,
   path = "itinerary",
+  focusedDayIndex: controlledFocusedDayIndex,
+  onFocusedDayIndexChange,
+  hideHeader = false,
 }: {
   days: Day[];
   slug: string;
   poiOptions: PoiOption[];
   path?: string;
+  /** Controlled day selection (a dayIndex value, not an array position) —
+   * used by the mobile full-screen layout to keep the map and the drawer's
+   * list in sync. Falls back to internal state when omitted. */
+  focusedDayIndex?: number;
+  onFocusedDayIndexChange?: (dayIndex: number) => void;
+  /** Skips the built-in switcher/mode-toggle header — the mobile drawer
+   * renders its own (shared with the map above it) instead. */
+  hideHeader?: boolean;
 }) {
   // Defaults to the single-day focused view everywhere (desktop pairs it
   // side-by-side with the route map; mobile pairs it with the route map
@@ -26,12 +37,24 @@ export function ItineraryDaysView({
   // reads far better than a wall of day cards on any screen size. A manual
   // toggle to "all days" is still one tap away.
   const [mode, setMode] = useState<"grid" | "focused">("focused");
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [internalFocusedIndex, setInternalFocusedIndex] = useState(0);
 
   if (days.length === 0) return null;
 
-  const clampedIndex = Math.min(focusedIndex, days.length - 1);
+  const controlledArrayIndex =
+    controlledFocusedDayIndex !== undefined ? days.findIndex((d) => d.dayIndex === controlledFocusedDayIndex) : -1;
+  const rawIndex = controlledArrayIndex >= 0 ? controlledArrayIndex : internalFocusedIndex;
+  const clampedIndex = Math.min(Math.max(rawIndex, 0), days.length - 1);
   const focusedDay = days[clampedIndex];
+
+  function goToIndex(next: number) {
+    if (onFocusedDayIndexChange) onFocusedDayIndexChange(days[next].dayIndex);
+    else setInternalFocusedIndex(next);
+  }
+
+  if (hideHeader) {
+    return <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} large />;
+  }
 
   return (
     <div className="flex flex-col gap-4 lg:h-full lg:min-h-0">
@@ -70,7 +93,7 @@ export function ItineraryDaysView({
         <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
           <div className="flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}>
             <button
-              onClick={() => setFocusedIndex((i) => Math.max(0, i - 1))}
+              onClick={() => goToIndex(Math.max(0, clampedIndex - 1))}
               disabled={clampedIndex === 0}
               className="flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}
@@ -86,7 +109,7 @@ export function ItineraryDaysView({
               </p>
             </div>
             <button
-              onClick={() => setFocusedIndex((i) => Math.min(days.length - 1, i + 1))}
+              onClick={() => goToIndex(Math.min(days.length - 1, clampedIndex + 1))}
               disabled={clampedIndex === days.length - 1}
               className="flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}

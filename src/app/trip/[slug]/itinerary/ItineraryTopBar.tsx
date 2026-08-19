@@ -67,8 +67,8 @@ export function ItineraryTopBar({
       <div className="relative">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
-          style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm"
+          style={{ borderColor: "var(--primary)", color: "var(--primary)", background: "var(--surface)" }}
         >
           📂 {templates.length > 0 ? `${templates.length} מסלולים שמורים` : "המסלולים שלי"} ▾
         </button>

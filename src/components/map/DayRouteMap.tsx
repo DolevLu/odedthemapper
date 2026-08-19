@@ -10,14 +10,27 @@ export type MapDay = {
   points: { id: string; name: string; lat: number; lng: number; description?: string | null; photoUrl?: string | null }[];
 };
 
-function infoWindowHtml(p: MapDay["points"][number]): string {
+const MOVE_BTN_STYLE =
+  "cursor:pointer;border:1px solid #7C3AED;border-radius:999px;padding:3px 9px;font-size:11px;background:#fff;color:#7C3AED;font-family:'Rubik',sans-serif;white-space:nowrap";
+
+function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, totalDays: number, movable: boolean): string {
   const photo = p.photoUrl
     ? `<img src="${p.photoUrl}" alt="" style="width:200px;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
   const description = p.description
-    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:200px">${p.description.slice(0, 200)}</div>`
+    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${p.description.slice(0, 200)}</div>`
     : "";
-  return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">${photo}<strong>${p.name}</strong>${description}</div>`;
+  const otherDays = Array.from({ length: totalDays }, (_, i) => i + 1).filter((d) => d !== currentDayIndex);
+  const moveButtons =
+    movable && otherDays.length > 0
+      ? `<div style="margin-top:8px;max-width:220px">
+          <div style="font-size:11px;opacity:.6;margin-bottom:4px">העברה ליום:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${otherDays.map((d) => `<button data-move-btn data-item-id="${p.id}" data-day="${d}" style="${MOVE_BTN_STYLE}">יום ${d}</button>`).join("")}
+          </div>
+        </div>`
+      : "";
+  return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">${photo}<strong>${p.name}</strong>${description}${moveButtons}</div>`;
 }
 
 /** Honest heuristic, not real transit routing: short hops are walkable,
@@ -28,16 +41,46 @@ function transportIconFor(distanceKm: number): string {
   return "🚇";
 }
 
-export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fillHeight?: boolean }) {
+export function DayRouteMap({
+  days,
+  fillHeight = false,
+  mobileFullScreen = false,
+  showDaySwitcher = true,
+  activeDayIndex: controlledActiveDayIndex,
+  onActiveDayIndexChange,
+  onMoveToDay,
+}: {
+  days: MapDay[];
+  fillHeight?: boolean;
+  /** Below the sm breakpoint, fills the viewport below the header (fixed
+   * positioning) instead of flowing in-page — used by the mobile itinerary
+   * layout, which overlays a draggable list drawer on top of this. */
+  mobileFullScreen?: boolean;
+  /** Hides the built-in day-pill row — used when an outer component (the
+   * mobile drawer) already renders its own, synced day switcher. */
+  showDaySwitcher?: boolean;
+  /** Controlled active-day selection; falls back to internal state when
+   * omitted (existing desktop usage is unaffected). */
+  activeDayIndex?: number | null;
+  onActiveDayIndexChange?: (dayIndex: number | null) => void;
+  /** When provided, marker popups show "move to day N" buttons; clicking one
+   * calls this with the point's id (an ItineraryItem id) and the target day. */
+  onMoveToDay?: (itemId: string, dayIndex: number) => void;
+}) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<(google.maps.Marker | google.maps.Polyline)[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
-  const [activeDayIndex, setActiveDayIndex] = useState<number | null>(null);
+  const onMoveToDayRef = useRef(onMoveToDay);
+  onMoveToDayRef.current = onMoveToDay;
+
+  const [internalActiveDayIndex, setInternalActiveDayIndex] = useState<number | null>(null);
+  const activeDayIndex = controlledActiveDayIndex !== undefined ? controlledActiveDayIndex : internalActiveDayIndex;
+  const setActiveDayIndex = onActiveDayIndexChange ?? setInternalActiveDayIndex;
 
   const visibleDays = useMemo(
-    () => (activeDayIndex === null ? days : days.filter((d) => d.dayIndex === activeDayIndex)),
+    () => (activeDayIndex == null ? days : days.filter((d) => d.dayIndex === activeDayIndex)),
     [days, activeDayIndex]
   );
 
@@ -53,9 +96,25 @@ export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fill
         zoom: 12,
         streetViewControl: false,
         fullscreenControl: false,
+        gestureHandling: "greedy",
         styles: DECLUTTERED_MAP_STYLES,
       });
       infoWindowRef.current = new google.maps.InfoWindow();
+
+      // Wires the plain-HTML "move to day N" buttons inside the info
+      // window — fires on every open() since Maps rebuilds the content DOM
+      // node each time (same pattern as MapScreen's favorite/booking buttons).
+      google.maps.event.addListener(infoWindowRef.current, "domready", () => {
+        mapDivRef.current?.querySelectorAll<HTMLButtonElement>("[data-move-btn]").forEach((btn) => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const itemId = btn.getAttribute("data-item-id")!;
+            const day = Number(btn.getAttribute("data-day"));
+            onMoveToDayRef.current?.(itemId, day);
+            infoWindowRef.current?.close();
+          };
+        });
+      });
     }
 
     overlaysRef.current.forEach((o) => o.setMap(null));
@@ -118,7 +177,7 @@ export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fill
           },
         });
         marker.addListener("click", () => {
-          infoWindowRef.current?.setContent(infoWindowHtml(p));
+          infoWindowRef.current?.setContent(infoWindowHtml(p, day.dayIndex, days.length, Boolean(onMoveToDayRef.current)));
           infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
         });
         overlaysRef.current.push(marker);
@@ -137,17 +196,23 @@ export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fill
     );
   }
 
+  const containerClass = mobileFullScreen
+    ? "fixed inset-x-0 bottom-0 top-14 z-0 flex flex-col gap-2 sm:relative sm:inset-auto sm:bottom-auto sm:top-auto sm:h-full"
+    : fillHeight
+      ? "flex h-[380px] min-h-0 flex-col gap-2 lg:h-full"
+      : "flex flex-col gap-2";
+
   return (
-    <div className={fillHeight ? "flex h-[380px] min-h-0 flex-col gap-2 lg:h-full" : "flex flex-col gap-2"}>
-      {days.length > 1 && (
+    <div className={containerClass}>
+      {showDaySwitcher && days.length > 1 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setActiveDayIndex(null)}
             className="rounded-full border px-3 py-1 text-xs font-semibold"
             style={{
               borderColor: "var(--primary)",
-              background: activeDayIndex === null ? "var(--primary)" : "transparent",
-              color: activeDayIndex === null ? "white" : "var(--text)",
+              background: activeDayIndex == null ? "var(--primary)" : "transparent",
+              color: activeDayIndex == null ? "white" : "var(--text)",
             }}
           >
             כל הימים
@@ -174,8 +239,8 @@ export function DayRouteMap({ days, fillHeight = false }: { days: MapDay[]; fill
       )}
       <div
         ref={mapDivRef}
-        className={fillHeight ? "w-full flex-1 min-h-0" : "h-[420px] w-full"}
-        style={{ borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
+        className={mobileFullScreen ? "w-full flex-1 min-h-0 sm:rounded-[var(--radius)] sm:border" : fillHeight ? "w-full flex-1 min-h-0" : "h-[420px] w-full"}
+        style={mobileFullScreen ? undefined : { borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
       />
     </div>
   );

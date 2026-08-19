@@ -19,6 +19,29 @@ export type DayListItem = {
 // feels consistent across the two screens.
 const SWIPE_DELETE_THRESHOLD = 90;
 
+/** "Where am I" cue: the last time-stamped stop at or before right-now is
+ * highlighted green (currently happening), the next one after it gets a
+ * lighter accent (coming up) — purely a clock-time comparison against each
+ * stop's timeOfDay, not validated against which calendar day the trip is
+ * actually on, so it's a same-schedule-shape cue rather than a literal
+ * "you're here today" guarantee. */
+function timeStatusMap(items: { id: string; timeOfDay: string | null }[]): Map<string, "current" | "next"> {
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  const map = new Map<string, "current" | "next">();
+  let currentId: string | null = null;
+  let nextId: string | null = null;
+  for (const item of items) {
+    if (!item.timeOfDay) continue;
+    const [h, m] = item.timeOfDay.split(":").map(Number);
+    const minutes = h * 60 + m;
+    if (minutes <= nowMinutes) currentId = item.id;
+    else if (!nextId) nextId = item.id;
+  }
+  if (currentId) map.set(currentId, "current");
+  if (nextId) map.set(nextId, "next");
+  return map;
+}
+
 // Debounced rather than saved on every keystroke, so typing a note doesn't
 // fire a server action per character.
 const NOTE_SAVE_DEBOUNCE_MS = 700;
@@ -171,6 +194,8 @@ export function DayItemsList({
 
   if (items.length === 0) return <p className="text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
 
+  const timeStatus = timeStatusMap(ordered);
+
   return (
     <div className="flex flex-col">
       {ordered.map((item, idx) => (
@@ -214,8 +239,17 @@ export function DayItemsList({
               onPointerCancel={() => handleSwipePointerEnd(item.id)}
               className="relative flex items-start gap-3 rounded-xl border p-2 text-sm shadow-sm touch-pan-y"
               style={{
-                borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)",
-                background: "var(--background)",
+                borderColor:
+                  timeStatus.get(item.id) === "current"
+                    ? "#16A34A"
+                    : timeStatus.get(item.id) === "next"
+                      ? "#F59E0B"
+                      : "color-mix(in srgb, var(--primary) 20%, transparent)",
+                borderWidth: timeStatus.get(item.id) === "current" ? 2 : 1,
+                background:
+                  timeStatus.get(item.id) === "current"
+                    ? "color-mix(in srgb, #16A34A 10%, var(--background))"
+                    : "var(--background)",
                 opacity: dragId === item.id ? 0.6 : 1,
                 transform: `translateX(${swipeX[item.id] ?? 0}px)`,
                 transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
@@ -248,14 +282,26 @@ export function DayItemsList({
               )}
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 {item.timeOfDay && (
-                  <span
-                    className="w-fit rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
-                    style={{ background: "var(--primary)" }}
-                  >
-                    {item.timeOfDay}
+                  <span className="flex w-fit items-center gap-1.5">
+                    <span
+                      className="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
+                      style={{ background: timeStatus.get(item.id) === "current" ? "#16A34A" : "var(--primary)" }}
+                    >
+                      {item.timeOfDay}
+                    </span>
+                    {timeStatus.get(item.id) === "current" && (
+                      <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>
+                        🟢 עכשיו
+                      </span>
+                    )}
+                    {timeStatus.get(item.id) === "next" && (
+                      <span className="text-[10px] font-bold" style={{ color: "#F59E0B" }}>
+                        ⏭ הבא
+                      </span>
+                    )}
                   </span>
                 )}
-                <span className="truncate font-medium">
+                <span className="line-clamp-2 font-medium leading-snug">
                   {item.poi ? item.poi.name : item.customLabel}
                   {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
                 </span>

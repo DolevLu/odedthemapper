@@ -43,7 +43,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
     getFlatPoisForDestination(destination.id),
     prisma.plannerProfile.findUnique({ where: { userId } }),
     prisma.itineraryTemplate.findMany({
-      where: { userId, destinationId: destination.id },
+      where: { userId, destinationId: destination.id, kind: "client" },
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true },
     }),
