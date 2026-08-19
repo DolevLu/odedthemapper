@@ -138,7 +138,11 @@ export function TodayCard({
 
           {!editing && countdown ? (
             <>
-              <div className="flex items-center gap-3 sm:gap-5">
+              {/* dir="ltr" pins days→hours→minutes reading left-to-right
+               * (largest unit leftmost, like a normal digital countdown)
+               * regardless of the page's own RTL direction, which would
+               * otherwise flip the DOM order visually right-to-left. */}
+              <div dir="ltr" className="flex items-center gap-3 sm:gap-5">
                 <CountdownBlock value={countdown.days} label="ימים" />
                 <span className="pb-4 text-2xl font-bold opacity-30">:</span>
                 <CountdownBlock value={countdown.hours} label="שעות" />
