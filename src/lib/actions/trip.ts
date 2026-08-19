@@ -213,22 +213,41 @@ export async function addLogistic(destinationId: string, slug: string, formData:
   revalidatePath(`/trip/${slug}`);
 }
 
-/** Lets the user set a countdown target date manually from the "Today"
- * screen when they haven't added a flight yet — stored as an ordinary
- * TripLogistic row, same as one added via the logistics form. */
-export async function setTripStartDate(destinationId: string, slug: string, dateStr: string) {
+/** Sets (or edits) the countdown's target date+time from the "Today" screen
+ * — when `logisticId` is given (the flight/logistic entry currently driving
+ * the countdown), updates that row's startsAt in place so re-editing never
+ * creates duplicates and stays in sync with the Logistics screen; with no
+ * existing entry yet, creates the same kind of placeholder flight row as
+ * before. `dateTimeStr` is a full datetime-local value ("YYYY-MM-DDTHH:mm"),
+ * not just a date, so the countdown can show hours/minutes, not just days. */
+export async function setTripStartDateTime(
+  destinationId: string,
+  slug: string,
+  logisticId: string | null,
+  dateTimeStr: string
+) {
   const userId = await requireUserId();
-  if (!dateStr) return;
-  await prisma.tripLogistic.create({
-    data: {
-      userId,
-      destinationId,
-      type: "flight",
-      detailsJson: JSON.stringify({ title: "טיסה (תאריך יעד)", notes: "" }),
-      startsAt: new Date(dateStr),
-    },
-  });
+  if (!dateTimeStr) return;
+  const startsAt = new Date(dateTimeStr);
+  if (Number.isNaN(startsAt.getTime())) return;
+
+  if (logisticId) {
+    const existing = await prisma.tripLogistic.findUnique({ where: { id: logisticId } });
+    if (!existing || existing.userId !== userId) return;
+    await prisma.tripLogistic.update({ where: { id: logisticId }, data: { startsAt } });
+  } else {
+    await prisma.tripLogistic.create({
+      data: {
+        userId,
+        destinationId,
+        type: "flight",
+        detailsJson: JSON.stringify({ title: "טיסה (תאריך יעד)", notes: "" }),
+        startsAt,
+      },
+    });
+  }
   revalidatePath(`/trip/${slug}`);
+  revalidatePath(`/trip/${slug}/now`);
   revalidatePath(`/trip/${slug}/logistics`);
 }
 

@@ -50,17 +50,17 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   );
 
   const today = startOfDay(new Date());
-  const tripStart = logistics[0]?.startsAt ? startOfDay(logistics[0].startsAt) : null;
+  // Full timestamp (not truncated to midnight) so the Now screen can show a
+  // real days/hours/minutes countdown, not just a day count.
+  const tripStartExact = logistics[0]?.startsAt ?? null;
+  const tripStart = tripStartExact ? startOfDay(tripStartExact) : null;
   const tripEnd = logistics.length > 0 ? startOfDay(logistics[logistics.length - 1].endsAt ?? logistics[logistics.length - 1].startsAt!) : null;
 
-  let daysUntil: number | null = null;
   let todayDayItems: { time: string | null; label: string }[] | null = null;
 
   if (tripStart) {
     const diffDays = Math.round((tripStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays > 0) {
-      daysUntil = diffDays;
-    } else if (tripEnd && today <= tripEnd) {
+    if (diffDays <= 0 && tripEnd && today <= tripEnd) {
       const dayIndex = Math.round((today.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       const day = itinerary?.days.find((d) => d.dayIndex === dayIndex);
       if (day) {
@@ -80,9 +80,8 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
         destinationId: destination.id,
         destinationName: destination.name,
         heroImage: destination.heroImage,
-        hasTargetDate: Boolean(tripStart),
-        daysUntil,
-        targetDateLabel: tripStart ? tripStart.toLocaleDateString("he-IL") : null,
+        logisticId: logistics[0]?.id ?? null,
+        targetDateTimeIso: tripStartExact ? tripStartExact.toISOString() : null,
         todayDayItems,
         bookableItems: bookablePois,
       }}

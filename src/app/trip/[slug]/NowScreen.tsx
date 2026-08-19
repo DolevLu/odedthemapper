@@ -11,9 +11,8 @@ type TodayData = {
   destinationId: string;
   destinationName: string;
   heroImage: string | null;
-  hasTargetDate: boolean;
-  daysUntil: number | null;
-  targetDateLabel: string | null;
+  logisticId: string | null;
+  targetDateTimeIso: string | null;
   todayDayItems: { time: string | null; label: string }[] | null;
   bookableItems: { id: string; name: string }[];
 };
@@ -100,9 +99,8 @@ export function NowScreen({
         destinationName={today.destinationName}
         heroImage={today.heroImage}
         slug={slug}
-        hasTargetDate={today.hasTargetDate}
-        daysUntil={today.daysUntil}
-        targetDateLabel={today.targetDateLabel}
+        logisticId={today.logisticId}
+        targetDateTimeIso={today.targetDateTimeIso}
         todayDayItems={today.todayDayItems}
         bookableItems={today.bookableItems}
       />
