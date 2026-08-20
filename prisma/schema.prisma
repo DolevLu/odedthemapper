@@ -82,6 +82,13 @@ model PointOfInterest {
   lng               Float
   geometryType      String   @default("point") // point | line | polygon
   geometryCoords    String? // JSON array of [lng,lat] pairs for line/polygon
+  // The KML placemark's own resolved styleUrl color — distinct from
+  // Category.colorHex (which is just one representative swatch per
+  // category/folder, taken from its first placemark). Matters most for line/
+  // polygon geometries grouped under one category (e.g. several differently
+  // colored metro lines all inside a single "מטרו" folder) where every
+  // placemark needs its own real color, not the folder's shared one.
+  colorHex          String?
   rawDescriptionHtml String?
   address           String?
   priceRange        String?

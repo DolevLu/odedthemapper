@@ -35,8 +35,8 @@ const LABEL_ZOOM_THRESHOLD = 16;
 // Overpass query (and the map would be too cluttered with shade lines).
 const SHADOW_MIN_ZOOM = 15;
 
-// Walking routes / district lines always render in the same brand purple,
-// regardless of whatever color the KML import happened to assign.
+// Fallback only, for the rare shape with no category color at all — every
+// normal line/polygon renders in its own KML-derived category color instead.
 const SHAPE_COLOR = "#7C3AED";
 
 const INFO_ACTION_BTN_STYLE =
@@ -421,7 +421,11 @@ export function MapScreen({
     });
   }, [loaded, savedPins]);
 
-  // Render line/polygon geometries (walking routes, districts, etc.) once.
+  // Render line/polygon geometries (metro lines, walking routes, districts,
+  // etc.) — each in its own category's color (poi.categoryColor, sourced
+  // from the KML's styleUrl/IconStyle at import time — see
+  // src/lib/kml/importToDb.ts), so e.g. every metro line shows in its real
+  // line color instead of every shape rendering identically.
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
     shapesRef.current.forEach((s) => s.setMap(null));
@@ -430,12 +434,18 @@ export function MapScreen({
     shapePois.forEach((poi) => {
       const path = (poi.geometryCoords ?? []).map(([lng, lat]) => ({ lat, lng }));
       if (path.length < 2) return;
+      // Prefers the placemark's own KML color (e.g. this exact metro line's
+      // real line color) over the category's one shared swatch — several
+      // differently-colored lines can otherwise be grouped in a single
+      // category/folder (e.g. all under "מטרו") and would wrongly render
+      // identically if only the category color were used.
+      const color = poi.colorHex || poi.categoryColor || SHAPE_COLOR;
       if (poi.geometryType === "polygon") {
         const polygon = new google.maps.Polygon({
           paths: path,
-          strokeColor: SHAPE_COLOR,
+          strokeColor: color,
           strokeWeight: 2,
-          fillColor: SHAPE_COLOR,
+          fillColor: color,
           fillOpacity: 0.15,
           map: mapRef.current!,
         });
@@ -443,7 +453,7 @@ export function MapScreen({
       } else {
         const polyline = new google.maps.Polyline({
           path,
-          strokeColor: SHAPE_COLOR,
+          strokeColor: color,
           strokeWeight: 3,
           strokeOpacity: 0.8,
           map: mapRef.current!,

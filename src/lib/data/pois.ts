@@ -12,6 +12,11 @@ export type FlatPoi = {
   areaName: string;
   categoryName: string;
   categoryColor: string;
+  /** The placemark's own KML-resolved color, when it has one — distinct from
+   * categoryColor (one shared swatch per category/folder). Matters for line/
+   * polygon geometries (e.g. several differently colored metro lines grouped
+   * under one category), where each needs its real individual color. */
+  colorHex: string | null;
   address: string | null;
   priceRange: string | null;
   bookingUrl: string | null;
@@ -77,6 +82,7 @@ async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatP
               lng: true,
               geometryType: true,
               geometryCoords: true,
+              colorHex: true,
               address: true,
               priceRange: true,
               bookingUrl: true,
@@ -108,6 +114,7 @@ async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatP
           areaName: area.name,
           categoryName: category.name,
           categoryColor: category.colorHex,
+          colorHex: poi.colorHex,
           address: poi.address,
           priceRange: poi.priceRange,
           bookingUrl: poi.bookingUrl,

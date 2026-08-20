@@ -77,6 +77,7 @@ export async function importKmlToDestination(
             lng: poi.lng,
             geometryType: poi.geometryType,
             geometryCoords: poi.geometryCoords ? JSON.stringify(poi.geometryCoords) : null,
+            colorHex: poi.colorHex,
             rawDescriptionHtml: poi.descriptionHtml,
             photos: { create: photoUrls.map((url) => ({ url })) },
           },
