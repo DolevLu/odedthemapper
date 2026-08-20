@@ -10,6 +10,11 @@ import {
   deletePhrasebookEntry,
 } from "@/lib/actions/admin";
 
+// KML uploads for a large destination (1000-2000+ placemarks) can take a
+// while even after batching the DB writes — raised from the platform
+// default so a big import isn't killed mid-way through.
+export const maxDuration = 60;
+
 export default async function AdminDestinationPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const destination = await prisma.destination.findUnique({
