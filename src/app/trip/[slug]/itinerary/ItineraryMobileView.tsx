@@ -15,7 +15,7 @@ type PoiOption = { id: string; name: string; areaName: string; categoryName: str
 type Template = { id: string; name: string };
 
 const OPEN_VH = 76;
-const PEEK_PX = 260;
+const PEEK_PX = 170;
 
 /**
  * Mobile itinerary layout: the route map fills the screen (same fixed
@@ -109,10 +109,11 @@ export function ItineraryMobileView({
         onMoveToDay={handleMoveToDay}
       />
 
-      {/* Floats over the map, top — same role as the in-flow header on
-       * desktop/the empty state, just repositioned so it doesn't compete
-       * with the full-screen map+drawer for vertical space. */}
-      <div className="absolute inset-x-0 top-3 z-10 flex flex-wrap items-center gap-1.5 px-3">
+      {/* Floats over the map, below the map's own Map/Satellite toggle
+       * (top-left) so the two rows don't collide — same role as the in-flow
+       * header on desktop/the empty state, just repositioned so it doesn't
+       * compete with the full-screen map+drawer for vertical space. */}
+      <div className="absolute inset-x-0 top-12 z-10 flex flex-wrap items-center gap-1.5 px-3">
         <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
         <ExportPdfButton destinationId={destinationId} slug={slug} />
       </div>
@@ -136,7 +137,7 @@ export function ItineraryMobileView({
           <span className="text-xs opacity-50">{drawerState === "open" ? "⌄ גררו למטה לצמצום" : "⌃ גררו למעלה להרחבה"}</span>
         </div>
 
-        {dayListDays.length > 1 && (
+        {dayListDays.length > 1 && drawerState === "open" && (
           <div className="flex shrink-0 items-center justify-between gap-3 border-b px-4 pb-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
             <button
               onClick={() => {

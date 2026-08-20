@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { FlatPoi } from "@/lib/data/pois";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { PoiDetailModal } from "@/components/PoiDetailModal";
@@ -16,6 +17,27 @@ type TodayData = {
   todayDayItems: { time: string | null; label: string }[] | null;
   bookableItems: { id: string; name: string }[];
 };
+
+// Best-effort heuristic — there's no dedicated "indoor" field on a POI, so
+// this matches category names against known indoor/outdoor keywords.
+// Outdoor keywords win over indoor ones (e.g. an outdoor "shopping street"
+// won't get suggested), and a category matching neither is left out
+// entirely rather than guessed — a shorter, reliable list beats a longer,
+// noisy one for a "it's raining" suggestion.
+const INDOOR_HINTS = [
+  "מוזיאון", "גלריה", "קניון", "מסעד", "קפה", "בר", "ספא", "תיאטרון", "מועדון",
+  "אולם", "שוק מקור", "אקווריום", "פלנטריום", "כנסיי", "מסגד", "ארמון", "קולנוע",
+  "מרכז קניות", "בריכה מקורה",
+];
+const OUTDOOR_HINTS = [
+  "פארק", "טבע", "חוף", "טיול רגלי", "שביל", "הרים", "מפל", "יער", "טיילת",
+  "נוף", "road trip", "רחוב", "גן ציבורי",
+];
+
+function isIndoorFriendly(categoryName: string): boolean {
+  if (OUTDOOR_HINTS.some((h) => categoryName.includes(h))) return false;
+  return INDOOR_HINTS.some((h) => categoryName.includes(h));
+}
 
 function haversineKm(a: [number, number], b: [number, number]) {
   const [lat1, lng1] = a;
@@ -44,11 +66,13 @@ export function NowScreen({
   scheduledPoiIds: Set<string>;
   today: TodayData;
 }) {
+  const router = useRouter();
   const [location, setLocation] = useState<[number, number] | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [requesting, setRequesting] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [detailPoi, setDetailPoi] = useState<FlatPoi | null>(null);
+  const [rainMode, setRainMode] = useState(false);
 
   function requestLocation() {
     setRequesting(true);
@@ -92,6 +116,14 @@ export function NowScreen({
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }, [pois, activeCategory, location]);
 
+  const indoorPois = useMemo(() => {
+    const filtered = pois.filter((p) => isIndoorFriendly(p.categoryName));
+    if (!location) return filtered;
+    return [...filtered]
+      .map((p) => ({ ...p, distanceKm: haversineKm(location, [p.lat, p.lng]) }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [pois, location]);
+
   return (
     <div className="flex flex-col gap-6">
       <TodayCard
@@ -116,17 +148,73 @@ export function NowScreen({
           </p>
           {locationError && <p className="text-sm text-red-600">{locationError}</p>}
         </div>
-        {!location && (
+        <div className="flex shrink-0 gap-2">
+          {!location && (
+            <button
+              onClick={requestLocation}
+              disabled={requesting}
+              className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              style={{ background: "var(--primary)" }}
+            >
+              {requesting ? "מאתר..." : "📍 שתפו מיקום"}
+            </button>
+          )}
           <button
-            onClick={requestLocation}
-            disabled={requesting}
-            className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            style={{ background: "var(--primary)" }}
+            onClick={() => setRainMode(true)}
+            className="rounded-full px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: "#0284C7" }}
           >
-            {requesting ? "מאתר..." : "📍 שתפו מיקום"}
+            🌧️ יורד גשם עכשיו?
           </button>
-        )}
+        </div>
       </div>
+
+      {rainMode && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setRainMode(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex max-h-[80vh] w-full max-w-md flex-col gap-3 overflow-hidden rounded-2xl p-5"
+            style={{ background: "var(--surface)" }}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">🌧️ מה לעשות כשיורד גשם</h2>
+              <button onClick={() => setRainMode(false)} className="text-xl opacity-50 hover:opacity-100" aria-label="סגירה">
+                ✕
+              </button>
+            </div>
+            <p className="text-xs opacity-60">הצעות למקומות מקורים ביעד — לחיצה שולחת אתכם למיקום שלהם על המפה.</p>
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+              {indoorPois.length === 0 ? (
+                <p className="py-4 text-center text-sm opacity-60">לא מצאנו מספיק אטרקציות מקורות ביעד הזה, לצערנו.</p>
+              ) : (
+                indoorPois.map((poi) => (
+                  <button
+                    key={poi.id}
+                    onClick={() => {
+                      setRainMode(false);
+                      router.push(`/trip/${slug}?focus=${poi.id}`);
+                    }}
+                    className="flex items-center justify-between gap-2 rounded-xl border p-3 text-start text-sm transition-colors hover:bg-black/5"
+                    style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: poi.categoryColor }} />
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate font-medium">{poi.name}</span>
+                        <span className="truncate text-xs opacity-60">
+                          {poi.categoryName} · {poi.areaName}
+                          {"distanceKm" in poi && ` · ${(poi as unknown as { distanceKm: number }).distanceKm.toFixed(1)} ק״מ`}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="shrink-0 opacity-40">🗺️</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {!activeCategory ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

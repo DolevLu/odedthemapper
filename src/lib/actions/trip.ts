@@ -363,6 +363,15 @@ export async function addSwipedItineraryItem(
   return { ok: true };
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export type SwipeDeckCard = {
   poiId: string;
   name: string;
@@ -398,12 +407,17 @@ export async function buildSwipeDeck(
   const filtered = pois.filter(
     (p) => !excludeSet.has(p.id) && (categories.length === 0 || categories.includes(p.categoryName))
   );
-  filtered.sort((a, b) => {
-    if (a.isMustSee !== b.isMustSee) return a.isMustSee ? -1 : 1;
-    return b.tags.length - a.tags.length;
-  });
 
-  return filtered.slice(0, SWIPE_DECK_MAX_CARDS).map((p) => ({
+  // Must-see spots get a mild priority (shown within the first stretch of
+  // the deck), but within each tier the order is fully shuffled — a plain
+  // sort by tags/must-see left same-tier POIs in their original DB order,
+  // which is grouped area-by-area/category-by-category (all malls, then all
+  // cafes, then all bars...), making the deck feel repetitive.
+  const mustSee = shuffle(filtered.filter((p) => p.isMustSee));
+  const rest = shuffle(filtered.filter((p) => !p.isMustSee));
+  const ordered = [...mustSee, ...rest];
+
+  return ordered.slice(0, SWIPE_DECK_MAX_CARDS).map((p) => ({
     poiId: p.id,
     name: p.name,
     categoryName: p.categoryName,

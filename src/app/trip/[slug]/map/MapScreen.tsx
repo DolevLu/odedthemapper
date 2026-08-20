@@ -94,6 +94,7 @@ export function MapScreen({
   initialTrail = [],
   savedPins = [],
   preview = false,
+  autoLocate = true,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
@@ -110,6 +111,12 @@ export function MapScreen({
    * filters, layers, route mode, the POI list, favoriting — is grayed out and
    * routes to login instead of functioning. */
   preview?: boolean;
+  /** Whether to auto-start GPS tracking and center on the user's real
+   * position on load — false while the trip hasn't started yet (a future
+   * flight date), since the traveler's actual current location is unrelated
+   * to the destination they're planning; the map instead falls back to its
+   * default destination-overview center/zoom. */
+  autoLocate?: boolean;
 }) {
   const router = useRouter();
   const { loaded, error } = useGoogleMaps();
@@ -723,14 +730,16 @@ export function MapScreen({
   }, []);
 
   // Google-Maps-app-style default: location tracking just starts on its own
-  // instead of waiting for a button press, since this map is now the trip's
-  // home screen.
+  // instead of waiting for a button press, since this map is the trip's home
+  // screen — but only once the trip has actually started (see `autoLocate`);
+  // before then the traveler's real position is somewhere else entirely, so
+  // the map instead keeps its default center/zoom over the destination.
   useEffect(() => {
-    if (!loaded || preview || autoLocationStartedRef.current) return;
+    if (!loaded || preview || !autoLocate || autoLocationStartedRef.current) return;
     autoLocationStartedRef.current = true;
     toggleGps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, preview]);
+  }, [loaded, preview, autoLocate]);
 
   // Deep link support (?focus=<poiId>), e.g. from a Travi chat suggestion —
   // clears any active category filter so the target POI's marker exists.

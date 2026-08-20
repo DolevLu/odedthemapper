@@ -199,31 +199,31 @@ export function DayItemsList({
   return (
     <div className="flex flex-col">
       {ordered.map((item, idx) => (
-        <div key={item.id} className="flex gap-2 pb-2.5 last:pb-0">
+        <div key={item.id} className="flex gap-2.5 pb-3.5 last:pb-0">
           {/* Route "trail" connector — a small stop marker plus a wavy line
            * down to the next stop. The line overflows this row's own box by
-           * exactly the row gap (bottom: -0.625rem ~ pb-2.5) so it bridges
+           * exactly the row gap (bottom: -0.875rem ~ pb-3.5) so it bridges
            * cleanly into the next item's dot regardless of how tall this
            * item's card is (note text can make it taller). */}
           <div className="relative w-4 shrink-0">
             <span
-              className="absolute left-1/2 top-3 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              className="absolute left-1/2 top-4 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
               style={{ background: "var(--accent)", boxShadow: "0 0 0 2px var(--surface)" }}
             />
             {idx < ordered.length - 1 && (
               <span
-                className="route-connector-line absolute left-1/2 top-3 -translate-x-1/2"
-                style={{ bottom: "-0.625rem" }}
+                className="route-connector-line absolute left-1/2 top-4 -translate-x-1/2"
+                style={{ bottom: "-0.875rem" }}
               />
             )}
           </div>
 
-          <div className="relative flex-1 overflow-hidden rounded-xl">
+          <div className="relative flex-1 overflow-hidden rounded-2xl">
             {/* Revealed behind the card as it's dragged left — mirrors the
              * delete affordance so the gesture reads clearly before release. */}
             <div
-              className="absolute inset-0 flex items-center justify-start rounded-xl px-4 text-lg"
-              style={{ background: "#DC2626", color: "white", opacity: Math.min(1, -(swipeX[item.id] ?? 0) / SWIPE_DELETE_THRESHOLD) }}
+              className="absolute inset-0 flex items-center justify-start rounded-2xl px-4 text-lg"
+              style={{ background: "#E11D48", color: "white", opacity: Math.min(1, -(swipeX[item.id] ?? 0) / SWIPE_DELETE_THRESHOLD) }}
               aria-hidden
             >
               🗑️
@@ -237,24 +237,25 @@ export function DayItemsList({
               onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
               onPointerUp={() => handleSwipePointerEnd(item.id)}
               onPointerCancel={() => handleSwipePointerEnd(item.id)}
-              className="relative flex items-start gap-3 rounded-xl border p-2 text-sm shadow-sm touch-pan-y"
+              className="relative flex items-start gap-3.5 overflow-hidden rounded-2xl border p-3.5 text-sm shadow-sm touch-pan-y"
               style={{
-                borderColor:
-                  timeStatus.get(item.id) === "current"
-                    ? "#16A34A"
-                    : timeStatus.get(item.id) === "next"
-                      ? "#F59E0B"
-                      : "color-mix(in srgb, var(--primary) 20%, transparent)",
-                borderWidth: timeStatus.get(item.id) === "current" ? 2 : 1,
-                background:
-                  timeStatus.get(item.id) === "current"
-                    ? "color-mix(in srgb, #16A34A 10%, var(--background))"
-                    : "var(--background)",
+                borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)",
+                background: "var(--surface)",
                 opacity: dragId === item.id ? 0.6 : 1,
                 transform: `translateX(${swipeX[item.id] ?? 0}px)`,
                 transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
               }}
             >
+              {/* Soft accent bar instead of recoloring the whole card —
+               * reads as a status cue without turning the card into an
+               * alert box. */}
+              {timeStatus.get(item.id) && (
+                <span
+                  className="absolute inset-y-0 start-0 w-1"
+                  style={{ background: timeStatus.get(item.id) === "current" ? "#22C55E" : "#F59E0B" }}
+                  aria-hidden
+                />
+              )}
               <span
                 data-no-swipe
                 onPointerDown={(e) => {
@@ -264,18 +265,18 @@ export function DayItemsList({
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
-                className="shrink-0 cursor-grab touch-none select-none px-1 pt-2 text-lg opacity-50 active:cursor-grabbing"
+                className="shrink-0 cursor-grab touch-none select-none px-1 pt-2.5 text-lg opacity-40 active:cursor-grabbing"
                 aria-label="גרירה לשינוי סדר"
               >
                 ⠿
               </span>
               {item.poi?.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.poi.photoUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+                <img src={item.poi.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
               ) : (
                 <span
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg"
-                  style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-lg"
+                  style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}
                 >
                   📍
                 </span>
@@ -285,18 +286,18 @@ export function DayItemsList({
                   <span className="flex w-fit items-center gap-1.5">
                     <span
                       className="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
-                      style={{ background: timeStatus.get(item.id) === "current" ? "#16A34A" : "var(--primary)" }}
+                      style={{ background: timeStatus.get(item.id) === "current" ? "#22C55E" : "var(--primary)" }}
                     >
                       {item.timeOfDay}
                     </span>
                     {timeStatus.get(item.id) === "current" && (
-                      <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>
-                        🟢 עכשיו
+                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ color: "#16A34A", background: "color-mix(in srgb, #22C55E 14%, transparent)" }}>
+                        עכשיו
                       </span>
                     )}
                     {timeStatus.get(item.id) === "next" && (
-                      <span className="text-[10px] font-bold" style={{ color: "#F59E0B" }}>
-                        ⏭ הבא
+                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ color: "#B45309", background: "color-mix(in srgb, #F59E0B 14%, transparent)" }}>
+                        הבא
                       </span>
                     )}
                   </span>

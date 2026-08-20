@@ -21,7 +21,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
   // skipped rather than crashing on a missing userId.
   const isFullAccess = accessLevel !== "none";
 
-  const [pois, favorites, logisticPinRows, trail, savedMapPins] = await Promise.all([
+  const [pois, favorites, logisticPinRows, trail, savedMapPins, nextFlight] = await Promise.all([
     getFlatPoisForDestination(destination.id),
     isFullAccess && userId ? prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }) : Promise.resolve([]),
     isFullAccess && userId
@@ -37,7 +37,20 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
     isFullAccess && userId
       ? prisma.savedMapPin.findMany({ where: { userId, destinationId: destination.id } })
       : Promise.resolve([]),
+    // Same "earliest logistics start" the Now screen's countdown uses — a
+    // future flight date means the traveler isn't there yet, so their real
+    // GPS position (wherever they currently are) isn't useful map context;
+    // the map should default to an overview of the destination instead.
+    isFullAccess && userId
+      ? prisma.tripLogistic.findFirst({
+          where: { userId, destinationId: destination.id, startsAt: { not: null } },
+          orderBy: { startsAt: "asc" },
+          select: { startsAt: true },
+        })
+      : Promise.resolve(null),
   ]);
+
+  const autoLocate = !nextFlight?.startsAt || nextFlight.startsAt.getTime() <= Date.now();
 
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
@@ -62,6 +75,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
       initialTrail={trail}
       savedPins={savedMapPins}
       preview={!isFullAccess}
+      autoLocate={autoLocate}
     />
   );
 }

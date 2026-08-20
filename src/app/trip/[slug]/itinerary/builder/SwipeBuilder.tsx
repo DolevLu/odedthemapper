@@ -18,7 +18,7 @@ type DeckCard = Omit<SwipeDeckCard, "poiId" | "areaName"> & {
   isAiSuggested?: boolean;
 };
 
-const SWIPE_COMMIT_THRESHOLD = 100;
+const SWIPE_COMMIT_THRESHOLD = 80;
 const DAY_ITEM_CAP = 10;
 
 export function SwipeBuilder({
@@ -50,7 +50,6 @@ export function SwipeBuilder({
   const [deck, setDeck] = useState<DeckCard[]>([]);
   const [index, setIndex] = useState(0);
   const [pendingCard, setPendingCard] = useState<DeckCard | null>(null);
-  const [dayPickError, setDayPickError] = useState<string | null>(null);
   const [aiLoading, startAiTransition] = useTransition();
   const [, startTransition] = useTransition();
   const [starting, startStartTransition] = useTransition();
@@ -75,7 +74,16 @@ export function SwipeBuilder({
     requestConfirm(hasExistingDays, beginBuild);
   }
 
+  // Optimistic: advances the deck and closes the day-picker immediately
+  // instead of waiting on the server round-trip, which was the actual cause
+  // of "adding to a day feels slow" — the day-fullness check already runs
+  // client-side (full days are disabled below), so the server call failing
+  // here is the rare exception, not the common case, and is safe to just
+  // roll back if it does.
   function commitAdd(card: DeckCard, dayIndex: number) {
+    setDayCounts((prev) => prev.map((c, i) => (i === dayIndex - 1 ? c + 1 : c)));
+    setPendingCard(null);
+    setIndex((i) => i + 1);
     startTransition(async () => {
       const result = await addSwipedItineraryItem(
         destinationId,
@@ -85,12 +93,9 @@ export function SwipeBuilder({
         slug
       );
       if (result && "error" in result) {
-        setDayPickError(result.error);
-        return;
+        setDayCounts((prev) => prev.map((c, i) => (i === dayIndex - 1 ? Math.max(0, c - 1) : c)));
+        window.alert(result.error);
       }
-      setDayCounts((prev) => prev.map((c, i) => (i === dayIndex - 1 ? c + 1 : c)));
-      setPendingCard(null);
-      setIndex((i) => i + 1);
     });
   }
 
@@ -99,7 +104,6 @@ export function SwipeBuilder({
   }
 
   function handleAccept(card: DeckCard) {
-    setDayPickError(null);
     setPendingCard(card);
   }
 
@@ -241,7 +245,6 @@ export function SwipeBuilder({
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setPendingCard(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl p-5" style={{ background: "var(--surface)" }}>
             <p className="mb-3 text-center font-bold">לאיזה יום להוסיף את &quot;{pendingCard.name}&quot;?</p>
-            {dayPickError && <p className="mb-2 text-center text-xs font-semibold text-red-600">{dayPickError}</p>}
             <div className="flex flex-wrap justify-center gap-2">
               {Array.from({ length: dayTotal }, (_, i) => i + 1).map((d) => {
                 const count = dayCounts[d - 1] ?? 0;
@@ -327,6 +330,7 @@ function SwipeCardStack({
           onPointerCancel={handlePointerUp}
           className="absolute inset-0 cursor-grab touch-none select-none active:cursor-grabbing"
           style={{
+            touchAction: "none",
             transform: `translateX(${dragX}px) rotate(${rotate}deg)`,
             transition: dragging ? "none" : "transform 0.22s ease",
           }}
@@ -400,7 +404,12 @@ function CardFace({ card, hint }: { card: DeckCard; hint?: "left" | "right" | nu
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto p-3.5">
+      {/* No overflow-y-auto here on purpose — a scrollable region inside the
+       * draggable card competed with the swipe gesture for touch events on
+       * some browsers, making left/right drags feel unreliable when started
+       * over the description text. Content is short (truncated to ~160
+       * chars) so it fits without needing to scroll. */}
+      <div className="flex flex-1 flex-col gap-1.5 overflow-hidden p-3.5">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-full px-2 py-1 font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
             {card.categoryName}

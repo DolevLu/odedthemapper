@@ -76,6 +76,7 @@ export function DayRouteMap({
   onMoveToDayRef.current = onMoveToDay;
 
   const [internalActiveDayIndex, setInternalActiveDayIndex] = useState<number | null>(null);
+  const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const activeDayIndex = controlledActiveDayIndex !== undefined ? controlledActiveDayIndex : internalActiveDayIndex;
   const setActiveDayIndex = onActiveDayIndexChange ?? setInternalActiveDayIndex;
 
@@ -188,6 +189,11 @@ export function DayRouteMap({
     if (!bounds.isEmpty()) mapRef.current.fitBounds(bounds);
   }, [loaded, days, visibleDays]);
 
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    mapRef.current.setMapTypeId(mapType);
+  }, [loaded, mapType]);
+
   if (error) {
     return (
       <div className="rounded-lg border p-6 text-center text-sm" style={{ borderColor: "var(--primary)" }}>
@@ -237,11 +243,33 @@ export function DayRouteMap({
           })}
         </div>
       )}
-      <div
-        ref={mapDivRef}
-        className={mobileFullScreen ? "w-full flex-1 min-h-0 sm:rounded-[var(--radius)] sm:border" : fillHeight ? "w-full flex-1 min-h-0" : "h-[420px] w-full"}
-        style={mobileFullScreen ? undefined : { borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
-      />
+      <div className={mobileFullScreen || fillHeight ? "relative w-full flex-1 min-h-0" : "relative h-[420px] w-full"}>
+        <div
+          ref={mapDivRef}
+          className={mobileFullScreen ? "h-full w-full sm:rounded-[var(--radius)] sm:border" : "h-full w-full"}
+          style={mobileFullScreen ? undefined : { borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
+        />
+        {/* Small Hebrew Map/Satellite toggle, same compact style and physical
+         * top-left position as the main Map screen's own control (`end-2` is
+         * the physical left under this page's RTL direction) — this route
+         * map had none before. */}
+        <div className="absolute end-2 top-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md">
+          <button
+            onClick={() => setMapType("roadmap")}
+            className="rounded-full px-2.5 py-1"
+            style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "#1a1a1a" }}
+          >
+            מפה
+          </button>
+          <button
+            onClick={() => setMapType("satellite")}
+            className="rounded-full px-2.5 py-1"
+            style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "#1a1a1a" }}
+          >
+            לוויין
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
