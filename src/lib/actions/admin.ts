@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { importKmlToDestination } from "@/lib/kml/importToDb";
@@ -33,48 +32,59 @@ function slugify(input: string): string {
  * (invisible to customers, matching DestinationCard's isComingSoon check)
  * with a starter theme the admin picks from STARTER_THEMES; content (KML,
  * coupons, phrasebook) is added afterward from the destination's own admin
- * page, which this redirects straight into. */
-export async function createDestination(formData: FormData): Promise<{ error: string } | void> {
-  await requireContentManager();
-
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) return { error: "שם היעד הוא שדה חובה" };
-
-  const slugInput = String(formData.get("slug") ?? "").trim();
-  const slug = slugify(slugInput || name);
-  if (!slug) return { error: "לא הצלחנו לייצר כתובת (slug) תקינה מהשם — נסו להזין אחת ידנית" };
-
-  const existing = await prisma.destination.findUnique({ where: { slug }, select: { id: true } });
-  if (existing) return { error: `כבר קיים יעד עם הכתובת "${slug}"` };
-
-  const tagline = String(formData.get("tagline") ?? "").trim() || null;
-  const continent = String(formData.get("continent") ?? "europe");
-  const isBestSeller = formData.get("isBestSeller") === "on";
-
-  let theme: ThemeConfig;
+ * page. Returns the new slug instead of calling redirect() itself — this is
+ * invoked imperatively from a client component (not as a bare <form
+ * action={...}>), and redirect()'s special throw is only guaranteed to be
+ * intercepted correctly for the latter; the client does the navigation once
+ * it gets a successful result back. Every failure path (including an
+ * unexpected thrown error, e.g. a permission check) resolves to a returned
+ * {error} instead of throwing, so the caller always gets visible feedback
+ * rather than a silent no-op. */
+export async function createDestination(formData: FormData): Promise<{ ok: true; slug: string } | { error: string }> {
   try {
-    theme = JSON.parse(String(formData.get("themeConfig") ?? ""));
-    if (!theme?.palette?.primary) throw new Error("invalid theme");
-  } catch {
-    theme = STARTER_THEMES[0].theme;
+    await requireContentManager();
+
+    const name = String(formData.get("name") ?? "").trim();
+    if (!name) return { error: "שם היעד הוא שדה חובה" };
+
+    const slugInput = String(formData.get("slug") ?? "").trim();
+    const slug = slugify(slugInput || name);
+    if (!slug) return { error: "לא הצלחנו לייצר כתובת (slug) תקינה מהשם — נסו להזין אחת ידנית" };
+
+    const existing = await prisma.destination.findUnique({ where: { slug }, select: { id: true } });
+    if (existing) return { error: `כבר קיים יעד עם הכתובת "${slug}"` };
+
+    const tagline = String(formData.get("tagline") ?? "").trim() || null;
+    const continent = String(formData.get("continent") ?? "europe");
+    const isBestSeller = formData.get("isBestSeller") === "on";
+
+    let theme: ThemeConfig;
+    try {
+      theme = JSON.parse(String(formData.get("themeConfig") ?? ""));
+      if (!theme?.palette?.primary) throw new Error("invalid theme");
+    } catch {
+      theme = STARTER_THEMES[0].theme;
+    }
+
+    await prisma.destination.create({
+      data: {
+        slug,
+        name,
+        tagline,
+        continent,
+        isBestSeller,
+        status: "draft",
+        themeConfig: JSON.stringify(theme),
+      },
+    });
+
+    revalidateTag("destinations-list", "max");
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { ok: true, slug };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "שגיאה לא צפויה ביצירת היעד" };
   }
-
-  await prisma.destination.create({
-    data: {
-      slug,
-      name,
-      tagline,
-      continent,
-      isBestSeller,
-      status: "draft",
-      themeConfig: JSON.stringify(theme),
-    },
-  });
-
-  revalidateTag("destinations-list", "max");
-  revalidatePath("/admin");
-  revalidatePath("/");
-  redirect(`/admin/destinations/${slug}`);
 }
 
 /** Deletes all imported content (areas/categories/POIs cascade) and the KML

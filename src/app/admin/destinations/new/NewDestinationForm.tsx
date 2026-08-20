@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createDestination } from "@/lib/actions/admin";
 import type { StarterTheme } from "@/lib/theme/starterThemes";
 
@@ -22,6 +23,7 @@ const CONTINENTS = [
 ];
 
 export function NewDestinationForm({ starterThemes }: { starterThemes: StarterTheme[] }) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
@@ -37,10 +39,13 @@ export function NewDestinationForm({ starterThemes }: { starterThemes: StarterTh
     formData.set("slug", effectiveSlug);
     formData.set("themeConfig", JSON.stringify(selectedTheme.theme));
     startTransition(async () => {
-      const result = await createDestination(formData);
-      if (result?.error) setError(result.error);
-      // On success the action itself redirects to the new destination's
-      // admin page — nothing else to do here.
+      try {
+        const result = await createDestination(formData);
+        if ("error" in result) setError(result.error);
+        else router.push(`/admin/destinations/${result.slug}`);
+      } catch {
+        setError("שגיאה לא צפויה — נסו שוב");
+      }
     });
   }
 
