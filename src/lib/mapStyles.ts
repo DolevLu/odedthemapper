@@ -37,13 +37,22 @@ const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "p
  * baked in (as a data: SVG), so a marker's category is readable at a glance
  * without opening it or memorizing colors. Falls back to the destination's
  * own KML-derived color/icon for categories outside the standardized set. */
-export function categoryMarkerIcon(fallbackColor: string, categoryName: string, scale = 15): google.maps.Icon {
+export function categoryMarkerIcon(
+  fallbackColor: string,
+  categoryName: string,
+  scale = 15,
+  favorited = false
+): google.maps.Icon {
   const standard = STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName));
   const color = standard?.color ?? fallbackColor;
+  // Favorited points get a bright yellow glyph instead of white so they
+  // stand out ("shine") at a glance while scanning the map, without needing
+  // to open each one to check.
+  const glyphFill = favorited ? "#FDE047" : "white";
   const glyph =
     standard?.icon.type === "text"
-      ? `<text x="12" y="17" font-size="15" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="white">${standard.icon.char}</text>`
-      : `<path d="${standard?.icon.type === "path" ? standard.icon.d : pathForCategory(categoryName)}" fill="white" />`;
+      ? `<text x="12" y="17" font-size="15" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="${glyphFill}">${standard.icon.char}</text>`
+      : `<path d="${standard?.icon.type === "path" ? standard.icon.d : pathForCategory(categoryName)}" fill="${glyphFill}" />`;
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${scale * 2}" height="${scale * 2}" viewBox="0 0 ${scale * 2} ${scale * 2}">

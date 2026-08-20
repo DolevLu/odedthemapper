@@ -295,6 +295,13 @@ export function MapScreen({
           if (nowFavorited) favoritedIdsRef.current.add(poiId);
           else favoritedIdsRef.current.delete(poiId);
           favBtn.textContent = nowFavorited ? "❤️ מועדפים" : "🤍 מועדפים";
+          // Updates the marker's own icon immediately (yellow glyph fill for
+          // favorites) instead of waiting for a full marker rebuild.
+          const favoritedPoi = pointPoisById.get(poiId);
+          const favoritedMarker = markersByPoiId.current.get(poiId);
+          if (favoritedPoi && favoritedMarker) {
+            favoritedMarker.setIcon(categoryMarkerIcon(favoritedPoi.categoryColor, favoritedPoi.categoryName, undefined, nowFavorited));
+          }
           toggleFavorite(poiId, slug);
         };
       }
@@ -716,7 +723,7 @@ export function MapScreen({
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
         title: poi.name,
-        icon: categoryMarkerIcon(poi.categoryColor, poi.categoryName),
+        icon: categoryMarkerIcon(poi.categoryColor, poi.categoryName, undefined, favoritedIdsRef.current.has(poi.id)),
       });
       marker.addListener("click", () => openPoi(poi, marker));
       markersByPoiId.current.set(poi.id, marker);
