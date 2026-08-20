@@ -172,6 +172,10 @@ export function MapScreen({
   const [shadowIsNight, setShadowIsNight] = useState(false);
   const [shadowTick, setShadowTick] = useState(0);
   const [listOpen, setListOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchNoResults, setSearchNoResults] = useState(false);
   const [routeModeActive, setRouteModeActive] = useState(false);
   const [showGooglePois, setShowGooglePois] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
@@ -551,6 +555,53 @@ export function MapScreen({
     });
   }, [loaded, logisticPins]);
 
+  // Free-text search against Google Places itself (not just our curated
+  // POIs) — biased to the current viewport, panning/zooming to the top
+  // result and offering the same "💾 שמירה למפה" info-window button already
+  // wired up for the "tap a Google POI tag" flow above.
+  function runPlaceSearch() {
+    const query = searchQuery.trim();
+    if (!query || !mapRef.current) return;
+    setSearching(true);
+    setSearchNoResults(false);
+    loadPlacesLibrary()
+      .then(() => {
+        if (!placesServiceRef.current && mapRef.current) {
+          placesServiceRef.current = new google.maps.places.PlacesService(mapRef.current);
+        }
+        placesServiceRef.current?.textSearch(
+          { query, bounds: mapRef.current?.getBounds() ?? undefined },
+          (results, status) => {
+            setSearching(false);
+            const top = results?.[0];
+            const location = top?.geometry?.location;
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !top || !location || !top.place_id) {
+              setSearchNoResults(true);
+              return;
+            }
+            const lat = location.lat();
+            const lng = location.lng();
+            const name = top.name ?? query;
+            mapRef.current!.panTo({ lat, lng });
+            mapRef.current!.setZoom(16);
+            infoWindowRef.current?.setContent(
+              `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
+                <strong>${name}</strong>
+                ${top.formatted_address ? `<div style="font-size:12px;opacity:.6;margin-top:2px">${top.formatted_address}</div>` : ""}
+                <div style="margin-top:8px">
+                  <button data-save-pin-btn data-place-id="${top.place_id}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">💾 שמירה למפה</button>
+                </div>
+              </div>`
+            );
+            infoWindowRef.current?.setPosition({ lat, lng });
+            infoWindowRef.current?.open({ map: mapRef.current! });
+            setSearchOpen(false);
+          }
+        );
+      })
+      .catch(() => setSearching(false));
+  }
+
   async function drawRouteTo(poi: FlatPoi) {
     const origin = userPositionRef.current;
     if (!origin || !mapRef.current) return;
@@ -837,14 +888,59 @@ export function MapScreen({
           </button>
         </div>
         <button
-          onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
-          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-          aria-label="גלילה שמאלה"
+          onClick={previewGate(() => setSearchOpen((v) => !v))}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: searchOpen ? "var(--primary)" : "rgba(255,255,255,0.94)", color: searchOpen ? "white" : "var(--text)", ...previewDim }}
+          aria-label="חיפוש מקום בגוגל מפות"
         >
-          ‹
+          🔍
         </button>
-        <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1 overflow-x-auto scroll-smooth p-1">
+        {searchOpen ? (
+          <div className="flex flex-1 items-center gap-1 rounded-full bg-white/95 p-1 shadow-md">
+            <input
+              autoFocus
+              dir="rtl"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchNoResults(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && runPlaceSearch()}
+              placeholder="חיפוש מקום בגוגל מפות..."
+              className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
+              style={{ color: "var(--text)" }}
+            />
+            <button
+              onClick={runPlaceSearch}
+              disabled={searching || !searchQuery.trim()}
+              className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
+              style={{ background: "var(--primary)" }}
+            >
+              {searching ? "…" : "חיפוש"}
+            </button>
+            <button
+              onClick={() => {
+                setSearchOpen(false);
+                setSearchQuery("");
+                setSearchNoResults(false);
+              }}
+              className="shrink-0 px-1 text-lg opacity-50 hover:opacity-100"
+              aria-label="סגירת חיפוש"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+              style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+              aria-label="גלילה שמאלה"
+            >
+              ‹
+            </button>
+            <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1 overflow-x-auto scroll-smooth p-1">
         <button
           onClick={previewGate(() => setActiveCategory(null))}
           className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
@@ -897,15 +993,23 @@ export function MapScreen({
               : "🌑 צל"}
         </button>
         </div>
-        <button
-          onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
-          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-          aria-label="גלילה ימינה"
-        >
-          ›
-        </button>
+            <button
+              onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+              style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+              aria-label="גלילה ימינה"
+            >
+              ›
+            </button>
+          </>
+        )}
       </div>
+
+      {searchNoResults && (
+        <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">
+          לא נמצאו תוצאות לחיפוש הזה
+        </div>
+      )}
 
       {gpsError && (
         <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{gpsError}</div>
