@@ -14,6 +14,7 @@ import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 import { sunPosition, shadedSidePath } from "@/lib/shadow";
 import { fetchStreetsInBounds, type StreetWay } from "@/lib/streetNetwork";
+import { saveDestinationOffline, isDestinationSavedOffline, isOfflineStorageSupported } from "@/lib/offlineStore";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
@@ -176,6 +177,10 @@ export function MapScreen({
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchNoResults, setSearchNoResults] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineSaved, setOfflineSaved] = useState(false);
+  const [offlineSaving, setOfflineSaving] = useState(false);
+  const [offlineProgress, setOfflineProgress] = useState<{ done: number; total: number } | null>(null);
   const [routeModeActive, setRouteModeActive] = useState(false);
   const [showGooglePois, setShowGooglePois] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
@@ -208,6 +213,49 @@ export function MapScreen({
       .map((p) => ({ ...p, distanceKm: haversineKm([userPosition.lat, userPosition.lng], [p.lat, p.lng]) }))
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }, [filtered, gpsActive, userPosition]);
+
+  // Tracks connectivity so the map can fall back to a clear "offline" state
+  // — the live tiled map itself can never work without a network (no
+  // supported way to legitimately cache Google's tiles for offline use),
+  // but the points list + descriptions + any photos saved via "download for
+  // offline" below still work fine without one.
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    isDestinationSavedOffline(slug).then(setOfflineSaved);
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, [slug]);
+
+  // Offline is exactly when the points list matters most — force it open
+  // (still collapsible back) instead of leaving it as a slim handle.
+  useEffect(() => {
+    if (!isOnline) setListOpen(true);
+  }, [isOnline]);
+
+  async function handleSaveOffline() {
+    setOfflineSaving(true);
+    setOfflineProgress({ done: 0, total: 0 });
+    try {
+      await saveDestinationOffline(
+        slug,
+        pois.map((p) => ({ id: p.id, photoUrl: p.photoUrl })),
+        (done, total) => setOfflineProgress({ done, total })
+      );
+      setOfflineSaved(true);
+    } catch {
+      // best-effort — isOfflineStorageSupported already gates the button for
+      // browsers that can't do this at all
+    } finally {
+      setOfflineSaving(false);
+      setOfflineProgress(null);
+    }
+  }
 
   // Initialize the map once Google Maps is loaded.
   useEffect(() => {
@@ -1011,6 +1059,12 @@ export function MapScreen({
         </div>
       )}
 
+      {!isOnline && (
+        <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2.5 text-center text-xs font-semibold shadow-md" style={{ color: "#92400E" }}>
+          📡 אין חיבור לאינטרנט — המפה החיה דורשת רשת, מוצגת הרשימה השמורה בלבד
+        </div>
+      )}
+
       {gpsError && (
         <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{gpsError}</div>
       )}
@@ -1085,13 +1139,29 @@ export function MapScreen({
         className="absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
         style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem", ...previewDim }}
       >
-        <button
-          onClick={previewGate(() => setListOpen((v) => !v))}
-          className="flex shrink-0 items-center justify-between gap-2 px-4 py-3 text-sm font-semibold"
-        >
-          <span>📋 {sortedList.length} נקודות ברשימה{gpsActive && userPosition ? " · ממוין לפי קרבה" : ""}</span>
-          <span className="text-xs opacity-60">{listOpen ? "▼" : "▲"}</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-semibold">
+          <button onClick={previewGate(() => setListOpen((v) => !v))} className="flex flex-1 items-center gap-2 text-start">
+            <span>📋 {sortedList.length} נקודות ברשימה{gpsActive && userPosition ? " · ממוין לפי קרבה" : ""}</span>
+          </button>
+          {isOfflineStorageSupported() && (
+            <button
+              onClick={previewGate(handleSaveOffline)}
+              disabled={offlineSaving}
+              className="shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold opacity-70 hover:opacity-100 disabled:opacity-50"
+              style={{ background: offlineSaved ? "color-mix(in srgb, #16A34A 12%, transparent)" : "transparent", color: offlineSaved ? "#16A34A" : "var(--text)" }}
+              title="שמירת הנקודות והתמונות לשימוש אופליין"
+            >
+              {offlineSaving
+                ? `📥 ${offlineProgress?.done ?? 0}/${offlineProgress?.total ?? 0}`
+                : offlineSaved
+                  ? "✓ נשמר אופליין"
+                  : "📥 שמירה אופליין"}
+            </button>
+          )}
+          <button onClick={previewGate(() => setListOpen((v) => !v))} className="shrink-0 text-xs opacity-60">
+            {listOpen ? "▼" : "▲"}
+          </button>
+        </div>
         {listOpen && <div className="flex-1 overflow-y-auto overscroll-contain">{sortedList.map((poi) => renderListItem(poi))}</div>}
       </div>
     </div>
