@@ -97,6 +97,10 @@ export function DayRouteMap({
         zoom: 12,
         streetViewControl: false,
         fullscreenControl: false,
+        // Google's own native (English) Map/Satellite control is replaced by
+        // our own compact Hebrew toggle below — without this, both rendered
+        // at once, the native one large and behind ours.
+        mapTypeControl: false,
         gestureHandling: "greedy",
         styles: DECLUTTERED_MAP_STYLES,
       });
