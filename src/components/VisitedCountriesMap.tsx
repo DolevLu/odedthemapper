@@ -10,6 +10,16 @@ import { WORLD_COUNTRIES, flagEmoji } from "@/lib/worldCountries";
 // zoomed in on roughly a single country/region.
 const PHOTO_CLUSTER_ZOOM = 3;
 
+// Simplified (110m resolution) world country borders, stripped down to just
+// {iso_a2, name} + geometry — see how it was generated in this session's
+// notes. ISO_A2 matches WORLD_COUNTRIES' own `code` field directly.
+const WORLD_BORDERS_URL = "/data/world-countries.geojson";
+
+const VISITED_FILL = "#22C55E";
+const VISITED_STROKE = "#16A34A";
+const UNVISITED_FILL = "#D1D5DB";
+const UNVISITED_STROKE = "#9CA3AF";
+
 const CLUSTER_LAYOUT = [
   { x: 0, y: 0, r: 4 },
   { x: 20, y: -6, r: -8 },
@@ -103,11 +113,28 @@ export function VisitedCountriesMap({
   const { loaded } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
+  const bordersLoadedRef = useRef(false);
+  const visitedRef = useRef<Set<string>>(new Set(initialVisited));
   const [visited, setVisited] = useState<Set<string>>(new Set(initialVisited));
   const [query, setQuery] = useState("");
   const [managingCode, setManagingCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    visitedRef.current = visited;
+  }, [visited]);
+
+  const styleFeature = (feature: google.maps.Data.Feature): google.maps.Data.StyleOptions => {
+    const code = String(feature.getProperty("iso_a2") ?? "");
+    const isVisited = visitedRef.current.has(code);
+    return {
+      fillColor: isVisited ? VISITED_FILL : UNVISITED_FILL,
+      fillOpacity: isVisited ? 0.65 : 0.25,
+      strokeColor: isVisited ? VISITED_STROKE : UNVISITED_STROKE,
+      strokeWeight: 1,
+      clickable: true,
+    };
+  };
 
   useEffect(() => {
     if (!loaded || !mapDivRef.current || mapRef.current) return;
@@ -119,45 +146,56 @@ export function VisitedCountriesMap({
       mapTypeControl: false,
       gestureHandling: "greedy",
     });
-    mapRef.current.addListener("zoom_changed", () => drawMarkers());
+
+    // Real country-shape polygons instead of a pin per visited country —
+    // visited ones fill green, everything else stays a neutral gray so the
+    // world still reads as a map. Clicking a country's shape toggles it,
+    // same as the checklist below.
+    mapRef.current.data.loadGeoJson(WORLD_BORDERS_URL, { idPropertyName: "iso_a2" }, () => {
+      bordersLoadedRef.current = true;
+      mapRef.current?.data.setStyle(styleFeature);
+    });
+    mapRef.current.data.addListener("click", (e: google.maps.Data.MouseEvent) => {
+      const code = String(e.feature.getProperty("iso_a2") ?? "");
+      if (code) toggle(code);
+    });
+
+    mapRef.current.addListener("zoom_changed", () => drawPhotoClusters());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
-  function drawMarkers() {
+  // Re-styles every country feature (green vs. gray) whenever the visited
+  // set changes — the Data layer's style function is only evaluated when
+  // explicitly (re-)applied, not reactively on every render.
+  useEffect(() => {
+    if (!loaded || !mapRef.current || !bordersLoadedRef.current) return;
+    mapRef.current.data.setStyle(styleFeature);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, visited]);
+
+  function drawPhotoClusters() {
     if (!mapRef.current) return;
     const zoom = mapRef.current.getZoom() ?? 1;
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current = [];
     overlaysRef.current.forEach((o) => o.setMap(null));
     overlaysRef.current = [];
+    if (zoom < PHOTO_CLUSTER_ZOOM) return;
 
     for (const country of WORLD_COUNTRIES) {
       if (!visited.has(country.code)) continue;
       const photos = photosByCountry[country.code] ?? [];
-      const useCluster = zoom >= PHOTO_CLUSTER_ZOOM && photos.length > 0;
+      if (photos.length === 0) continue;
       const position = { lat: country.lat, lng: country.lng };
-
-      if (useCluster) {
-        overlaysRef.current.push(
-          createPhotoClusterOverlay(mapRef.current, position, photos, country.name, () => setManagingCode(country.code))
-        );
-      } else {
-        const marker = new google.maps.Marker({
-          position,
-          map: mapRef.current,
-          title: country.name,
-          label: { text: flagEmoji(country.code), fontSize: "16px" },
-        });
-        marker.addListener("click", () => setManagingCode(country.code));
-        markersRef.current.push(marker);
-      }
+      overlaysRef.current.push(
+        createPhotoClusterOverlay(mapRef.current, position, photos, country.name, () => setManagingCode(country.code))
+      );
     }
   }
 
-  // Redraw pins whenever the visited set or photo data changes.
+  // Redraws photo clusters whenever the visited set or photo data changes
+  // (country-shape coloring updates itself via the effect above).
   useEffect(() => {
     if (!loaded) return;
-    drawMarkers();
+    drawPhotoClusters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, visited, photosByCountry]);
 

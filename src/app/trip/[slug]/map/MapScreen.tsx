@@ -39,6 +39,10 @@ const SHADOW_MIN_ZOOM = 15;
 // normal line/polygon renders in its own KML-derived category color instead.
 const SHAPE_COLOR = "#7C3AED";
 
+// Main-street lines always render in brand purple, not whatever color (often
+// a generic blue) the KML happened to assign them.
+const MAIN_STREET_PATTERN = /רחוב.*ראשי|ראשי.*רחוב|main street|main road/i;
+
 const INFO_ACTION_BTN_STYLE =
   "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
 
@@ -438,8 +442,10 @@ export function MapScreen({
       // real line color) over the category's one shared swatch — several
       // differently-colored lines can otherwise be grouped in a single
       // category/folder (e.g. all under "מטרו") and would wrongly render
-      // identically if only the category color were used.
-      const color = poi.colorHex || poi.categoryColor || SHAPE_COLOR;
+      // identically if only the category color were used. Main-street lines
+      // are a deliberate exception — always our own brand purple regardless
+      // of whatever color (usually blue) the KML assigned them.
+      const color = MAIN_STREET_PATTERN.test(poi.categoryName) ? SHAPE_COLOR : poi.colorHex || poi.categoryColor || SHAPE_COLOR;
       if (poi.geometryType === "polygon") {
         const polygon = new google.maps.Polygon({
           paths: path,
