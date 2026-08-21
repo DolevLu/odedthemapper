@@ -97,6 +97,8 @@ model PointOfInterest {
   hours             String?
   wantsBooking      Boolean  @default(false)
   isMustSee         Boolean  @default(false) // flagged as one of the destination's unmissable highlights
+  website           String? // real official site, found by AI enrichment — distinct from bookingUrl (tour/ticket booking specifically)
+  enrichedAt        DateTime? // set once AI enrichment (real photo/description/website) has run for this POI, so re-runs skip it
   createdAt         DateTime @default(now())
 
   category    Category           @relation(fields: [categoryId], references: [id], onDelete: Cascade)

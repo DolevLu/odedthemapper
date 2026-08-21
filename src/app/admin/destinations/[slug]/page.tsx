@@ -8,7 +8,9 @@ import {
   deleteCoupon,
   addPhrasebookEntry,
   deletePhrasebookEntry,
+  getEnrichmentStatus,
 } from "@/lib/actions/admin";
+import { EnrichmentPanel } from "./EnrichmentPanel";
 
 // KML uploads for a large destination (1000-2000+ placemarks) can take a
 // while even after batching the DB writes — raised from the platform
@@ -32,6 +34,7 @@ export default async function AdminDestinationPage({ params }: { params: Promise
     (sum, a) => sum + a.categories.reduce((s, c) => s + c._count.pois, 0),
     0
   );
+  const enrichmentStatus = await getEnrichmentStatus(destination.id);
 
   const uploadAction = uploadKml.bind(null, destination.id, slug);
   const deleteContentAction = deleteDestinationContent.bind(null, destination.id, slug);
@@ -92,6 +95,13 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           </form>
         )}
       </section>
+
+      <EnrichmentPanel
+        destinationId={destination.id}
+        slug={slug}
+        initialTotal={enrichmentStatus.total}
+        initialRemaining={enrichmentStatus.remaining}
+      />
 
       <section className="rounded-xl border border-black/10 bg-white p-5">
         <h2 className="mb-3 font-bold">הנחות וקופונים</h2>

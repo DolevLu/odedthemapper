@@ -4,6 +4,8 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { importKmlFilesToDestination } from "@/lib/kml/importToDb";
+import { findWikipediaPhoto, generateDescriptionAndWebsite } from "@/lib/kml/enrichPoi";
+import { extractTextDescription } from "@/lib/data/pois";
 import { canManageContent } from "@/lib/access";
 import { getPhrasebookSeedForSlug } from "@/lib/phrasebookSeeds";
 import { STARTER_THEMES } from "@/lib/theme/starterThemes";
@@ -139,6 +141,106 @@ export async function uploadKml(destinationId: string, slug: string, formData: F
   revalidatePath(`/admin/destinations/${slug}`);
   revalidatePath("/");
   revalidatePath(`/trip/${slug}`);
+}
+
+// ---------- AI enrichment (real photo/description/website for POIs whose
+// KML data is missing or generic) ----------
+
+// Some KML export/generator tools stamp every single placemark with the
+// exact same boilerplate blurb instead of real per-place text — confirmed
+// directly against a real uploaded file. A description containing one of
+// these is treated the same as no description at all.
+const GENERIC_DESCRIPTION_MARKERS = ["נקודה שסומנה במסלול", "מומלץ לבדוק שעות פתיחה"];
+
+// A photo URL reused across this many or more *different* POIs in the same
+// destination clearly isn't a real photo of any one of them (the same
+// generator tools stamp every placemark with one or two stock images).
+const GENERIC_PHOTO_MIN_REUSE = 4;
+
+export async function getEnrichmentStatus(destinationId: string) {
+  const where = { category: { area: { destinationId } }, geometryType: "point" } as const;
+  const [total, remaining] = await Promise.all([
+    prisma.pointOfInterest.count({ where }),
+    prisma.pointOfInterest.count({ where: { ...where, enrichedAt: null } }),
+  ]);
+  return { total, remaining };
+}
+
+/** Enriches up to `batchSize` not-yet-processed POIs with a real photo
+ * (Wikipedia), and a real description + website (Gemini with Google Search
+ * grounding) — only filling in what's actually missing/generic, never
+ * touching a POI's existing content when it already looks like real,
+ * unique data. Processes the batch concurrently (bounded by the slowest
+ * single POI's lookups, not the sum) to stay well inside the page's 60s
+ * maxDuration. Call repeatedly (the client drives the loop) until
+ * `remaining` reaches 0 — there's no single "enrich everything" call by
+ * design, since that could run for many destination-sized minutes. */
+export async function enrichDestinationPoisBatch(destinationId: string, slug: string, batchSize = 4) {
+  await requireContentManager();
+  const destination = await prisma.destination.findUniqueOrThrow({ where: { id: destinationId } });
+
+  const photoRows = await prisma.poiPhoto.findMany({
+    where: { poi: { category: { area: { destinationId } } } },
+    select: { url: true, poiId: true },
+  });
+  const poiIdsByUrl = new Map<string, Set<string>>();
+  for (const p of photoRows) {
+    if (!poiIdsByUrl.has(p.url)) poiIdsByUrl.set(p.url, new Set());
+    poiIdsByUrl.get(p.url)!.add(p.poiId);
+  }
+  const genericPhotoUrls = new Set(
+    [...poiIdsByUrl.entries()].filter(([, poiIds]) => poiIds.size >= GENERIC_PHOTO_MIN_REUSE).map(([url]) => url)
+  );
+
+  const batch = await prisma.pointOfInterest.findMany({
+    where: { category: { area: { destinationId } }, geometryType: "point", enrichedAt: null },
+    include: { category: { include: { area: true } }, photos: { select: { url: true } } },
+    take: batchSize,
+    orderBy: { id: "asc" },
+  });
+
+  // Sequential, not Promise.all — the Gemini grounding tool hits rate/
+  // capacity limits noticeably faster under a concurrent burst than one
+  // request at a time (observed directly), and this is meant to reliably
+  // finish eventually, not race through as fast as possible.
+  const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  for (const poi of batch) {
+    const descriptionText = extractTextDescription(poi.rawDescriptionHtml);
+    const needsDescription = !descriptionText || GENERIC_DESCRIPTION_MARKERS.some((m) => descriptionText.includes(m));
+    const hasRealPhoto = poi.photos.some((p) => !genericPhotoUrls.has(p.url));
+    const needsPhoto = !hasRealPhoto;
+    const needsWebsite = !poi.website;
+
+    if (!needsDescription && !needsPhoto && !needsWebsite) {
+      await prisma.pointOfInterest.update({ where: { id: poi.id }, data: { enrichedAt: new Date() } });
+      continue;
+    }
+
+    const photoUrl = needsPhoto ? await findWikipediaPhoto(poi.name, poi.lat, poi.lng) : null;
+    const aiResult =
+      needsDescription || needsWebsite
+        ? await generateDescriptionAndWebsite(poi.name, poi.category.name, poi.category.area.name, destination.name, poi.lat, poi.lng)
+        : { description: null, website: null };
+
+    await prisma.pointOfInterest.update({
+      where: { id: poi.id },
+      data: {
+        enrichedAt: new Date(),
+        ...(needsWebsite && aiResult.website ? { website: aiResult.website } : {}),
+        ...(needsDescription && aiResult.description ? { rawDescriptionHtml: `<p>${escapeHtml(aiResult.description)}</p>` } : {}),
+      },
+    });
+    if (needsPhoto && photoUrl) {
+      await prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } });
+    }
+  }
+
+  revalidateTag(`pois-${destinationId}`, "max");
+  revalidatePath(`/admin/destinations/${slug}`);
+  revalidatePath(`/trip/${slug}`);
+
+  const status = await getEnrichmentStatus(destinationId);
+  return { processedInBatch: batch.length, ...status };
 }
 
 export async function updateDestinationMeta(destinationId: string, slug: string, formData: FormData) {
