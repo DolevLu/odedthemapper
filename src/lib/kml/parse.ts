@@ -223,3 +223,38 @@ export function parseKml(xml: string): ParsedKml {
 
   return { documentName, areas };
 }
+
+/** Merges the areas from several parsed KML files into one coherent set —
+ * used when an admin uploads multiple files for one destination (e.g. one
+ * KML per city) instead of a single combined file. Areas/categories with
+ * the exact same name across files are combined into one (their POI lists
+ * concatenated) rather than creating duplicate rows; anything with a name
+ * unique to one file is carried through as-is. First-seen category color
+ * wins when the same category name appears in more than one file. */
+export function mergeParsedAreas(areaLists: ParsedArea[][]): ParsedArea[] {
+  const areaByName = new Map<string, ParsedArea>();
+
+  for (const areas of areaLists) {
+    for (const area of areas) {
+      let mergedArea = areaByName.get(area.name);
+      if (!mergedArea) {
+        mergedArea = { name: area.name, categories: [] };
+        areaByName.set(area.name, mergedArea);
+      }
+
+      const categoryByName = new Map(mergedArea.categories.map((c) => [c.name, c]));
+      for (const category of area.categories) {
+        const mergedCategory = categoryByName.get(category.name);
+        if (mergedCategory) {
+          mergedCategory.pois.push(...category.pois);
+        } else {
+          const copy: ParsedCategory = { name: category.name, colorHex: category.colorHex, pois: [...category.pois] };
+          mergedArea.categories.push(copy);
+          categoryByName.set(category.name, copy);
+        }
+      }
+    }
+  }
+
+  return Array.from(areaByName.values());
+}

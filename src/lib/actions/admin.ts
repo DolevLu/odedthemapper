@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { importKmlToDestination } from "@/lib/kml/importToDb";
+import { importKmlFilesToDestination } from "@/lib/kml/importToDb";
 import { canManageContent } from "@/lib/access";
 import { getPhrasebookSeedForSlug } from "@/lib/phrasebookSeeds";
 import { STARTER_THEMES } from "@/lib/theme/starterThemes";
@@ -100,20 +100,24 @@ export async function deleteDestinationContent(destinationId: string, slug: stri
   revalidatePath(`/trip/${slug}`);
 }
 
-/** Uploads + imports a KML, auto-seeds the destination's phrasebook (if empty)
- * from a curated per-language phrase list, and publishes the destination —
- * one action takes a raw KML all the way to a fully working destination.
- * Any previously imported content for this destination is cleared first, so
- * re-uploading a KML always fully replaces the old map rather than duplicating it. */
+/** Uploads + imports one or more KML files, auto-seeds the destination's
+ * phrasebook (if empty) from a curated per-language phrase list, and
+ * publishes the destination — one action takes raw KML(s) all the way to a
+ * fully working destination. Any previously imported content for this
+ * destination is cleared first, so re-uploading always fully replaces the
+ * old map rather than duplicating it; when multiple files are given (e.g.
+ * one KML per city), their areas/categories are merged into one coherent
+ * map instead of ending up as separate, possibly-duplicate content — see
+ * mergeParsedAreas. */
 export async function uploadKml(destinationId: string, slug: string, formData: FormData) {
   await requireContentManager();
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) return;
+  const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length === 0) return;
 
-  const xml = await file.text();
+  const parsedFiles = await Promise.all(files.map(async (file) => ({ fileName: file.name, xml: await file.text() })));
   await prisma.area.deleteMany({ where: { destinationId } });
   await prisma.kmlImport.deleteMany({ where: { destinationId } });
-  await importKmlToDestination(prisma, destinationId, file.name, xml);
+  await importKmlFilesToDestination(prisma, destinationId, parsedFiles);
 
   const existingPhrasebookCount = await prisma.phrasebookEntry.count({ where: { destinationId } });
   if (existingPhrasebookCount === 0) {

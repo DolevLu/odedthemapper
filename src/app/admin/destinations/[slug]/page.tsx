@@ -64,12 +64,13 @@ export default async function AdminDestinationPage({ params }: { params: Promise
       <section className="rounded-xl border border-black/10 bg-white p-5">
         <h2 className="mb-3 font-bold">העלאת KML</h2>
         <p className="mb-3 text-sm opacity-60">
-          לחיצה על &quot;שמירה&quot; מוחקת את כל התוכן הקיים של היעד (אם יש), מייבאת את הקובץ החדש, מוסיפה שיחון בסיסי
-          אוטומטית (אם עדיין ריק), ומפרסמת את היעד — הכל בפעולה אחת. כלומר העלאת קובץ חדש תמיד מחליפה לגמרי את המפה
-          הקיימת, לא מוסיפה עליה.
+          לחיצה על &quot;שמירה&quot; מוחקת את כל התוכן הקיים של היעד (אם יש), מייבאת את הקבצים החדשים, מוסיפה שיחון
+          בסיסי אוטומטית (אם עדיין ריק), ומפרסמת את היעד — הכל בפעולה אחת. אפשר לבחור כמה קבצי KML בבת אחת (למשל קובץ
+          נפרד לכל עיר) — האזורים והקטגוריות שלהם יאוחדו למפה אחת קוהרנטית (אזור/קטגוריה עם אותו שם בכמה קבצים ימוזגו
+          לאחד, לא ישוכפלו). בכל מקרה, העלאה חדשה תמיד מחליפה לגמרי את המפה הקיימת, לא מוסיפה עליה.
         </p>
         <form action={uploadAction} className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input type="file" name="file" accept=".kml" required className="flex-1 text-sm" />
+          <input type="file" name="files" accept=".kml" multiple required className="flex-1 text-sm" />
           <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white">
             שמירה והחלפה
           </button>

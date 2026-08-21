@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
-import { parseKml } from "./parse";
+import { parseKml, mergeParsedAreas, type ParsedArea } from "./parse";
 
 const IMG_SRC_RE = /<img[^>]+src="([^"]+)"/g;
 
@@ -14,17 +14,25 @@ function extractPhotoUrls(html: string | null): string[] {
 }
 
 export type KmlImportResult = {
-  kmlImportId: string;
+  kmlImportIds: string[];
   areasCreated: number;
   categoriesCreated: number;
   poisCreated: number;
 };
 
 /**
- * Parses a KML document and writes it into the DB for the given destination.
- * Idempotent-ish: each call creates a fresh KmlImport record and fresh
- * Area/Category/POI rows — re-running against the same destination will
- * duplicate content, so this is meant to run once per reviewed import.
+ * Parses one or more KML files and writes their *merged* content into the
+ * DB for the given destination — areas/categories with the same name
+ * across files are combined into one instead of duplicated (see
+ * mergeParsedAreas), so e.g. a destination split into one KML per city
+ * still ends up as one coherent map. Each file still gets its own
+ * KmlImport history row (own rawXml/fileName/placemarkCount) even though
+ * their parsed content is merged before writing.
+ *
+ * Idempotent-ish: each call creates fresh KmlImport/Area/Category/POI
+ * rows — re-running against the same destination will duplicate content,
+ * so this is meant to run once per reviewed batch (the admin UI always
+ * deletes existing content first — see uploadKml).
  *
  * Everything runs inside one interactive transaction. Two things forced
  * this: (1) POI/photo writes are batched via createMany (up to ~2000+
@@ -39,31 +47,35 @@ export type KmlImportResult = {
  * function (a category's POI insert, then an area's own category insert)
  * before everything was put on one connection via a single transaction.
  */
-export async function importKmlToDestination(
+export async function importKmlFilesToDestination(
   prisma: PrismaClient,
   destinationId: string,
-  fileName: string,
-  xml: string
+  files: { fileName: string; xml: string }[]
 ): Promise<KmlImportResult> {
-  const parsed = parseKml(xml);
-  const totalPlacemarks = parsed.areas.reduce((sum, a) => sum + a.categories.reduce((s, c) => s + c.pois.length, 0), 0);
+  const parsedFiles = files.map((f) => ({ ...f, parsed: parseKml(f.xml) }));
+  const mergedAreas: ParsedArea[] = mergeParsedAreas(parsedFiles.map((f) => f.parsed.areas));
 
   return prisma.$transaction(
     async (tx) => {
       let categoriesCreated = 0;
       let poisCreated = 0;
 
-      const kmlImport = await tx.kmlImport.create({
-        data: {
-          destinationId,
-          fileName,
-          rawXml: xml,
-          status: "pending_review",
-          placemarkCount: totalPlacemarks,
-        },
-      });
+      const kmlImportIds: string[] = [];
+      for (const f of parsedFiles) {
+        const placemarkCount = f.parsed.areas.reduce((sum, a) => sum + a.categories.reduce((s, c) => s + c.pois.length, 0), 0);
+        const kmlImport = await tx.kmlImport.create({
+          data: {
+            destinationId,
+            fileName: f.fileName,
+            rawXml: f.xml,
+            status: "pending_review",
+            placemarkCount,
+          },
+        });
+        kmlImportIds.push(kmlImport.id);
+      }
 
-      for (const area of parsed.areas) {
+      for (const area of mergedAreas) {
         const areaRow = await tx.area.create({
           data: { destinationId, name: area.name },
         });
@@ -107,8 +119,8 @@ export async function importKmlToDestination(
       }
 
       return {
-        kmlImportId: kmlImport.id,
-        areasCreated: parsed.areas.length,
+        kmlImportIds,
+        areasCreated: mergedAreas.length,
         categoriesCreated,
         poisCreated,
       };
@@ -118,4 +130,16 @@ export async function importKmlToDestination(
     // createMany round-trips, still sequential within the transaction).
     { timeout: 45_000, maxWait: 15_000 }
   );
+}
+
+/** Single-file convenience wrapper around importKmlFilesToDestination — kept
+ * for existing call sites (e.g. scripts/reimport-destination.ts) that only
+ * ever had one file to begin with. */
+export async function importKmlToDestination(
+  prisma: PrismaClient,
+  destinationId: string,
+  fileName: string,
+  xml: string
+): Promise<KmlImportResult> {
+  return importKmlFilesToDestination(prisma, destinationId, [{ fileName, xml }]);
 }
