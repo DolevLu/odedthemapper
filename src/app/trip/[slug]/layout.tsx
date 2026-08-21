@@ -7,6 +7,7 @@ import { DestinationThemeProvider } from "@/components/theme/DestinationThemePro
 import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { TraviChat } from "@/components/travi/TraviChat";
+import { WalkthroughGuide } from "@/components/WalkthroughGuide";
 
 export default async function TripLayout({
   children,
@@ -45,6 +46,7 @@ export default async function TripLayout({
       </div>
 
       {accessLevel !== "none" && <TraviChat destinationId={destination.id} slug={slug} />}
+      {accessLevel !== "none" && <WalkthroughGuide slug={slug} />}
     </DestinationThemeProvider>
   );
 }
