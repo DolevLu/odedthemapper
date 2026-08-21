@@ -998,7 +998,7 @@ export function MapScreen({
         ) : (
           <>
             <button
-              onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+              onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
               style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
               aria-label="גלילה שמאלה"
@@ -1059,7 +1059,7 @@ export function MapScreen({
         </button>
         </div>
             <button
-              onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+              onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
               style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
               aria-label="גלילה ימינה"
