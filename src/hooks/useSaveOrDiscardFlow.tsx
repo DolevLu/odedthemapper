@@ -4,25 +4,32 @@ import { useState } from "react";
 import { saveItineraryAsTemplate, clearActiveItineraryDays } from "@/lib/actions/trip";
 
 /**
- * Shared confirmation flow for anything that's about to replace the active
- * itinerary's days (the Tinder builder, the AI wizard) — used from both so
- * clicking either one behaves the same way. When there's nothing to lose
- * (no existing days) `requestConfirm` just runs the action immediately; when
- * there is, it shows a modal offering to save the current plan under a name
- * first (as an ItineraryTemplate — see the version dropdown) or discard it,
- * before calling through to whatever the caller actually wanted to do.
+ * Shared confirmation flow for anything that's about to touch the active
+ * itinerary's days (the Tinder builder, the AI wizard, switching to a saved
+ * template) — used from all three so they behave consistently. When
+ * there's nothing to lose (no existing days) `requestConfirm` just runs the
+ * action immediately; when there is, it shows a modal.
+ *
+ * The Tinder builder additionally passes `allowContinue: true` — unlike the
+ * AI wizard (which always fully regenerates) or switching to a different
+ * saved template (which fully replaces by definition), swiping can sensibly
+ * keep going on top of an existing itinerary instead of only ever
+ * replacing/starting fresh, so it gets a third option that does nothing
+ * destructive at all: proceed as-is.
  */
 export function useSaveOrDiscardFlow(destinationId: string, slug: string) {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [allowContinue, setAllowContinue] = useState(false);
   const [nameStep, setNameStep] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  function requestConfirm(hasExistingDays: boolean, onProceed: () => void) {
+  function requestConfirm(hasExistingDays: boolean, onProceed: () => void, options?: { allowContinue?: boolean }) {
     if (!hasExistingDays) {
       onProceed();
       return;
     }
+    setAllowContinue(Boolean(options?.allowContinue));
     setPendingAction(() => onProceed);
   }
 
@@ -39,6 +46,10 @@ export function useSaveOrDiscardFlow(destinationId: string, slug: string) {
     setPendingAction(null);
     setNameStep(false);
     setName("");
+  }
+
+  function handleContinue() {
+    finish();
   }
 
   async function handleSaveAndNew() {
@@ -61,6 +72,15 @@ export function useSaveOrDiscardFlow(destinationId: string, slug: string) {
           <>
             <p className="mb-4 text-center font-bold">כבר יש לכם מסלול פעיל — מה לעשות איתו?</p>
             <div className="flex flex-col gap-2">
+              {allowContinue && (
+                <button
+                  onClick={handleContinue}
+                  className="rounded-full px-4 py-2.5 text-sm font-bold text-white"
+                  style={{ background: "linear-gradient(135deg, #F472B6, #F59E0B)" }}
+                >
+                  🔥 המשך והוסיפו למסלול הקיים
+                </button>
+              )}
               <button
                 onClick={() => setNameStep(true)}
                 className="rounded-full px-4 py-2.5 text-sm font-bold text-white"

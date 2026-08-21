@@ -71,7 +71,7 @@ export function SwipeBuilder({
   }
 
   function handleStart() {
-    requestConfirm(hasExistingDays, beginBuild);
+    requestConfirm(hasExistingDays, beginBuild, { allowContinue: true });
   }
 
   // Optimistic: advances the deck and closes the day-picker immediately

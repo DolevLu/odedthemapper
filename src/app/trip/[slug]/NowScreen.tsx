@@ -7,6 +7,8 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { PoiDetailModal } from "@/components/PoiDetailModal";
 import { TodayCard } from "@/components/TodayCard";
 import { PoiCard } from "@/components/PoiCard";
+import { HomeLocalTime } from "@/components/HomeLocalTime";
+import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
 
 type TodayData = {
   destinationId: string;
@@ -137,6 +139,8 @@ export function NowScreen({
         bookableItems={today.bookableItems}
       />
 
+      <HomeLocalTime slug={slug} />
+
       <div
         className="flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
@@ -166,6 +170,7 @@ export function NowScreen({
           >
             🌧️ יורד גשם עכשיו?
           </button>
+          <EmergencyInfoButton slug={slug} destinationName={today.destinationName} />
         </div>
       </div>
 

@@ -30,7 +30,7 @@ export function ItineraryTopBar({
   const [applying, setApplying] = useState<string | null>(null);
 
   function goToBuilder() {
-    requestConfirm(hasExistingDays, () => router.push(`/trip/${slug}/itinerary/builder`));
+    requestConfirm(hasExistingDays, () => router.push(`/trip/${slug}/itinerary/builder`), { allowContinue: true });
   }
 
   function handleApply(templateId: string) {

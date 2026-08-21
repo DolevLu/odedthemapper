@@ -8,6 +8,7 @@ import { CURRENCIES } from "@/lib/exchangeRates";
 import { getGroupMembers } from "@/lib/access";
 import { getSettleUpSummary } from "@/lib/costSplitting";
 import { DailyRemaining } from "./DailyRemaining";
+import { CurrencyConverterWidget } from "./CurrencyConverterWidget";
 
 const CATEGORIES = ["אוכל", "תחבורה", "לינה", "אטרקציות", "קניות", "אחר"];
 
@@ -56,6 +57,8 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-bold">💸 הוצאות ותקציב</h1>
+
+      <CurrencyConverterWidget />
 
       <div
         className="border p-5"

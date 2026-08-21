@@ -92,6 +92,15 @@ export async function toggleWantsBooking(poiId: string, slug: string) {
 
 // ---------- Expenses ----------
 
+/** Powers the standalone currency-converter widget — a thin server action
+ * wrapper since the actual conversion lives in a plain lib module (used by
+ * addExpense too), not itself a server action. No auth required; this
+ * doesn't read or write anything personal. */
+export async function convertCurrencyForWidget(amount: number, from: string, to: string) {
+  const { convertCurrency } = await import("@/lib/exchangeRates");
+  return convertCurrency(amount, from, to);
+}
+
 export async function addExpense(destinationId: string, slug: string, formData: FormData) {
   const userId = await requireUserId();
   const category = String(formData.get("category") ?? "אחר");

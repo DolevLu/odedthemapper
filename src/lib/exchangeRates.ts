@@ -28,6 +28,34 @@ const FALLBACK_RATES_TO_ILS: Record<string, number> = {
   HUF: 0.01,
 };
 
+/** General any-currency-to-any-currency conversion (not anchored to ILS) —
+ * powers the standalone converter widget. Same free API, same static
+ * fallback philosophy, just parameterized on the target currency too. */
+export async function convertCurrency(amount: number, from: string, to: string): Promise<{ result: number; rate: number }> {
+  if (from === to) return { result: amount, rate: 1 };
+
+  try {
+    const res = await fetch(`https://open.er-api.com/v6/latest/${from}`, {
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rate = data?.rates?.[to];
+      if (typeof rate === "number" && rate > 0) {
+        return { result: amount * rate, rate };
+      }
+    }
+  } catch {
+    // fall through to the static fallback below
+  }
+
+  const fromToIls = FALLBACK_RATES_TO_ILS[from] ?? 1;
+  const toToIls = FALLBACK_RATES_TO_ILS[to] ?? 1;
+  const rate = fromToIls / toToIls;
+  return { result: amount * rate, rate };
+}
+
 /** Converts an amount in `fromCurrency` to ILS agorot, via a free no-key
  * exchange-rate API (rates refreshed at most hourly), falling back to a
  * static approximate table on any failure so adding an expense never blocks
