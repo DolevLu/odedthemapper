@@ -2,13 +2,39 @@
 // every destination, to completion, in one long-running process — resumable
 // by design (enrichedAt marks progress), so re-running after an interruption
 // just continues where it left off instead of redoing work.
-import { prisma } from "../src/lib/prisma";
+//
+// Uses its own PrismaClient on the direct (non-pooled) connection rather than
+// the app's shared pooled client: this script has already died twice on
+// P1001 "Can't reach database server" against the pooler (port 6543) after a
+// few hundred sequential requests — Supabase's transaction-mode PgBouncer
+// doesn't tolerate a long-lived script issuing one request at a time with
+// network round-trips (Wikipedia/Gemini calls) between them nearly as well
+// as the direct connection does.
+import { PrismaClient } from "@prisma/client";
 import { extractTextDescription } from "../src/lib/data/pois";
 import { findWikipediaPhoto, generateDescriptionAndWebsite } from "../src/lib/kml/enrichPoi";
+
+const prisma = new PrismaClient({ datasourceUrl: process.env.POSTGRES_URL_NON_POOLING });
 
 const GENERIC_DESCRIPTION_MARKERS = ["נקודה שסומנה במסלול", "מומלץ לבדוק שעות פתיחה"];
 const GENERIC_PHOTO_MIN_REUSE = 4;
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// A single transient pooler/network drop shouldn't kill a multi-hour run —
+// retry a few times with backoff before actually giving up on this POI.
+async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 5): Promise<T> {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === attempts) throw err;
+      const delayMs = 2000 * i;
+      console.log(`  [retry] ${label} failed (attempt ${i}/${attempts}), retrying in ${delayMs}ms: ${(err as Error).message}`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error("unreachable");
+}
 
 async function enrichDestination(destinationId: string, destinationName: string, slug: string) {
   const photoRows = await prisma.poiPhoto.findMany({
@@ -26,12 +52,16 @@ async function enrichDestination(destinationId: string, destinationName: string,
 
   let processed = 0;
   for (;;) {
-    const batch = await prisma.pointOfInterest.findMany({
-      where: { category: { area: { destinationId } }, geometryType: "point", enrichedAt: null },
-      include: { category: { include: { area: true } }, photos: { select: { url: true } } },
-      take: 20,
-      orderBy: { id: "asc" },
-    });
+    const batch = await withRetry(
+      () =>
+        prisma.pointOfInterest.findMany({
+          where: { category: { area: { destinationId } }, geometryType: "point", enrichedAt: null },
+          include: { category: { include: { area: true } }, photos: { select: { url: true } } },
+          take: 20,
+          orderBy: { id: "asc" },
+        }),
+      `${slug}: fetch batch`
+    );
     if (batch.length === 0) break;
 
     for (const poi of batch) {
@@ -42,7 +72,10 @@ async function enrichDestination(destinationId: string, destinationName: string,
       const needsWebsite = !poi.website;
 
       if (!needsDescription && !needsPhoto && !needsWebsite) {
-        await prisma.pointOfInterest.update({ where: { id: poi.id }, data: { enrichedAt: new Date() } });
+        await withRetry(
+          () => prisma.pointOfInterest.update({ where: { id: poi.id }, data: { enrichedAt: new Date() } }),
+          `${slug}: mark ${poi.name} enriched`
+        );
       } else {
         const photoUrl = needsPhoto ? await findWikipediaPhoto(poi.name, poi.lat, poi.lng) : null;
         const aiResult =
@@ -50,16 +83,23 @@ async function enrichDestination(destinationId: string, destinationName: string,
             ? await generateDescriptionAndWebsite(poi.name, poi.category.name, poi.category.area.name, destinationName, poi.lat, poi.lng)
             : { description: null, website: null };
 
-        await prisma.pointOfInterest.update({
-          where: { id: poi.id },
-          data: {
-            enrichedAt: new Date(),
-            ...(needsWebsite && aiResult.website ? { website: aiResult.website } : {}),
-            ...(needsDescription && aiResult.description ? { rawDescriptionHtml: `<p>${escapeHtml(aiResult.description)}</p>` } : {}),
-          },
-        });
+        await withRetry(
+          () =>
+            prisma.pointOfInterest.update({
+              where: { id: poi.id },
+              data: {
+                enrichedAt: new Date(),
+                ...(needsWebsite && aiResult.website ? { website: aiResult.website } : {}),
+                ...(needsDescription && aiResult.description ? { rawDescriptionHtml: `<p>${escapeHtml(aiResult.description)}</p>` } : {}),
+              },
+            }),
+          `${slug}: update ${poi.name}`
+        );
         if (needsPhoto && photoUrl) {
-          await prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } });
+          await withRetry(
+            () => prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } }),
+            `${slug}: create photo for ${poi.name}`
+          );
         }
       }
       processed++;

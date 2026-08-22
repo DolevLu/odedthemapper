@@ -61,6 +61,8 @@ model Area {
 
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   categories  Category[]
+
+  @@index([destinationId])
 }
 
 model Category {
@@ -72,6 +74,8 @@ model Category {
 
   area Area              @relation(fields: [areaId], references: [id], onDelete: Cascade)
   pois PointOfInterest[]
+
+  @@index([areaId])
 }
 
 model PointOfInterest {
@@ -106,6 +110,8 @@ model PointOfInterest {
   photos      PoiPhoto[]
   favorites   Favorite[]
   itineraryItems ItineraryItem[]
+
+  @@index([categoryId])
 }
 
 model PoiTag {
@@ -114,6 +120,8 @@ model PoiTag {
   label String
 
   poi PointOfInterest @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@index([poiId])
 }
 
 model PoiPhoto {
@@ -122,6 +130,8 @@ model PoiPhoto {
   url   String
 
   poi PointOfInterest @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@index([poiId])
 }
 
 model KmlImport {
@@ -134,6 +144,8 @@ model KmlImport {
   createdAt     DateTime @default(now())
 
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
 }
 
 // ---------- Users, auth, subscriptions ----------
@@ -260,6 +272,8 @@ model Subscription {
   user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   destinations SubscriptionDestination[]
   members      SubscriptionMember[]
+
+  @@index([userId])
 }
 
 /** Extra seats on a Family/Org subscription. Membership is resolved by email
@@ -274,7 +288,12 @@ model SubscriptionMember {
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
+  // getActiveSubscription (lib/access.ts) — called on every navigation for
+  // every seat member — looks this up by invitedEmail directly, not through
+  // subscriptionId, so the (subscriptionId, invitedEmail) unique above (whose
+  // leading column is subscriptionId) doesn't serve that lookup at all.
   @@unique([subscriptionId, invitedEmail])
+  @@index([invitedEmail])
 }
 
 model SubscriptionDestination {
@@ -326,6 +345,8 @@ model ItineraryDay {
 
   itinerary Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
   items     ItineraryItem[]
+
+  @@index([itineraryId])
 }
 
 model ItineraryItem {
@@ -340,6 +361,9 @@ model ItineraryItem {
   day   ItineraryDay        @relation(fields: [itineraryDayId], references: [id], onDelete: Cascade)
   poi   PointOfInterest?    @relation(fields: [poiId], references: [id], onDelete: Cascade)
   votes ItineraryItemVote[]
+
+  @@index([itineraryDayId])
+  @@index([poiId])
 }
 
 /** One like/dislike per co-traveler per itinerary item — lets everyone
@@ -379,6 +403,8 @@ model Expense {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   splits      ExpenseSplit[]
+
+  @@index([userId, destinationId])
 }
 
 /** One row per participant (other than the payer) on a shared expense —
@@ -407,6 +433,8 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /** One GPS point recorded while the "my location" tracker was on. Rendered
@@ -479,6 +507,8 @@ model TripLogistic {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, destinationId])
 }
 
 model TripBudget {
@@ -508,6 +538,8 @@ model PhrasebookEntry {
 
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   progress    PhrasebookProgress[]
+
+  @@index([destinationId])
 }
 
 /** Marks a phrasebook entry as "known" by a given user — lets the phrasebook
@@ -532,6 +564,8 @@ model Coupon {
   url           String?
 
   destination Destination? @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
 }
 
 model PackingCheck {
@@ -572,6 +606,8 @@ model PriceQuote {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, destinationId])
 }
 
 /** User-uploaded trip photos/videos for the "Album" screen — distinct from
@@ -590,6 +626,8 @@ model AlbumMedia {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, destinationId])
 }
 
 /** One row per user+destination — the digital album's look (template,
@@ -619,6 +657,8 @@ model QuizQuestion {
   correctIndex  Int
 
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
 }
 
 model QuizAttempt {
@@ -631,6 +671,8 @@ model QuizAttempt {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, destinationId])
 }
 
 /** A country the user marks as "been there" on their personal travel map —
@@ -658,6 +700,8 @@ model DestinationTip {
   text          String
 
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([destinationId])
 }
 
 /** A saved snapshot of a client-planner itinerary's days/items, reusable as
@@ -673,4 +717,6 @@ model ItineraryTemplate {
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, destinationId, kind])
 }
