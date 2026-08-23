@@ -199,13 +199,13 @@ export function SwipeBuilder({
   }
 
   return (
-    // Fixed to fill the viewport below the header (same pattern as the map
-    // screen) instead of flowing in-page — a fixed-height card + button row
-    // that doesn't need scrolling to reach the ❤️/✕ controls was the fix for
-    // both "have to scroll to see like/dislike" and a mis-tap on the mobile
-    // bottom nav underneath registering as an accidental exit to the map.
+    // Fixed to fill the viewport (there's no header above it anymore) instead
+    // of flowing in-page — a fixed-height card + button row that doesn't
+    // need scrolling to reach the ❤️/✕ controls was the fix for both "have to
+    // scroll to see like/dislike" and a mis-tap on the mobile bottom nav
+    // underneath registering as an accidental exit to the map.
     <div
-      className="fixed inset-x-0 bottom-0 top-14 z-10 flex flex-col items-center gap-3 px-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-4 sm:relative sm:inset-auto sm:bottom-auto sm:top-auto sm:h-[calc(100vh-160px)] sm:pb-4"
+      className="fixed inset-x-0 bottom-0 top-0 z-10 flex flex-col items-center gap-3 px-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-4 sm:relative sm:inset-auto sm:bottom-auto sm:top-auto sm:h-[calc(100vh-100px)] sm:pb-4"
       style={{ background: "var(--background)" }}
     >
       <div className="flex w-full max-w-md items-center justify-between">

@@ -61,7 +61,7 @@ export function ItineraryLayoutSwitcher({
   }
 
   return (
-    <div className="flex flex-col gap-6 lg:h-[calc(100vh-260px)] lg:min-h-[480px] lg:flex-row lg:items-stretch">
+    <div className="flex flex-col gap-6 lg:h-[calc(100vh-200px)] lg:min-h-[480px] lg:flex-row lg:items-stretch">
       <div className="lg:min-h-0 lg:w-[420px] lg:shrink-0">
         <ItineraryDaysView slug={slug} poiOptions={poiOptions} days={dayListDays} />
       </div>

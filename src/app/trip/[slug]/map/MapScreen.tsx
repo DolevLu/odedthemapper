@@ -970,7 +970,7 @@ export function MapScreen({
      * on desktop was tried before and covered the wrong region (made the
      * sidebar look like it had disappeared), so this stays in-flow via
      * h-full off the now-unpadded, flex-stretched parent instead. */}
-    <div className="map-screen-container fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
+    <div className="map-screen-container fixed inset-x-0 bottom-0 top-0 z-0 sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
       <div ref={mapDivRef} className="h-full w-full" />
 
       {preview && (

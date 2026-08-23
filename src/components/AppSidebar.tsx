@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
 import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
+import { ProfileMenu } from "@/components/header/ProfileMenu";
+import { DestinationBadge } from "@/components/header/DestinationBadge";
 
 type Tier = "free" | "silver" | "gold";
 
@@ -66,10 +68,14 @@ export function AppSidebar({
   currentSlug,
   accessLevel,
   isLoggedIn,
+  name,
+  planLabel,
 }: {
   currentSlug: string | null;
   accessLevel: "none" | "silver" | "gold";
   isLoggedIn: boolean;
+  name: string | null;
+  planLabel: string | null;
 }) {
   const pathname = usePathname();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
@@ -135,12 +141,27 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Desktop sidebar — home/destinations pinned at top, upgrade CTA
-          pinned at bottom, only the destination nav groups scroll. */}
+      {/* Desktop sidebar — no separate top header bar anymore (reclaims that
+          strip of height for the app itself); the profile button + logo/name
+          now live as the sidebar's own first row instead. Home/destinations
+          pinned below that, upgrade CTA pinned at bottom, only the
+          destination nav groups scroll. */}
       <nav
-        className="app-sidebar-desktop hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-[60px] sm:h-[calc(100vh-60px)]"
+        className="app-sidebar-desktop hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-0 sm:h-screen"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
+        <div className="mb-3 flex shrink-0 items-center gap-2 px-1">
+          <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+          <Link href="/" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />
+            <span className="text-base font-extrabold">עודד המנקד</span>
+          </Link>
+        </div>
+        <div className="mb-2 px-1">
+          <DestinationBadge />
+        </div>
+
         <div className="mb-1 flex shrink-0 items-center justify-between px-1">
           <span className="text-xs font-bold uppercase tracking-wide opacity-45">תפריט</span>
           <FocusModeCollapseButton />
@@ -218,6 +239,14 @@ export function AppSidebar({
         </Link>
       </nav>
 
+      {/* Mobile: no top header bar either — the profile button just floats
+          in the same spot the header used to place it, with no bar behind
+          it, so it doesn't cost any page height. Logo/name move into the
+          drawer below instead of sitting in a persistent top strip. */}
+      <div className="fixed top-3 right-3 z-40 sm:hidden">
+        <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+      </div>
+
       {/* Mobile bottom bar — 5 pinned icons, native-app style */}
       <nav
         ref={mobileNavRef}
@@ -282,10 +311,17 @@ export function AppSidebar({
             style={{ background: "var(--background, #FBF6EE)" }}
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-bold">תפריט</span>
+              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />
+                <span className="text-base font-extrabold">עודד המנקד</span>
+              </Link>
               <button onClick={() => setDrawerOpen(false)} className="rounded-full px-2 py-1 text-lg opacity-60">
                 ✕
               </button>
+            </div>
+            <div className="mb-2 px-0.5">
+              <DestinationBadge />
             </div>
 
             {TOP_ITEMS.map((item) => {

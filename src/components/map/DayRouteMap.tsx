@@ -207,7 +207,7 @@ export function DayRouteMap({
   }
 
   const containerClass = mobileFullScreen
-    ? "fixed inset-x-0 bottom-0 top-14 z-0 flex flex-col gap-2 sm:relative sm:inset-auto sm:bottom-auto sm:top-auto sm:h-full"
+    ? "fixed inset-x-0 bottom-0 top-0 z-0 flex flex-col gap-2 sm:relative sm:inset-auto sm:bottom-auto sm:top-auto sm:h-full"
     : fillHeight
       ? "flex h-[380px] min-h-0 flex-col gap-2 lg:h-full"
       : "flex flex-col gap-2";

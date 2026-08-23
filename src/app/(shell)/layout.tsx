@@ -1,8 +1,7 @@
 import { auth } from "@/auth";
-import { getUserPurchasedSlugs, pickDefaultDestinationSlug, getAccessLevel } from "@/lib/access";
+import { getUserPurchasedSlugs, pickDefaultDestinationSlug, getAccessLevel, getActiveSubscriptionSummary } from "@/lib/access";
 import { getAllDestinations, getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
-import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 
 // This account's default is pinned to Prague regardless of last-visited
@@ -54,11 +53,19 @@ export default async function ShellLayout({ children }: { children: React.ReactN
     }
   }
 
+  const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
+  const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
+
   return (
     <div className="flex min-h-screen flex-1 flex-col">
-      <SiteHeader />
       <div className="flex flex-1 flex-col sm:flex-row">
-        <AppSidebar currentSlug={currentSlug} accessLevel={accessLevel} isLoggedIn={Boolean(session?.user?.id)} />
+        <AppSidebar
+          currentSlug={currentSlug}
+          accessLevel={accessLevel}
+          isLoggedIn={Boolean(session?.user?.id)}
+          name={session?.user?.name ?? null}
+          planLabel={planLabel}
+        />
         <div className="min-w-0 flex-1 pb-32 sm:pb-0">{children}</div>
       </div>
     </div>

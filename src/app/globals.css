@@ -265,12 +265,13 @@ button:disabled {
 }
 
 /* Focus mode (see hooks/useFocusMode.ts + FocusModeCollapseButton/
- * FocusModeExitButton) — collapses the header + desktop sidebar so a
- * page's main content (the map, most notably) can fill the whole viewport.
- * Desktop-only: mobile has no persistent sidebar to hide and its header is
- * already minimal, so the trigger buttons themselves only render at sm+. */
+ * FocusModeExitButton) — collapses the desktop sidebar so a page's main
+ * content (the map, most notably) can fill the whole viewport. There's no
+ * separate top header to collapse anymore (removed — the profile button and
+ * logo/name live in the sidebar itself now). Desktop-only: mobile has no
+ * persistent sidebar to hide, so the trigger buttons themselves only render
+ * at sm+. */
 @media (min-width: 640px) {
-  :root[data-focus-mode="true"] .site-header-bar,
   :root[data-focus-mode="true"] .app-sidebar-desktop {
     display: none !important;
   }

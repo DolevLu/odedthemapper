@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
-import { getAccessLevel } from "@/lib/access";
+import { getAccessLevel, getActiveSubscriptionSummary } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
-import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { TraviChat } from "@/components/travi/TraviChat";
 import { WalkthroughGuide } from "@/components/WalkthroughGuide";
@@ -37,12 +36,19 @@ export default async function TripLayout({
     await prisma.user.update({ where: { id: session.user.id }, data: { defaultDestinationSlug: slug } }).catch(() => {});
   }
 
+  const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
+  const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
+
   return (
     <DestinationThemeProvider theme={destination.theme} as="main" className="flex min-h-screen flex-1 flex-col">
-      <SiteHeader />
-
       <div className="flex flex-1 flex-col sm:flex-row">
-        <AppSidebar currentSlug={slug} accessLevel={accessLevel} isLoggedIn={isLoggedIn} />
+        <AppSidebar
+          currentSlug={slug}
+          accessLevel={accessLevel}
+          isLoggedIn={isLoggedIn}
+          name={session?.user?.name ?? null}
+          planLabel={planLabel}
+        />
         <TripContentArea slug={slug}>{children}</TripContentArea>
       </div>
 
