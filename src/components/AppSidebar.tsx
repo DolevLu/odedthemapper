@@ -156,8 +156,13 @@ export function AppSidebar({
                 className="flex items-center gap-3 px-4 py-2 text-[15px] font-semibold"
                 style={{
                   borderRadius: "999px",
-                  background: active ? "var(--primary, #7C3AED)" : "transparent",
-                  color: active ? "white" : "var(--text, #1a1a1a)",
+                  // A soft tint instead of a solid fill — the old solid
+                  // var(--primary) background read as a harsh black block on
+                  // the default (non-destination) theme, where --primary and
+                  // --text happen to be the same dark brown, so a solid pill
+                  // also erased any color contrast with the label text.
+                  background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 12%, transparent)" : "transparent",
+                  color: "var(--text, #1a1a1a)",
                 }}
               >
                 <span className="icon-pop text-lg">{item.icon}</span>
@@ -293,8 +298,8 @@ export function AppSidebar({
                   className="flex items-center gap-3 px-4 py-2 text-sm font-semibold"
                   style={{
                     borderRadius: "999px",
-                    background: active ? "var(--primary, #7C3AED)" : "transparent",
-                    color: active ? "white" : "var(--text, #1a1a1a)",
+                    background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 12%, transparent)" : "transparent",
+                    color: "var(--text, #1a1a1a)",
                   }}
                 >
                   <span className="icon-pop text-lg">{item.icon}</span>
