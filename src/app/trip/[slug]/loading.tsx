@@ -1,12 +1,10 @@
-export default function TripLoading() {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="h-7 w-48 animate-pulse rounded-lg bg-black/5" />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-black/5" />
-        ))}
-      </div>
-    </div>
-  );
+import { LoadingTraveler } from "@/components/LoadingTraveler";
+
+// Next.js wraps this segment's page in a Suspense boundary keyed to this
+// file — shown immediately on navigation between any of the destination
+// screens (now/map/itinerary/favorites/...), while the sidebar itself
+// stays put, so switching screens no longer looks frozen while its data
+// loads.
+export default function Loading() {
+  return <LoadingTraveler />;
 }

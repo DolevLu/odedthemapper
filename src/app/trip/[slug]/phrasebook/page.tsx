@@ -13,10 +13,12 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
   const session = await auth();
   const userId = session?.user?.id;
 
-  const entries = await prisma.phrasebookEntry.findMany({ where: { destinationId: destination.id } });
-  const progress = userId
-    ? await prisma.phrasebookProgress.findMany({ where: { userId, entry: { destinationId: destination.id } }, select: { entryId: true } })
-    : [];
+  const [entries, progress] = await Promise.all([
+    prisma.phrasebookEntry.findMany({ where: { destinationId: destination.id } }),
+    userId
+      ? prisma.phrasebookProgress.findMany({ where: { userId, entry: { destinationId: destination.id } }, select: { entryId: true } })
+      : Promise.resolve([]),
+  ]);
   const knownIds = new Set(progress.map((p) => p.entryId));
   const locale = DESTINATION_LOCALE[slug] ?? "en-US";
 

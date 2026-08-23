@@ -34,7 +34,12 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
     }),
     prisma.itinerary.findUnique({
       where: { userId_destinationId_kind: { userId, destinationId: destination.id, kind: "personal" } },
-      include: { days: { orderBy: { dayIndex: "asc" }, include: { items: { orderBy: { order: "asc" }, include: { poi: true } } } } },
+      include: {
+        days: {
+          orderBy: { dayIndex: "asc" },
+          include: { items: { orderBy: { order: "asc" }, include: { poi: { select: { id: true, name: true } } } } },
+        },
+      },
     }),
     prisma.pointOfInterest.findMany({
       where: { wantsBooking: true, category: { area: { destinationId: destination.id } } },
