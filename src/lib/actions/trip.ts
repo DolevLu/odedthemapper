@@ -53,16 +53,22 @@ export async function togglePackingCheck(destinationId: string, itemKey: string,
 /** Saves a place picked from Google's own POI layer onto the map — personal
  * to this user+destination only, never written into the shared destination
  * dataset other customers see. */
-export async function saveMapPin(
-  destinationId: string,
-  slug: string,
-  place: { placeId: string; name: string; lat: number; lng: number }
-) {
+export async function saveMapPin(destinationId: string, slug: string, formData: FormData) {
   const userId = await requireUserId();
+  const placeId = formData.get("placeId") as string;
+  const name = (formData.get("name") as string)?.trim();
+  const lat = Number(formData.get("lat"));
+  const lng = Number(formData.get("lng"));
+  const description = (formData.get("description") as string)?.trim() || null;
+  const categoryName = (formData.get("categoryName") as string) || null;
+
+  const photoFile = formData.get("photo") as File | null;
+  const photoUrl = photoFile && photoFile.size > 0 ? await saveUploadedFile(photoFile, "saved-pins") : undefined;
+
   await prisma.savedMapPin.upsert({
-    where: { userId_destinationId_placeId: { userId, destinationId, placeId: place.placeId } },
-    update: {},
-    create: { userId, destinationId, placeId: place.placeId, name: place.name, lat: place.lat, lng: place.lng },
+    where: { userId_destinationId_placeId: { userId, destinationId, placeId } },
+    update: { name, description, categoryName, ...(photoUrl ? { photoUrl } : {}) },
+    create: { userId, destinationId, placeId, name, lat, lng, description, categoryName, photoUrl: photoUrl ?? null },
   });
   revalidatePath(`/trip/${slug}`);
 }

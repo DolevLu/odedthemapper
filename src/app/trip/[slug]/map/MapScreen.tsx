@@ -7,8 +7,9 @@ import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { toggleFavorite, toggleWantsBooking, saveMapPin, deleteSavedMapPin } from "@/lib/actions/trip";
-import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
+import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin } from "@/lib/actions/trip";
+import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
+import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
@@ -84,6 +85,13 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   </div>`;
 }
 
+// Saved-pin name/description are free text the user themselves typed into
+// SavePinModal — escaped before going into InfoWindow innerHTML so a stray
+// "<" in there can't break the popup's markup.
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function formatDistance(km: number): string {
   return km < 1 ? `${Math.round(km * 1000)} מ׳` : `${km.toFixed(1)} ק״מ`;
 }
@@ -122,7 +130,16 @@ export function MapScreen({
   initialTrail?: { lat: number; lng: number }[];
   /** Places a paying user chose to "save to the map" from Google's own POI
    * layer — personal to them, rendered as extra markers only on their map. */
-  savedPins?: { id: string; placeId: string; name: string; lat: number; lng: number }[];
+  savedPins?: {
+    id: string;
+    placeId: string;
+    name: string;
+    lat: number;
+    lng: number;
+    description: string | null;
+    photoUrl: string | null;
+    categoryName: string | null;
+  }[];
   /** Anonymous/unsubscribed visitors: the map itself still renders (pan/zoom/
    * markers all work), but every control that reads or writes personal data —
    * filters, layers, route mode, the POI list, favoriting — is grayed out and
@@ -201,6 +218,7 @@ export function MapScreen({
   const [routeModeActive, setRouteModeActive] = useState(false);
   const [showGooglePois, setShowGooglePois] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
+  const [pendingSavePin, setPendingSavePin] = useState<PendingSavePin | null>(null);
 
   useEffect(() => {
     showGooglePoisRef.current = showGooglePois;
@@ -340,14 +358,13 @@ export function MapScreen({
       if (saveBtn) {
         saveBtn.onclick = (e) => {
           e.stopPropagation();
-          saveBtn.disabled = true;
-          saveBtn.textContent = "✓ נשמר למפה שלי";
-          saveMapPin(destinationId, slug, {
+          setPendingSavePin({
             placeId: saveBtn.getAttribute("data-place-id")!,
             name: saveBtn.getAttribute("data-place-name")!,
             lat: Number(saveBtn.getAttribute("data-place-lat")),
             lng: Number(saveBtn.getAttribute("data-place-lng")),
           });
+          infoWindowRef.current?.close();
         };
       }
       const deletePinBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-delete-pin-btn]");
@@ -417,18 +434,27 @@ export function MapScreen({
     savedPinMarkersRef.current.forEach((m) => m.setMap(null));
     savedPinMarkersRef.current = [];
 
+    const scale = markerScaleForZoom(mapRef.current.getZoom());
     savedPins.forEach((pin) => {
       const marker = new google.maps.Marker({
         position: { lat: pin.lat, lng: pin.lng },
         map: mapRef.current!,
-        label: { text: "📌", fontSize: "16px" },
+        icon: categoryMarkerIcon(SAVED_PIN_FALLBACK_COLOR, pin.categoryName ?? "אחר", scale, false),
         title: pin.name,
         zIndex: 600,
       });
       marker.addListener("click", () => {
+        const photo = pin.photoUrl
+          ? `<img src="${escapeHtml(pin.photoUrl)}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+          : "";
+        const description = pin.description
+          ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${escapeHtml(pin.description)}</div>`
+          : "";
         infoWindowRef.current?.setContent(
           `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
-            <strong>📌 ${pin.name}</strong>
+            ${photo}
+            <strong>📌 ${escapeHtml(pin.name)}</strong>
+            ${description}
             <div style="margin-top:8px">
               <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">🗑️ הסרה מהמפה שלי</button>
             </div>
@@ -935,14 +961,15 @@ export function MapScreen({
   }
 
   return (
-    // Mobile: true edge-to-edge fullscreen (fixed to the viewport, below the
-    // header, no sidebar to preserve). Desktop: also edge-to-edge — fills
-    // the entire content column (TripContentArea skips its usual padding for
-    // this exact route) flush against the header and sidebar, no border/
-    // rounded card and no visible page background around it. Position:fixed
-    // on desktop was tried before and covered the wrong region (made the
-    // sidebar look like it had disappeared), so this stays in-flow via
-    // h-full off the now-unpadded, flex-stretched parent instead.
+    <>
+    {/* Mobile: true edge-to-edge fullscreen (fixed to the viewport, below the
+     * header, no sidebar to preserve). Desktop: also edge-to-edge — fills
+     * the entire content column (TripContentArea skips its usual padding for
+     * this exact route) flush against the header and sidebar, no border/
+     * rounded card and no visible page background around it. Position:fixed
+     * on desktop was tried before and covered the wrong region (made the
+     * sidebar look like it had disappeared), so this stays in-flow via
+     * h-full off the now-unpadded, flex-stretched parent instead. */}
     <div className="map-screen-container fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
       <div ref={mapDivRef} className="h-full w-full" />
 
@@ -1160,8 +1187,10 @@ export function MapScreen({
        * off by default so our pins don't compete with Google's; only paying
        * users can turn it on (previewGate routes anon/free visitors to
        * pricing instead). Mirrors the route-mode button's position/style on
-       * the opposite side. */}
-      <div className="group absolute bottom-36 start-3 z-10 sm:bottom-6">
+       * the opposite side. Desktop: raised to sit above the Travi chat
+       * button (bottom-6 h-14) instead of sharing its exact offset, which
+       * was overlapping the two. */}
+      <div className="group absolute bottom-36 start-3 z-10 sm:bottom-24">
         <button
           onClick={previewGate(() => setShowGooglePois((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
@@ -1221,6 +1250,10 @@ export function MapScreen({
         {listOpen && <div className="flex-1 overflow-y-auto overscroll-contain">{sortedList.map((poi) => renderListItem(poi))}</div>}
       </div>
     </div>
+    {pendingSavePin && (
+      <SavePinModal destinationId={destinationId} slug={slug} pin={pendingSavePin} onClose={() => setPendingSavePin(null)} />
+    )}
+    </>
   );
 
   function renderListItem(poi: (typeof sortedList)[number]) {

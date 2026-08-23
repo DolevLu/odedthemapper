@@ -465,6 +465,14 @@ model SavedMapPin {
   name          String
   lat           Float
   lng           Float
+  // Optional curation the user adds at save time — categoryName drives the
+  // same categoryMarkerIcon() lookup (icon+color) as every other point on
+  // the map, from a fixed list of the app's standard categories (see
+  // SAVED_PIN_CATEGORY_OPTIONS in lib/mapStyles.ts), so a personal pin looks
+  // like a normal one instead of a generic Google red-pin.
+  description   String?
+  photoUrl      String?
+  categoryName  String?
   createdAt     DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

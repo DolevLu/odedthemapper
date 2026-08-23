@@ -33,6 +33,24 @@ const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "p
   { match: /אטרקצי|attraction/i, color: "#7C3AED", icon: { type: "path", d: STAR_PATH } },
 ];
 
+// Offered to users saving a personal pin (see SavePinModal) — each label is
+// written to match one of STANDARD_CATEGORY_STYLES's regexes above, so
+// picking one guarantees the exact same icon+color as every KML-curated
+// point in that category, never a mismatched/invented look. "אחר" is the
+// deliberate catch-all: it matches none of them, so it renders with
+// SAVED_PIN_FALLBACK_COLOR and the generic default pin glyph.
+export const SAVED_PIN_CATEGORY_OPTIONS = [
+  "בתי קפה",
+  "מסעדות",
+  "פארקים",
+  "ברים",
+  "תחנות מטרו ורכבת",
+  "ערים ועיירות",
+  "אטרקציות",
+  "אחר",
+];
+export const SAVED_PIN_FALLBACK_COLOR = "#6B7280";
+
 /** Builds a small colored-circle marker icon with the category's glyph
  * baked in (as a data: SVG), so a marker's category is readable at a glance
  * without opening it or memorizing colors. Falls back to the destination's
