@@ -300,6 +300,8 @@ export function MapScreen({
     const avgLng = pointPois.reduce((s, p) => s + p.lng, 0) / (pointPois.length || 1);
 
     mapRef.current = new google.maps.Map(mapDivRef.current, {
+      // Fallback only, for the split-second before fitBounds (below) takes
+      // over, or the rare destination with zero point POIs.
       center: { lat: avgLat, lng: avgLng },
       zoom: 12,
       streetViewControl: false,
@@ -315,6 +317,25 @@ export function MapScreen({
       gestureHandling: "greedy",
       styles: DECLUTTERED_MAP_STYLES,
     });
+
+    // Frames the initial view around the actual data instead of a fixed
+    // zoom 12 + raw average — a single average lat/lng plus a fixed zoom
+    // looks fine for a one-city destination (Prague) but is wrong for a
+    // multi-city one (Italy: Rome/Milan/Florence/Naples/Venice): the average
+    // often lands in an empty stretch between cities, with zoom 12 too close
+    // to show any of them. fitBounds over every point POI instead centers
+    // and zooms to whatever actually contains the data — the city center for
+    // a single-city destination, the country center (wide enough to see
+    // every city cluster) for a multi-city one — the same behavior the user
+    // asked for in both cases, with no per-destination special-casing
+    // needed. Padding keeps points clear of the floating filter pills (top)
+    // and the points-list drawer (bottom).
+    if (pointPois.length > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      pointPois.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      mapRef.current.fitBounds(bounds, { top: 90, bottom: 140, left: 24, right: 24 });
+    }
+
     infoWindowRef.current = new google.maps.InfoWindow();
 
     // Wires up the plain-HTML favorite/booking buttons inside the info
