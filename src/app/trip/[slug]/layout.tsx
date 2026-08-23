@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/header/SiteHeader";
 import { AppSidebar } from "@/components/AppSidebar";
 import { TraviChat } from "@/components/travi/TraviChat";
 import { WalkthroughGuide } from "@/components/WalkthroughGuide";
+import { TripContentArea } from "@/components/TripContentArea";
 
 export default async function TripLayout({
   children,
@@ -42,7 +43,7 @@ export default async function TripLayout({
 
       <div className="flex flex-1 flex-col sm:flex-row">
         <AppSidebar currentSlug={slug} accessLevel={accessLevel} isLoggedIn={isLoggedIn} />
-        <div className="min-w-0 flex-1 p-6 pb-32 sm:pb-6">{children}</div>
+        <TripContentArea slug={slug}>{children}</TripContentArea>
       </div>
 
       {accessLevel !== "none" && <TraviChat destinationId={destination.id} slug={slug} />}

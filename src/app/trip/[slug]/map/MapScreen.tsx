@@ -936,13 +936,14 @@ export function MapScreen({
 
   return (
     // Mobile: true edge-to-edge fullscreen (fixed to the viewport, below the
-    // header, no sidebar to preserve). Desktop: a normal in-flow content
-    // card next to the sidebar — position:fixed on desktop was covering the
-    // wrong region and made the sidebar look like it had disappeared.
-    <div
-      className="map-screen-container fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-[calc(100vh-140px)] sm:overflow-hidden sm:rounded-[var(--radius)] sm:border"
-      style={{ borderColor: "var(--primary)" }}
-    >
+    // header, no sidebar to preserve). Desktop: also edge-to-edge — fills
+    // the entire content column (TripContentArea skips its usual padding for
+    // this exact route) flush against the header and sidebar, no border/
+    // rounded card and no visible page background around it. Position:fixed
+    // on desktop was tried before and covered the wrong region (made the
+    // sidebar look like it had disappeared), so this stays in-flow via
+    // h-full off the now-unpadded, flex-stretched parent instead.
+    <div className="map-screen-container fixed inset-x-0 bottom-0 top-14 z-0 sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
       <div ref={mapDivRef} className="h-full w-full" />
 
       {preview && (
