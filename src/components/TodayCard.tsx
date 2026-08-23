@@ -99,11 +99,14 @@ export function TodayCard({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Countdown / mascot card — a faded hero photo of the destination
-       * (Colosseum for Italy, Eiffel Tower for France, etc. — whatever the
-       * destination's own heroImage is) sits behind the content as texture,
-       * not competing with it: low opacity, plus a fade-to-surface gradient
-       * so text stays fully legible regardless of the photo's brightness. */}
+      {/* Countdown / mascot card — a hero photo of the destination (Colosseum
+       * for Italy, Eiffel Tower for France, etc. — whatever the destination's
+       * own heroImage is) sits behind the content, shown near-full strength
+       * so it actually reads as a photo rather than faint texture. The
+       * gradient still fades to solid surface toward the bottom (kicking in
+       * earlier than the top-to-bottom span, not gradually across all of it)
+       * so the countdown numbers below it stay fully legible regardless of
+       * the photo's own brightness/colors. */}
       <div
         className="relative flex flex-col items-center gap-3 overflow-hidden border p-6 text-center"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
@@ -112,11 +115,11 @@ export function TodayCard({
           <>
             <div
               className="absolute inset-0"
-              style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.16 }}
+              style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.55 }}
             />
             <div
               className="absolute inset-0"
-              style={{ background: "linear-gradient(180deg, transparent 0%, var(--surface) 90%)" }}
+              style={{ background: "linear-gradient(180deg, transparent 0%, transparent 30%, var(--surface) 75%)" }}
             />
           </>
         )}
