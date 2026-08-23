@@ -31,6 +31,18 @@ const METERS_PER_DEGREE_LAT = 111320;
 // marker is legible rather than overlapping clutter.
 const LABEL_ZOOM_THRESHOLD = 16;
 
+// The map opens at zoom 12 (see the Map constructor below) — a whole city
+// fitting on screen, with many pins visible at once — where the default
+// marker circle reads as a bit too big/cluttered. Shrinks slightly at that
+// city-overview zoom band; once zoomed in past it (individual streets/pins),
+// markers return to the normal, easier-to-tap size.
+const CITY_VIEW_MAX_ZOOM = 14;
+const MARKER_SCALE_CITY_VIEW = 12;
+const MARKER_SCALE_DEFAULT = 15;
+function markerScaleForZoom(zoom: number | undefined): number {
+  return zoom !== undefined && zoom < CITY_VIEW_MAX_ZOOM ? MARKER_SCALE_CITY_VIEW : MARKER_SCALE_DEFAULT;
+}
+
 // Below this zoom the viewport covers too much ground for a reasonable
 // Overpass query (and the map would be too cluttered with shade lines).
 const SHADOW_MIN_ZOOM = 15;
@@ -132,6 +144,7 @@ export function MapScreen({
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const markersByPoiId = useRef<Map<string, google.maps.Marker>>(new Map());
+  const currentMarkerScaleRef = useRef<number>(MARKER_SCALE_DEFAULT);
   const shapesRef = useRef<(google.maps.Polygon | google.maps.Polyline)[]>([]);
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const watchIdRef = useRef<number | null>(null);
@@ -304,7 +317,9 @@ export function MapScreen({
           const favoritedPoi = pointPoisById.get(poiId);
           const favoritedMarker = markersByPoiId.current.get(poiId);
           if (favoritedPoi && favoritedMarker) {
-            favoritedMarker.setIcon(categoryMarkerIcon(favoritedPoi.categoryColor, favoritedPoi.categoryName, undefined, nowFavorited));
+            favoritedMarker.setIcon(
+              categoryMarkerIcon(favoritedPoi.categoryColor, favoritedPoi.categoryName, markerScaleForZoom(mapRef.current?.getZoom()), nowFavorited)
+            );
           }
           toggleFavorite(poiId, slug);
         };
@@ -735,11 +750,13 @@ export function MapScreen({
 
     if (heatmapVisible) return; // the heatmap layer replaces individual pins
 
+    const initialScale = markerScaleForZoom(mapRef.current.getZoom());
+    currentMarkerScaleRef.current = initialScale;
     const markers = filtered.map((poi) => {
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
         title: poi.name,
-        icon: categoryMarkerIcon(poi.categoryColor, poi.categoryName, undefined, favoritedIdsRef.current.has(poi.id)),
+        icon: categoryMarkerIcon(poi.categoryColor, poi.categoryName, initialScale, favoritedIdsRef.current.has(poi.id)),
       });
       marker.addListener("click", () => openPoi(poi, marker));
       markersByPoiId.current.set(poi.id, marker);
@@ -765,6 +782,15 @@ export function MapScreen({
       const zoom = map.getZoom() ?? 0;
       const bounds = map.getBounds();
       const showLabels = zoom >= LABEL_ZOOM_THRESHOLD && !!bounds;
+
+      // Only touch marker icons when the zoom actually crossed the
+      // city-view threshold — re-setting every marker's icon on every idle
+      // event (drag, pan) would be wasted work and risks reintroducing the
+      // panning lag noted above.
+      const nextScale = markerScaleForZoom(zoom);
+      const scaleChanged = nextScale !== currentMarkerScaleRef.current;
+      if (scaleChanged) currentMarkerScaleRef.current = nextScale;
+
       markersByPoiId.current.forEach((marker, id) => {
         const position = marker.getPosition();
         // O(1) lookup — with 1000+ points this ran as an O(n) .find() per
@@ -774,6 +800,12 @@ export function MapScreen({
         marker.setLabel(
           poi ? { text: poi.name, color: "#FFFFFF", fontSize: "11px", fontWeight: "700", className: "poi-marker-label" } : ""
         );
+        if (scaleChanged) {
+          const fullPoi = pointPoisById.get(id);
+          if (fullPoi) {
+            marker.setIcon(categoryMarkerIcon(fullPoi.categoryColor, fullPoi.categoryName, nextScale, favoritedIdsRef.current.has(id)));
+          }
+        }
       });
     }
 
