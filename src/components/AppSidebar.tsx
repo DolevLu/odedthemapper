@@ -233,6 +233,9 @@ export function AppSidebar({
               })}
             </div>
           ))}
+          <Link href="/privacy" className="mt-2 block px-4 py-1 text-xs opacity-40 hover:opacity-70">
+            מדיניות פרטיות
+          </Link>
         </div>
 
         <Link
@@ -381,6 +384,9 @@ export function AppSidebar({
                 </div>
               );
             })}
+            <Link href="/privacy" onClick={() => setDrawerOpen(false)} className="mt-2 block px-4 py-1 text-xs opacity-40">
+              מדיניות פרטיות
+            </Link>
 
             <Link
               href="/pricing"

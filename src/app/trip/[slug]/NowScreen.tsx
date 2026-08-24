@@ -160,7 +160,7 @@ export function NowScreen({
               className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               style={{ background: "var(--primary)" }}
             >
-              {requesting ? "מאתר..." : "📍 שתפו מיקום"}
+              {requesting ? "מאתר..." : "📍 מיקום"}
             </button>
           )}
           <button
@@ -168,7 +168,7 @@ export function NowScreen({
             className="rounded-full px-4 py-2 text-sm font-semibold text-white"
             style={{ background: "#0284C7" }}
           >
-            🌧️ יורד גשם עכשיו?
+            🌧️ יורד גשם?
           </button>
           <EmergencyInfoButton slug={slug} destinationName={today.destinationName} />
         </div>

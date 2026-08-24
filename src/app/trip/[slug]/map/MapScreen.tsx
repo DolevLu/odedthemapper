@@ -75,7 +75,7 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
     ? ""
     : `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
     <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
-    <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה"}</button>
+    <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ להזמנה"}</button>
     ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">🎨 עריכת צבע/אייקון</button>` : ""}
   </div>`;
   return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
@@ -318,6 +318,10 @@ export function MapScreen({
       // toggle below — full control over its size/position, instead of the
       // native control crowding the top of a small mobile screen.
       mapTypeControl: false,
+      // Google's native rotate/tilt compass control — floats right where our
+      // own filter-pill/chat buttons sit and serves no purpose here (this
+      // app has no 45°-imagery tilt view to rotate).
+      rotateControl: false,
       // "greedy" lets a single finger pan/zoom the map immediately — Google's
       // default "cooperative" mode demands two fingers specifically so an
       // embedded map doesn't trap the page's scroll gesture, but that's not
@@ -385,7 +389,7 @@ export function MapScreen({
           const nowWants = !wantsBookingIdsRef.current.has(poiId);
           if (nowWants) wantsBookingIdsRef.current.add(poiId);
           else wantsBookingIdsRef.current.delete(poiId);
-          bookBtn.textContent = nowWants ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה";
+          bookBtn.textContent = nowWants ? "🎟️ ✓ נוסף להזמנה" : "🎟️ להזמנה";
           toggleWantsBooking(poiId, slug);
         };
       }

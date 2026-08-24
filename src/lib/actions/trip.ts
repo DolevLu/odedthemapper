@@ -5,6 +5,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { saveUploadedFile } from "@/lib/uploads";
 import { resolveItineraryOwnerId, canManageContent } from "@/lib/access";
+import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
+
+const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 async function requireUserId() {
   const session = await auth();
@@ -50,9 +53,13 @@ export async function togglePackingCheck(destinationId: string, itemKey: string,
 
 // ---------- Map: personal saved Google-Maps pins ----------
 
-/** Saves a place picked from Google's own POI layer onto the map — personal
- * to this user+destination only, never written into the shared destination
- * dataset other customers see. */
+/** Saves a place picked from Google's own POI layer onto the map. For a
+ * regular user this is personal — a SavedMapPin only they see, never written
+ * into the shared destination dataset other customers see. For a content
+ * manager (canManageContent — global admins and org-tier subscribers, same
+ * gate the map's color/icon editor uses), the exact same button instead
+ * creates a real PointOfInterest everyone sees, since an admin adding a
+ * point is curating the map, not personalizing their own copy of it. */
 export async function saveMapPin(destinationId: string, slug: string, formData: FormData) {
   const userId = await requireUserId();
   const placeId = formData.get("placeId") as string;
@@ -64,6 +71,41 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
 
   const photoFile = formData.get("photo") as File | null;
   const photoUrl = photoFile && photoFile.size > 0 ? await saveUploadedFile(photoFile, "saved-pins") : undefined;
+
+  if (await canManageContent(userId)) {
+    // Files under the destination's first/primary area — a destination
+    // with more than one area (e.g. a country split into several cities)
+    // has no signal here for which one a single Google-place pin belongs
+    // to, and defaulting to the first is far less surprising than failing.
+    const area = await prisma.area.findFirst({ where: { destinationId }, orderBy: { id: "asc" } });
+    if (!area) throw new Error("ליעד הזה עדיין אין אזורים במפה — יש להעלות KML קודם");
+
+    let category = await prisma.category.findFirst({ where: { areaId: area.id, name: categoryName ?? "אחר" } });
+    if (!category) {
+      category = await prisma.category.create({
+        data: { areaId: area.id, name: categoryName ?? "אחר", colorHex: SAVED_PIN_FALLBACK_COLOR },
+      });
+    }
+
+    const poi = await prisma.pointOfInterest.create({
+      data: {
+        categoryId: category.id,
+        name,
+        lat,
+        lng,
+        geometryType: "point",
+        iconCategory: categoryName,
+        rawDescriptionHtml: description ? `<p>${escapeHtml(description)}</p>` : null,
+        enrichedAt: new Date(), // admin-authored — nothing generic here to backfill later
+      },
+    });
+    if (photoUrl) {
+      await prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } });
+    }
+    revalidateTag(`pois-${destinationId}`, "max");
+    revalidatePath(`/trip/${slug}`);
+    return;
+  }
 
   await prisma.savedMapPin.upsert({
     where: { userId_destinationId_placeId: { userId, destinationId, placeId } },
