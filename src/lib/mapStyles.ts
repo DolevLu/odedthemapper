@@ -59,10 +59,16 @@ export function categoryMarkerIcon(
   fallbackColor: string,
   categoryName: string,
   scale = 15,
-  favorited = false
+  favorited = false,
+  // An admin's explicit per-POI color choice (PointOfInterest.colorHex) —
+  // always wins over the standard category color when set, since otherwise
+  // a category match (café/restaurant/bar/etc.) always overrode any custom
+  // color and the "real color picker" admin feature would have no visible
+  // effect for the majority of POIs, which do match one of those.
+  overrideColor?: string | null
 ): google.maps.Icon {
   const standard = STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName));
-  const color = standard?.color ?? fallbackColor;
+  const color = overrideColor || standard?.color || fallbackColor;
   // Favorited points get a bright yellow glyph instead of white so they
   // stand out ("shine") at a glance while scanning the map, without needing
   // to open each one to check.

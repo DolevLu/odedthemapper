@@ -10,6 +10,7 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin } from "@/lib/actions/trip";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
+import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
 import { haversineKm } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
@@ -59,7 +60,7 @@ const MAIN_STREET_PATTERN = /רחוב.*ראשי|ראשי.*רחוב|main street|m
 const INFO_ACTION_BTN_STYLE =
   "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
 
-function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, preview: boolean): string {
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, preview: boolean, isAdmin: boolean): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
@@ -72,9 +73,10 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   // the popup is informational only — no personal-data actions to gate.
   const actions = preview
     ? ""
-    : `<div style="display:flex;gap:6px;margin-top:8px">
+    : `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
     <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
     <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה"}</button>
+    ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">🎨 עריכת צבע/אייקון</button>` : ""}
   </div>`;
   return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
     ${photo}
@@ -120,6 +122,7 @@ export function MapScreen({
   savedPins = [],
   preview = false,
   autoLocate = true,
+  isAdmin = false,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
@@ -151,6 +154,10 @@ export function MapScreen({
    * to the destination they're planning; the map instead falls back to its
    * default destination-overview center/zoom. */
   autoLocate?: boolean;
+  /** Content managers (see canManageContent) get an extra "🎨 עריכת צבע/אייקון"
+   * action on every point's info window, and shapes become clickable too —
+   * opens AdminEditPinModal to override colorHex/iconCategory in place. */
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const { loaded, error } = useGoogleMaps();
@@ -219,6 +226,7 @@ export function MapScreen({
   const [showGooglePois, setShowGooglePois] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const [pendingSavePin, setPendingSavePin] = useState<PendingSavePin | null>(null);
+  const [editingPin, setEditingPin] = useState<EditablePin | null>(null);
 
   useEffect(() => {
     showGooglePoisRef.current = showGooglePois;
@@ -357,7 +365,13 @@ export function MapScreen({
           const favoritedMarker = markersByPoiId.current.get(poiId);
           if (favoritedPoi && favoritedMarker) {
             favoritedMarker.setIcon(
-              categoryMarkerIcon(favoritedPoi.categoryColor, favoritedPoi.categoryName, markerScaleForZoom(mapRef.current?.getZoom()), nowFavorited)
+              categoryMarkerIcon(
+                favoritedPoi.categoryColor,
+                favoritedPoi.iconCategory ?? favoritedPoi.categoryName,
+                markerScaleForZoom(mapRef.current?.getZoom()),
+                nowFavorited,
+                favoritedPoi.colorHex
+              )
             );
           }
           toggleFavorite(poiId, slug);
@@ -373,6 +387,18 @@ export function MapScreen({
           else wantsBookingIdsRef.current.delete(poiId);
           bookBtn.textContent = nowWants ? "🎟️ ✓ נוסף להזמנה" : "🎟️ הוספה להזמנה";
           toggleWantsBooking(poiId, slug);
+        };
+      }
+      const editStyleBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-edit-style-btn]");
+      if (editStyleBtn) {
+        editStyleBtn.onclick = (e) => {
+          e.stopPropagation();
+          const poiId = editStyleBtn.getAttribute("data-poi-id")!;
+          const target = pointPoisById.get(poiId);
+          if (target) {
+            setEditingPin({ id: target.id, name: target.name, colorHex: target.colorHex, iconCategory: target.iconCategory, isShape: false });
+            infoWindowRef.current?.close();
+          }
         };
       }
       const saveBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-save-pin-btn]");
@@ -508,6 +534,10 @@ export function MapScreen({
       // are a deliberate exception — always our own brand purple regardless
       // of whatever color (usually blue) the KML assigned them.
       const color = MAIN_STREET_PATTERN.test(poi.categoryName) ? SHAPE_COLOR : poi.colorHex || poi.categoryColor || SHAPE_COLOR;
+      // Shapes aren't otherwise clickable (no info window/route/favorite
+      // flow exists for a line/polygon) — only wired up in admin mode, to
+      // open the same color editor points get.
+      const openShapeEditor = () => setEditingPin({ id: poi.id, name: poi.name, colorHex: poi.colorHex, iconCategory: null, isShape: true });
       if (poi.geometryType === "polygon") {
         const polygon = new google.maps.Polygon({
           paths: path,
@@ -516,7 +546,9 @@ export function MapScreen({
           fillColor: color,
           fillOpacity: 0.15,
           map: mapRef.current!,
+          clickable: isAdmin,
         });
+        if (isAdmin) polygon.addListener("click", openShapeEditor);
         shapesRef.current.push(polygon);
       } else {
         const polyline = new google.maps.Polyline({
@@ -525,11 +557,13 @@ export function MapScreen({
           strokeWeight: 3,
           strokeOpacity: 0.8,
           map: mapRef.current!,
+          clickable: isAdmin,
         });
+        if (isAdmin) polyline.addListener("click", openShapeEditor);
         shapesRef.current.push(polyline);
       }
     });
-  }, [loaded, shapePois]);
+  }, [loaded, shapePois, isAdmin]);
 
   // "Places I've been" trail — a single long-lived polyline whose path grows
   // as new GPS points come in, toggled on/off exactly like a category layer.
@@ -778,7 +812,7 @@ export function MapScreen({
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(
-      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), preview)
+      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), preview, isAdmin)
     );
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
@@ -803,7 +837,7 @@ export function MapScreen({
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
         title: poi.name,
-        icon: categoryMarkerIcon(poi.categoryColor, poi.categoryName, initialScale, favoritedIdsRef.current.has(poi.id)),
+        icon: categoryMarkerIcon(poi.categoryColor, poi.iconCategory ?? poi.categoryName, initialScale, favoritedIdsRef.current.has(poi.id), poi.colorHex),
       });
       marker.addListener("click", () => openPoi(poi, marker));
       markersByPoiId.current.set(poi.id, marker);
@@ -850,7 +884,9 @@ export function MapScreen({
         if (scaleChanged) {
           const fullPoi = pointPoisById.get(id);
           if (fullPoi) {
-            marker.setIcon(categoryMarkerIcon(fullPoi.categoryColor, fullPoi.categoryName, nextScale, favoritedIdsRef.current.has(id)));
+            marker.setIcon(
+              categoryMarkerIcon(fullPoi.categoryColor, fullPoi.iconCategory ?? fullPoi.categoryName, nextScale, favoritedIdsRef.current.has(id), fullPoi.colorHex)
+            );
           }
         }
       });
@@ -1273,6 +1309,9 @@ export function MapScreen({
     </div>
     {pendingSavePin && (
       <SavePinModal destinationId={destinationId} slug={slug} pin={pendingSavePin} onClose={() => setPendingSavePin(null)} />
+    )}
+    {editingPin && (
+      <AdminEditPinModal destinationId={destinationId} slug={slug} pin={editingPin} onClose={() => setEditingPin(null)} />
     )}
     </>
   );

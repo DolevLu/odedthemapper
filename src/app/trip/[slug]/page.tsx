@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
-import { getAccessLevel } from "@/lib/access";
+import { getAccessLevel, canManageContent } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { MapScreen } from "./map/MapScreen";
 
@@ -21,7 +21,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
   // skipped rather than crashing on a missing userId.
   const isFullAccess = accessLevel !== "none";
 
-  const [pois, favorites, logisticPinRows, trail, savedMapPins, nextFlight] = await Promise.all([
+  const [pois, favorites, logisticPinRows, trail, savedMapPins, nextFlight, isAdmin] = await Promise.all([
     getFlatPoisForDestination(destination.id),
     isFullAccess && userId ? prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }) : Promise.resolve([]),
     isFullAccess && userId
@@ -48,6 +48,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
           select: { startsAt: true },
         })
       : Promise.resolve(null),
+    userId ? canManageContent(userId) : Promise.resolve(false),
   ]);
 
   const autoLocate = !nextFlight?.startsAt || nextFlight.startsAt.getTime() <= Date.now();
@@ -76,6 +77,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
       savedPins={savedMapPins}
       preview={!isFullAccess}
       autoLocate={autoLocate}
+      isAdmin={isAdmin}
     />
   );
 }

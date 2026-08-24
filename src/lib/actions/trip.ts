@@ -1,10 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { saveUploadedFile } from "@/lib/uploads";
-import { resolveItineraryOwnerId } from "@/lib/access";
+import { resolveItineraryOwnerId, canManageContent } from "@/lib/access";
 
 async function requireUserId() {
   const session = await auth();
@@ -76,6 +76,30 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
 export async function deleteSavedMapPin(id: string, slug: string) {
   const userId = await requireUserId();
   await prisma.savedMapPin.deleteMany({ where: { id, userId } });
+  revalidatePath(`/trip/${slug}`);
+}
+
+/** Admin/content-manager map editing: overrides a POI's (or shape's) marker
+ * color and/or icon-category — see PointOfInterest.colorHex/iconCategory.
+ * Passing null for either clears that override back to the category
+ * default. Gated the same way as the KML admin panel (canManageContent),
+ * not just isLoggedIn — this changes what every visitor sees on the shared
+ * destination map, not personal data. */
+export async function updatePoiStyle(
+  poiId: string,
+  destinationId: string,
+  slug: string,
+  style: { colorHex: string | null; iconCategory: string | null }
+) {
+  const session = await auth();
+  if (!session?.user?.id || !(await canManageContent(session.user.id))) {
+    throw new Error("אין הרשאה לעריכת המפה");
+  }
+  await prisma.pointOfInterest.update({
+    where: { id: poiId },
+    data: { colorHex: style.colorHex, iconCategory: style.iconCategory },
+  });
+  revalidateTag(`pois-${destinationId}`, "max");
   revalidatePath(`/trip/${slug}`);
 }
 

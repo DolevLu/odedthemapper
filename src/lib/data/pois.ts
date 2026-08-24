@@ -17,6 +17,9 @@ export type FlatPoi = {
    * polygon geometries (e.g. several differently colored metro lines grouped
    * under one category), where each needs its real individual color. */
   colorHex: string | null;
+  /** Admin override of which category's icon glyph to draw — see
+   * PointOfInterest.iconCategory. Independent of the POI's real category. */
+  iconCategory: string | null;
   address: string | null;
   priceRange: string | null;
   bookingUrl: string | null;
@@ -83,6 +86,7 @@ async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatP
               geometryType: true,
               geometryCoords: true,
               colorHex: true,
+              iconCategory: true,
               address: true,
               priceRange: true,
               bookingUrl: true,
@@ -115,6 +119,7 @@ async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatP
           categoryName: category.name,
           categoryColor: category.colorHex,
           colorHex: poi.colorHex,
+          iconCategory: poi.iconCategory,
           address: poi.address,
           priceRange: poi.priceRange,
           bookingUrl: poi.bookingUrl,

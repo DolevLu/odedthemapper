@@ -93,6 +93,14 @@ model PointOfInterest {
   // colored metro lines all inside a single "מטרו" folder) where every
   // placemark needs its own real color, not the folder's shared one.
   colorHex          String?
+  // Admin override for the marker's icon glyph — one of
+  // SAVED_PIN_CATEGORY_OPTIONS (lib/mapStyles.ts), used instead of the POI's
+  // real category name for icon (and, absent an explicit colorHex, color)
+  // lookup in categoryMarkerIcon. Deliberately separate from `category`
+  // itself, which still governs the POI's real folder/grouping — this only
+  // changes how it's drawn, e.g. a place that's structurally filed under
+  // "אטרקציות כללי" but should show as a café pin.
+  iconCategory      String?
   rawDescriptionHtml String?
   address           String?
   priceRange        String?

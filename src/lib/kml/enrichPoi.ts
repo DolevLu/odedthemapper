@@ -72,14 +72,57 @@ async function fetchWikiSummaryPhoto(lang: "he" | "en", title: string): Promise<
   }
 }
 
-/** Finds a real photo for a real-world place via Wikipedia: a geosearch
- * within 300m first, then a name search as a fallback — both require the
- * candidate article's title to actually relate to the POI's name (proximity
- * alone isn't trusted; see looksRelated) before its photo is used. Tries
- * Hebrew Wikipedia first, then English. Free, no API key, no per-call cost.
- * Skips entirely for names that don't look like real place names to begin
- * with (see looksLikeARealName) — nothing to verify a match against. */
-export async function findWikipediaPhoto(name: string, lat: number, lng: number): Promise<string | null> {
+// File names that are real content images but never a good "photo of the
+// place" (site icons, maps, coats of arms, generic UI chrome Wikipedia
+// articles commonly embed) — excluded when picking a second photo from an
+// article's full media list, where nothing has been curated as "the" image
+// the way page/summary's originalimage already is.
+const NON_PHOTO_FILENAME_RE =
+  /\.svg$|logo|icon|symbol|flag[_-]|coat[_-]of[_-]arms|emblem|locator|map[_-]|wiki|edit-icon|commons-logo|pin\.png/i;
+
+/** A second, different photo for the same matched article — page/summary
+ * only ever exposes one "main" image, so this walks the article's full media
+ * list (REST media-list endpoint) for another real photo, resolves its
+ * actual file URL via the standard MediaWiki imageinfo call, and skips it
+ * silently on any failure (a single good photo beats none, and a second one
+ * is a nice-to-have, not required). */
+async function fetchSecondWikiPhoto(lang: "he" | "en", title: string, excludeUrl: string | null): Promise<string | null> {
+  try {
+    const listRes = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/media-list/${encodeURIComponent(title)}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!listRes.ok) return null;
+    const listData = await listRes.json();
+    const items: { title?: string; type?: string }[] = listData?.items ?? [];
+    const candidates = items
+      .filter((i) => i.type === "image" && i.title?.startsWith("File:") && !NON_PHOTO_FILENAME_RE.test(i.title))
+      .map((i) => i.title as string);
+
+    for (const fileTitle of candidates.slice(0, 5)) {
+      const infoRes = await fetch(
+        `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileTitle)}&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (!infoRes.ok) continue;
+      const infoData = await infoRes.json();
+      const pages = infoData?.query?.pages ?? {};
+      const page = Object.values(pages)[0] as { imageinfo?: { thumburl?: string; url?: string }[] } | undefined;
+      const url = page?.imageinfo?.[0]?.thumburl ?? page?.imageinfo?.[0]?.url ?? null;
+      if (url && url !== excludeUrl) return url;
+    }
+  } catch {
+    // best-effort — a missing second photo is fine
+  }
+  return null;
+}
+
+/** Shared by findWikipediaPhoto/findWikipediaPhotos: locates the Wikipedia
+ * article (if any) that actually matches this real-world place — a geosearch
+ * within 300m first, then a name search as a fallback — both required to
+ * pass looksRelated before being trusted, tried on Hebrew Wikipedia then
+ * English. Returns the matched language+title so callers can pull whatever
+ * photo(s) they need from that one confirmed article. */
+async function findMatchingWikiArticle(name: string, lat: number, lng: number): Promise<{ lang: "he" | "en"; title: string } | null> {
   if (!looksLikeARealName(name)) return null;
 
   for (const lang of ["he", "en"] as const) {
@@ -92,10 +135,7 @@ export async function findWikipediaPhoto(name: string, lat: number, lng: number)
         const geoData = await geoRes.json();
         const candidates: { title: string }[] = geoData?.query?.geosearch ?? [];
         const match = candidates.find((c) => looksRelated(name, c.title));
-        if (match) {
-          const photo = await fetchWikiSummaryPhoto(lang, match.title);
-          if (photo) return photo;
-        }
+        if (match) return { lang, title: match.title };
       }
     } catch {
       // try the next language / fall through to name search
@@ -109,16 +149,45 @@ export async function findWikipediaPhoto(name: string, lat: number, lng: number)
       if (searchRes.ok) {
         const searchData = await searchRes.json();
         const title: string | undefined = searchData?.query?.search?.[0]?.title;
-        if (title && looksRelated(name, title)) {
-          const photo = await fetchWikiSummaryPhoto(lang, title);
-          if (photo) return photo;
-        }
+        if (title && looksRelated(name, title)) return { lang, title };
       }
     } catch {
       // try the next language
     }
   }
   return null;
+}
+
+/** Finds a real photo for a real-world place via Wikipedia — see
+ * findMatchingWikiArticle for the matching logic. Free, no API key, no
+ * per-call cost. */
+export async function findWikipediaPhoto(name: string, lat: number, lng: number): Promise<string | null> {
+  const match = await findMatchingWikiArticle(name, lat, lng);
+  if (!match) return null;
+  return fetchWikiSummaryPhoto(match.lang, match.title);
+}
+
+/** Like findWikipediaPhoto, but returns up to `count` distinct photos from
+ * the same matched article — the summary endpoint's single "main" image
+ * plus additional ones pulled from the article's full media list (see
+ * fetchSecondWikiPhoto). Still only ever pulls from the one article already
+ * confirmed to actually match the place — never a second, less-certain
+ * match — so a place with just one good photo available simply returns one
+ * URL, not a padded-out wrong one. */
+export async function findWikipediaPhotos(name: string, lat: number, lng: number, count = 2): Promise<string[]> {
+  const match = await findMatchingWikiArticle(name, lat, lng);
+  if (!match) return [];
+
+  const photos: string[] = [];
+  const first = await fetchWikiSummaryPhoto(match.lang, match.title);
+  if (first) photos.push(first);
+
+  if (photos.length < count) {
+    const second = await fetchSecondWikiPhoto(match.lang, match.title, first);
+    if (second) photos.push(second);
+  }
+
+  return photos.slice(0, count);
 }
 
 export type PoiEnrichment = { description: string | null; website: string | null };
