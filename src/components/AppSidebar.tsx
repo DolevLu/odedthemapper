@@ -157,10 +157,7 @@ export function AppSidebar({
             <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8" />
             <span className="flex flex-col leading-tight">
               <span className="text-base font-extrabold">עודד המנקד</span>
-              <span
-                className="text-xs font-extrabold"
-                style={{ color: "#F97316", WebkitTextStroke: "0.6px #000", paintOrder: "stroke fill" }}
-              >
+              <span className="text-xs font-extrabold" style={{ color: "#F97316" }}>
                 טראבי
               </span>
             </span>
