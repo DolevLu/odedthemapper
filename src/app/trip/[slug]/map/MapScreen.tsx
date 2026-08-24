@@ -213,6 +213,21 @@ export function MapScreen({
   const [shadowError, setShadowError] = useState<string | null>(null);
   const [shadowIsNight, setShadowIsNight] = useState(false);
   const [shadowTick, setShadowTick] = useState(0);
+
+  // Both were a wide white banner stretching most of the map's width with
+  // no way to dismiss it early and no auto-dismiss — now a small popup that
+  // clears itself after a few seconds (or immediately via its own close
+  // button, see the render below).
+  useEffect(() => {
+    if (!gpsError) return;
+    const t = setTimeout(() => setGpsError(null), 5000);
+    return () => clearTimeout(t);
+  }, [gpsError]);
+  useEffect(() => {
+    if (!routeError) return;
+    const t = setTimeout(() => setRouteError(null), 5000);
+    return () => clearTimeout(t);
+  }, [routeError]);
   const [listOpen, setListOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -312,16 +327,15 @@ export function MapScreen({
       // over, or the rare destination with zero point POIs.
       center: { lat: avgLat, lng: avgLng },
       zoom: 12,
-      streetViewControl: false,
-      fullscreenControl: false,
-      // Google's own Map/Satellite control is replaced by our own compact
-      // toggle below — full control over its size/position, instead of the
-      // native control crowding the top of a small mobile screen.
-      mapTypeControl: false,
-      // Google's native rotate/tilt compass control — floats right where our
-      // own filter-pill/chat buttons sit and serves no purpose here (this
-      // app has no 45°-imagery tilt view to rotate).
-      rotateControl: false,
+      // Strips every native Google control (zoom, street view, map type,
+      // rotate, fullscreen, scale) in one go — setting each one false
+      // individually kept missing whichever native button was actually
+      // floating over our own filter-pill/chat buttons (rotateControl:false
+      // alone didn't remove the one behind the chat button, since it only
+      // ever showed for 45°-tilt imagery this app never uses — a different
+      // native control was the real culprit). We build our own controls for
+      // everything we actually want, so there's nothing native left to keep.
+      disableDefaultUI: true,
       // "greedy" lets a single finger pan/zoom the map immediately — Google's
       // default "cooperative" mode demands two fingers specifically so an
       // embedded map doesn't trap the page's scroll gesture, but that's not
@@ -951,8 +965,15 @@ export function MapScreen({
             zIndex: 999,
             title: "המיקום שלי",
           });
-          mapRef.current.panTo(point);
-          mapRef.current.setZoom(15);
+          // Only recenters the camera once the trip has actually started
+          // (autoLocate) — tracking itself starts immediately regardless
+          // (see the auto-start effect below), so a "you are here" marker
+          // shows and follows you right away, it just doesn't yank the
+          // view away from the destination-overview default before then.
+          if (autoLocate) {
+            mapRef.current.panTo(point);
+            mapRef.current.setZoom(15);
+          }
         } else {
           userMarkerRef.current?.setPosition(point);
         }
@@ -972,15 +993,18 @@ export function MapScreen({
 
   // Google-Maps-app-style default: location tracking just starts on its own
   // instead of waiting for a button press, since this map is the trip's home
-  // screen — but only once the trip has actually started (see `autoLocate`);
-  // before then the traveler's real position is somewhere else entirely, so
-  // the map instead keeps its default center/zoom over the destination.
+  // screen — prompts for permission and starts tracking immediately on
+  // every visit, trip started or not (the camera itself only jumps to the
+  // live position once `autoLocate` is true — see the watchPosition
+  // callback above — so before the trip starts you still get a live "you
+  // are here" marker, just without the view snapping away from the
+  // destination-overview default).
   useEffect(() => {
-    if (!loaded || preview || !autoLocate || autoLocationStartedRef.current) return;
+    if (!loaded || preview || autoLocationStartedRef.current) return;
     autoLocationStartedRef.current = true;
     toggleGps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, preview, autoLocate]);
+  }, [loaded, preview]);
 
   // Deep link support (?focus=<poiId>), e.g. from a Travi chat suggestion —
   // clears any active category filter so the target POI's marker exists.
@@ -1209,11 +1233,22 @@ export function MapScreen({
         </div>
       )}
 
-      {gpsError && (
-        <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{gpsError}</div>
-      )}
-      {routeError && (
-        <div className="absolute inset-x-3 top-28 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{routeError}</div>
+      {(gpsError || routeError) && (
+        <div className="absolute inset-x-0 top-28 z-10 flex justify-center px-3">
+          <div className="flex max-w-[85%] items-center gap-2 rounded-lg bg-white/95 py-1.5 ps-3 pe-1.5 text-xs text-red-600 shadow-md">
+            <span>{gpsError || routeError}</span>
+            <button
+              onClick={() => {
+                setGpsError(null);
+                setRouteError(null);
+              }}
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-50 text-[10px] font-bold text-red-600"
+              aria-label="סגירה"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
       {shadowVisible && shadowError && (
         <div className="absolute inset-x-3 top-40 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{shadowError}</div>
