@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updatePoiStyle } from "@/lib/actions/trip";
+import { updatePoiStyle, deletePoi } from "@/lib/actions/trip";
 import { SAVED_PIN_CATEGORY_OPTIONS } from "@/lib/mapStyles";
 
 export type EditablePin = { id: string; name: string; colorHex: string | null; iconCategory: string | null; isShape: boolean };
@@ -28,6 +28,7 @@ export function AdminEditPinModal({
   const [color, setColor] = useState(pin.colorHex ?? DEFAULT_PICKER_COLOR);
   const [iconCategory, setIconCategory] = useState(pin.iconCategory ?? "");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -39,6 +40,14 @@ export function AdminEditPinModal({
     onClose();
   }
 
+  async function handleDelete() {
+    if (!window.confirm(`למחוק את "${pin.name}" לצמיתות מהמפה?`)) return;
+    setDeleting(true);
+    await deletePoi(pin.id, destinationId, slug);
+    setDeleting(false);
+    onClose();
+  }
+
   return (
     <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
       <div
@@ -46,9 +55,22 @@ export function AdminEditPinModal({
         className="flex w-full max-w-sm flex-col gap-3 rounded-2xl p-5 shadow-2xl"
         style={{ background: "var(--surface)" }}
       >
-        <h2 className="text-lg font-bold">
-          🎨 עריכת צבע{!pin.isShape && "/אייקון"} — {pin.name}
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-bold">
+            🎨 עריכת צבע{!pin.isShape && "/אייקון"} — {pin.name}
+          </h2>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm disabled:opacity-50"
+            style={{ background: "#FEE2E2", color: "#DC2626" }}
+            title="הסרת הנקודה מהמפה"
+            aria-label="הסרת הנקודה מהמפה"
+          >
+            🗑️
+          </button>
+        </div>
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={useCustomColor} onChange={(e) => setUseCustomColor(e.target.checked)} />

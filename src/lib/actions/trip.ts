@@ -145,6 +145,20 @@ export async function updatePoiStyle(
   revalidatePath(`/trip/${slug}`);
 }
 
+/** Admin/content-manager map editing: permanently removes a point or shape
+ * from the shared destination map (cascades to its photos/tags/favorites/
+ * itinerary items, same as any other POI deletion). Same gate as
+ * updatePoiStyle — this is curating the shared map, not personal data. */
+export async function deletePoi(poiId: string, destinationId: string, slug: string) {
+  const session = await auth();
+  if (!session?.user?.id || !(await canManageContent(session.user.id))) {
+    throw new Error("אין הרשאה לעריכת המפה");
+  }
+  await prisma.pointOfInterest.delete({ where: { id: poiId } });
+  revalidateTag(`pois-${destinationId}`, "max");
+  revalidatePath(`/trip/${slug}`);
+}
+
 export async function togglePhrasebookKnown(entryId: string, slug: string) {
   const userId = await requireUserId();
   const existing = await prisma.phrasebookProgress.findUnique({ where: { userId_entryId: { userId, entryId } } });
