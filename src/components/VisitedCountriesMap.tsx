@@ -297,11 +297,26 @@ function CountryPhotoManager({
   onClose: () => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function handleUpload(formData: FormData) {
+    setError(null);
     startTransition(async () => {
-      await uploadCountryPhoto(code, formData, slug);
-      onUploaded();
+      try {
+        const result = await uploadCountryPhoto(code, formData, slug);
+        if (result?.error) {
+          setError(result.error);
+          return;
+        }
+        onUploaded();
+        formRef.current?.reset();
+      } catch {
+        // Should be unreachable now that uploadCountryPhoto itself never
+        // throws, but kept as a last line of defense — a raw unhandled
+        // rejection here is what could crash the whole page before.
+        setError("משהו השתבש בהעלאה — נסו שוב");
+      }
     });
   }
 
@@ -337,8 +352,8 @@ function CountryPhotoManager({
       )}
       {photos.length === 0 && <p className="text-xs opacity-50">אין עדיין תמונות למדינה הזו.</p>}
 
-      <form action={handleUpload} className="flex items-center gap-2">
-        <input type="file" name="photo" accept="image/*" className="flex-1 text-xs" />
+      <form ref={formRef} action={handleUpload} className="flex items-center gap-2">
+        <input type="file" name="photos" accept="image/*" multiple className="flex-1 text-xs" />
         <button
           type="submit"
           disabled={pending}
@@ -348,7 +363,8 @@ function CountryPhotoManager({
           {pending ? "מעלה..." : "העלאה"}
         </button>
       </form>
-      <p className="text-[11px] opacity-40">תמונות שהועלו לאלבום של יעד ביבשת/מדינה זו יופיעו כאן אוטומטית.</p>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <p className="text-[11px] opacity-40">אפשר לבחור כמה תמונות יחד. תמונות שהועלו לאלבום של יעד ביבשת/מדינה זו יופיעו כאן אוטומטית.</p>
     </div>
   );
 }

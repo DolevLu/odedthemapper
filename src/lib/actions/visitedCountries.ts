@@ -50,25 +50,45 @@ export async function getCountryPhotos(userId: string): Promise<Record<string, C
 
 /** Open to every logged-in user for any country in the world — not gated by
  * having a paid subscription to a matching destination, since this is just
- * a personal travel scrapbook, not destination content. Uploading a photo
+ * a personal travel scrapbook, not destination content. Uploading photos
  * also marks that country visited (if it wasn't already), since adding a
- * photo from a place implies you were there — one less manual step. */
-export async function uploadCountryPhoto(countryCode: string, formData: FormData, slug?: string) {
-  const userId = await requireUserId();
-  const file = formData.get("photo") as File | null;
-  if (!file || file.size === 0) return;
-  const url = await saveUploadedFile(file, "country-photos");
-  if (!url) return;
-  await Promise.all([
-    prisma.countryPhoto.create({ data: { userId, countryCode, url } }),
-    prisma.visitedCountry.upsert({
-      where: { userId_countryCode: { userId, countryCode } },
-      update: {},
-      create: { userId, countryCode },
-    }),
-  ]);
-  if (slug) revalidatePath(`/trip/${slug}/quiz`);
-  revalidatePath("/account");
+ * photo from a place implies you were there — one less manual step.
+ *
+ * Accepts several files at once (formData.getAll, not .get) and never
+ * throws on a real failure — every earlier version of this returned void
+ * and let any exception (a transient DB blip, an upload failure) propagate
+ * unhandled all the way to the client's startTransition callback, which is
+ * exactly the kind of unhandled rejection that crashes the whole React tree
+ * into the nearest error boundary instead of just failing this one upload. */
+export async function uploadCountryPhoto(
+  countryCode: string,
+  formData: FormData,
+  slug?: string
+): Promise<{ error?: string }> {
+  try {
+    const userId = await requireUserId();
+    const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+    if (files.length === 0) return {};
+
+    const urls = (await Promise.all(files.map((f) => saveUploadedFile(f, "country-photos")))).filter(
+      (u): u is string => Boolean(u)
+    );
+    if (urls.length === 0) return { error: "העלאת התמונות נכשלה — נסו שוב" };
+
+    await Promise.all([
+      prisma.countryPhoto.createMany({ data: urls.map((url) => ({ userId, countryCode, url })) }),
+      prisma.visitedCountry.upsert({
+        where: { userId_countryCode: { userId, countryCode } },
+        update: {},
+        create: { userId, countryCode },
+      }),
+    ]);
+    if (slug) revalidatePath(`/trip/${slug}/quiz`);
+    revalidatePath("/account");
+    return {};
+  } catch {
+    return { error: "משהו השתבש בהעלאה — נסו שוב" };
+  }
 }
 
 export async function deleteCountryPhoto(id: string) {
