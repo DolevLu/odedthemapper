@@ -154,8 +154,16 @@ export function AppSidebar({
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />
-            <span className="text-base font-extrabold">עודד המנקד</span>
+            <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8" />
+            <span className="flex flex-col leading-tight">
+              <span className="text-base font-extrabold">עודד המנקד</span>
+              <span
+                className="text-xs font-extrabold"
+                style={{ color: "#F97316", WebkitTextStroke: "0.6px #000", paintOrder: "stroke fill" }}
+              >
+                טראבי
+              </span>
+            </span>
           </Link>
         </div>
         <div className="mb-2 px-1">
