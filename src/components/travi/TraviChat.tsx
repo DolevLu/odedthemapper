@@ -49,11 +49,15 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
        * points-list bar (which sits at the same offset) instead of floating
        * separately higher up and eating extra map height — a floating
        * action button overlapping a bottom sheet's corner is standard
-       * mobile-map UI (Google Maps/Waze do the same). Desktop keeps its own
-       * position, clear of the sidebar. */}
+       * mobile-map UI (Google Maps/Waze do the same). Desktop: right-64
+       * exactly matched the sidebar's own width (w-64), so the button's edge
+       * was flush against it with zero gap — right-[268px] adds the sidebar
+       * width's usual 12px clearance (same gap the map's Google-tags toggle
+       * button already keeps from that same edge), without touching bottom
+       * (unchanged height). */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-16 right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-64"
+        className="fixed bottom-16 right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px]"
         style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         aria-label="טראבי — עוזר הטיול"
       >
