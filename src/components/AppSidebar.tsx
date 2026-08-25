@@ -64,7 +64,7 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "במהלך הטיול",
     items: [
-      { href: "/favorites", label: "מועדפים", icon: "❤️", tier: "silver" },
+      { href: "/favorites", label: "מועדפים והטבות", icon: "❤️", tier: "silver" },
       { href: "/bookable", label: "להזמנה", icon: "🎟️", tier: "silver" },
       { href: "/logistics", label: "לוגיסטיקה", icon: "✈️", tier: "free" },
       { href: "/expenses", label: "הוצאות", icon: "💸", tier: "free" },
