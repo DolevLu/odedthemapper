@@ -19,10 +19,11 @@ const TOP_ITEMS = [
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedthemapper.travi";
 
-/** Distinct pill (brand gradient, not the plain nav style) linking to the
- * Play Store listing — shown only on the web, since a visitor already inside
- * the native app has no use for a link to install it. */
-function DownloadAppLink({ onClick, compact = false }: { onClick?: () => void; compact?: boolean }) {
+/** Standalone pill, same size/shape as the "שדרג עכשיו" upgrade CTA — not a
+ * plain nav-list row — linking to the Play Store listing. Shown only on the
+ * web, since a visitor already inside the native app has no use for a link
+ * to install it. */
+function DownloadAppLink({ onClick }: { onClick?: () => void }) {
   const [isNativeApp, setIsNativeApp] = useState(true); // default hidden until confirmed web, avoids a flash inside the app
   useEffect(() => setIsNativeApp(Capacitor.isNativePlatform()), []);
   if (isNativeApp) return null;
@@ -32,11 +33,10 @@ function DownloadAppLink({ onClick, compact = false }: { onClick?: () => void; c
       target="_blank"
       rel="noopener noreferrer"
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 font-bold text-white ${compact ? "py-2 text-sm" : "py-2 text-[15px]"}`}
-      style={{ borderRadius: "999px", background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+      className="mt-2 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
     >
-      <span className="icon-pop text-lg">📲</span>
-      <span>הורידו את האפליקציה</span>
+      📲 הורידו את האפליקציה
     </a>
   );
 }
@@ -221,7 +221,6 @@ export function AppSidebar({
               </Link>
             );
           })}
-          <DownloadAppLink />
         </div>
 
         <div className="my-1.5 h-px shrink-0 bg-black/10" />
@@ -271,6 +270,7 @@ export function AppSidebar({
         >
           ✨ שדרג עכשיו
         </Link>
+        <DownloadAppLink />
       </nav>
 
       {/* Mobile: no top header bar either — the profile button just floats
@@ -377,7 +377,6 @@ export function AppSidebar({
                 </Link>
               );
             })}
-            <DownloadAppLink onClick={() => setDrawerOpen(false)} compact />
 
             <div className="my-1.5 h-px bg-black/10" />
 
@@ -423,6 +422,7 @@ export function AppSidebar({
             >
               ✨ שדרג עכשיו
             </Link>
+            <DownloadAppLink onClick={() => setDrawerOpen(false)} />
           </div>
         </div>
       )}
