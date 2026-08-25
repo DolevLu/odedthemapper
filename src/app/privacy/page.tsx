@@ -111,8 +111,8 @@ export default function PrivacyPage() {
         <h2 className="text-lg font-bold">יצירת קשר</h2>
         <p>
           לכל שאלה בנוגע למדיניות פרטיות זו, ניתן לפנות אלינו בכתובת{" "}
-          <a href="mailto:support@odedthemapper.com" className="underline">
-            support@odedthemapper.com
+          <a href="mailto:dolev0018@gmail.com" className="underline">
+            dolev0018@gmail.com
           </a>
           .
         </p>
