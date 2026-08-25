@@ -35,7 +35,13 @@ const CATEGORY_INTENTS: { keywords: string[]; categoryFragments: string[]; label
 // Kept as reference context fed to Gemini (so it can accurately explain app
 // features even when the phrasing doesn't match any fixed keyword list) and
 // as a zero-cost fast path if Gemini is unavailable.
+// One entry per app screen (matches APP_SCREENS_REFERENCE) so an app-usage
+// question always gets a real, correct answer even when Gemini is
+// unavailable/slow/times out — not just the handful of screens someone
+// happened to add a keyword list for. Checked before the "couldn't find
+// anything" catch-all, so nothing app-related ever falls through to that.
 const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
+  { keywords: ["איך משתמשים במפה", "להשתמש במפה", "לסנן במפה", "סינון קטגור", "מפה לפי קטגור"], answer: "במסך \"מפה\" רואים את כל הנקודות על מפת גוגל, עם צבע לפי קטגוריה. לוחצים על סיכה כדי לראות פרטים, מסננים לפי קטגוריה עם הכפתורים למעלה, ולוחצים על 📍 כדי למיין לפי קרבה למיקום שלכם." },
   { keywords: ["מסלול", "לתכנן", "לבנות מסלול", "תוכנית טיול", "לארגן את הטיול", "סדר יום"], answer: "במסך \"מסלול\" תוכלו להוסיף ימים ונקודות, לגרור ולסדר מחדש, ואפילו לבקש מהמערכת ליצור לכם מסלול אוטומטי לפי הימים והתחומי עניין שתבחרו." },
   { keywords: ["תקציב", "הוצאות", "כסף שהוצאתי", "כמה הוצאתי", "לעקוב אחרי כסף"], answer: "במסך \"הוצאות\" תוכלו לרשום הוצאות לפי יום, להגדיר תקציב כולל, ולראות כמה נשאר לכם ליום הנוכחי." },
   { keywords: ["מועדפים", "לשמור נקודה", "לשמור מקום", "איך שומרים", "רשימת שמורים"], answer: "לוחצים על הלב ⭐ על כל נקודה במפה או ברשימה כדי לשמור אותה למועדפים — הם יופיעו במסך \"מועדפים\"." },
@@ -44,6 +50,11 @@ const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
   { keywords: ["חידון", "משחק", "לבדוק את עצמי", "טריוויה"], answer: "יש לכם מסך \"חידונים\" עם חידונים קצרים בספורט, היסטוריה וגאוגרפיה של היעד." },
   { keywords: ["מסמך", "כרטיס טיסה", "אישור הזמנה", "לוגיסטיקה", "דרכון", "ויזה", "ביטוח נסיעות"], answer: "במסך \"לוגיסטיקה\" תוכלו לשמור טיסות, מלונות, כרטיסים, דרכון, ויזה וביטוח — עם תזכורות אוטומטיות לפני שהם מתקרבים." },
   { keywords: ["חג", "חגים", "יום חג", "אירוע קרוב"], answer: "במסך \"להזמנה\" יש לוח חגים קרובים ביעד, כדי לדעת מראש על ימים שבהם עסקים ואתרים עשויים לפעול אחרת." },
+  { keywords: ["מה עכשיו", "מה כדאי עכשיו", "מה לעשות עכשיו", "המלצה עכשיו"], answer: "במסך \"מה עכשיו\" יש המלצות לפי קרבה למיקום שלכם, שעון מקומי מול שעון הבית, וכפתור מידע חירום עם שקעים/ויזה/טיפים." },
+  { keywords: ["מזג אוויר", "תחזית", "גשם", "טמפרטורה"], answer: "במסך \"מזג אוויר\" יש תחזית ליומיים הקרובים ביעד." },
+  { keywords: ["שיחון", "מילים בשפה", "לתרגם", "תרגום", "הגייה"], answer: "במסך \"שיחון\" יש מילים וביטויים שימושיים בשפה המקומית, כולל הקראה קולית של ההגייה." },
+  { keywords: ["ציוד", "מה לקחת", "צ'ק ליסט", "רשימת אריזה", "מה לארוז"], answer: "במסך \"ציוד וצ'ק ליסט\" יש רשימת ציוד מומלצת לפני הטיסה, עם אפשרות לסמן מה כבר ארזתם." },
+  { keywords: ["אלבום", "תמונות מהטיול", "וידאו", "קולאז'"], answer: "במסך \"אלבום\" אפשר להעלות תמונות ווידאו מהטיול וליצור מהם קולאז'ים." },
 ];
 
 // Short reference of every screen, given to Gemini as context so it can
@@ -147,7 +158,13 @@ ${suggestionsBlock}
           contents: [{ role: "user", parts: [{ text: message }] }],
           generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
         }),
-        signal: AbortSignal.timeout(15000),
+        // Confirmed live (this exact question, twice in a row) that the
+        // flash model can take longer than 15s to respond — 25s gives real
+        // slow responses a chance to land instead of forcing every one of
+        // them onto the FAQ fallback, which — while now covering every
+        // screen — is still a fixed canned answer rather than Gemini's
+        // actual understanding of arbitrary phrasing.
+        signal: AbortSignal.timeout(25000),
       }
     );
     if (!res.ok) {
