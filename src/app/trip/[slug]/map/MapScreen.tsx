@@ -87,6 +87,54 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   </div>`;
 }
 
+/** Google's JS API has no way to embed Google Maps' own native place card
+ * (photos/rating/hours/phone/website/reviews) — that UI only exists inside
+ * Google's own apps. This is the closest equivalent: pulls the same
+ * PlacesService data Google's card is built from and lays it out ourselves,
+ * plus a direct link to open the real thing on Google Maps for anything
+ * (reviews, full photo set) that genuinely can't be reproduced here. */
+function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId: string, lat: number, lng: number): string {
+  const name = place.name ?? "מקום ללא שם";
+  const photo = place.photos?.[0]
+    ? `<img src="${place.photos[0].getUrl({ maxWidth: 320, maxHeight: 160 })}" alt="" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+    : "";
+  const rating =
+    place.rating != null
+      ? `<div style="font-size:13px;margin-top:2px">⭐ ${place.rating}${place.user_ratings_total ? ` · ${place.user_ratings_total.toLocaleString("he-IL")} ביקורות` : ""}</div>`
+      : "";
+  const openNow = place.opening_hours?.isOpen?.();
+  const openStatus =
+    openNow === true
+      ? `<span style="color:#16A34A;font-weight:600">פתוח עכשיו</span>`
+      : openNow === false
+        ? `<span style="color:#DC2626;font-weight:600">סגור עכשיו</span>`
+        : "";
+  const address = place.formatted_address
+    ? `<div style="font-size:12px;opacity:.7;margin-top:4px">📍 ${place.formatted_address}</div>`
+    : "";
+  const phone = place.formatted_phone_number
+    ? `<div style="font-size:12px;margin-top:2px"><a href="tel:${place.formatted_phone_number}" style="color:#7C3AED">📞 ${place.formatted_phone_number}</a></div>`
+    : "";
+  const website = place.website
+    ? `<div style="font-size:12px;margin-top:2px"><a href="${place.website}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 אתר</a></div>`
+    : "";
+  const mapsUrl = place.url ?? `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+
+  return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px;max-width:260px">
+    ${photo}
+    <strong>${name}</strong>
+    ${rating}
+    ${openStatus ? `<div style="font-size:12px;margin-top:2px">${openStatus}</div>` : ""}
+    ${address}
+    ${phone}
+    ${website}
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+      <button data-save-pin-btn data-place-id="${placeId}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">💾 שמירה למפה</button>
+      <a href="${mapsUrl}" target="_blank" rel="noopener" style="${INFO_ACTION_BTN_STYLE};text-decoration:none;color:#333;display:inline-block">🗺️ פתיחה ב-Google Maps</a>
+    </div>
+  </div>`;
+}
+
 // Saved-pin name/description are free text the user themselves typed into
 // SavePinModal — escaped before going into InfoWindow innerHTML so a stray
 // "<" in there can't break the popup's markup.
@@ -456,20 +504,26 @@ export function MapScreen({
             placesServiceRef.current = new google.maps.places.PlacesService(mapRef.current);
           }
           placesServiceRef.current?.getDetails(
-            { placeId: e.placeId!, fields: ["name", "geometry"] },
+            {
+              placeId: e.placeId!,
+              fields: [
+                "name",
+                "geometry",
+                "rating",
+                "user_ratings_total",
+                "formatted_address",
+                "formatted_phone_number",
+                "opening_hours",
+                "website",
+                "photos",
+                "url",
+              ],
+            },
             (place, status) => {
               if (status !== google.maps.places.PlacesServiceStatus.OK || !place?.geometry?.location) return;
               const lat = place.geometry.location.lat();
               const lng = place.geometry.location.lng();
-              const name = place.name ?? "מקום ללא שם";
-              infoWindowRef.current?.setContent(
-                `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
-                  <strong>${name}</strong>
-                  <div style="margin-top:8px">
-                    <button data-save-pin-btn data-place-id="${e.placeId}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">💾 שמירה למפה</button>
-                  </div>
-                </div>`
-              );
+              infoWindowRef.current?.setContent(richPlaceInfoWindowHtml(place, e.placeId!, lat, lng));
               infoWindowRef.current?.setPosition({ lat, lng });
               infoWindowRef.current?.open({ map: mapRef.current! });
             }
