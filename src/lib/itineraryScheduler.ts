@@ -3,6 +3,12 @@ import { optimizeAcrossDays, orderByNearestNeighbor } from "@/lib/routeOptimizer
 
 const LUNCH_CATEGORY_MATCH = /מסעד|קפה|בראנץ/;
 const EVENING_CATEGORY_MATCH = /מסעד|בר|לילה|מועדונ/;
+// "Commonly done, worth recommending" tier — cruises/boat tours, museums,
+// galleries, viewpoints — ranked below the destination's isMustSee landmarks
+// but above generic filler attractions, so a trip fills out with the things
+// most travelers actually do (not just the unmissable headliners) before it
+// resorts to whatever's simply nearby.
+const RECOMMENDED_CATEGORY_MATCH = /מוזיאון|גלריה|שיט|סיור מודרך|תצפית|קרוזה/;
 const ATTRACTIONS_PER_DAY = 5; // 3 morning + 2 afternoon, framing the lunch/dinner slots
 export const TOTAL_STOPS_PER_DAY = ATTRACTIONS_PER_DAY + 2; // + lunch + evening food/bar = 7
 
@@ -11,6 +17,9 @@ export type ScheduledStop = { poiId: string; order: number; timeOfDay: string };
 
 function byQuality(a: SchedulablePoi, b: SchedulablePoi): number {
   if (a.isMustSee !== b.isMustSee) return Number(b.isMustSee) - Number(a.isMustSee);
+  const aRecommended = RECOMMENDED_CATEGORY_MATCH.test(a.categoryName);
+  const bRecommended = RECOMMENDED_CATEGORY_MATCH.test(b.categoryName);
+  if (aRecommended !== bRecommended) return Number(bRecommended) - Number(aRecommended);
   return Number(b.hasPhoto) - Number(a.hasPhoto);
 }
 
