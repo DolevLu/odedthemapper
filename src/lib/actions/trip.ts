@@ -1006,6 +1006,7 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
 
   const candidates = rows.map((p) => ({
     id: p.id,
+    name: p.name,
     lat: p.lat,
     lng: p.lng,
     isMustSee: p.isMustSee,

@@ -9,10 +9,15 @@ const EVENING_CATEGORY_MATCH = /מסעד|בר|לילה|מועדונ/;
 // most travelers actually do (not just the unmissable headliners) before it
 // resorts to whatever's simply nearby.
 const RECOMMENDED_CATEGORY_MATCH = /מוזיאון|גלריה|שיט|סיור מודרך|תצפית|קרוזה/;
+// An airport is a place you pass through, not a stop to visit — but a real
+// KML import can still tag it under a generic "attractions" category (seen
+// live: "Václav Havel Airport Prague" filed under אטרקציות כללי), so it has
+// to be excluded by name, not by trusting the category.
+const AIRPORT_NAME_MATCH = /airport|נמל תעופה|שדה תעופה/i;
 const ATTRACTIONS_PER_DAY = 5; // 3 morning + 2 afternoon, framing the lunch/dinner slots
 export const TOTAL_STOPS_PER_DAY = ATTRACTIONS_PER_DAY + 2; // + lunch + evening food/bar = 7
 
-export type SchedulablePoi = { id: string; lat: number; lng: number; isMustSee: boolean; hasPhoto: boolean; categoryName: string };
+export type SchedulablePoi = { id: string; name: string; lat: number; lng: number; isMustSee: boolean; hasPhoto: boolean; categoryName: string };
 export type ScheduledStop = { poiId: string; order: number; timeOfDay: string };
 
 function byQuality(a: SchedulablePoi, b: SchedulablePoi): number {
@@ -40,14 +45,17 @@ function takeNearestUnused(pool: SchedulablePoi[], used: Set<string>, centroid: 
 
 /**
  * Builds a day-by-day, time-scheduled itinerary from a pool of candidate
- * POIs: must-see landmarks are prioritized into the attraction pool (so
- * they're guaranteed a spot and naturally spread across days as more days
- * are added), geographically clustered/ordered per day, and a lunch stop
- * (cafe/restaurant) plus an evening stop (restaurant/bar) are woven in near
- * that day's cluster — 7 stops/day: 3 morning attractions, lunch, 2
- * afternoon attractions, evening food. Shared by both AI-generation entry
- * points (the itinerary wizard and the destination-matching quiz) so they
- * produce the same quality of plan.
+ * POIs: airports are dropped (see AIRPORT_NAME_MATCH — a place you pass
+ * through, never a stop), must-see landmarks and commonly-recommended spots
+ * (museums/cruises/viewpoints — see RECOMMENDED_CATEGORY_MATCH) are
+ * prioritized into the attraction pool, then split across days by
+ * optimizeAcrossDays' density-respecting tour-then-slice (so a dense core
+ * area doesn't lose stops to an artificially padded-out day on the sparse
+ * side of town), and a lunch stop (cafe/restaurant) plus an evening stop
+ * (restaurant/bar) are woven in near that day's cluster — 7 stops/day: 3
+ * morning attractions, lunch, 2 afternoon attractions, evening food. Shared
+ * by both AI-generation entry points (the itinerary wizard and the
+ * destination-matching quiz) so they produce the same quality of plan.
  *
  * When a hotel anchor is given (from the traveler's saved logistics), each
  * day's walking order is re-rooted to start from whichever stop is closest
@@ -59,14 +67,15 @@ export function scheduleItineraryDays(
   tripDays: number,
   hotelAnchor?: { lat: number; lng: number } | null
 ): ScheduledStop[][] {
-  const lunchPool = candidates.filter((p) => LUNCH_CATEGORY_MATCH.test(p.categoryName)).sort(byQuality);
-  const eveningPool = candidates.filter((p) => EVENING_CATEGORY_MATCH.test(p.categoryName)).sort(byQuality);
-  const attractionPool = candidates
+  const schedulable = candidates.filter((p) => !AIRPORT_NAME_MATCH.test(p.name));
+  const lunchPool = schedulable.filter((p) => LUNCH_CATEGORY_MATCH.test(p.categoryName)).sort(byQuality);
+  const eveningPool = schedulable.filter((p) => EVENING_CATEGORY_MATCH.test(p.categoryName)).sort(byQuality);
+  const attractionPool = schedulable
     .filter((p) => !LUNCH_CATEGORY_MATCH.test(p.categoryName) && !EVENING_CATEGORY_MATCH.test(p.categoryName))
     .sort(byQuality)
     .slice(0, tripDays * ATTRACTIONS_PER_DAY);
 
-  const attractionsByDay = optimizeAcrossDays(attractionPool, tripDays);
+  const attractionsByDay = optimizeAcrossDays(attractionPool, tripDays, hotelAnchor);
   const usedFoodIds = new Set<string>();
   const days: ScheduledStop[][] = [];
 
