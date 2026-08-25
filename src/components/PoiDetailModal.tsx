@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { FlatPoi } from "@/lib/data/pois";
 
 export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => void }) {
@@ -10,8 +11,9 @@ export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => 
         className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white"
       >
         {poi.photoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={poi.photoUrl} alt={poi.name} className="h-48 w-full object-cover" />
+          <div className="relative h-48 w-full shrink-0">
+            <Image src={poi.photoUrl} alt={poi.name} fill sizes="448px" className="object-cover" />
+          </div>
         )}
         <div className="flex flex-col gap-2 overflow-y-auto p-5">
           <div className="flex items-center gap-2">

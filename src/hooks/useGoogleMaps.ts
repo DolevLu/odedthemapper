@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 declare global {
   interface Window {
     google?: typeof google;
+    gm_authFailure?: () => void;
     __googleMapsLoadPromise?: Promise<void>;
     __googleMapsRoutesPromise?: Promise<void>;
     __googleMapsPlacesPromise?: Promise<void>;
@@ -31,15 +32,30 @@ function loadGoogleMaps(apiKey: string): Promise<void> {
   if (window.__googleMapsLoadPromise) return window.__googleMapsLoadPromise;
 
   window.__googleMapsLoadPromise = new Promise((resolve, reject) => {
+    // Google calls this global instead of the success callback when the API
+    // key is rejected (bad referrer restriction, disabled API, billing,
+    // etc.) — without handling it the promise above just hangs forever with
+    // no error, which is exactly what happened inside the Android WebView:
+    // the app's own referrer differs from a normal mobile-browser tab, the
+    // key got rejected, and the map silently never rendered instead of
+    // surfacing a message.
+    window.gm_authFailure = () => reject(new Error("Google Maps דחה את המפתח (בדקו הגבלות referrer/API בענן)"));
+
+    const timeout = setTimeout(() => reject(new Error("תם הזמן הקצוב לטעינת Google Maps")), 15000);
+
     const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&callback=__initGoogleMaps`;
     script.async = true;
     (window as unknown as Record<string, () => void>).__initGoogleMaps = () => {
+      clearTimeout(timeout);
       Promise.all([google.maps.importLibrary("maps"), google.maps.importLibrary("marker")])
         .then(() => resolve())
         .catch(reject);
     };
-    script.onerror = () => reject(new Error("נכשלה טעינת Google Maps"));
+    script.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error("נכשלה טעינת Google Maps"));
+    };
     document.head.appendChild(script);
   });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { CategoryIcon } from "@/components/CategoryIcon";
 
@@ -61,8 +62,7 @@ export function PoiCard({
         style={{ borderRadius: "var(--radius)", borderColor: `color-mix(in srgb, ${poi.categoryColor} 35%, transparent)`, background: "var(--surface)" }}
       >
         {poi.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={poi.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" loading="lazy" />
+          <Image src={poi.photoUrl} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-lg object-cover" loading="lazy" />
         ) : (
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
             <CategoryIcon name={poi.categoryName} size={24} />
@@ -106,8 +106,14 @@ export function PoiCard({
       >
         <div className="relative aspect-[2.5/1] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
           {poi.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={poi.photoUrl} alt="" className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+            <Image
+              src={poi.photoUrl}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 50vw, 240px"
+              className="object-cover transition-transform group-hover:scale-105"
+              loading="lazy"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: poi.categoryColor }}>
