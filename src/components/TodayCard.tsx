@@ -50,7 +50,7 @@ export function TodayCard({
   const [dateTimeInput, setDateTimeInput] = useState(() =>
     targetDateTimeIso ? toDateTimeLocalValue(new Date(targetDateTimeIso)) : ""
   );
-  const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  const [handledIds, setHandledIds] = useState<Set<string>>(new Set());
   const [now, setNow] = useState<Date | null>(null);
 
   // Ticks the live countdown every minute — started only after mount so the
@@ -90,10 +90,15 @@ export function TodayCard({
     });
   }
 
-  function markAsBooked(poiId: string) {
-    setSentIds((s) => new Set(s).add(poiId));
+  /** Both outcomes remove the item from THIS user's own list — "booked" and
+   * "not interested" both just mean "stop showing me this," they just log
+   * different itemKeys so a real checklist (packing screen) can still tell
+   * the difference. wantsBooking itself is shared across every traveler on
+   * the destination, so neither button touches it — see now/page.tsx. */
+  function markHandled(poiId: string, kind: "booked" | "dismissed") {
+    setHandledIds((s) => new Set(s).add(poiId));
     startTransition(() => {
-      togglePackingCheck(destinationId, `booking:${poiId}`, slug);
+      togglePackingCheck(destinationId, kind === "booked" ? `booking:${poiId}` : `booking-dismissed:${poiId}`, slug);
     });
   }
 
@@ -222,27 +227,41 @@ export function TodayCard({
       )}
 
       {/* Things to remember to book */}
-      {bookableItems.length > 0 && (
+      {bookableItems.some((item) => !handledIds.has(item.id)) && (
         <section>
           <h2 className="mb-3 text-lg font-bold">🎟️ לזכור להזמין</h2>
           <div className="flex flex-col gap-2">
-            {bookableItems.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-2 border p-3 text-sm"
-                style={{ borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
-              >
-                <span>{item.name}</span>
-                <button
-                  onClick={() => markAsBooked(item.id)}
-                  disabled={sentIds.has(item.id)}
-                  className="shrink-0 rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50"
-                  style={{ borderColor: "var(--primary)", color: sentIds.has(item.id) ? undefined : "var(--primary)" }}
+            {bookableItems
+              .filter((item) => !handledIds.has(item.id))
+              .map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 border p-3 text-sm"
+                  style={{ borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
                 >
-                  {sentIds.has(item.id) ? "✓ נשלח לצ׳ק ליסט" : "שליחה לצ׳ק ליסט"}
-                </button>
-              </div>
-            ))}
+                  <span>{item.name}</span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      onClick={() => markHandled(item.id, "booked")}
+                      aria-label="הוזמן"
+                      title="הוזמן"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white"
+                      style={{ background: "#22C55E" }}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={() => markHandled(item.id, "dismissed")}
+                      aria-label="לא מעוניין/ת"
+                      title="לא מעוניין/ת"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white"
+                      style={{ background: "#DC2626" }}
+                    >
+                      ✗
+                    </button>
+                  </span>
+                </div>
+              ))}
           </div>
           <Link href={`/trip/${slug}/packing`} className="mt-2 inline-block text-xs underline opacity-60">
             לצ׳ק ליסט המלא ←

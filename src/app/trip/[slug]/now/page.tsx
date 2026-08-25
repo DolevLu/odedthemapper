@@ -25,7 +25,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
 
   const userId = session!.user!.id;
 
-  const [pois, favorites, logistics, itinerary, bookablePois] = await Promise.all([
+  const [pois, favorites, logistics, itinerary, bookingChecks] = await Promise.all([
     getFlatPoisForDestination(destination.id),
     prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }),
     prisma.tripLogistic.findMany({
@@ -41,12 +41,27 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
         },
       },
     }),
-    prisma.pointOfInterest.findMany({
-      where: { wantsBooking: true, category: { area: { destinationId: destination.id } } },
-      select: { id: true, name: true },
-      take: 5,
+    // Both "✓ הוזמן" and "✗ לא מעניין" are personal dismissals (see
+    // TodayCard's markHandled) — wantsBooking itself is a shared,
+    // destination-wide flag (anyone can propose a place to book, per the map's
+    // own 🎟️ toggle), so one user booking or dismissing a place must never
+    // remove it from everyone else's list, only their own.
+    prisma.packingCheck.findMany({
+      where: { userId, destinationId: destination.id, itemKey: { startsWith: "booking" } },
+      select: { itemKey: true },
     }),
   ]);
+
+  const handledPoiIds = bookingChecks.map((c) => c.itemKey.replace(/^booking(-dismissed)?:/, ""));
+  const bookablePois = await prisma.pointOfInterest.findMany({
+    where: {
+      wantsBooking: true,
+      category: { area: { destinationId: destination.id } },
+      ...(handledPoiIds.length > 0 ? { id: { notIn: handledPoiIds } } : {}),
+    },
+    select: { id: true, name: true },
+    take: 5,
+  });
 
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
