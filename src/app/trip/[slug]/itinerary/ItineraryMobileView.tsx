@@ -45,6 +45,12 @@ export function ItineraryMobileView({
 }) {
   const router = useRouter();
   const [focusedDayIndex, setFocusedDayIndex] = useState(dayListDays[0]?.dayIndex ?? 1);
+  // Independent of focusedDayIndex (which the drawer's list keeps using for
+  // its own single-day view) — lets the map show every day's route at once,
+  // matching the "כל הימים" pill desktop's DayRouteMap already has built in
+  // but this mobile layout hides (showDaySwitcher={false}) in favor of its
+  // own drawer-driven day nav.
+  const [mapAllDays, setMapAllDays] = useState(false);
   const [drawerState, setDrawerState] = useState<"open" | "peek">("open");
   const [dragOffset, setDragOffset] = useState(0);
   const dragging = useRef(false);
@@ -104,7 +110,7 @@ export function ItineraryMobileView({
         days={mapDays}
         mobileFullScreen
         showDaySwitcher={false}
-        activeDayIndex={focusedDayIndex}
+        activeDayIndex={mapAllDays ? null : focusedDayIndex}
         onActiveDayIndexChange={(d) => d != null && setFocusedDayIndex(d)}
         onMoveToDay={handleMoveToDay}
       />
@@ -138,28 +144,46 @@ export function ItineraryMobileView({
         </div>
 
         {dayListDays.length > 1 && drawerState === "open" && (
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b px-4 pb-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 pb-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
             <button
               onClick={() => {
                 const idx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
-                if (idx > 0) setFocusedDayIndex(dayListDays[idx - 1].dayIndex);
+                if (idx > 0) {
+                  setFocusedDayIndex(dayListDays[idx - 1].dayIndex);
+                  setMapAllDays(false);
+                }
               }}
               disabled={dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex) === 0}
-              className="flex h-8 w-8 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}
             >
               ‹
             </button>
-            <p className="text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
+            <p className="min-w-0 truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
               יום {focusedDayIndex}
             </p>
             <button
+              onClick={() => setMapAllDays((v) => !v)}
+              className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold"
+              style={{
+                borderColor: "var(--primary)",
+                background: mapAllDays ? "var(--primary)" : "transparent",
+                color: mapAllDays ? "white" : "var(--text)",
+              }}
+              title="הצגת כל הימים על גבי המפה"
+            >
+              🗺️ כל הימים
+            </button>
+            <button
               onClick={() => {
                 const idx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
-                if (idx < dayListDays.length - 1) setFocusedDayIndex(dayListDays[idx + 1].dayIndex);
+                if (idx < dayListDays.length - 1) {
+                  setFocusedDayIndex(dayListDays[idx + 1].dayIndex);
+                  setMapAllDays(false);
+                }
               }}
               disabled={dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex) === dayListDays.length - 1}
-              className="flex h-8 w-8 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}
             >
               ›

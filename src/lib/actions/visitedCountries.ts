@@ -48,6 +48,22 @@ export async function getCountryPhotos(userId: string): Promise<Record<string, C
   return result;
 }
 
+// A transient Supabase pooler drop (P1001/P1017/connection-pool timeout) has
+// been the recurring cause of otherwise-inexplicable one-off failures on
+// Prisma writes throughout this app's build — retry the DB write itself
+// before giving up, same as the admin content scripts do for exactly this.
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === attempts) throw err;
+      await new Promise((r) => setTimeout(r, 500 * i));
+    }
+  }
+  throw new Error("unreachable");
+}
+
 /** Open to every logged-in user for any country in the world — not gated by
  * having a paid subscription to a matching destination, since this is just
  * a personal travel scrapbook, not destination content. Uploading photos
@@ -75,18 +91,21 @@ export async function uploadCountryPhoto(
     );
     if (urls.length === 0) return { error: "העלאת התמונות נכשלה — נסו שוב" };
 
-    await Promise.all([
-      prisma.countryPhoto.createMany({ data: urls.map((url) => ({ userId, countryCode, url })) }),
-      prisma.visitedCountry.upsert({
-        where: { userId_countryCode: { userId, countryCode } },
-        update: {},
-        create: { userId, countryCode },
-      }),
-    ]);
+    await withRetry(() =>
+      Promise.all([
+        prisma.countryPhoto.createMany({ data: urls.map((url) => ({ userId, countryCode, url })) }),
+        prisma.visitedCountry.upsert({
+          where: { userId_countryCode: { userId, countryCode } },
+          update: {},
+          create: { userId, countryCode },
+        }),
+      ])
+    );
     if (slug) revalidatePath(`/trip/${slug}/quiz`);
     revalidatePath("/account");
     return {};
-  } catch {
+  } catch (err) {
+    console.error("uploadCountryPhoto failed:", err);
     return { error: "משהו השתבש בהעלאה — נסו שוב" };
   }
 }

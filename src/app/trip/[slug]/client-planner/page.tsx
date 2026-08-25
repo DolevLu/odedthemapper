@@ -63,6 +63,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
         lng: i.poi!.lng,
         description: extractTextDescription(i.poi!.rawDescriptionHtml),
         photoUrl: i.poi!.photos[0]?.url ?? null,
+        timeOfDay: i.timeOfDay,
       })),
   }));
 

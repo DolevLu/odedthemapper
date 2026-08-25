@@ -11,11 +11,27 @@ const LEVEL_TITLES = [
   "אגדת עודד המנקד", // 10+
 ];
 
-/** Points required to REACH a given level — quadratic growth (50 * (level-1)^2)
- * so early levels come quickly (hooks new users) while later levels need
- * sustained, ongoing engagement (keeps people coming back). */
+// Points required to REACH each level (index 0 = level 1's threshold, 0
+// points). Fixed table, not a formula — early levels come quickly (hooks
+// new users), later ones need real sustained engagement. Levels past the
+// table's length (11+) never unlock — level 10 ("אגדת עודד המנקד") is the
+// permanent top tier, matching LEVEL_TITLES' own "10+" framing.
+const LEVEL_THRESHOLDS = [0, 50, 100, 250, 500, 1000, 2000, 5000, 10000, 20000];
+
 function thresholdForLevel(level: number): number {
-  return 50 * (level - 1) ** 2;
+  const idx = level - 1;
+  return idx < LEVEL_THRESHOLDS.length ? LEVEL_THRESHOLDS[idx] : Infinity;
+}
+
+// Fixed subscription-renewal discount per level — recomputed live from
+// whatever level the user is at right now (not an accumulated balance), so
+// it "renews" every month simply by always reflecting the current level.
+// Levels above the table (9+) stay at the top tier's percentage.
+const DISCOUNT_PCT_BY_LEVEL = [1, 3, 5, 8, 13, 20, 27, 33];
+
+export function discountPctForLevel(level: number): number {
+  const idx = Math.min(level, DISCOUNT_PCT_BY_LEVEL.length) - 1;
+  return DISCOUNT_PCT_BY_LEVEL[idx];
 }
 
 export type LevelInfo = {

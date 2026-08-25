@@ -1,17 +1,14 @@
 import type { LevelInfo } from "@/lib/gamification";
-import { formatIls } from "@/lib/plans";
 
 export function LevelCard({
   level,
   totalPoints,
-  creditCents = 0,
-  creditDiscountPct,
+  discountPct,
 }: {
   level: LevelInfo;
   totalPoints: number;
-  creditCents?: number;
-  /** Credit as a % of the active plan's monthly price; null if no active plan. */
-  creditDiscountPct?: number | null;
+  /** Fixed subscription-renewal discount for the current level — see discountPctForLevel. */
+  discountPct: number;
 }) {
   return (
     <div
@@ -51,26 +48,20 @@ export function LevelCard({
         </p>
       </div>
 
-      {creditCents > 0 && (
-        <div
-          className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
-          style={{ background: "color-mix(in srgb, #22C55E 12%, white)" }}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🎟️</span>
-            <div>
-              <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
-                {formatIls(creditCents)} קרדיט לחידוש הבא
-              </p>
-              <p className="text-xs opacity-60">
-                {creditDiscountPct !== null && creditDiscountPct !== undefined
-                  ? `שווה ל-${creditDiscountPct}% הנחה על החיוב החודשי שלכם`
-                  : "נצבר מעליית רמות — מתחדש בכל חודש"}
-              </p>
-            </div>
+      <div
+        className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+        style={{ background: "color-mix(in srgb, #22C55E 12%, white)" }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🎟️</span>
+          <div>
+            <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
+              {discountPct}% הנחה על החיוב החודשי שלכם
+            </p>
+            <p className="text-xs opacity-60">לפי רמה {level.level} — מתעדכן אוטומטית בכל חודש לפי הרמה הנוכחית שלכם</p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

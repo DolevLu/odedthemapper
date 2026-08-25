@@ -55,7 +55,6 @@ export default async function AccountPage() {
     }))
   );
   const level = levelForPoints(stats.totalPoints);
-  const creditDiscountPct = plan ? Math.min(100, Math.round((credits.creditCents / plan.monthlyCents) * 100)) : null;
   const STAT_CARDS = [
     { label: "מדינות", value: stats.countriesVisited, icon: "🌍" },
     { label: "מסמכים שמורים", value: stats.documentsCount, icon: "📄" },
@@ -69,7 +68,7 @@ export default async function AccountPage() {
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
       <h1 className="mb-4 text-2xl font-extrabold">הפרופיל שלי</h1>
 
-      <LevelCard level={level} totalPoints={stats.totalPoints} creditCents={credits.creditCents} creditDiscountPct={creditDiscountPct} />
+      <LevelCard level={level} totalPoints={stats.totalPoints} discountPct={credits.discountPct} />
 
       <NotificationOptIn />
 

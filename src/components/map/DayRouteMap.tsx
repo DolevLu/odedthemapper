@@ -7,8 +7,31 @@ import { DECLUTTERED_MAP_STYLES } from "@/lib/mapStyles";
 
 export type MapDay = {
   dayIndex: number;
-  points: { id: string; name: string; lat: number; lng: number; description?: string | null; photoUrl?: string | null }[];
+  points: {
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    description?: string | null;
+    photoUrl?: string | null;
+    timeOfDay?: string | null;
+  }[];
 };
+
+/** Same "where am I" cue as DayItemsList's timeStatusMap — the last
+ * time-stamped stop at or before right-now, within one day's own points.
+ * Kept in sync with that one deliberately (not imported from it) since it
+ * lives in a route-list component, not a shared lib. */
+function currentPointId(points: MapDay["points"]): string | null {
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  let currentId: string | null = null;
+  for (const p of points) {
+    if (!p.timeOfDay) continue;
+    const [h, m] = p.timeOfDay.split(":").map(Number);
+    if (h * 60 + m <= nowMinutes) currentId = p.id;
+  }
+  return currentId;
+}
 
 const MOVE_BTN_STYLE =
   "cursor:pointer;border:1px solid #7C3AED;border-radius:999px;padding:3px 9px;font-size:11px;background:#fff;color:#7C3AED;font-family:'Rubik',sans-serif;white-space:nowrap";
@@ -166,20 +189,26 @@ export function DayRouteMap({
         overlaysRef.current.push(transportMarker);
       }
 
+      const currentId = currentPointId(day.points);
       day.points.forEach((p, idx) => {
+        const isCurrent = p.id === currentId;
         const marker = new google.maps.Marker({
           position: { lat: p.lat, lng: p.lng },
           map: mapRef.current!,
           label: { text: String(idx + 1), color: "white", fontSize: "11px", fontWeight: "bold" },
-          title: `יום ${day.dayIndex} · ${p.name}`,
+          title: `יום ${day.dayIndex} · ${p.name}${isCurrent ? " (עכשיו)" : ""}`,
+          // Same "where am I" cue as the list view's green highlight — a
+          // slightly bigger circle with a green ring instead of the usual
+          // white one, so the current stop reads at a glance on the map too.
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            scale: 10,
+            scale: isCurrent ? 13 : 10,
             fillColor: color,
             fillOpacity: 1,
-            strokeColor: "#fff",
-            strokeWeight: 2,
+            strokeColor: isCurrent ? "#22C55E" : "#fff",
+            strokeWeight: isCurrent ? 3 : 2,
           },
+          zIndex: isCurrent ? 500 : undefined,
         });
         marker.addListener("click", () => {
           infoWindowRef.current?.setContent(infoWindowHtml(p, day.dayIndex, days.length, Boolean(onMoveToDayRef.current)));

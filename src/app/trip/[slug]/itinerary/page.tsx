@@ -62,6 +62,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
         lng: i.poi!.lng,
         description: extractTextDescription(i.poi!.rawDescriptionHtml),
         photoUrl: i.poi!.photos[0]?.url ?? null,
+        timeOfDay: i.timeOfDay,
       })),
   }));
 

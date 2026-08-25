@@ -51,7 +51,14 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
     userId ? canManageContent(userId) : Promise.resolve(false),
   ]);
 
-  const autoLocate = !nextFlight?.startsAt || nextFlight.startsAt.getTime() <= Date.now();
+  // Only auto-locates once a real flight is logged AND its date has passed —
+  // no flight logged at all must NOT auto-locate (was `!nextFlight?.startsAt
+  // || ...`, which defaulted to true with nothing logged, auto-centering on
+  // the visitor's real GPS position instead of the destination overview for
+  // every destination without trip dates set — the exact opposite of the
+  // intended "destination overview by default, real position only once the
+  // trip has actually started per a logged flight" behavior).
+  const autoLocate = Boolean(nextFlight?.startsAt && nextFlight.startsAt.getTime() <= Date.now());
 
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
