@@ -182,6 +182,10 @@ export default async function AccountPage() {
           </Link>
         </div>
       )}
+
+      <Link href="/delete-account" className="mt-8 block text-center text-xs opacity-40 hover:opacity-70">
+        מחיקת החשבון שלי
+      </Link>
     </div>
   );
 }
