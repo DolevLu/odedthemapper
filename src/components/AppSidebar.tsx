@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Capacitor } from "@capacitor/core";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
 import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
@@ -15,6 +16,30 @@ const TOP_ITEMS = [
   { href: "/", label: "דף הבית", icon: "🏠" },
   { href: "/destinations", label: "יעדים", icon: "🌍" },
 ];
+
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedthemapper.travi";
+
+/** Distinct pill (brand gradient, not the plain nav style) linking to the
+ * Play Store listing — shown only on the web, since a visitor already inside
+ * the native app has no use for a link to install it. */
+function DownloadAppLink({ onClick, compact = false }: { onClick?: () => void; compact?: boolean }) {
+  const [isNativeApp, setIsNativeApp] = useState(true); // default hidden until confirmed web, avoids a flash inside the app
+  useEffect(() => setIsNativeApp(Capacitor.isNativePlatform()), []);
+  if (isNativeApp) return null;
+  return (
+    <a
+      href={PLAY_STORE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 font-bold text-white ${compact ? "py-2 text-sm" : "py-2 text-[15px]"}`}
+      style={{ borderRadius: "999px", background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+    >
+      <span className="icon-pop text-lg">📲</span>
+      <span>הורידו את האפליקציה</span>
+    </a>
+  );
+}
 
 type DestItem = { href: string; label: string; icon: string; tier: Tier };
 
@@ -196,6 +221,7 @@ export function AppSidebar({
               </Link>
             );
           })}
+          <DownloadAppLink />
         </div>
 
         <div className="my-1.5 h-px shrink-0 bg-black/10" />
@@ -351,6 +377,7 @@ export function AppSidebar({
                 </Link>
               );
             })}
+            <DownloadAppLink onClick={() => setDrawerOpen(false)} compact />
 
             <div className="my-1.5 h-px bg-black/10" />
 
