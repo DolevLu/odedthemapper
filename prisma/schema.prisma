@@ -276,6 +276,13 @@ model Subscription {
   currency          String   @default("USD")
   currentPeriodEnd  DateTime
   createdAt         DateTime @default(now())
+  // PayMe's own reference ids + timestamp, filled in once their server-to-server
+  // callback confirms the sale (see /api/payme/callback) — paymentSessionId is
+  // what we send them as transaction_id to correlate the callback back to this
+  // row; these are what WE get back from them, kept for reconciliation/refunds.
+  paymeSaleId        String?
+  paymeTransactionId String?
+  paidAt             DateTime?
 
   user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   destinations SubscriptionDestination[]

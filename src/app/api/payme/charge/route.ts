@@ -71,23 +71,54 @@ export async function POST(request: Request) {
         currency: subscription.currency,
         product_name: planName,
         buyer_key: token,
+        // Correlates PayMe's async server-to-server callback (see
+        // /api/payme/callback) back to this row — that callback, not this
+        // synchronous response, is the authoritative confirmation the sale
+        // actually completed (per PayMe's own docs: generate-sale can return
+        // a sale_url to redirect the buyer to rather than settling inline).
+        transaction_id: subscription.paymentSessionId,
+        sale_callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payme/callback`,
       }),
     });
   } catch {
     return NextResponse.json({ error: "לא הצלחנו להתחבר ל-PayMe" }, { status: 502 });
   }
 
-  // PayMe's error shape (confirmed live): { status_code, status_error_code,
-  // status_error_details, status_additional_info, session }. Success shape
-  // isn't independently confirmed (never reached one — that needs a real
-  // card), so treat any non-2xx or any present status_error_code as failure.
+  // Verified against PayMe's real API docs (docs.payme.io/docs/payments —
+  // "Generate Sale with Token" + "Sale Callbacks"): the response's own
+  // success/failure indicator is `status_code` (0 = success, 1 = error) —
+  // NOT `status_error_code`, which only appears on an error response as the
+  // error's ID, never as a boolean-ish success flag. The earlier version of
+  // this check tested the wrong field entirely, and since a success response
+  // never has status_error_code, that field is always falsy either way — an
+  // actual PayMe-side failure would have been silently treated as success
+  // and activated the subscription anyway.
   const payMeBody = await payMeResponse.json().catch(() => null);
-  if (!payMeResponse.ok || !payMeBody || payMeBody.status_error_code) {
+  if (!payMeResponse.ok || !payMeBody || payMeBody.status_code !== 0) {
     const detail = payMeBody?.status_error_details ?? "";
     return NextResponse.json({ error: `התשלום נכשל ${detail ? `— ${detail}` : ""}`.trim() }, { status: 402 });
   }
 
-  await prisma.subscription.update({ where: { id: subscription.id }, data: { status: "active" } });
+  // Activate immediately for a fast, correct UX in the normal case (this is
+  // a direct token charge, not the redirect/iframe flow — status_code 0
+  // here really does mean the card was charged). The /api/payme/callback
+  // webhook independently does the exact same update from PayMe's own
+  // server-to-server notification, so activation still happens even if this
+  // response never reaches us (browser closed, network dropped, mobile app
+  // backgrounded — all *after* PayMe already charged the card) — that gap,
+  // with zero recovery path, was the original bug this replaced.
+  await prisma.subscription.update({
+    where: { id: subscription.id },
+    data: {
+      status: "active",
+      paidAt: new Date(),
+      // Only payme_sale_id appears on this synchronous response; the
+      // distinct payme_transaction_id only appears on the callback payload
+      // (see /api/payme/callback) — this response's own `transaction_id`
+      // field just echoes back what we sent (our paymentSessionId).
+      ...(payMeBody.payme_sale_id ? { paymeSaleId: String(payMeBody.payme_sale_id) } : {}),
+    },
+  });
   await awardReferralCreditIfEligible(subscription.userId);
   return NextResponse.json({ ok: true });
 }
