@@ -238,7 +238,11 @@ export async function generateDescriptionAndWebsite(
         ],
       },
     ],
-    generationConfig: { maxOutputTokens: 600, temperature: 0.2 },
+    // thinkingConfig disables internal reasoning tokens — without it, the
+    // current default model can silently spend the whole maxOutputTokens
+    // budget on reasoning and return an empty response instead of the
+    // actual description/website (confirmed live against this endpoint).
+    generationConfig: { maxOutputTokens: 600, temperature: 0.2, thinkingConfig: { thinkingBudget: 0 } },
   });
 
   for (let attempt = 0; attempt <= 1; attempt++) {

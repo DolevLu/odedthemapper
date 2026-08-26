@@ -156,7 +156,14 @@ ${suggestionsBlock}
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: [{ role: "user", parts: [{ text: message }] }],
-          generationConfig: { maxOutputTokens: 1024, temperature: 0.6 },
+          // thinkingBudget:0 — confirmed live that without this, the current
+          // default model can burn part or all of maxOutputTokens on internal
+          // reasoning before writing any visible reply text, returning
+          // finishReason "MAX_TOKENS" with an EMPTY response and no error —
+          // likely a real contributor to this exact endpoint's earlier-observed
+          // slowness/timeouts, not just a theoretical risk. Travi's replies are
+          // meant to be fast conversational answers, not deep reasoning.
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
         }),
         // Confirmed live (this exact question, twice in a row) that the
         // flash model can take longer than 15s to respond — 25s gives real

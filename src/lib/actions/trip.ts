@@ -556,7 +556,14 @@ export async function fetchAiSuggestedPois(
             ],
           },
           contents: [{ role: "user", parts: [{ text: `הצעות נוספות ל${destinationName}` }] }],
-          generationConfig: { maxOutputTokens: 800, temperature: 0.4 },
+          // thinkingBudget:0 — without it, this model version can silently
+          // spend the whole token budget on internal reasoning and return
+          // empty text (finishReason "MAX_TOKENS", no visible output, no
+          // error) instead of the actual reply. Confirmed live against this
+          // exact endpoint/model. This call just needs a fast structured
+          // answer, not deep reasoning, so disabling it is strictly better
+          // here, not a tradeoff.
+          generationConfig: { maxOutputTokens: 800, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } },
         }),
         signal: AbortSignal.timeout(15000),
       }
@@ -919,7 +926,10 @@ async function resolveFreeTextIntent(
               ],
             },
             contents: [{ role: "user", parts: [{ text: freeText }] }],
-            generationConfig: { maxOutputTokens: 256, temperature: 0.2 },
+            // See the sibling call above in this file for why thinkingBudget:0
+            // matters — this one's budget (256) is small enough that even a
+            // little internal reasoning would reliably eat the whole thing.
+            generationConfig: { maxOutputTokens: 256, temperature: 0.2, thinkingConfig: { thinkingBudget: 0 } },
           }),
           signal: AbortSignal.timeout(12000),
         }
