@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel, getActiveSubscriptionSummary } from "@/lib/access";
@@ -31,9 +32,15 @@ export default async function TripLayout({
   // fallback ((shell)/layout.tsx) — this layout only re-runs when the slug
   // itself changes (not on every screen switch within the same
   // destination), so this naturally fires once per real destination switch
-  // rather than on every navigation.
+  // rather than on every navigation. Deferred via after() rather than
+  // awaited — it's pure bookkeeping for a future page load, not something
+  // this render depends on, so it shouldn't hold up first paint. after()
+  // (not a bare un-awaited promise) so the write reliably completes even
+  // after the response is sent, instead of risking cancellation when the
+  // serverless function's execution context ends.
   if (session?.user?.id) {
-    await prisma.user.update({ where: { id: session.user.id }, data: { defaultDestinationSlug: slug } }).catch(() => {});
+    const userId = session.user.id;
+    after(() => prisma.user.update({ where: { id: userId }, data: { defaultDestinationSlug: slug } }).catch(() => {}));
   }
 
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;

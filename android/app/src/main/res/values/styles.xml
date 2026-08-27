@@ -15,8 +15,16 @@
         <item name="android:background">@null</item>
     </style>
 
-
+    <!-- Edge-to-edge: transparent system bars so the WebView's own page
+         background shows all the way to the physical screen edges instead of
+         a visibly different-colored status/nav bar strip sitting on top of
+         it. Paired with WindowCompat.setDecorFitsSystemWindows(false) in
+         MainActivity — the theme alone only makes the bars transparent, that
+         call is what actually lets content draw underneath them. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 </resources>

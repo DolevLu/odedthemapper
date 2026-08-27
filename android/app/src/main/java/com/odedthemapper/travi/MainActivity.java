@@ -18,6 +18,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.WindowCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.BridgeWebViewClient;
@@ -32,6 +33,12 @@ public class MainActivity extends BridgeActivity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    // Edge-to-edge: lets the WebView draw underneath the (now transparent —
+    // see styles.xml) status/nav bars instead of the OS reserving opaque
+    // space for them, so there's no visible bar strip in a different color
+    // than the app's own page background. Must be called before super's
+    // onCreate() sets up the bridge's content view/WebView.
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     super.onCreate(savedInstanceState);
 
     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)

@@ -68,6 +68,61 @@ export async function getFlatPoisForDestination(destinationId: string): Promise<
   })();
 }
 
+export type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
+
+/** Slim projection of the same data as getFlatPoisForDestination — just
+ * enough for a "pick a POI" dropdown (Itinerary's AddClientItem, Client-
+ * planner). Those screens never needed the photo/description/tags/booking
+ * fields the full flat POI carries, so they were paying to have thousands of
+ * those shipped over the wire on every navigation for nothing. Separately
+ * cached (own unstable_cache key, same invalidation tag) rather than
+ * deriving from getFlatPoisForDestination's result, so a screen that only
+ * needs this slice never even materializes the heavier one server-side. */
+export async function getPoiOptionsForDestination(destinationId: string): Promise<PoiOption[]> {
+  return unstable_cache(() => fetchPoiOptionsForDestination(destinationId), [`poi-options-${destinationId}`], {
+    tags: [`pois-${destinationId}`],
+    revalidate: 3600,
+  })();
+}
+
+async function fetchPoiOptionsForDestination(destinationId: string): Promise<PoiOption[]> {
+  const areas = await prisma.area.findMany({
+    where: { destinationId },
+    select: {
+      name: true,
+      categories: { select: { name: true, pois: { select: { id: true, name: true } } } },
+    },
+  });
+  const flat: PoiOption[] = [];
+  for (const area of areas) {
+    for (const category of area.categories) {
+      for (const poi of category.pois) {
+        flat.push({ id: poi.id, name: poi.name, areaName: area.name, categoryName: category.name });
+      }
+    }
+  }
+  return flat;
+}
+
+/** Slim [lat, lng] pairs for every POI in a destination — all a "where
+ * should I stay" density heatmap (Logistics) needs. Matches
+ * getFlatPoisForDestination's own behavior of including every geometry type
+ * (not just points) unfiltered, so the heatmap's shape doesn't change. */
+export async function getPoiLocationsForDestination(destinationId: string): Promise<[number, number][]> {
+  return unstable_cache(() => fetchPoiLocationsForDestination(destinationId), [`poi-locations-${destinationId}`], {
+    tags: [`pois-${destinationId}`],
+    revalidate: 3600,
+  })();
+}
+
+async function fetchPoiLocationsForDestination(destinationId: string): Promise<[number, number][]> {
+  const pois = await prisma.pointOfInterest.findMany({
+    where: { category: { area: { destinationId } } },
+    select: { lat: true, lng: true },
+  });
+  return pois.map((p) => [p.lat, p.lng]);
+}
+
 async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatPoi[]> {
   const areas = await prisma.area.findMany({
     where: { destinationId },

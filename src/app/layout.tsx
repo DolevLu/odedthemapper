@@ -15,7 +15,14 @@ export const metadata: Metadata = {
 };
 
 export function generateViewport() {
-  return { themeColor: "#B5502A" };
+  // viewportFit: "cover" — lets the page draw into the display cutout/status
+  // bar area instead of the browser/WebView reserving a plain strip for it.
+  // Paired with the native Android edge-to-edge change (MainActivity.java +
+  // styles.xml) so the app's own background actually reaches the physical
+  // top of the screen instead of a visible OS-colored bar sitting above it;
+  // content that shouldn't sit under the notch/status bar uses
+  // env(safe-area-inset-top) padding (see AppSidebar's mobile header).
+  return { themeColor: "#B5502A", viewportFit: "cover" };
 }
 
 export default function RootLayout({

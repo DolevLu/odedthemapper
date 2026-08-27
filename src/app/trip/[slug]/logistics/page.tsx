@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
-import { getFlatPoisForDestination } from "@/lib/data/pois";
+import { getPoiLocationsForDestination } from "@/lib/data/pois";
 import { prisma } from "@/lib/prisma";
 import { addLogistic } from "@/lib/actions/trip";
 import { LoginPromptBanner } from "@/components/LoginPromptBanner";
@@ -16,15 +16,14 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
 
   const session = await auth();
   const userId = session?.user?.id;
-  const [items, pois] = await Promise.all([
+  const [items, heatmapPoints] = await Promise.all([
     userId
       ? prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id }, orderBy: { startsAt: "asc" } })
       : Promise.resolve([]),
-    getFlatPoisForDestination(destination.id),
+    getPoiLocationsForDestination(destination.id),
   ]);
 
   const addAction = addLogistic.bind(null, destination.id, slug);
-  const heatmapPoints: [number, number][] = pois.map((p) => [p.lat, p.lng]);
 
   const logisticItems: LogisticItem[] = items.map((item) => {
     const details = JSON.parse(item.detailsJson) as { title: string; notes: string };

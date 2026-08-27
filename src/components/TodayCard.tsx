@@ -142,14 +142,14 @@ export function TodayCard({
          * instead of going through /destinations. Only shows up when there's
          * actually more than one, i.e. never for solo-plan users. */}
         {myDestinations.length > 0 && (
-          <div className="absolute start-3 top-3 z-20 flex items-center gap-1.5">
+          <div className="absolute start-3 top-3 z-20 flex items-center gap-1">
             {myDestinations.map((d) => (
               <Link
                 key={d.slug}
                 href={`/trip/${d.slug}/now`}
                 title={d.name}
                 aria-label={d.name}
-                className="flex h-8 w-8 items-center justify-center rounded-full border bg-white text-base shadow-sm transition-transform hover:scale-110"
+                className="flex h-6 w-6 items-center justify-center rounded-full border bg-white text-xs shadow-sm transition-transform hover:scale-110 sm:h-8 sm:w-8 sm:text-base"
                 style={{ borderColor: "var(--primary)" }}
               >
                 {flagForSlug(d.slug)}
@@ -158,7 +158,7 @@ export function TodayCard({
           </div>
         )}
 
-        <div className={`relative z-10 flex w-full flex-col items-center gap-3 ${myDestinations.length > 0 ? "pt-8" : ""}`}>
+        <div className={`relative z-10 flex w-full flex-col items-center gap-3 ${myDestinations.length > 0 ? "pt-7 sm:pt-8" : ""}`}>
           <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
             {destinationName} מחכה לנו
           </h1>
@@ -265,7 +265,7 @@ export function TodayCard({
               .map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between gap-2 border p-3 text-sm"
+                  className="flex items-center justify-between gap-2 border p-2 text-xs sm:p-3 sm:text-sm"
                   style={{ borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
                 >
                   <span>{item.name}</span>
@@ -274,7 +274,7 @@ export function TodayCard({
                       onClick={() => markHandled(item.id, "booked")}
                       aria-label="הוזמן"
                       title="הוזמן"
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white"
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white sm:h-7 sm:w-7 sm:text-sm"
                       style={{ background: "#22C55E" }}
                     >
                       ✓
@@ -283,7 +283,7 @@ export function TodayCard({
                       onClick={() => markHandled(item.id, "dismissed")}
                       aria-label="לא מעוניין/ת"
                       title="לא מעוניין/ת"
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white"
+                      className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white sm:h-7 sm:w-7 sm:text-sm"
                       style={{ background: "#DC2626" }}
                     >
                       ✗

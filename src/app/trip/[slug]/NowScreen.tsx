@@ -266,7 +266,7 @@ export function NowScreen({
             {activeCategory}
           </h2>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6">
             {listForCategory.map((poi) => (
               <PoiCard
                 key={poi.id}

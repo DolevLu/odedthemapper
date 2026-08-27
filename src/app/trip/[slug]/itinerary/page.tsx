@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
-import { getFlatPoisForDestination, extractTextDescription } from "@/lib/data/pois";
+import { getPoiOptionsForDestination, extractTextDescription } from "@/lib/data/pois";
 import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { listItineraryTemplates } from "@/lib/actions/trip";
@@ -27,7 +27,7 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
   const userId = session!.user!.id;
   const ownerId = await resolveItineraryOwnerId(userId);
 
-  const [itinerary, pois, areas, templates] = await Promise.all([
+  const [itinerary, poiOptions, areas, templates] = await Promise.all([
     prisma.itinerary.findUnique({
       where: { userId_destinationId_kind: { userId: ownerId, destinationId: destination.id, kind: "personal" } },
       include: {
@@ -45,13 +45,12 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
         },
       },
     }),
-    getFlatPoisForDestination(destination.id),
+    getPoiOptionsForDestination(destination.id),
     prisma.area.findMany({ where: { destinationId: destination.id }, select: { id: true, name: true } }),
     listItineraryTemplates(destination.id, "personal"),
   ]);
 
-  const poiOptions = pois.map((p) => ({ id: p.id, name: p.name, areaName: p.areaName, categoryName: p.categoryName }));
-  const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
+  const categoryNames = Array.from(new Set(poiOptions.map((p) => p.categoryName))).sort();
   const hasExistingDays = Boolean(itinerary && itinerary.days.length > 0);
 
   const mapDays: MapDay[] = (itinerary?.days ?? []).map((day) => ({

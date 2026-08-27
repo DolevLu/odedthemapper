@@ -321,7 +321,7 @@ export function AppSidebar({
           in the same spot the header used to place it, with no bar behind
           it, so it doesn't cost any page height. Logo/name move into the
           drawer below instead of sitting in a persistent top strip. */}
-      <div className="fixed top-3 right-3 z-40 sm:hidden">
+      <div className="fixed inset-x-0 top-0 z-40 flex justify-end pe-3 sm:hidden" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
         <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
       </div>
 
@@ -392,7 +392,7 @@ export function AppSidebar({
            * header and the bottom action buttons, which stay fixed in place
            * (matching the desktop sidebar's own layout: only the nav list
            * scrolls, the upgrade/download/admin buttons never move). */}
-          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <GuideInfoButton onClick={() => setDrawerOpen(false)} />
