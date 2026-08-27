@@ -52,7 +52,7 @@ export default async function Home() {
             <span className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-semibold shadow-sm">
               🧭 {stats[0].value} יעדים · {stats[1].value} נקודות עניין
             </span>
-            <h1 className="text-4xl font-extrabold leading-tight sm:text-6xl">
+            <h1 className="text-3xl font-extrabold leading-tight sm:text-5xl">
               טראבי - פלטפורמת הטיולים
               <br />
               שהופכת כל טיסה להרפתקה
