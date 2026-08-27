@@ -60,7 +60,7 @@ const MAIN_STREET_PATTERN = /רחוב.*ראשי|ראשי.*רחוב|main street|m
 const INFO_ACTION_BTN_STYLE =
   "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
 
-function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, preview: boolean, isAdmin: boolean): string {
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, isAdmin: boolean): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
@@ -69,11 +69,12 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
     : "";
   // Plain data-attributed buttons, not React — Google's InfoWindow content is
   // an HTML string, so clicks are wired up separately via the "domready"
-  // event (see the infoWindow "domready" listener below). In preview mode
-  // the popup is informational only — no personal-data actions to gate.
-  const actions = preview
-    ? ""
-    : `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+  // event (see the infoWindow "domready" listener below). Only ever built
+  // for paying users now — preview/anonymous visitors are routed to
+  // /pricing straight from the marker's click listener (see openPoi) before
+  // this is ever called, so there's no "informational-only" reduced variant
+  // to build here anymore.
+  const actions = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
     <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
     <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ להזמנה"}</button>
     ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">🎨 עריכת צבע/אייקון</button>` : ""}
@@ -881,10 +882,20 @@ export function MapScreen({
   // Clicking a point only opens its info popup by default — a route is only
   // drawn when route mode is explicitly on (floating button), so an ordinary
   // click never surprises you with a walking route you didn't ask for.
+  // Preview (anonymous/free) visitors can pan and zoom the map, but per-point
+  // details are a paying feature — same previewGate treatment as every other
+  // gated control, just triggered from the marker's own click listener
+  // instead of a button's onClick (previewRef, not the preview prop directly,
+  // since this closure is captured once when markers are (re)built, not on
+  // every render).
   function openPoi(poi: FlatPoi, marker: google.maps.Marker) {
+    if (previewRef.current) {
+      router.push("/pricing");
+      return;
+    }
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(
-      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), preview, isAdmin)
+      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), isAdmin)
     );
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
