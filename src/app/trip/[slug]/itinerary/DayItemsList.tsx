@@ -323,47 +323,47 @@ function ItemDetailSheet({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white sm:rounded-3xl"
+        className="flex max-h-[75vh] w-full max-w-xs flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
         {item.poi?.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.poi.photoUrl} alt="" className="h-44 w-full object-cover" />
+          <img src={item.poi.photoUrl} alt="" className="h-28 w-full object-cover" />
         ) : (
-          <div className="flex h-20 w-full items-center justify-center text-3xl" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
+          <div className="flex h-14 w-full items-center justify-center text-2xl" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
             📍
           </div>
         )}
-        <div className="flex flex-col gap-3 overflow-y-auto p-5">
+        <div className="flex flex-col gap-2.5 overflow-y-auto p-3.5">
           <div className="flex items-start justify-between gap-2">
-            <div>
-              {item.poi?.categoryName && <p className="text-xs font-semibold opacity-60">{shortCategoryLabel(item.poi.categoryName)}</p>}
-              <h2 className="text-lg font-bold">{item.poi ? item.poi.name : item.customLabel}</h2>
-              {item.timeOfDay && <p className="mt-0.5 text-sm font-bold" style={{ color: "var(--primary)" }}>{item.timeOfDay}</p>}
+            <div className="min-w-0">
+              {item.poi?.categoryName && <p className="text-[11px] font-semibold opacity-60">{shortCategoryLabel(item.poi.categoryName)}</p>}
+              <h2 className="truncate text-sm font-bold">{item.poi ? item.poi.name : item.customLabel}</h2>
+              {item.timeOfDay && <p className="mt-0.5 text-xs font-bold" style={{ color: "var(--primary)" }}>{item.timeOfDay}</p>}
             </div>
-            <button onClick={onClose} className="shrink-0 rounded-full px-2 py-1 text-lg opacity-50 hover:opacity-100" aria-label="סגירה">
+            <button onClick={onClose} className="shrink-0 rounded-full px-1.5 py-0.5 text-base opacity-50 hover:opacity-100" aria-label="סגירה">
               ✕
             </button>
           </div>
 
-          {item.poi?.description && <p className="text-sm opacity-80">{item.poi.description}</p>}
+          {item.poi?.description && <p className="text-xs opacity-80">{item.poi.description}</p>}
 
           <textarea
             value={note}
             onChange={(e) => onNoteChange(e.target.value)}
             placeholder="✎ הוספת הערה אישית..."
             rows={2}
-            className="w-full resize-none rounded-lg border p-2 text-sm outline-none"
+            className="w-full resize-none rounded-lg border p-1.5 text-xs outline-none"
             style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
           />
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onVote(1)}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold"
+                className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold"
                 style={{
                   background: item.myVote === 1 ? "color-mix(in srgb, #16A34A 20%, transparent)" : "color-mix(in srgb, var(--primary) 8%, transparent)",
                   color: item.myVote === 1 ? "#16A34A" : "var(--text)",
@@ -373,7 +373,7 @@ function ItemDetailSheet({
               </button>
               <button
                 onClick={() => onVote(-1)}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold"
+                className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold"
                 style={{
                   background: item.myVote === -1 ? "color-mix(in srgb, #DC2626 20%, transparent)" : "color-mix(in srgb, var(--primary) 8%, transparent)",
                   color: item.myVote === -1 ? "#DC2626" : "var(--text)",
@@ -382,8 +382,8 @@ function ItemDetailSheet({
                 👎 {item.dislikeCount > 0 && item.dislikeCount}
               </button>
             </div>
-            <button onClick={onRemove} className="rounded-full px-3 py-1.5 text-sm font-semibold text-white" style={{ background: "#DC2626" }}>
-              🗑️ הסרה מהמסלול
+            <button onClick={onRemove} className="rounded-full px-2.5 py-1 text-xs font-semibold text-white" style={{ background: "#DC2626" }}>
+              🗑️ הסרה
             </button>
           </div>
         </div>

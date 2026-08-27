@@ -158,7 +158,7 @@ export function TodayCard({
           </div>
         )}
 
-        <div className="relative z-10 flex w-full flex-col items-center gap-3">
+        <div className={`relative z-10 flex w-full flex-col items-center gap-3 ${myDestinations.length > 0 ? "pt-8" : ""}`}>
           <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
             {destinationName} מחכה לנו
           </h1>
