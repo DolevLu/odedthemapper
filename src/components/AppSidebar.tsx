@@ -385,9 +385,14 @@ export function AppSidebar({
           <div className="flex-1 bg-black/40" />
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex w-[80%] max-w-xs flex-col gap-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
+            className="flex w-[80%] max-w-xs flex-col shadow-2xl"
             style={{ background: "var(--background, #FBF6EE)" }}
           >
+          {/* Scrollable middle section — everything except the logo/close
+           * header and the bottom action buttons, which stay fixed in place
+           * (matching the desktop sidebar's own layout: only the nav list
+           * scrolls, the upgrade/download/admin buttons never move). */}
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <GuideInfoButton onClick={() => setDrawerOpen(false)} />
@@ -460,17 +465,20 @@ export function AppSidebar({
             <Link href="/privacy" onClick={() => setDrawerOpen(false)} className="mt-2 block px-4 py-1 text-xs opacity-40">
               מדיניות פרטיות
             </Link>
+          </div>
 
+          <div className="flex shrink-0 flex-col gap-1 p-4 pt-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <Link
               href="/pricing"
               onClick={() => setDrawerOpen(false)}
-              className="mt-3 flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+              className="flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
               style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
             >
               ✨ שדרג עכשיו
             </Link>
             <DownloadAppLink onClick={() => setDrawerOpen(false)} />
             {isAdmin && <AdminPanelLink onClick={() => setDrawerOpen(false)} />}
+          </div>
           </div>
         </div>
       )}
