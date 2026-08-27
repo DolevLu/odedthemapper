@@ -1,7 +1,22 @@
+import Image from "next/image";
+
+// A real drone photo of Prague (Charles Bridge + castle skyline) stands in
+// for whichever destination's actual map the viewer will see — reads
+// unmistakably as "a real city" at a glance, unlike an abstract map
+// illustration. Self-hosted (public/hero-prague.jpg, resized/compressed from
+// the Wikimedia Commons original) rather than hotlinked — Wikimedia's upload
+// servers reject Next.js's own image-optimizer requests with a 400 (their
+// upload host is picky about the request's User-Agent, which the optimizer
+// doesn't let you customize per-image). CC BY 4.0, European Commission
+// Audiovisual Service — see the attribution line on the card, required by
+// the license.
+const HERO_PHOTO_URL = "/hero-prague.jpg";
+const HERO_PHOTO_SOURCE_URL = "https://commons.wikimedia.org/wiki/File:Ponte_Carlo,_Praga_(9).jpg";
+
 // A static, illustrative preview of the actual product — real brand colors
-// and category palette (see lib/mapStyles.ts), not a screenshot — sitting
-// beside the homepage hero copy so "what this actually does" reads at a
-// glance instead of needing the paragraph above it.
+// and category palette (see lib/mapStyles.ts) over a real city photo —
+// sitting beside the homepage hero copy so "what this actually does" reads
+// at a glance instead of needing the paragraph above it.
 export function HeroAppPreview() {
   return (
     <div className="relative mx-auto w-full max-w-sm lg:mx-0" aria-hidden="true">
@@ -9,53 +24,22 @@ export function HeroAppPreview() {
         className="relative overflow-hidden rounded-[28px] border shadow-xl"
         style={{ borderColor: "rgba(124,58,237,0.15)", background: "#eef2ed" }}
       >
-        {/* mini map — a top-down cityscape (street grid + building
-         * footprints + a river/bridge), so it unmistakably reads as "a city
-         * on a map" at a glance rather than an abstract planning canvas. */}
+        {/* mini map — a real aerial photo of a city (Prague), so it
+         * unmistakably reads as "a real place" at a glance rather than an
+         * abstract map illustration or planning canvas. */}
         <div className="relative h-56 w-full overflow-hidden">
-          <svg viewBox="0 0 400 224" className="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-hidden="true">
-            <rect x="0" y="0" width="400" height="224" fill="#eef1ea" />
-
-            {/* park */}
-            <rect x="18" y="16" width="82" height="58" rx="10" fill="#d3e6cf" />
-
-            {/* river + bridge, a nod to the actual itinerary strip below */}
-            <path d="M -20 210 Q 140 150 220 190 T 420 130" stroke="#c3d8e6" strokeWidth="26" fill="none" />
-            <line x1="255" y1="150" x2="285" y2="205" stroke="#eef1ea" strokeWidth="8" />
-
-            {/* street grid */}
-            <g stroke="#d7d3c6" strokeWidth="7">
-              <line x1="0" y1="86" x2="400" y2="86" />
-              <line x1="0" y1="150" x2="400" y2="150" />
-              <line x1="118" y1="0" x2="118" y2="224" />
-              <line x1="232" y1="0" x2="232" y2="224" />
-              <line x1="330" y1="0" x2="330" y2="224" />
-            </g>
-
-            {/* building footprints — varied sizes/shades per city block so it
-             * reads as real structures, not a texture */}
-            <g>
-              <rect x="130" y="10" width="42" height="30" rx="2" fill="#d9d4c8" />
-              <rect x="180" y="14" width="34" height="24" rx="2" fill="#cfc9bb" />
-              <rect x="244" y="8" width="50" height="34" rx="2" fill="#e0dbcf" />
-              <rect x="304" y="14" width="20" height="26" rx="2" fill="#d2ccbe" />
-              <rect x="340" y="10" width="46" height="32" rx="2" fill="#d9d4c8" />
-
-              <rect x="10" y="96" width="36" height="42" rx="2" fill="#dcd7cb" />
-              <rect x="54" y="100" width="30" height="30" rx="2" fill="#cfc9bb" />
-              <rect x="130" y="94" width="44" height="46" rx="2" fill="#e0dbcf" />
-              <rect x="184" y="100" width="26" height="34" rx="2" fill="#d2ccbe" />
-              <rect x="240" y="96" width="38" height="44" rx="2" fill="#d9d4c8" />
-              <rect x="340" y="98" width="48" height="40" rx="2" fill="#dcd7cb" />
-
-              <rect x="8" y="162" width="40" height="30" rx="2" fill="#d2ccbe" />
-              <rect x="56" y="158" width="50" height="36" rx="2" fill="#e0dbcf" />
-              <rect x="130" y="164" width="30" height="28" rx="2" fill="#cfc9bb" />
-              <rect x="244" y="160" width="36" height="34" rx="2" fill="#dcd7cb" />
-              <rect x="290" y="166" width="28" height="26" rx="2" fill="#d9d4c8" />
-              <rect x="336" y="160" width="44" height="34" rx="2" fill="#d2ccbe" />
-            </g>
-          </svg>
+          <Image
+            src={HERO_PHOTO_URL}
+            alt=""
+            fill
+            sizes="384px"
+            className="object-cover"
+            style={{ objectPosition: "center 35%" }}
+            priority
+          />
+          {/* Gentle bottom-up darkening so the pins/popup/chat bubble stay
+           * legible over the photo regardless of what's directly behind them. */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 30%, transparent 65%, rgba(0,0,0,0.25) 100%)" }} />
 
           {[
             { top: "24%", right: "62%", color: "#7C3AED" },
@@ -92,6 +76,19 @@ export function HeroAppPreview() {
           >
             💬
           </span>
+
+          {/* Required CC BY 4.0 attribution for the photo above — small and
+           * unobtrusive (matches how map basemap credits are usually shown)
+           * but genuinely visible, not hidden. */}
+          <a
+            href={HERO_PHOTO_SOURCE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute bottom-1 end-1.5 text-[8px] text-white/70 hover:text-white/90"
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}
+          >
+            📷 European Commission · CC BY 4.0
+          </a>
         </div>
 
         {/* mini itinerary strip */}
