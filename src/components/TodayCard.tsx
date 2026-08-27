@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setTripStartDateTime, togglePackingCheck } from "@/lib/actions/trip";
+import { flagForSlug } from "@/lib/countryFlags";
 
 /** Formats a Date as the value a <input type="datetime-local"> expects
  * ("YYYY-MM-DDTHH:mm"), using the browser's local time components — NOT
@@ -148,10 +149,10 @@ export function TodayCard({
                 href={`/trip/${d.slug}/now`}
                 title={d.name}
                 aria-label={d.name}
-                className="flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold shadow-sm transition-transform hover:scale-110"
-                style={{ borderColor: "var(--primary)", background: "var(--surface)", color: "var(--primary)" }}
+                className="flex h-8 w-8 items-center justify-center rounded-full border bg-white text-base shadow-sm transition-transform hover:scale-110"
+                style={{ borderColor: "var(--primary)" }}
               >
-                {d.name.trim().charAt(0)}
+                {flagForSlug(d.slug)}
               </Link>
             ))}
           </div>
@@ -192,7 +193,7 @@ export function TodayCard({
           ) : !editing && tripAlreadyHere ? (
             <>
               <p className="text-lg font-bold" style={{ color: "var(--primary)" }}>
-                ✈️ הטיול כבר כאן — תיהנו!
+                ✈️ הטיול כבר כאן - תיהנו!
               </p>
               <button onClick={openEdit} className="text-xs underline opacity-60 hover:opacity-100">
                 ✏️ עריכת מועד הטיסה
@@ -201,7 +202,7 @@ export function TodayCard({
           ) : (
             <div className="flex flex-col items-center gap-2">
               <p className="text-sm opacity-70">
-                {targetDateTimeIso ? "עדכנו את מועד הטיסה:" : "עדיין לא הוגדר מועד טיסה — הוסיפו טיסה בלוגיסטיקה, או קבעו כאן מועד יעד:"}
+                {targetDateTimeIso ? "עדכנו את מועד הטיסה:" : "עדיין לא הוגדר מועד טיסה - הוסיפו טיסה בלוגיסטיקה, או קבעו כאן מועד יעד:"}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <input
