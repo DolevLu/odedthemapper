@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
-import { getAccessLevel } from "@/lib/access";
+import { getAccessLevel, getUserPurchasedSlugs } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NowScreen } from "../NowScreen";
@@ -63,6 +63,22 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
     take: 5,
   });
 
+  // Every destination this user's subscription currently covers (1 for solo,
+  // up to 5 for family, all of them for org) — always read live from the
+  // subscription's own destination rows, so a swap (see SwapDestinationButton,
+  // capped at once every 14 days) shows up here on the very next load with
+  // no separate cache to invalidate. Capped at 8 for display even on org
+  // tier, where "every destination" would otherwise flood a switcher row
+  // meant for quick access, not a full directory (that's what /destinations
+  // is for).
+  // accessLevel is already guaranteed not "none" here (redirected/blocked above).
+  const purchasedSlugs = await getUserPurchasedSlugs(userId);
+  const myDestinations = await prisma.destination.findMany({
+    where: { slug: { in: purchasedSlugs, not: slug } },
+    select: { slug: true, name: true },
+    take: 8,
+  });
+
   const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
   const scheduledPoiIds = new Set(
@@ -104,6 +120,12 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
         targetDateTimeIso: tripStartExact ? tripStartExact.toISOString() : null,
         todayDayItems,
         bookableItems: bookablePois,
+        myDestinations,
+        // Once they've started on either the flight or the itinerary, they've
+        // found their way around — no need to keep nudging (the component
+        // itself also respects an explicit dismiss, but this alone already
+        // makes it disappear naturally for any user with real activity).
+        showOnboarding: logistics.length === 0 && (itinerary?.days.length ?? 0) === 0,
       }}
     />
   );

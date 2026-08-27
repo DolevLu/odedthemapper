@@ -34,6 +34,7 @@ export function TodayCard({
   targetDateTimeIso,
   todayDayItems,
   bookableItems,
+  myDestinations,
 }: {
   destinationId: string;
   destinationName: string;
@@ -43,6 +44,11 @@ export function TodayCard({
   targetDateTimeIso: string | null;
   todayDayItems: { time: string | null; label: string }[] | null;
   bookableItems: { id: string; name: string }[];
+  /** Every other destination this user's subscription currently covers —
+   * lets a paying customer with more than one active destination (family/org
+   * plans) jump straight between them instead of going through /destinations
+   * every time. Empty for solo-plan users with only this one destination. */
+  myDestinations: { slug: string; name: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -127,6 +133,28 @@ export function TodayCard({
               style={{ background: "linear-gradient(180deg, transparent 0%, transparent 30%, var(--surface) 75%)" }}
             />
           </>
+        )}
+
+        {/* Quick-switch between every destination this subscription covers
+         * (1 for solo, up to 5 for family, chosen by the user and swappable
+         * every 14 days — see SwapDestinationButton) — jumps straight there
+         * instead of going through /destinations. Only shows up when there's
+         * actually more than one, i.e. never for solo-plan users. */}
+        {myDestinations.length > 0 && (
+          <div className="absolute start-3 top-3 z-20 flex items-center gap-1.5">
+            {myDestinations.map((d) => (
+              <Link
+                key={d.slug}
+                href={`/trip/${d.slug}/now`}
+                title={d.name}
+                aria-label={d.name}
+                className="flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold shadow-sm transition-transform hover:scale-110"
+                style={{ borderColor: "var(--primary)", background: "var(--surface)", color: "var(--primary)" }}
+              >
+                {d.name.trim().charAt(0)}
+              </Link>
+            ))}
+          </div>
         )}
 
         <div className="relative z-10 flex w-full flex-col items-center gap-3">

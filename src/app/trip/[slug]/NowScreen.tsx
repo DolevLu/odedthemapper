@@ -9,6 +9,7 @@ import { TodayCard } from "@/components/TodayCard";
 import { PoiCard } from "@/components/PoiCard";
 import { HomeLocalTime } from "@/components/HomeLocalTime";
 import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
+import { OnboardingNudge } from "@/components/OnboardingNudge";
 
 type TodayData = {
   destinationId: string;
@@ -18,6 +19,8 @@ type TodayData = {
   targetDateTimeIso: string | null;
   todayDayItems: { time: string | null; label: string }[] | null;
   bookableItems: { id: string; name: string }[];
+  myDestinations: { slug: string; name: string }[];
+  showOnboarding: boolean;
 };
 
 // Best-effort heuristic — there's no dedicated "indoor" field on a POI, so
@@ -128,6 +131,7 @@ export function NowScreen({
 
   return (
     <div className="flex flex-col gap-6">
+      {today.showOnboarding && <OnboardingNudge slug={slug} />}
       <TodayCard
         destinationId={today.destinationId}
         destinationName={today.destinationName}
@@ -137,6 +141,7 @@ export function NowScreen({
         targetDateTimeIso={today.targetDateTimeIso}
         todayDayItems={today.todayDayItems}
         bookableItems={today.bookableItems}
+        myDestinations={today.myDestinations}
       />
 
       <HomeLocalTime slug={slug} />
