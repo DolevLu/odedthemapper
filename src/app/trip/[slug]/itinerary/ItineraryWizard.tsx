@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { generateItineraryFromPreferences } from "@/lib/actions/trip";
 import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
@@ -60,26 +61,38 @@ export function ItineraryWizard({
     requestConfirm(hasExistingDays, actuallyGenerate);
   }
 
+  const trigger = (
+    <button
+      onClick={() => setOpen(true)}
+      className="game-pop-in shrink-0 self-start rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
+      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+    >
+      ✨ צרו מסלול AI
+    </button>
+  );
+
   if (!open) {
     return (
       <>
-        <button
-          onClick={() => setOpen(true)}
-          className="game-pop-in self-start rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
-          style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
-        >
-          ✨ צרו מסלול AI
-        </button>
+        {trigger}
         {confirmModal}
       </>
     );
   }
 
-  return (
-    <div
-      className="flex flex-col gap-4 border p-5"
-      style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-    >
+  // Rendered as a full-screen modal (portaled to document.body) rather than
+  // inline — this trigger is meant to be droppable anywhere (a compact pill
+  // in a horizontal action strip, in-flow on desktop, ...) without the big
+  // question form underneath it disrupting whatever layout it's sitting in.
+  if (typeof document === "undefined") return trigger;
+
+  return createPortal(
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpen(false)}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85vh] w-full max-w-md flex-col gap-4 overflow-y-auto border p-5"
+        style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
+      >
       <h2 className="font-bold">כמה שאלות ונבנה לכם מסלול</h2>
 
       <div className="flex gap-1 self-start rounded-full bg-black/5 p-1">
@@ -188,6 +201,8 @@ export function ItineraryWizard({
         )}
       </div>
       {confirmModal}
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 }

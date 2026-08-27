@@ -8,6 +8,7 @@ import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
 import { ItineraryDaysView } from "./ItineraryDaysView";
 import type { DayListItem } from "./DayItemsList";
 import { ItineraryTopBar } from "./ItineraryTopBar";
+import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
 
 type Day = { id: string; dayIndex: number; items: DayListItem[] };
@@ -34,6 +35,8 @@ export function ItineraryMobileView({
   mapDays,
   dayListDays,
   poiOptions,
+  categoryNames,
+  areas,
 }: {
   slug: string;
   destinationId: string;
@@ -42,8 +45,11 @@ export function ItineraryMobileView({
   mapDays: MapDay[];
   dayListDays: Day[];
   poiOptions: PoiOption[];
+  categoryNames: string[];
+  areas: { id: string; name: string }[];
 }) {
   const router = useRouter();
+  const pillRowRef = useRef<HTMLDivElement>(null);
   const [focusedDayIndex, setFocusedDayIndex] = useState(dayListDays[0]?.dayIndex ?? 1);
   // Independent of focusedDayIndex (which the drawer's list keeps using for
   // its own single-day view) — lets the map show every day's route at once,
@@ -115,13 +121,37 @@ export function ItineraryMobileView({
         onMoveToDay={handleMoveToDay}
       />
 
-      {/* Floats over the map, below the map's own Map/Satellite toggle
-       * (top-left) so the two rows don't collide — same role as the in-flow
-       * header on desktop/the empty state, just repositioned so it doesn't
-       * compete with the full-screen map+drawer for vertical space. */}
-      <div className="absolute inset-x-0 top-12 z-10 flex flex-wrap items-center gap-1.5 px-3">
-        <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
-        <ExportPdfButton destinationId={destinationId} slug={slug} />
+      {/* Floats over the map, at the very top — the map's own Map/Satellite
+       * toggle has moved to the bottom-left on mobile (see DayRouteMap) so
+       * this strip can have the top to itself. Same shrunk horizontal-scroll
+       * pattern as the Map screen's own category-filter pills: a ref'd
+       * scrollable row with flanking ‹/› arrow buttons and the native
+       * scrollbar hidden (.no-scrollbar), so a row of otherwise-too-wide
+       * action buttons stays reachable via a swipe instead of wrapping and
+       * eating vertical space over the map. Each button keeps its own
+       * existing color instead of being restyled into a uniform set. */}
+      <div dir="ltr" className="absolute inset-x-0 top-3 z-10 flex items-center gap-1 px-2">
+        <button
+          onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+          aria-label="גלילה שמאלה"
+        >
+          ‹
+        </button>
+        <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto scroll-smooth p-1">
+          <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
+          <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
+          <ExportPdfButton destinationId={destinationId} slug={slug} />
+        </div>
+        <button
+          onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+          aria-label="גלילה ימינה"
+        >
+          ›
+        </button>
       </div>
 
       <div

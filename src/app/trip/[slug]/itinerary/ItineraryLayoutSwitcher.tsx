@@ -23,6 +23,8 @@ export function ItineraryLayoutSwitcher({
   mapDays,
   dayListDays,
   poiOptions,
+  categoryNames,
+  areas,
 }: {
   slug: string;
   destinationId: string;
@@ -31,6 +33,8 @@ export function ItineraryLayoutSwitcher({
   mapDays: MapDay[];
   dayListDays: Day[];
   poiOptions: PoiOption[];
+  categoryNames: string[];
+  areas: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -56,6 +60,8 @@ export function ItineraryLayoutSwitcher({
         mapDays={mapDays}
         dayListDays={dayListDays}
         poiOptions={poiOptions}
+        categoryNames={categoryNames}
+        areas={areas}
       />
     );
   }

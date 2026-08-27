@@ -131,6 +131,8 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
         mapDays={mapDays}
         dayListDays={dayListDays}
         poiOptions={poiOptions}
+        categoryNames={categoryNames}
+        areas={areas}
       />
     </div>
   );

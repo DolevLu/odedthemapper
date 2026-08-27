@@ -282,11 +282,16 @@ export function DayRouteMap({
           className={mobileFullScreen ? "h-full w-full sm:rounded-[var(--radius)] sm:border" : "h-full w-full"}
           style={mobileFullScreen ? undefined : { borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
         />
-        {/* Small Hebrew Map/Satellite toggle, same compact style and physical
-         * top-left position as the main Map screen's own control (`end-2` is
-         * the physical left under this page's RTL direction) — this route
-         * map had none before. */}
-        <div className="absolute end-2 top-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md">
+        {/* Small Hebrew Map/Satellite toggle — top-left on desktop (matches
+         * the main Map screen's own control). In the mobile full-screen
+         * layout it moves to the bottom-left instead, well above the
+         * bottom drawer's collapsed "peek" height, so the itinerary's own
+         * action pills can have the top strip to themselves. */}
+        <div
+          className={`absolute end-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md ${
+            mobileFullScreen ? "bottom-[190px] sm:top-2" : "top-2"
+          }`}
+        >
           <button
             onClick={() => setMapType("roadmap")}
             className="rounded-full px-2.5 py-1"

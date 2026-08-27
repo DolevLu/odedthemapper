@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, voteItineraryItem } from "@/lib/actions/trip";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
 
@@ -306,7 +307,14 @@ export function DayItemsList({
 }
 
 /** Opens on tap — everything that used to live inline in the row (note,
- * votes, remove) now lives here instead, keeping the row itself clean. */
+ * votes, remove) now lives here instead, keeping the row itself clean.
+ * Portaled straight to document.body: this list lives deep inside the
+ * mobile drawer's own scrollable/height-animated container, and a plain
+ * `position: fixed` nested that deep doesn't reliably center on the real
+ * viewport in every WebView (this app's Android shell included) — a
+ * fixed element can end up positioned relative to the wrong ancestor,
+ * which is exactly "opens off-center, have to scroll a bit to see all of
+ * it." Rendering outside that whole DOM subtree sidesteps it entirely. */
 function ItemDetailSheet({
   item,
   note,
@@ -322,7 +330,8 @@ function ItemDetailSheet({
   onRemove: () => void;
   onClose: () => void;
 }) {
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -388,6 +397,7 @@ function ItemDetailSheet({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

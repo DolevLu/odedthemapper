@@ -63,11 +63,11 @@ export function ItineraryTopBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <div className="relative">
+    <div className="flex flex-nowrap shrink-0 items-center gap-1.5">
+      <div className="relative shrink-0">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm"
           style={{ borderColor: "var(--primary)", color: "var(--primary)", background: "var(--surface)" }}
         >
           📂 שמורים{templates.length > 0 ? ` (${templates.length})` : ""} ▾
@@ -99,13 +99,17 @@ export function ItineraryTopBar({
 
       <button
         onClick={goToBuilder}
-        className="game-pop-in rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+        className="game-pop-in shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
         style={{ background: "linear-gradient(135deg, #F472B6, #F59E0B)" }}
       >
         🔥 מסלול טינדר
       </button>
 
-      <button onClick={handleAddDay} className="rounded-full px-3 py-1.5 text-xs font-semibold text-white" style={{ background: "var(--primary)" }}>
+      <button
+        onClick={handleAddDay}
+        className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+        style={{ background: "var(--primary)" }}
+      >
         + הוספת יום
       </button>
 
