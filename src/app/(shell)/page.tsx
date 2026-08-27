@@ -4,6 +4,7 @@ import { PLANS, formatIls } from "@/lib/plans";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { FloatingTravelIcons } from "@/components/FloatingTravelIcons";
+import { HeroAppPreview } from "@/components/HeroAppPreview";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { prisma } from "@/lib/prisma";
 
@@ -39,54 +40,58 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col" style={{ background: "#FBF6EE" }}>
-      <section className="relative overflow-hidden px-6 py-10 text-center sm:py-20">
+      <section className="relative overflow-hidden px-6 py-10 sm:py-20">
         <FloatingTravelIcons />
         <div
           className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[820px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
           style={{ background: "radial-gradient(circle, #F3EEFF, transparent 70%)" }}
           aria-hidden="true"
         />
-        <div className="relative mx-auto w-full max-w-6xl">
-          <span className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-semibold shadow-sm">
-            🧭 {stats[0].value} יעדים · {stats[1].value} נקודות עניין
-          </span>
-          <h1 className="text-4xl font-extrabold leading-tight sm:text-6xl">
-            מפות המלצות אישיות
-            <br />
-            שהופכות לאפליקציית טיול מלאה
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg opacity-70">
-            לכל יעד — עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד.
-            היכנסו ישר למערכת של כל יעד — בחינם, עוד לפני שמשלמים.
-          </p>
+        <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 text-center lg:grid-cols-[1.1fr_0.9fr] lg:text-start">
+          <div>
+            <span className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-semibold shadow-sm">
+              🧭 {stats[0].value} יעדים · {stats[1].value} נקודות עניין
+            </span>
+            <h1 className="text-4xl font-extrabold leading-tight sm:text-6xl">
+              מפות המלצות אישיות
+              <br />
+              שהופכות לאפליקציית טיול מלאה
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-lg opacity-70 lg:mx-0">
+              לכל יעד — עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד.
+              היכנסו ישר למערכת של כל יעד — בחינם, עוד לפני שמשלמים.
+            </p>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/destinations"
-              className="rounded-full px-7 py-3.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
-            >
-              לכל היעדים
-            </Link>
-            <Link
-              href="/destinations/quiz"
-              className="rounded-full bg-white px-7 py-3.5 font-bold shadow-sm transition-transform hover:-translate-y-0.5"
-            >
-              ✈️ לא בטוחים לאן? בואו נתאים לכם יעד
-            </Link>
-            <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-7 py-3.5 font-bold transition-transform hover:-translate-y-0.5">
-              תמחור — החל מ-{formatIls(PLANS.solo.monthlyCents)}/חודש
-            </Link>
+            <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+              <Link
+                href="/destinations"
+                className="rounded-full px-7 py-3.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+              >
+                לכל היעדים
+              </Link>
+              <Link
+                href="/destinations/quiz"
+                className="rounded-full bg-white px-7 py-3.5 font-bold shadow-sm transition-transform hover:-translate-y-0.5"
+              >
+                ✈️ לא בטוחים לאן? בואו נתאים לכם יעד
+              </Link>
+              <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-7 py-3.5 font-bold transition-transform hover:-translate-y-0.5">
+                תמחור — החל מ-{formatIls(PLANS.solo.monthlyCents)}/חודש
+              </Link>
+            </div>
+
+            <div className="mt-14 flex flex-wrap justify-center gap-10 lg:justify-start">
+              {stats.map((stat) => (
+                <div key={stat.label} className="text-center lg:text-start">
+                  <div className="text-3xl font-extrabold">{stat.value}</div>
+                  <div className="text-sm opacity-60">{stat.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-14 flex flex-wrap justify-center gap-10">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-extrabold">{stat.value}</div>
-                <div className="text-sm opacity-60">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+          <HeroAppPreview />
         </div>
       </section>
 
