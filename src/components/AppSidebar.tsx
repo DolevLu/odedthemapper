@@ -61,6 +61,23 @@ function GuideInfoButton({ onClick }: { onClick?: () => void }) {
   );
 }
 
+/** Blue "פאנל אדמין" shortcut — only ever rendered when isAdmin is true (see
+ * the caller), straight to /admin instead of making the site's real admin(s)
+ * dig for it via the URL bar. */
+function AdminPanelLink({ onClick }: { onClick?: () => void }) {
+  return (
+    <Link
+      href="/admin"
+      onClick={onClick}
+      className="flex items-center gap-3 px-4 py-2 text-[15px] font-semibold text-white shadow-sm"
+      style={{ borderRadius: "999px", background: "linear-gradient(135deg, #2563EB, #0EA5E9)" }}
+    >
+      <span className="icon-pop text-lg">🛠️</span>
+      <span>פאנל אדמין</span>
+    </Link>
+  );
+}
+
 type DestItem = { href: string; label: string; icon: string; tier: Tier };
 
 // The destination-scoped items pinned in the mobile bottom bar — everything
@@ -115,12 +132,18 @@ export function AppSidebar({
   isLoggedIn,
   name,
   planLabel,
+  isAdmin,
 }: {
   currentSlug: string | null;
   accessLevel: "none" | "silver" | "gold";
   isLoggedIn: boolean;
   name: string | null;
   planLabel: string | null;
+  /** Site-admin only (User.isAdmin) — deliberately NOT the same as org-tier
+   * "gold" access, which also unlocks /admin's content-management tools for
+   * paying customers. This surfaces the actual admin dashboard shortcut, so
+   * it's restricted to the real site admin(s) only. */
+  isAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
@@ -242,6 +265,7 @@ export function AppSidebar({
               </Link>
             );
           })}
+          {isAdmin && <AdminPanelLink />}
         </div>
 
         <div className="my-1.5 h-px shrink-0 bg-black/10" />
@@ -401,6 +425,7 @@ export function AppSidebar({
                 </Link>
               );
             })}
+            {isAdmin && <AdminPanelLink onClick={() => setDrawerOpen(false)} />}
 
             <div className="my-1.5 h-px bg-black/10" />
 

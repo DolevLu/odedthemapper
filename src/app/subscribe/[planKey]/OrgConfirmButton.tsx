@@ -1,15 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { resolvePromoDiscount } from "@/lib/promoCodes";
 
 export function OrgConfirmButton({ billingCycle }: { billingCycle: "monthly" | "annual" }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState("");
-  const promoDiscount = resolvePromoDiscount(promoCode);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+
+  useEffect(() => {
+    if (!promoCode.trim()) {
+      setPromoDiscount(0);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      fetch(`/api/promo-codes/check?code=${encodeURIComponent(promoCode.trim())}`)
+        .then((r) => r.json())
+        .then((body) => active && setPromoDiscount(body.discount ?? 0))
+        .catch(() => active && setPromoDiscount(0));
+    }, 400);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [promoCode]);
 
   async function handleSubmit() {
     setLoading(true);

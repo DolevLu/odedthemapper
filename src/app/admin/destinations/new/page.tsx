@@ -5,7 +5,7 @@ import { NewDestinationForm } from "./NewDestinationForm";
 export default function NewDestinationPage() {
   return (
     <div className="mx-auto max-w-2xl">
-      <Link href="/admin" className="text-sm underline opacity-60">
+      <Link href="/admin/destinations" className="text-sm underline opacity-60">
         ← חזרה ליעדים
       </Link>
       <h1 className="mb-6 mt-2 text-2xl font-bold">הוספת יעד חדש</h1>

@@ -81,7 +81,7 @@ export async function createDestination(formData: FormData): Promise<{ ok: true;
     });
 
     revalidateTag("destinations-list", "max");
-    revalidatePath("/admin");
+    revalidatePath("/admin/destinations");
     revalidatePath("/");
     return { ok: true, slug };
   } catch (err) {
@@ -254,7 +254,7 @@ export async function updateDestinationMeta(destinationId: string, slug: string,
   });
   revalidateTag("destinations-list", "max");
   revalidatePath(`/admin/destinations/${slug}`);
-  revalidatePath("/admin");
+  revalidatePath("/admin/destinations");
   revalidatePath("/");
 }
 

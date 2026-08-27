@@ -65,6 +65,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           isLoggedIn={Boolean(session?.user?.id)}
           name={session?.user?.name ?? null}
           planLabel={planLabel}
+          isAdmin={session?.user?.isAdmin ?? false}
         />
         <div className="min-w-0 flex-1 pb-32 sm:pb-0">{children}</div>
       </div>

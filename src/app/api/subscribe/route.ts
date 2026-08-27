@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { paymentProvider } from "@/lib/payments";
 import { PLANS, type PlanKey } from "@/lib/plans";
-import { resolvePromoDiscount } from "@/lib/promoCodes";
+import { resolvePromoCode, recordPromoCodeUse } from "@/lib/promoCodes";
 
 const SubscribeSchema = z.object({
   planKey: z.enum(["solo", "family", "org"]),
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
   }
 
   const baseAmountCents = billingCycle === "monthly" ? plan.monthlyCents : plan.annualCents;
-  const discount = resolvePromoDiscount(promoCode);
-  const amountCents = discount > 0 ? Math.round(baseAmountCents * (1 - discount)) : baseAmountCents;
+  const promo = await resolvePromoCode(promoCode);
+  const amountCents = promo ? Math.round(baseAmountCents * (1 - promo.discount)) : baseAmountCents;
   const periodDays = billingCycle === "monthly" ? 30 : 365;
   const currentPeriodEnd = new Date(Date.now() + periodDays * 24 * 60 * 60 * 1000);
 
@@ -53,11 +53,13 @@ export async function POST(request: Request) {
       amountCents,
       currency: "ILS",
       currentPeriodEnd,
+      promoCode: promo ? promoCode!.trim().toLowerCase() : undefined,
       destinations: plan.isOrgTier
         ? undefined
         : { create: destinationIds.map((destinationId) => ({ destinationId })) },
     },
   });
+  if (promo) await recordPromoCodeUse(promo.id);
 
   const checkoutUrl = await paymentProvider.createCheckoutUrl({
     subscriptionId: subscription.id,

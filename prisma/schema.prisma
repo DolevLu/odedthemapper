@@ -284,6 +284,14 @@ model Subscription {
   paymeSaleId        String?
   paymeTransactionId String?
   paidAt             DateTime?
+  // Lowercased code redeemed at checkout, if any (see lib/promoCodes.ts) —
+  // kept as a plain string rather than a relation so a PromoCode can be
+  // deleted later without breaking historical revenue-by-code reporting.
+  promoCode          String?
+  // Set only by an admin's manual grant/comp flow (see admin/subscriptions) —
+  // distinguishes "we gave this away" from a real PayMe sale in the
+  // financial dashboard's revenue numbers.
+  grantedByAdmin     Boolean  @default(false)
 
   user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   destinations SubscriptionDestination[]
@@ -593,6 +601,24 @@ model PhrasebookProgress {
   entry PhrasebookEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@unique([userId, entryId])
+}
+
+/** Checkout-redeemable discount codes (percentage off the subscription
+ * price) — admin-managed replacement for the old hardcoded PROMO_CODES map
+ * in lib/promoCodes.ts, so codes for new influencer/partner deals can be
+ * added from /admin/promo-codes without a code change. Distinct from Coupon
+ * below, which is a static partner-benefit listing shown inside the app, not
+ * a checkout discount. */
+model PromoCode {
+  id              String    @id @default(cuid())
+  code            String    @unique // always stored lowercased
+  discountPercent Int // 1-100
+  partnerName     String? // who this code is for, e.g. an influencer's name
+  active          Boolean   @default(true)
+  expiresAt       DateTime?
+  maxUses         Int? // null = unlimited
+  useCount        Int       @default(0)
+  createdAt       DateTime  @default(now())
 }
 
 model Coupon {

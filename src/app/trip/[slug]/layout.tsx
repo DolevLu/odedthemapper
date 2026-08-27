@@ -48,6 +48,7 @@ export default async function TripLayout({
           isLoggedIn={isLoggedIn}
           name={session?.user?.name ?? null}
           planLabel={planLabel}
+          isAdmin={session?.user?.isAdmin ?? false}
         />
         <TripContentArea slug={slug}>{children}</TripContentArea>
       </div>

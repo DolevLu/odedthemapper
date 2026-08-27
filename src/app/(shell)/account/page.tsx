@@ -163,6 +163,10 @@ export default async function AccountPage() {
             />
           )}
 
+          <a href={`/api/receipts/${active.id}`} className="mt-4 inline-block text-sm font-medium underline opacity-70 hover:opacity-100">
+            🧾 הורדת קבלה (PDF)
+          </a>
+
           {resolved!.isOwner && !active.cancelAtPeriodEnd && (
             <CancelSubscriptionButton
               subscriptionId={active.id}

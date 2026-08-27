@@ -18,10 +18,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Link>
         <nav className="flex gap-4 text-sm">
           <Link href="/admin" className="opacity-70 hover:opacity-100">
+            לוח בקרה
+          </Link>
+          <Link href="/admin/destinations" className="opacity-70 hover:opacity-100">
             יעדים
           </Link>
           <Link href="/admin/subscriptions" className="opacity-70 hover:opacity-100">
             מנויים
+          </Link>
+          <Link href="/admin/promo-codes" className="opacity-70 hover:opacity-100">
+            קודי קופון
           </Link>
           <Link href="/" className="opacity-70 hover:opacity-100">
             לאתר

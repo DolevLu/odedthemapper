@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PlanKey } from "@/lib/plans";
-import { resolvePromoDiscount } from "@/lib/promoCodes";
 
 type DestOption = { id: string; slug: string; name: string; tagline: string | null };
 
@@ -25,7 +24,28 @@ export function DestinationPicker({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [promoCode, setPromoCode] = useState("");
-  const promoDiscount = resolvePromoDiscount(promoCode);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+
+  // Debounced live-preview lookup (codes are now DB-backed, not a static
+  // client-side map) — a stale-response guard (via `active`) keeps a slow
+  // earlier request from clobbering a faster later one's result.
+  useEffect(() => {
+    if (!promoCode.trim()) {
+      setPromoDiscount(0);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      fetch(`/api/promo-codes/check?code=${encodeURIComponent(promoCode.trim())}`)
+        .then((r) => r.json())
+        .then((body) => active && setPromoDiscount(body.discount ?? 0))
+        .catch(() => active && setPromoDiscount(0));
+    }, 400);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [promoCode]);
 
   function toggle(id: string) {
     setSelected((prev) => {
