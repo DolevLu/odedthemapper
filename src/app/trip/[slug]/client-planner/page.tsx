@@ -72,7 +72,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold">🧑‍💼 תכנון מסלול ללקוח</h1>
-          <p className="text-sm opacity-70">כלי מקצועי למתכנני טיולים — ימים, שעות, אופטימיזציה ותצוגת מפה.</p>
+          <p className="text-sm opacity-70">כלי מקצועי למתכנני טיולים - ימים, שעות, אופטימיזציה ותצוגת מפה.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <form action={createDayAction}>

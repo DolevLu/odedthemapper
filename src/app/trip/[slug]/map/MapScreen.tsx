@@ -709,7 +709,7 @@ export function MapScreen({
         const streets = await fetchStreetsInBounds({ south: sw.lat(), west: sw.lng(), north: ne.lat(), east: ne.lng() });
         setShadowStreets(streets);
       } catch {
-        setShadowError("לא הצלחנו לטעון רחובות — נסו שוב");
+        setShadowError("לא הצלחנו לטעון רחובות - נסו שוב");
       } finally {
         setShadowLoading(false);
       }
@@ -1033,7 +1033,7 @@ export function MapScreen({
         }
         maybeRecordTrailPoint(point);
       },
-      () => setGpsError("לא הצלחנו לקבל מיקום — בדקו הרשאות מיקום בדפדפן"),
+      () => setGpsError("לא הצלחנו לקבל מיקום - בדקו הרשאות מיקום בדפדפן"),
       { enableHighAccuracy: true }
     );
     setGpsActive(true);
@@ -1121,7 +1121,7 @@ export function MapScreen({
             className="pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
             style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
           >
-            🔓 תצוגה מקדימה — שדרגו את החבילה כדי לפתוח את כל התכונות
+            🔓 תצוגה מקדימה - שדרגו את החבילה כדי לפתוח את כל התכונות
           </Link>
         </div>
       )}
@@ -1254,12 +1254,12 @@ export function MapScreen({
           onClick={previewGate(() => setShadowVisible((v) => !v))}
           className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
-          title="הערכה גסה — לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
+          title="הערכה גסה - לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
           {shadowVisible && shadowLoading
             ? "🌑 טוען..."
             : shadowVisible && shadowIsNight
-              ? "🌙 לילה — הכל מוצל"
+              ? "🌙 לילה - הכל מוצל"
               : "🌑 צל"}
         </button>
         </div>
@@ -1283,7 +1283,7 @@ export function MapScreen({
 
       {!isOnline && (
         <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2.5 text-center text-xs font-semibold shadow-md" style={{ color: "#92400E" }}>
-          📡 אין חיבור לאינטרנט — המפה החיה דורשת רשת, מוצגת הרשימה השמורה בלבד
+          📡 אין חיבור לאינטרנט - המפה החיה דורשת רשת, מוצגת הרשימה השמורה בלבד
         </div>
       )}
 
@@ -1329,7 +1329,7 @@ export function MapScreen({
           className="pointer-events-none absolute bottom-full end-0 mb-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
           style={{ background: "#111827" }}
         >
-          {routeModeActive ? "מצב מסלול פעיל — לחצו על נקודה" : "הפעלת מצב מסלול הליכה"}
+          {routeModeActive ? "מצב מסלול פעיל - לחצו על נקודה" : "הפעלת מצב מסלול הליכה"}
         </span>
       </div>
 

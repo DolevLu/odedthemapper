@@ -135,7 +135,7 @@ export function ItineraryWizard({
 
           {areas.length > 1 && (
             <div>
-              <p className="mb-2 text-sm font-semibold">אזורים (אופציונלי — ריק = הכל)</p>
+              <p className="mb-2 text-sm font-semibold">אזורים (אופציונלי - ריק = הכל)</p>
               <div className="flex flex-wrap gap-2">
                 {areas.map((a) => (
                   <button

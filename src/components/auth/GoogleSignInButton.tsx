@@ -22,7 +22,7 @@ export function GoogleSignInButton({ callbackUrl = "/" }: { callbackUrl?: string
         התחברות עם Google
       </button>
       {notConfigured && (
-        <p className="text-xs text-red-600">התחברות עם Google עדיין לא מוגדרת במערכת — נסו באימייל וסיסמה בינתיים.</p>
+        <p className="text-xs text-red-600">התחברות עם Google עדיין לא מוגדרת במערכת - נסו באימייל וסיסמה בינתיים.</p>
       )}
     </div>
   );

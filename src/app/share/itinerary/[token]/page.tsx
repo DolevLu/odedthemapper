@@ -40,7 +40,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
             <p className="text-xs font-bold tracking-wide opacity-70">
               {plannerProfile?.companyName ? `${plannerProfile.companyName} · עודד המנקד` : "עודד המנקד"}
             </p>
-            <p className="text-sm opacity-60">{isClientPlan ? "מסלול מקצועי — תצוגת לקוח" : "מסלול טיול — תצוגת אורח"}</p>
+            <p className="text-sm opacity-60">{isClientPlan ? "מסלול מקצועי - תצוגת לקוח" : "מסלול טיול - תצוגת אורח"}</p>
           </div>
         </div>
         <PrintButton />

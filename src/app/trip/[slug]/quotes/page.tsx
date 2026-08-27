@@ -34,7 +34,7 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">📊 CRM — לידים והצעות מחיר</h1>
+        <h1 className="text-xl font-bold">📊 CRM - לידים והצעות מחיר</h1>
         <p className="text-sm opacity-70">
           נהלו את הלידים שלכם, בנו הצעת מחיר מקצועית ושלחו ללקוח לאישור וחתימה. המסמך נוצר אוטומטית מתבנית מקצועית
           ואינו מהווה חתימה אלקטרונית מאושרת כחוק.

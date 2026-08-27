@@ -43,7 +43,7 @@ export default async function SubscribePage({
         <div className="mt-6 border-t border-black/5 pt-6">
           {plan.isOrgTier ? (
             <div className="flex flex-col gap-4">
-              <p className="text-sm opacity-70">התוכנית הזו כוללת גישה לכל היעדים במערכת — אין צורך לבחור.</p>
+              <p className="text-sm opacity-70">התוכנית הזו כוללת גישה לכל היעדים במערכת - אין צורך לבחור.</p>
               <OrgConfirmButton billingCycle={billingCycle} />
             </div>
           ) : (

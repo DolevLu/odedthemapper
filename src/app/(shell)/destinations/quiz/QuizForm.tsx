@@ -97,7 +97,7 @@ export function QuizForm({
               className="rounded-full px-5 py-2.5 font-bold text-white"
               style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
             >
-              ✨ פתחו לי מערכת מותאמת אישית — $75
+              ✨ פתחו לי מערכת מותאמת אישית - $75
             </Link>
           ) : !generated ? (
             <button

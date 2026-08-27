@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   const apiKey = process.env.PAYME_API_KEY;
   const sellerPaymeId = process.env.PAYME_SELLER_ID;
   if (!apiKey || !sellerPaymeId) {
-    return NextResponse.json({ error: "PayMe לא מוגדר במלואו בשרת — חסר Seller/Marchant ID" }, { status: 500 });
+    return NextResponse.json({ error: "PayMe לא מוגדר במלואו בשרת - חסר Seller/Marchant ID" }, { status: 500 });
   }
 
   const body = await request.json().catch(() => null);
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   const payMeBody = await payMeResponse.json().catch(() => null);
   if (!payMeResponse.ok || !payMeBody || payMeBody.status_code !== 0) {
     const detail = payMeBody?.status_error_details ?? "";
-    return NextResponse.json({ error: `התשלום נכשל ${detail ? `— ${detail}` : ""}`.trim() }, { status: 402 });
+    return NextResponse.json({ error: `התשלום נכשל ${detail ? `- ${detail}` : ""}`.trim() }, { status: 402 });
   }
 
   // Activate immediately for a fast, correct UX in the normal case (this is

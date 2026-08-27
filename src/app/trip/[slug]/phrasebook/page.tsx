@@ -26,7 +26,7 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          💬 שיחון — {destination.name}
+          💬 שיחון - {destination.name}
         </h1>
         {entries.length > 0 && userId && (
           <span className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>

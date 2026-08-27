@@ -45,7 +45,7 @@ export function OnboardingNudge({ slug }: { slug: string }) {
       style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold">👋 בואו נתחיל — 3 צעדים ראשונים</p>
+        <p className="text-sm font-bold">👋 בואו נתחיל - 3 צעדים ראשונים</p>
         <button onClick={dismiss} aria-label="סגירה" className="shrink-0 rounded-full px-2 py-1 text-xs opacity-50 hover:opacity-100">
           ✕
         </button>

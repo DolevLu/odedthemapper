@@ -72,7 +72,7 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
               <div>
                 <h2 className="text-lg font-bold">איפה כדאי ללון ב{destinationName}?</h2>
                 <p className="mt-1 text-xs opacity-60">
-                  מפת צפיפות לפי ריכוז האטרקציות, המסעדות והברים במערכת שלנו — אזורים אדומים הם הכי תוססים ונוחים כבסיס לינה.
+                  מפת צפיפות לפי ריכוז האטרקציות, המסעדות והברים במערכת שלנו - אזורים אדומים הם הכי תוססים ונוחים כבסיס לינה.
                 </p>
               </div>
               <button onClick={() => setOpen(false)} className="shrink-0 text-lg opacity-60">

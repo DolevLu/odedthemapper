@@ -33,7 +33,7 @@ export default async function SharedAlbumPage({ params }: { params: Promise<{ to
           <img src="/logo-mark.svg" alt="עודד המנקד" className="h-10 w-10" />
           <div>
             <p className="text-xs font-bold tracking-wide opacity-70">עודד המנקד</p>
-            <p className="text-sm opacity-60">אלבום טיול — תצוגת אורח</p>
+            <p className="text-sm opacity-60">אלבום טיול - תצוגת אורח</p>
           </div>
         </div>
         <PrintButton />

@@ -93,7 +93,7 @@ export function NowScreen({
         setRequesting(false);
       },
       () => {
-        setLocationError("לא הצלחנו לקבל מיקום — עדיין אפשר לעיין בקטגוריות");
+        setLocationError("לא הצלחנו לקבל מיקום - עדיין אפשר לעיין בקטגוריות");
         setRequesting(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -192,7 +192,7 @@ export function NowScreen({
                 ✕
               </button>
             </div>
-            <p className="text-xs opacity-60">הצעות למקומות מקורים ביעד — לחיצה שולחת אתכם למיקום שלהם על המפה.</p>
+            <p className="text-xs opacity-60">הצעות למקומות מקורים ביעד - לחיצה שולחת אתכם למיקום שלהם על המפה.</p>
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
               {indoorPois.length === 0 ? (
                 <p className="py-4 text-center text-sm opacity-60">לא מצאנו מספיק אטרקציות מקורות ביעד הזה, לצערנו.</p>

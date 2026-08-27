@@ -26,7 +26,7 @@ export function EmergencyInfoButton({ slug, destinationName }: { slug: string; d
             style={{ background: "var(--surface)" }}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">🆘 מידע חירום ושימושי — {destinationName}</h2>
+              <h2 className="text-lg font-bold">🆘 מידע חירום ושימושי - {destinationName}</h2>
               <button onClick={() => setOpen(false)} className="text-xl opacity-50 hover:opacity-100" aria-label="סגירה">
                 ✕
               </button>
@@ -40,7 +40,7 @@ export function EmergencyInfoButton({ slug, destinationName }: { slug: string; d
             </div>
 
             <p className="text-[11px] opacity-40">
-              מידע כללי לעזרה ראשונית — מומלץ לוודא מול מקורות רשמיים לפני הטיול, בפרט לגבי ויזה.
+              מידע כללי לעזרה ראשונית - מומלץ לוודא מול מקורות רשמיים לפני הטיול, בפרט לגבי ויזה.
             </p>
           </div>
         </div>

@@ -56,7 +56,7 @@ export function AlbumScreen({
   return (
     <div>
       <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-        📸 האלבום שלי — {destinationName}
+        📸 האלבום שלי - {destinationName}
       </h1>
       <p className="mb-4 text-sm opacity-60">העלו תמונות וסרטונים מהטיול, צרו סרטון קולאז׳ אוטומטי, או צפו באלבום דיגיטלי מעוצב.</p>
 

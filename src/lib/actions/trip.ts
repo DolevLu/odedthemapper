@@ -78,7 +78,7 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
     // has no signal here for which one a single Google-place pin belongs
     // to, and defaulting to the first is far less surprising than failing.
     const area = await prisma.area.findFirst({ where: { destinationId }, orderBy: { id: "asc" } });
-    if (!area) throw new Error("ליעד הזה עדיין אין אזורים במפה — יש להעלות KML קודם");
+    if (!area) throw new Error("ליעד הזה עדיין אין אזורים במפה - יש להעלות KML קודם");
 
     let category = await prisma.category.findFirst({ where: { areaId: area.id, name: categoryName ?? "אחר" } });
     if (!category) {
@@ -443,7 +443,7 @@ export async function addSwipedItineraryItem(
     select: { order: true, timeOfDay: true },
   });
   if (existing.length >= SWIPE_DAY_ITEM_CAP) {
-    return { error: `יום ${dayIndex} כבר מלא (מקסימום ${SWIPE_DAY_ITEM_CAP} נקודות ליום) — בחרו יום אחר` };
+    return { error: `יום ${dayIndex} כבר מלא (מקסימום ${SWIPE_DAY_ITEM_CAP} נקודות ליום) - בחרו יום אחר` };
   }
 
   await prisma.itineraryItem.create({
@@ -921,7 +921,7 @@ async function resolveFreeTextIntent(
             system_instruction: {
               parts: [
                 {
-                  text: `בהינתן תיאור חופשי של מטייל, רשימת הקטגוריות הזמינות ביעד, ורשימת האזורים/הערים הזמינות ביעד (חלק מהיעדים כוללים גם אזור "Road Trip" נפרד לטיולי יום/יציאות מהעיר המרכזית, בנוסף לעיר עצמה) — החזירו אך ורק אובייקט JSON (ללא טקסט נוסף) בצורה {"categories": [...], "areas": [...]}, עם שמות בדיוק כפי שהם כתובים ברשימות הנתונות. בשדה categories: הקטגוריות הרלוונטיות לתחומי העניין שתוארו, או מערך ריק אם לא צוין דבר. בשדה areas: אם המטייל ציין באופן מפורש שהוא רוצה להישאר רק בעיר/אזור מסוים ולא לצאת ממנו (למשל "רק בפראג עצמה", "בתוך העיר בלבד", "בלי לצאת מהעיר", "בלי road trip") — החזירו רק את שם האזור הראשי המתאים (בדרך כלל שם העיר, לא "Road Trip"). אם לא צוינה הגבלה על אזור, החזירו מערך ריק. קטגוריות זמינות: ${JSON.stringify(availableCategories)}. אזורים זמינים: ${JSON.stringify(availableAreas)}`,
+                  text: `בהינתן תיאור חופשי של מטייל, רשימת הקטגוריות הזמינות ביעד, ורשימת האזורים/הערים הזמינות ביעד (חלק מהיעדים כוללים גם אזור "Road Trip" נפרד לטיולי יום/יציאות מהעיר המרכזית, בנוסף לעיר עצמה) - החזירו אך ורק אובייקט JSON (ללא טקסט נוסף) בצורה {"categories": [...], "areas": [...]}, עם שמות בדיוק כפי שהם כתובים ברשימות הנתונות. בשדה categories: הקטגוריות הרלוונטיות לתחומי העניין שתוארו, או מערך ריק אם לא צוין דבר. בשדה areas: אם המטייל ציין באופן מפורש שהוא רוצה להישאר רק בעיר/אזור מסוים ולא לצאת ממנו (למשל "רק בפראג עצמה", "בתוך העיר בלבד", "בלי לצאת מהעיר", "בלי road trip") - החזירו רק את שם האזור הראשי המתאים (בדרך כלל שם העיר, לא "Road Trip"). אם לא צוינה הגבלה על אזור, החזירו מערך ריק. קטגוריות זמינות: ${JSON.stringify(availableCategories)}. אזורים זמינים: ${JSON.stringify(availableAreas)}`,
                 },
               ],
             },

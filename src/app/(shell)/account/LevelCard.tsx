@@ -58,7 +58,7 @@ export function LevelCard({
             <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
               {discountPct}% הנחה על החיוב החודשי שלכם
             </p>
-            <p className="text-xs opacity-60">לפי רמה {level.level} — מתעדכן אוטומטית בכל חודש לפי הרמה הנוכחית שלכם</p>
+            <p className="text-xs opacity-60">לפי רמה {level.level} - מתעדכן אוטומטית בכל חודש לפי הרמה הנוכחית שלכם</p>
           </div>
         </div>
       </div>

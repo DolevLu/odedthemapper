@@ -89,7 +89,7 @@ export async function uploadCountryPhoto(
     const urls = (await Promise.all(files.map((f) => saveUploadedFile(f, "country-photos")))).filter(
       (u): u is string => Boolean(u)
     );
-    if (urls.length === 0) return { error: "העלאת התמונות נכשלה — נסו שוב" };
+    if (urls.length === 0) return { error: "העלאת התמונות נכשלה - נסו שוב" };
 
     await withRetry(() =>
       Promise.all([
@@ -106,7 +106,7 @@ export async function uploadCountryPhoto(
     return {};
   } catch (err) {
     console.error("uploadCountryPhoto failed:", err);
-    return { error: "משהו השתבש בהעלאה — נסו שוב" };
+    return { error: "משהו השתבש בהעלאה - נסו שוב" };
   }
 }
 

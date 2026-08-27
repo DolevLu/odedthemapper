@@ -50,7 +50,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
       {mustSee.length > 0 && (
         <section>
           <h2 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            ⭐ המומלצים שלנו — אסור לפספס
+            ⭐ המומלצים שלנו - אסור לפספס
           </h2>
           <p className="mb-4 text-sm opacity-60">האתרים והאטרקציות הידועים והאהובים ביותר ב{destination.name}.</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">

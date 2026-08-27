@@ -91,7 +91,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
         )}
         {!activeCategory && filteredRest.length > UNFILTERED_CAP && (
           <p className="mb-2 text-xs opacity-50">
-            מציג {UNFILTERED_CAP} מתוך {filteredRest.length} — בחרו קטגוריה כדי לראות את כולן.
+            מציג {UNFILTERED_CAP} מתוך {filteredRest.length} - בחרו קטגוריה כדי לראות את כולן.
           </p>
         )}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

@@ -44,7 +44,7 @@ export function NewDestinationForm({ starterThemes }: { starterThemes: StarterTh
         if ("error" in result) setError(result.error);
         else router.push(`/admin/destinations/${result.slug}`);
       } catch {
-        setError("שגיאה לא צפויה — נסו שוב");
+        setError("שגיאה לא צפויה - נסו שוב");
       }
     });
   }
@@ -144,7 +144,7 @@ export function NewDestinationForm({ starterThemes }: { starterThemes: StarterTh
         {pending ? "יוצר..." : "יצירת יעד"}
       </button>
       <p className="text-xs opacity-50">
-        היעד ייווצר במצב &quot;draft&quot; (לא גלוי ללקוחות) — לאחר היצירה תעברו למסך הניהול שלו כדי להעלות KML ולפרסם אותו.
+        היעד ייווצר במצב &quot;draft&quot; (לא גלוי ללקוחות) - לאחר היצירה תעברו למסך הניהול שלו כדי להעלות KML ולפרסם אותו.
       </p>
     </form>
   );

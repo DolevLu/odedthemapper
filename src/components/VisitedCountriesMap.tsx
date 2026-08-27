@@ -315,7 +315,7 @@ function CountryPhotoManager({
         // Should be unreachable now that uploadCountryPhoto itself never
         // throws, but kept as a last line of defense — a raw unhandled
         // rejection here is what could crash the whole page before.
-        setError("משהו השתבש בהעלאה — נסו שוב");
+        setError("משהו השתבש בהעלאה - נסו שוב");
       }
     });
   }

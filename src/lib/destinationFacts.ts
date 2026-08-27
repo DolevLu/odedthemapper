@@ -30,7 +30,7 @@ export const DESTINATION_FACTS: Record<string, DestinationFacts> = {
   greece: { countryCode: "GR", timezone: "Europe/Athens", plug: "C / F", voltage: "230V", visaForIsraeli: "ללא צורך בוויזה (שנגן)", tipping: "5-10%", emergency: "112" },
   israel: { countryCode: "IL", timezone: "Asia/Jerusalem", plug: "C / H / M", voltage: "230V", visaForIsraeli: "-", tipping: "12% שירות כלול לרוב, אפשר להוסיף", emergency: "100 (משטרה) / 101 (מד״א) / 102 (כבאות)" },
   italy: { countryCode: "IT", timezone: "Europe/Rome", plug: "C / F / L", voltage: "230V", visaForIsraeli: "ללא צורך בוויזה (שנגן)", tipping: "לא חובה, coperto לרוב כלול", emergency: "112" },
-  japan: { countryCode: "JP", timezone: "Asia/Tokyo", plug: "A / B", voltage: "100V", visaForIsraeli: "ללא צורך בוויזה עד 90 יום", tipping: "לא נהוג — יכול אף להתקבל כפוגעני", emergency: "110 (משטרה) / 119 (אמבולנס/כבאות)" },
+  japan: { countryCode: "JP", timezone: "Asia/Tokyo", plug: "A / B", voltage: "100V", visaForIsraeli: "ללא צורך בוויזה עד 90 יום", tipping: "לא נהוג - יכול אף להתקבל כפוגעני", emergency: "110 (משטרה) / 119 (אמבולנס/כבאות)" },
   korea: { countryCode: "KR", timezone: "Asia/Seoul", plug: "C / F", voltage: "220V", visaForIsraeli: "ללא צורך בוויזה עד 90 יום (נדרש K-ETA)", tipping: "לא נהוג לתת טיפ", emergency: "112 (משטרה) / 119 (אמבולנס)" },
   laos: { countryCode: "LA", timezone: "Asia/Vientiane", plug: "A / B / C", voltage: "230V", visaForIsraeli: "נדרשת ויזה (ניתן בהגעה)", tipping: "לא חובה, מקובל לעגל", emergency: "191 (משטרה) / 195 (אמבולנס)" },
   netherlands: { countryCode: "NL", timezone: "Europe/Amsterdam", plug: "C / F", voltage: "230V", visaForIsraeli: "ללא צורך בוויזה (שנגן)", tipping: "עיגול קטן מקובל", emergency: "112" },
@@ -45,6 +45,6 @@ export const DESTINATION_FACTS: Record<string, DestinationFacts> = {
   sweden: { countryCode: "SE", timezone: "Europe/Stockholm", plug: "C / F", voltage: "230V", visaForIsraeli: "ללא צורך בוויזה (שנגן)", tipping: "לא חובה, כלול בחשבון", emergency: "112" },
   tanzania: { countryCode: "TZ", timezone: "Africa/Dar_es_Salaam", plug: "D / G", voltage: "230V", visaForIsraeli: "נדרשת ויזה (ניתן e-Visa מראש)", tipping: "מקובל ואף מצופה, כ-10%", emergency: "112 / 999" },
   thailand: { countryCode: "TH", timezone: "Asia/Bangkok", plug: "A / B / C", voltage: "220V", visaForIsraeli: "ללא צורך בוויזה עד 30 יום", tipping: "לא חובה, עיגול/כ-10% מוערך", emergency: "191 (משטרה) / 1669 (אמבולנס)" },
-  usa: { countryCode: "US", timezone: "America/New_York", plug: "A / B", voltage: "120V", visaForIsraeli: "נדרשת אישור ESTA מראש", tipping: "15-20% — כמעט תמיד מצופה", emergency: "911" },
+  usa: { countryCode: "US", timezone: "America/New_York", plug: "A / B", voltage: "120V", visaForIsraeli: "נדרשת אישור ESTA מראש", tipping: "15-20% - כמעט תמיד מצופה", emergency: "911" },
   vietnam: { countryCode: "VN", timezone: "Asia/Ho_Chi_Minh", plug: "A / C", voltage: "220V", visaForIsraeli: "נדרשת ויזה (e-Visa מראש)", tipping: "לא חובה, מוערך במסעדות לתיירים", emergency: "113 (משטרה) / 115 (אמבולנס)" },
 };

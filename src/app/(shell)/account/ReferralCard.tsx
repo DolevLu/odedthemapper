@@ -21,7 +21,7 @@ export function ReferralCard({ code, referredCount, rewardIls }: { code: string;
         <div>
           <h3 className="text-lg font-extrabold">🎁 הפניית חברים</h3>
           <p className="text-sm opacity-60">
-            כל חבר שנרשם דרך הקישור שלכם ומשדרג לחבילה בתשלום — שניכם מקבלים {rewardIls}₪ קרדיט לחידוש המנוי.
+            כל חבר שנרשם דרך הקישור שלכם ומשדרג לחבילה בתשלום - שניכם מקבלים {rewardIls}₪ קרדיט לחידוש המנוי.
           </p>
         </div>
         {referredCount > 0 && (

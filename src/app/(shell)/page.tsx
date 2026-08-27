@@ -15,7 +15,7 @@ const FAQ = [
   },
   {
     q: "אפשר לנסות לפני שמשלמים?",
-    a: "כן — נכנסים ישר למערכת של כל יעד ורואים חלק מהמסכים בחינם, לפני שבוחרים חבילה.",
+    a: "כן - נכנסים ישר למערכת של כל יעד ורואים חלק מהמסכים בחינם, לפני שבוחרים חבילה.",
   },
   {
     q: "המפה עובדת גם בלי אינטרנט?",
@@ -23,7 +23,7 @@ const FAQ = [
   },
   {
     q: "אפשר לבטל את המנוי מתי שרוצים?",
-    a: "בהחלט — אין התחייבות ארוכת טווח, אפשר לבטל בכל רגע.",
+    a: "בהחלט - אין התחייבות ארוכת טווח, אפשר לבטל בכל רגע.",
   },
 ];
 
@@ -58,26 +58,26 @@ export default async function Home() {
               שהופכות לאפליקציית טיול מלאה
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg opacity-70 lg:mx-0">
-              לכל יעד — עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד.
-              היכנסו ישר למערכת של כל יעד — בחינם, עוד לפני שמשלמים.
+              לכל יעד - עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד.
+              היכנסו ישר למערכת של כל יעד - בחינם, עוד לפני שמשלמים.
             </p>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+            <div className="mt-8 flex flex-wrap justify-center gap-2.5 text-sm lg:justify-start">
               <Link
                 href="/destinations"
-                className="rounded-full px-7 py-3.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                className="rounded-full px-5 py-2.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
                 style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
               >
                 לכל היעדים
               </Link>
               <Link
                 href="/destinations/quiz"
-                className="rounded-full bg-white px-7 py-3.5 font-bold shadow-sm transition-transform hover:-translate-y-0.5"
+                className="rounded-full bg-white px-5 py-2.5 font-bold shadow-sm transition-transform hover:-translate-y-0.5"
               >
-                ✈️ לא בטוחים לאן? בואו נתאים לכם יעד
+                ✈️ לא בטוחים לאן?
               </Link>
-              <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-7 py-3.5 font-bold transition-transform hover:-translate-y-0.5">
-                תמחור — החל מ-{formatIls(PLANS.solo.monthlyCents)}/חודש
+              <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-5 py-2.5 font-bold transition-transform hover:-translate-y-0.5">
+                תמחור - החל מ-{formatIls(PLANS.solo.monthlyCents)}/חודש
               </Link>
             </div>
 
@@ -114,7 +114,7 @@ export default async function Home() {
         <FloatingTravelIcons variant="plans" />
         <ScrollReveal className="relative mx-auto w-full max-w-4xl rounded-3xl border border-black/5 bg-white p-10 text-center shadow-sm">
           <h2 className="text-2xl font-extrabold">תוכנית לכל סוג מטייל</h2>
-          <p className="mt-2 opacity-70">ממטייל בודד ועד ארגוני נסיעות — יש לנו תוכנית שמתאימה לכם.</p>
+          <p className="mt-2 opacity-70">ממטייל בודד ועד ארגוני נסיעות - יש לנו תוכנית שמתאימה לכם.</p>
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {Object.values(PLANS).map((plan) => (
               <div key={plan.key} className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">

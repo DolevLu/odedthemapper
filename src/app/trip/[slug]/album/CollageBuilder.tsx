@@ -239,7 +239,7 @@ export function CollageBuilder({
       const blob = new Blob(chunks, { type: mimeType });
       setVideoUrl(URL.createObjectURL(blob));
     } catch {
-      setError("לא הצלחנו ליצור את הסרטון בדפדפן הזה — נסו תמונות אחרות או דפדפן אחר");
+      setError("לא הצלחנו ליצור את הסרטון בדפדפן הזה - נסו תמונות אחרות או דפדפן אחר");
     } finally {
       music?.stop();
       setRendering(false);
@@ -249,7 +249,7 @@ export function CollageBuilder({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs opacity-60">
-        הסרטון נוצר אוטומטית בדפדפן שלכם (כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו — ללא צורך בהעלאה לשרת חיצוני.
+        הסרטון נוצר אוטומטית בדפדפן שלכם (כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו - ללא צורך בהעלאה לשרת חיצוני.
       </p>
 
       <div className="flex flex-col gap-3 border p-3" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
@@ -275,7 +275,7 @@ export function CollageBuilder({
           </div>
         </div>
         <label className="flex items-center gap-3 text-xs font-semibold opacity-70">
-          משך כל תמונה — {secondsPerPhoto.toFixed(1)} שנ&apos;
+          משך כל תמונה - {secondsPerPhoto.toFixed(1)} שנ&apos;
           <input
             type="range"
             min={MIN_SECONDS_PER_PHOTO}
@@ -289,7 +289,7 @@ export function CollageBuilder({
       </div>
 
       {photos.length === 0 ? (
-        <p className="text-sm opacity-50">אין עדיין תמונות ליצירת קולאז׳ — העלו קודם כמה תמונות בטאב &quot;העלאה&quot;.</p>
+        <p className="text-sm opacity-50">אין עדיין תמונות ליצירת קולאז׳ - העלו קודם כמה תמונות בטאב &quot;העלאה&quot;.</p>
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {photos.map((p) => {
@@ -345,7 +345,7 @@ export function CollageBuilder({
           </a>
           {videoExt === "webm" && (
             <p className="text-[11px] opacity-50">
-              הדפדפן הזה יודע להקליט WebM בלבד (נגן בכל מקום, גם ברשתות חברתיות) — ב-Safari הקובץ יורד כ-MP4 אמיתי.
+              הדפדפן הזה יודע להקליט WebM בלבד (נגן בכל מקום, גם ברשתות חברתיות) - ב-Safari הקובץ יורד כ-MP4 אמיתי.
             </p>
           )}
         </div>

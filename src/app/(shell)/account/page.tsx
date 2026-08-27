@@ -106,14 +106,14 @@ export default async function AccountPage() {
           </p>
           {active.cancelAtPeriodEnd && (
             <p className="mt-1 text-sm font-semibold text-amber-600">
-              המנוי בוטל ולא יחודש — הגישה תישאר פעילה עד תום התקופה הנוכחית.
+              המנוי בוטל ולא יחודש - הגישה תישאר פעילה עד תום התקופה הנוכחית.
             </p>
           )}
           {!resolved!.isOwner && <p className="mt-1 text-xs opacity-60">אתם מוזמנים למנוי הזה כמשתמש נוסף.</p>}
 
           {plan?.isOrgTier ? (
             <div className="mt-4">
-              <p className="text-sm font-semibold">🌍 גישה מלאה לכל היעדים במערכת — ללא הגבלה</p>
+              <p className="text-sm font-semibold">🌍 גישה מלאה לכל היעדים במערכת - ללא הגבלה</p>
               <Link href="/destinations" className="mt-1 inline-block text-sm font-medium underline" style={{ color: "var(--primary)" }}>
                 עיון בכל היעדים ←
               </Link>

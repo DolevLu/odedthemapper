@@ -50,7 +50,7 @@ export default async function SharedQuotePage({ params }: { params: Promise<{ to
 
       <div>
         <h1 className="text-2xl font-extrabold">
-          הצעת מחיר עבור {quote.clientName} — {quote.destination.name}
+          הצעת מחיר עבור {quote.clientName} - {quote.destination.name}
         </h1>
         <p className="text-sm opacity-60">מסמך מס' {quote.id.slice(-8).toUpperCase()}</p>
       </div>

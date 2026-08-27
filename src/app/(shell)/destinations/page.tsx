@@ -14,7 +14,7 @@ export default function DestinationsPage() {
     <div className="px-6 py-10" style={{ background: "#FBF6EE", minHeight: "100%" }}>
       <div className="mx-auto w-full max-w-6xl">
         <h1 className="mb-2 text-2xl font-extrabold">כל היעדים</h1>
-        <p className="mb-6 opacity-70">בחרו יעד כדי להיכנס למערכת שלו — מפה, מסלול, שיחון ועוד.</p>
+        <p className="mb-6 opacity-70">בחרו יעד כדי להיכנס למערכת שלו - מפה, מסלול, שיחון ועוד.</p>
 
         <Link
           href="/destinations/quiz"
@@ -23,7 +23,7 @@ export default function DestinationsPage() {
         >
           <div>
             <p className="text-lg font-extrabold">✈️ לא בטוחים לאן לטוס?</p>
-            <p className="text-sm opacity-90">ענו על שאלון קצר ואנחנו נתאים לכם את היעד הבא — בחינם.</p>
+            <p className="text-sm opacity-90">ענו על שאלון קצר ואנחנו נתאים לכם את היעד הבא - בחינם.</p>
           </div>
           <span className="rounded-full bg-white px-5 py-2.5 font-bold" style={{ color: "#7C3AED" }}>
             למצוא לי יעד ←

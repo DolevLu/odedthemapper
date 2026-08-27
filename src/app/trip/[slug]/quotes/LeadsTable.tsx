@@ -56,7 +56,7 @@ export function LeadsTable({ leads, slug, destinationId }: { leads: Lead[]; slug
       </table>
       {leads.length === 0 && (
         <p className="border-t p-3 text-sm opacity-60" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
-          עדיין לא נוצרו לידים ליעד הזה — הוסיפו ליד מהיר למטה, או השתמשו בטופס למעלה להצעת מחיר מלאה.
+          עדיין לא נוצרו לידים ליעד הזה - הוסיפו ליד מהיר למטה, או השתמשו בטופס למעלה להצעת מחיר מלאה.
         </p>
       )}
     </div>
@@ -90,7 +90,7 @@ function QuickAddRow({ slug, destinationId }: { slug: string; destinationId: str
             onKeyDown={(e) => {
               if (e.key === "Enter") submit();
             }}
-            placeholder="שם לקוח חדש — הוספת שורת ליד מהירה..."
+            placeholder="שם לקוח חדש - הוספת שורת ליד מהירה..."
             className="flex-1 rounded-lg border border-dashed bg-transparent px-3 py-1.5 text-sm"
             style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" }}
           />

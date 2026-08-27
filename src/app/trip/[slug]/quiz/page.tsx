@@ -24,13 +24,13 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          🧠 חידונים — {destination.name}
+          🧠 חידונים - {destination.name}
         </h1>
         {questions.length === 0 ? (
-          <p className="text-sm opacity-60">עדיין אין חידונים ליעד הזה — בקרוב!</p>
+          <p className="text-sm opacity-60">עדיין אין חידונים ליעד הזה - בקרוב!</p>
         ) : (
           <>
-            <p className="mb-4 text-sm opacity-60">בחרו נושא — כמה אתם מכירים את היעד שלכם?</p>
+            <p className="mb-4 text-sm opacity-60">בחרו נושא - כמה אתם מכירים את היעד שלכם?</p>
             <QuizPicker
               destinationId={destination.id}
               questions={questions.map((q) => ({

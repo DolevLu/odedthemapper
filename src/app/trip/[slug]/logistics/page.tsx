@@ -71,7 +71,7 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
           </select>
           <input name="title" placeholder="למשל: אל-על LY386 / מלון רומא סנטרל" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
           <input name="confirmationNumber" placeholder="מספר אישור" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-          <input name="address" placeholder="כתובת (למלון — יסומן אוטומטית על המפה)" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="address" placeholder="כתובת (למלון - יסומן אוטומטית על המפה)" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
           <div className="flex gap-2">
             <label className="flex-1 text-xs opacity-60">
               מתאריך

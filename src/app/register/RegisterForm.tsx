@@ -47,7 +47,7 @@ export function RegisterForm() {
     const result = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
     if (result?.error) {
-      setError("ההרשמה הצליחה, אך ההתחברות נכשלה — נסו להתחבר ידנית");
+      setError("ההרשמה הצליחה, אך ההתחברות נכשלה - נסו להתחבר ידנית");
       return;
     }
     router.push(callbackUrl);

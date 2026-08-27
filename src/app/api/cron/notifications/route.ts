@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     }
     await sendPushToUser(flight.userId, {
       title: "✈️ הצ׳ק-אין לטיסה שלכם נפתח",
-      body: `${flightTitle} ל${flight.destination.name} ממריאה בקרוב — זמן להיכנס לצ׳ק-אין.`,
+      body: `${flightTitle} ל${flight.destination.name} ממריאה בקרוב - זמן להיכנס לצ׳ק-אין.`,
       url: `/trip/${flight.destination.slug}/logistics`,
     });
     await prisma.tripLogistic.update({ where: { id: flight.id }, data: { checkinNotifiedAt: now } });

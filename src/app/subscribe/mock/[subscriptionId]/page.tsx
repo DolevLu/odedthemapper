@@ -27,7 +27,7 @@ export default async function MockSubscribeCheckoutPage({
   return (
     <div className="flex flex-1 items-center justify-center p-6" style={{ background: "#FAF7FF" }}>
       <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 text-center shadow-xl">
-        <p className="text-sm font-medium opacity-60">מצב תשלום — הדגמה (Test Mode)</p>
+        <p className="text-sm font-medium opacity-60">מצב תשלום - הדגמה (Test Mode)</p>
         <h1 className="mt-2 text-2xl font-extrabold">מנוי {plan.name}</h1>
         <p className="mt-4 text-4xl font-extrabold" style={{ color: "#7C3AED" }}>
           {formatIls(subscription.amountCents)} <span className="text-lg font-medium opacity-60">{cycleLabel}</span>
@@ -47,7 +47,7 @@ export default async function MockSubscribeCheckoutPage({
         )}
 
         <p className="mt-4 text-xs opacity-50">
-          זהו תשלום מדומה לצורך פיתוח — לא מתבצע חיוב אמיתי. בהמשך יוחלף בסליקה אמיתית דרך PayMe.
+          זהו תשלום מדומה לצורך פיתוח - לא מתבצע חיוב אמיתי. בהמשך יוחלף בסליקה אמיתית דרך PayMe.
         </p>
 
         <MockPayButton subscriptionId={subscription.id} />

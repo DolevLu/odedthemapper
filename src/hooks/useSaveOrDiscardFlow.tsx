@@ -70,7 +70,7 @@ export function useSaveOrDiscardFlow(destinationId: string, slug: string) {
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl p-5 shadow-xl" style={{ background: "var(--surface)" }}>
         {!nameStep ? (
           <>
-            <p className="mb-4 text-center font-bold">כבר יש לכם מסלול פעיל — מה לעשות איתו?</p>
+            <p className="mb-4 text-center font-bold">כבר יש לכם מסלול פעיל - מה לעשות איתו?</p>
             <div className="flex flex-col gap-2">
               {allowContinue && (
                 <button

@@ -37,7 +37,7 @@ export function EnrichmentPanel({
         if (result.processedInBatch === 0) break; // safety valve against an infinite loop
       }
     } catch {
-      setError("קרתה שגיאה באמצע ההעשרה — אפשר ללחוץ שוב כדי להמשיך מאיפה שנעצר.");
+      setError("קרתה שגיאה באמצע ההעשרה - אפשר ללחוץ שוב כדי להמשיך מאיפה שנעצר.");
     } finally {
       setRunning(false);
     }
@@ -50,13 +50,13 @@ export function EnrichmentPanel({
     <section className="rounded-xl border border-black/10 bg-white p-5">
       <h2 className="mb-1 font-bold">✨ העשרת מידע מה-AI</h2>
       <p className="mb-3 text-sm opacity-60">
-        לכל נקודה שחסר לה תמונה אמיתית / תיאור אמיתי / קישור לאתר — או שהתיאור/התמונה גנריים (חוזרים על אותו תוכן בהרבה
-        נקודות, סימן לקובץ KML שנוצר אוטומטית) — הכפתור מחפש תמונה אמיתית בוויקיפדיה, ותיאור וקישור אמיתיים דרך AI עם
+        לכל נקודה שחסר לה תמונה אמיתית / תיאור אמיתי / קישור לאתר - או שהתיאור/התמונה גנריים (חוזרים על אותו תוכן בהרבה
+        נקודות, סימן לקובץ KML שנוצר אוטומטית) - הכפתור מחפש תמונה אמיתית בוויקיפדיה, ותיאור וקישור אמיתיים דרך AI עם
         חיפוש גוגל חי. לא נוגע בנקודות שכבר יש להן תוכן אמיתי וייחודי. יכול לקחת כמה דקות לפי גודל היעד.
       </p>
 
       {total === 0 ? (
-        <p className="text-sm opacity-50">עדיין אין נקודות ביעד הזה — העלו KML קודם.</p>
+        <p className="text-sm opacity-50">עדיין אין נקודות ביעד הזה - העלו KML קודם.</p>
       ) : (
         <>
           <div className="mb-3 flex items-center gap-3">

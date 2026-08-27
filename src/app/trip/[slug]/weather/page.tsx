@@ -22,11 +22,11 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-        🌤️ מזג אוויר — {destination.name}
+        🌤️ מזג אוויר - {destination.name}
       </h1>
 
       {!forecast ? (
-        <p className="text-sm opacity-60">לא הצלחנו לטעון תחזית מזג אוויר כרגע — נסו שוב מאוחר יותר.</p>
+        <p className="text-sm opacity-60">לא הצלחנו לטעון תחזית מזג אוויר כרגע - נסו שוב מאוחר יותר.</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {forecast.map((day, i) => {

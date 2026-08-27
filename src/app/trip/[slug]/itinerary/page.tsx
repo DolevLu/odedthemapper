@@ -36,7 +36,10 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
           include: {
             items: {
               orderBy: { order: "asc" },
-              include: { poi: { include: { photos: { take: 1 } } }, votes: { select: { userId: true, value: true } } },
+              include: {
+                poi: { include: { photos: { take: 1 }, category: { select: { name: true } } } },
+                votes: { select: { userId: true, value: true } },
+              },
             },
           },
         },
@@ -74,7 +77,14 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
       timeOfDay: i.timeOfDay,
       customLabel: i.customLabel,
       note: i.note,
-      poi: i.poi ? { name: i.poi.name, photoUrl: i.poi.photos[0]?.url ?? null } : null,
+      poi: i.poi
+        ? {
+            name: i.poi.name,
+            photoUrl: i.poi.photos[0]?.url ?? null,
+            categoryName: i.poi.category.name,
+            description: extractTextDescription(i.poi.rawDescriptionHtml),
+          }
+        : null,
       likeCount: i.votes.filter((v) => v.value === 1).length,
       dislikeCount: i.votes.filter((v) => v.value === -1).length,
       myVote: (i.votes.find((v) => v.userId === userId)?.value ?? 0) as -1 | 0 | 1,

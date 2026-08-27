@@ -59,7 +59,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-16 right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px]"
         style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
-        aria-label="טראבי — עוזר הטיול"
+        aria-label="טראבי - עוזר הטיול"
       >
         💬
       </button>

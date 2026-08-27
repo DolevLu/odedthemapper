@@ -51,7 +51,7 @@ export async function createDestination(formData: FormData): Promise<{ ok: true;
 
     const slugInput = String(formData.get("slug") ?? "").trim();
     const slug = slugify(slugInput || name);
-    if (!slug) return { error: "לא הצלחנו לייצר כתובת (slug) תקינה מהשם — נסו להזין אחת ידנית" };
+    if (!slug) return { error: "לא הצלחנו לייצר כתובת (slug) תקינה מהשם - נסו להזין אחת ידנית" };
 
     const existing = await prisma.destination.findUnique({ where: { slug }, select: { id: true } });
     if (existing) return { error: `כבר קיים יעד עם הכתובת "${slug}"` };

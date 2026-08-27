@@ -57,7 +57,7 @@ export function AdminEditPinModal({
       >
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold">
-            🎨 עריכת צבע{!pin.isShape && "/אייקון"} — {pin.name}
+            🎨 עריכת צבע{!pin.isShape && "/אייקון"} - {pin.name}
           </h2>
           <button
             type="button"

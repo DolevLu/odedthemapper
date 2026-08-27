@@ -57,7 +57,7 @@ export function SavePinModal({
         </label>
 
         <label className="text-xs opacity-60">
-          קטגוריה (קובעת את האייקון והצבע — כמו בשאר הנקודות במפה)
+          קטגוריה (קובעת את האייקון והצבע - כמו בשאר הנקודות במפה)
           <select
             name="categoryName"
             defaultValue={SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]}

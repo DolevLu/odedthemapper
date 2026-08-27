@@ -81,7 +81,7 @@ export function CurrencyConverterWidget() {
         </select>
       </div>
       <div className="text-lg font-bold" style={{ color: "var(--primary)" }}>
-        {loading ? "מחשב..." : result !== null ? `= ${result.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${to}` : "—"}
+        {loading ? "מחשב..." : result !== null ? `= ${result.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${to}` : "-"}
       </div>
       {rate !== null && !loading && <p className="text-xs opacity-50">שער: 1 {from} = {rate.toLocaleString("he-IL", { maximumFractionDigits: 4 })} {to}</p>}
     </div>

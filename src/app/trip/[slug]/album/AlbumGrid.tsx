@@ -59,7 +59,7 @@ export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]
             onChange={(e) => handleDayChange(item.id, e.target.value)}
             disabled={pending}
             className="absolute bottom-1.5 end-1.5 rounded-md border-0 bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white"
-            title="שיוך לפי יום בטיול — לחלוקת האלבום הדיגיטלי"
+            title="שיוך לפי יום בטיול - לחלוקת האלבום הדיגיטלי"
           >
             <option value="">ללא יום</option>
             {dayOptions.map((d) => (

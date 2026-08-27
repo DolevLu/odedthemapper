@@ -35,7 +35,7 @@ export function CancelSubscriptionButton({ subscriptionId, periodEndLabel }: { s
             <span className="text-3xl">⚠️</span>
             <h2 className="mt-2 text-lg font-bold">האם אתם בטוחים?</h2>
             <p className="mt-2 text-sm opacity-70">
-              המנוי יישאר פעיל עד <span className="font-semibold">{periodEndLabel}</span> ולא יחודש אחרי זה — לא תחויבו שוב.
+              המנוי יישאר פעיל עד <span className="font-semibold">{periodEndLabel}</span> ולא יחודש אחרי זה - לא תחויבו שוב.
             </p>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <div className="mt-5 flex gap-2">

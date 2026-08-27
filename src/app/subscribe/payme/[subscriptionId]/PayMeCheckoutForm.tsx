@@ -49,7 +49,7 @@ export function PayMeCheckoutForm({
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_PAYME_API_KEY;
     if (!apiKey) {
-      setError("PayMe לא מוגדר — חסר מפתח API");
+      setError("PayMe לא מוגדר - חסר מפתח API");
       return;
     }
 

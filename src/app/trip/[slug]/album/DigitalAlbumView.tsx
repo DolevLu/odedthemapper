@@ -150,7 +150,7 @@ export function DigitalAlbumView({
 
       {userItems.length === 0 ? (
         <p className="text-center text-sm opacity-50">
-          האלבום הדיגיטלי שלכם עדיין ריק — העלו תמונות מהטיול כדי לראות אותו קם לחיים.
+          האלבום הדיגיטלי שלכם עדיין ריק - העלו תמונות מהטיול כדי לראות אותו קם לחיים.
         </p>
       ) : hasDayGrouping ? (
         <div className="flex flex-col gap-10">

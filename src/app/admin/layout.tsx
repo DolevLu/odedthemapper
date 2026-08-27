@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="flex min-h-screen flex-1 flex-col bg-[#f7f5f0]">
       <header className="flex items-center justify-between border-b border-black/10 bg-white px-6 py-4">
         <Link href="/admin" className="text-lg font-bold">
-          פאנל ניהול — עודד המנקד
+          פאנל ניהול - עודד המנקד
         </Link>
         <nav className="flex gap-4 text-sm">
           <Link href="/admin" className="opacity-70 hover:opacity-100">

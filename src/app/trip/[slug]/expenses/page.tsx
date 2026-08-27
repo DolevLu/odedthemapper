@@ -99,7 +99,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
 
         <div className="mt-5 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
           <Stat label="סה״כ הוצאות" value={`₪${total.toFixed(0)}`} />
-          <Stat label="תקציב כולל" value={totalBudget !== null ? `₪${totalBudget.toFixed(0)}` : "—"} />
+          <Stat label="תקציב כולל" value={totalBudget !== null ? `₪${totalBudget.toFixed(0)}` : "-"} />
           <Stat
             label="נשאר בתקציב"
             value={remaining !== null ? `₪${remaining.toFixed(0)}` : "—"}

@@ -2,13 +2,14 @@
 
 import { useRef, useState, useTransition } from "react";
 import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, voteItineraryItem } from "@/lib/actions/trip";
+import { shortCategoryLabel } from "@/lib/categoryLabels";
 
 export type DayListItem = {
   id: string;
   timeOfDay: string | null;
   customLabel: string | null;
   note: string | null;
-  poi: { name: string; photoUrl: string | null } | null;
+  poi: { name: string; photoUrl: string | null; categoryName?: string; description?: string | null } | null;
   likeCount: number;
   dislikeCount: number;
   myVote: -1 | 0 | 1;
@@ -24,7 +25,8 @@ const SWIPE_DELETE_THRESHOLD = 90;
  * lighter accent (coming up) — purely a clock-time comparison against each
  * stop's timeOfDay, not validated against which calendar day the trip is
  * actually on, so it's a same-schedule-shape cue rather than a literal
- * "you're here today" guarantee. */
+ * "you're here today" guarantee. Same logic the map's route view and the
+ * Now screen already use, kept in sync deliberately. */
 function timeStatusMap(items: { id: string; timeOfDay: string | null }[]): Map<string, "current" | "next"> {
   const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
   const map = new Map<string, "current" | "next">();
@@ -40,6 +42,16 @@ function timeStatusMap(items: { id: string; timeOfDay: string | null }[]): Map<s
   if (currentId) map.set(currentId, "current");
   if (nextId) map.set(nextId, "next");
   return map;
+}
+
+/** "קטגוריה · שם" — the Hebrew category always comes first purely for
+ * accessibility (immediately clear whether a stop is a restaurant, bar,
+ * attraction... before reading the venue name, which is very often in
+ * English/the local language and gives no hint on its own). */
+function displayLabel(item: DayListItem): string {
+  const name = item.poi ? item.poi.name : (item.customLabel ?? "");
+  if (!item.poi?.categoryName) return name;
+  return `${shortCategoryLabel(item.poi.categoryName)} · ${name}`;
 }
 
 // Debounced rather than saved on every keystroke, so typing a note doesn't
@@ -69,6 +81,7 @@ export function DayItemsList({
   const [swipeX, setSwipeX] = useState<Record<string, number>>({});
   const swipingId = useRef<string | null>(null);
   const swipeStartX = useRef(0);
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
 
   // Keep `order`/`notes` in sync with `items` when the server sends a fresh list
   // (React's documented pattern for adjusting state during render, in place
@@ -161,8 +174,7 @@ export function DayItemsList({
 
   // Horizontal drag-left-to-delete on the item card itself (mobile's
   // equivalent of the swipe-builder's reject gesture). Ignores drags that
-  // start on the reorder handle, note textarea, delete button, or vote
-  // buttons via the `data-no-swipe` marker on those elements.
+  // start on the reorder handle via the `data-no-swipe` marker.
   function handleSwipePointerDown(itemId: string, e: React.PointerEvent) {
     if ((e.target as HTMLElement).closest("[data-no-swipe]")) return;
     swipingId.current = itemId;
@@ -180,10 +192,14 @@ export function DayItemsList({
     if (swipingId.current !== itemId) return;
     swipingId.current = null;
     const delta = swipeX[itemId] ?? 0;
+    setSwipeX((prev) => ({ ...prev, [itemId]: 0 }));
     if (delta < -SWIPE_DELETE_THRESHOLD) {
       removeItineraryItem(itemId, slug);
+      return;
     }
-    setSwipeX((prev) => ({ ...prev, [itemId]: 0 }));
+    // A swipe too small to count as a delete gesture is treated as a tap —
+    // opens the detail sheet, same as tapping the card normally would.
+    if (Math.abs(delta) < 6) setDetailItemId(itemId);
   }
 
   function handleVote(itemId: string, value: 1 | -1) {
@@ -195,165 +211,183 @@ export function DayItemsList({
   if (items.length === 0) return <p className="text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
 
   const timeStatus = timeStatusMap(ordered);
+  const detailItem = detailItemId ? byId.get(detailItemId) ?? null : null;
 
   return (
     <div className="flex flex-col">
-      {ordered.map((item, idx) => (
-        <div key={item.id} className="flex gap-2.5 pb-3.5 last:pb-0">
-          {/* Route "trail" connector — a small stop marker plus a wavy line
-           * down to the next stop. The line overflows this row's own box by
-           * exactly the row gap (bottom: -0.875rem ~ pb-3.5) so it bridges
-           * cleanly into the next item's dot regardless of how tall this
-           * item's card is (note text can make it taller). */}
-          <div className="relative w-4 shrink-0">
-            <span
-              className="absolute left-1/2 top-4 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ background: "var(--accent)", boxShadow: "0 0 0 2px var(--surface)" }}
-            />
-            {idx < ordered.length - 1 && (
-              <span
-                className="route-connector-line absolute left-1/2 top-4 -translate-x-1/2"
-                style={{ bottom: "-0.875rem" }}
-              />
-            )}
-          </div>
-
-          <div className="relative flex-1 overflow-hidden rounded-2xl">
-            {/* Revealed behind the card as it's dragged left — mirrors the
-             * delete affordance so the gesture reads clearly before release. */}
-            <div
-              className="absolute inset-0 flex items-center justify-start rounded-2xl px-4 text-lg"
-              style={{ background: "#E11D48", color: "white", opacity: Math.min(1, -(swipeX[item.id] ?? 0) / SWIPE_DELETE_THRESHOLD) }}
-              aria-hidden
-            >
-              🗑️
-            </div>
-            <div
-              ref={(el) => {
-                if (el) itemRefs.current.set(item.id, el);
-                else itemRefs.current.delete(item.id);
-              }}
-              onPointerDown={(e) => handleSwipePointerDown(item.id, e)}
-              onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
-              onPointerUp={() => handleSwipePointerEnd(item.id)}
-              onPointerCancel={() => handleSwipePointerEnd(item.id)}
-              className="relative flex items-start gap-3.5 overflow-hidden rounded-2xl border p-3.5 text-sm shadow-sm touch-pan-y"
-              style={{
-                borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)",
-                background: "var(--surface)",
-                opacity: dragId === item.id ? 0.6 : 1,
-                transform: `translateX(${swipeX[item.id] ?? 0}px)`,
-                transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
-              }}
-            >
-              {/* Soft accent bar instead of recoloring the whole card —
-               * reads as a status cue without turning the card into an
-               * alert box. */}
-              {timeStatus.get(item.id) && (
-                <span
-                  className="absolute inset-y-0 start-0 w-1"
-                  style={{ background: timeStatus.get(item.id) === "current" ? "#22C55E" : "#F59E0B" }}
-                  aria-hidden
-                />
-              )}
-              <span
-                data-no-swipe
-                onPointerDown={(e) => {
-                  e.stopPropagation();
-                  handlePointerDown(item.id, e);
-                }}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
-                className="shrink-0 cursor-grab touch-none select-none px-1 pt-2.5 text-lg opacity-40 active:cursor-grabbing"
-                aria-label="גרירה לשינוי סדר"
+      {ordered.map((item) => {
+        const status = timeStatus.get(item.id);
+        return (
+          <div key={item.id} className="pb-2 last:pb-0">
+            <div className="relative overflow-hidden rounded-2xl">
+              {/* Revealed behind the card as it's dragged left — mirrors the
+               * delete affordance so the gesture reads clearly before release. */}
+              <div
+                className="absolute inset-0 flex items-center justify-start rounded-2xl px-4 text-lg"
+                style={{ background: "#E11D48", color: "white", opacity: Math.min(1, -(swipeX[item.id] ?? 0) / SWIPE_DELETE_THRESHOLD) }}
+                aria-hidden
               >
-                ⠿
-              </span>
-              {item.poi?.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.poi.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
-              ) : (
+                🗑️
+              </div>
+              <div
+                ref={(el) => {
+                  if (el) itemRefs.current.set(item.id, el);
+                  else itemRefs.current.delete(item.id);
+                }}
+                onPointerDown={(e) => handleSwipePointerDown(item.id, e)}
+                onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
+                onPointerUp={() => handleSwipePointerEnd(item.id)}
+                onPointerCancel={() => handleSwipePointerEnd(item.id)}
+                className="relative flex cursor-pointer items-center gap-2 overflow-hidden rounded-2xl border p-3 text-sm shadow-sm touch-pan-y"
+                style={{
+                  borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)",
+                  background: "var(--surface)",
+                  opacity: dragId === item.id ? 0.6 : 1,
+                  transform: `translateX(${swipeX[item.id] ?? 0}px)`,
+                  transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
+                }}
+              >
                 <span
-                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-lg"
-                  style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}
+                  data-no-swipe
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    handlePointerDown(item.id, e);
+                  }}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  className="shrink-0 cursor-grab touch-none select-none px-0.5 text-base opacity-30 active:cursor-grabbing"
+                  aria-label="גרירה לשינוי סדר"
                 >
-                  📍
+                  ⠿
                 </span>
-              )}
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+
                 {item.timeOfDay && (
-                  <span className="flex w-fit items-center gap-1.5">
-                    <span
-                      className="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold text-white"
-                      style={{ background: timeStatus.get(item.id) === "current" ? "#22C55E" : "var(--primary)" }}
-                    >
-                      {item.timeOfDay}
-                    </span>
-                    {timeStatus.get(item.id) === "current" && (
-                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ color: "#16A34A", background: "color-mix(in srgb, #22C55E 14%, transparent)" }}>
-                        עכשיו
-                      </span>
-                    )}
-                    {timeStatus.get(item.id) === "next" && (
-                      <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ color: "#B45309", background: "color-mix(in srgb, #F59E0B 14%, transparent)" }}>
-                        הבא
-                      </span>
-                    )}
+                  <span
+                    className="shrink-0 rounded-full px-2 py-1 font-mono text-xs font-bold text-white"
+                    style={{ background: status === "current" ? "#22C55E" : "var(--primary)" }}
+                  >
+                    {item.timeOfDay}
                   </span>
                 )}
-                <span className="line-clamp-2 font-medium leading-snug">
-                  {item.poi ? item.poi.name : item.customLabel}
-                  {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
-                </span>
-                <textarea
-                  data-no-swipe
-                  value={notes[item.id] ?? ""}
-                  onChange={(e) => {
-                    handleNoteChange(item.id, e.target.value);
-                    e.currentTarget.style.height = "auto";
-                    e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
-                  }}
-                  placeholder="✎ הוספת הערה אישית..."
-                  rows={1}
-                  className="mt-0.5 w-full resize-none rounded-md border-0 bg-transparent px-1.5 py-1 text-xs leading-snug opacity-80 outline-none placeholder:opacity-40 focus:bg-white/60 focus:opacity-100"
-                />
-                <span data-no-swipe className="mt-0.5 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleVote(item.id, 1)}
-                    className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold"
-                    style={{
-                      background: item.myVote === 1 ? "color-mix(in srgb, #16A34A 20%, transparent)" : "transparent",
-                      color: item.myVote === 1 ? "#16A34A" : "var(--text)",
-                      opacity: item.myVote === 1 ? 1 : 0.5,
-                    }}
-                    aria-label="לייק"
-                  >
-                    👍 {item.likeCount > 0 && item.likeCount}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleVote(item.id, -1)}
-                    className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold"
-                    style={{
-                      background: item.myVote === -1 ? "color-mix(in srgb, #DC2626 20%, transparent)" : "transparent",
-                      color: item.myVote === -1 ? "#DC2626" : "var(--text)",
-                      opacity: item.myVote === -1 ? 1 : 0.5,
-                    }}
-                    aria-label="דיסלייק"
-                  >
-                    👎 {item.dislikeCount > 0 && item.dislikeCount}
-                  </button>
-                </span>
-              </span>
-              <form data-no-swipe action={removeItineraryItem.bind(null, item.id, slug)}>
-                <button className="shrink-0 pt-2 opacity-40 hover:opacity-100">✕</button>
-              </form>
+                <span className="min-w-0 flex-1 truncate font-medium">{displayLabel(item)}</span>
+                {status === "current" && (
+                  <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: "#22C55E" }}>
+                    עכשיו
+                  </span>
+                )}
+                {status === "next" && (
+                  <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ color: "#B45309", background: "color-mix(in srgb, #F59E0B 14%, transparent)" }}>
+                    הבא
+                  </span>
+                )}
+                {notes[item.id] && <span className="shrink-0 text-xs opacity-40">✎</span>}
+              </div>
             </div>
           </div>
+        );
+      })}
+
+      {detailItem && (
+        <ItemDetailSheet
+          item={detailItem}
+          note={notes[detailItem.id] ?? ""}
+          onNoteChange={(v) => handleNoteChange(detailItem.id, v)}
+          onVote={(v) => handleVote(detailItem.id, v)}
+          onRemove={() => {
+            removeItineraryItem(detailItem.id, slug);
+            setDetailItemId(null);
+          }}
+          onClose={() => setDetailItemId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Opens on tap — everything that used to live inline in the row (note,
+ * votes, remove) now lives here instead, keeping the row itself clean. */
+function ItemDetailSheet({
+  item,
+  note,
+  onNoteChange,
+  onVote,
+  onRemove,
+  onClose,
+}: {
+  item: DayListItem;
+  note: string;
+  onNoteChange: (value: string) => void;
+  onVote: (value: 1 | -1) => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white sm:rounded-3xl"
+      >
+        {item.poi?.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.poi.photoUrl} alt="" className="h-44 w-full object-cover" />
+        ) : (
+          <div className="flex h-20 w-full items-center justify-center text-3xl" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
+            📍
+          </div>
+        )}
+        <div className="flex flex-col gap-3 overflow-y-auto p-5">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              {item.poi?.categoryName && <p className="text-xs font-semibold opacity-60">{shortCategoryLabel(item.poi.categoryName)}</p>}
+              <h2 className="text-lg font-bold">{item.poi ? item.poi.name : item.customLabel}</h2>
+              {item.timeOfDay && <p className="mt-0.5 text-sm font-bold" style={{ color: "var(--primary)" }}>{item.timeOfDay}</p>}
+            </div>
+            <button onClick={onClose} className="shrink-0 rounded-full px-2 py-1 text-lg opacity-50 hover:opacity-100" aria-label="סגירה">
+              ✕
+            </button>
+          </div>
+
+          {item.poi?.description && <p className="text-sm opacity-80">{item.poi.description}</p>}
+
+          <textarea
+            value={note}
+            onChange={(e) => onNoteChange(e.target.value)}
+            placeholder="✎ הוספת הערה אישית..."
+            rows={2}
+            className="w-full resize-none rounded-lg border p-2 text-sm outline-none"
+            style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
+          />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onVote(1)}
+                className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold"
+                style={{
+                  background: item.myVote === 1 ? "color-mix(in srgb, #16A34A 20%, transparent)" : "color-mix(in srgb, var(--primary) 8%, transparent)",
+                  color: item.myVote === 1 ? "#16A34A" : "var(--text)",
+                }}
+              >
+                👍 {item.likeCount > 0 && item.likeCount}
+              </button>
+              <button
+                onClick={() => onVote(-1)}
+                className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm font-semibold"
+                style={{
+                  background: item.myVote === -1 ? "color-mix(in srgb, #DC2626 20%, transparent)" : "color-mix(in srgb, var(--primary) 8%, transparent)",
+                  color: item.myVote === -1 ? "#DC2626" : "var(--text)",
+                }}
+              >
+                👎 {item.dislikeCount > 0 && item.dislikeCount}
+              </button>
+            </div>
+            <button onClick={onRemove} className="rounded-full px-3 py-1.5 text-sm font-semibold text-white" style={{ background: "#DC2626" }}>
+              🗑️ הסרה מהמסלול
+            </button>
+          </div>
         </div>
-      ))}
+      </div>
     </div>
   );
 }

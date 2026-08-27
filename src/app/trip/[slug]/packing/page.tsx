@@ -31,7 +31,7 @@ export default async function PackingPage({ params }: { params: Promise<{ slug: 
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="mb-2 text-xl font-bold">🧳 רשימת ציוד וצ׳ק ליסט לפני טיסה</h1>
-        <p className="text-sm opacity-60">מסך חינמי — זמין לכל משתמש, בכל יעד.</p>
+        <p className="text-sm opacity-60">מסך חינמי - זמין לכל משתמש, בכל יעד.</p>
       </div>
       <BookingChecklist destinationId={destination.id} slug={slug} items={bookablePois} checkedKeys={checkedKeys} />
       <PackingChecklist
