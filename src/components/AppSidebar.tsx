@@ -41,6 +41,24 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
   );
 }
 
+/** Small "i" button next to the logo/name — links to the full usage guide
+ * (/guide), for anyone who wants the manual rather than the first-login
+ * walkthrough (see WalkthroughGuide, which only ever shows once). */
+function GuideInfoButton({ onClick }: { onClick?: () => void }) {
+  return (
+    <Link
+      href="/guide"
+      onClick={onClick}
+      title="מדריך שימוש"
+      aria-label="מדריך שימוש"
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold"
+      style={{ borderColor: "var(--primary, #7C3AED)", color: "var(--primary, #7C3AED)" }}
+    >
+      i
+    </Link>
+  );
+}
+
 type DestItem = { href: string; label: string; icon: string; tier: Tier };
 
 // The destination-scoped items pinned in the mobile bottom bar — everything
@@ -177,6 +195,7 @@ export function AppSidebar({
       >
         <div className="mb-3 flex shrink-0 items-center gap-2 px-1">
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+          <GuideInfoButton />
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8" />
@@ -345,11 +364,14 @@ export function AppSidebar({
             style={{ background: "var(--background, #FBF6EE)" }}
           >
             <div className="mb-2 flex items-center justify-between">
-              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />
-                <span className="text-base font-extrabold">עודד המנקד</span>
-              </Link>
+              <div className="flex items-center gap-1.5">
+                <GuideInfoButton onClick={() => setDrawerOpen(false)} />
+                <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />
+                  <span className="text-base font-extrabold">עודד המנקד</span>
+                </Link>
+              </div>
               <button onClick={() => setDrawerOpen(false)} className="rounded-full px-2 py-1 text-lg opacity-60">
                 ✕
               </button>
