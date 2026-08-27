@@ -77,9 +77,9 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   const actions = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
     <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
     <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ להזמנה"}</button>
-    ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">🎨 עריכת צבע/אייקון</button>` : ""}
+    ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">🎨 עריכה</button>` : ""}
   </div>`;
-  return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
+  return `<div style="font-family:'Rubik',sans-serif;padding:8px">
     ${photo}
     <strong>${poi.name}</strong><br/>
     <span style="opacity:.6;font-size:12px">${poi.categoryName} · ${poi.areaName}</span>
@@ -121,7 +121,7 @@ function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId:
     : "";
   const mapsUrl = place.url ?? `https://www.google.com/maps/place/?q=place_id:${placeId}`;
 
-  return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px;max-width:260px">
+  return `<div style="font-family:'Rubik',sans-serif;padding:8px;max-width:260px">
     ${photo}
     <strong>${name}</strong>
     ${rating}
@@ -203,7 +203,7 @@ export function MapScreen({
    * to the destination they're planning; the map instead falls back to its
    * default destination-overview center/zoom. */
   autoLocate?: boolean;
-  /** Content managers (see canManageContent) get an extra "🎨 עריכת צבע/אייקון"
+  /** Content managers (see canManageContent) get an extra "🎨 עריכה"
    * action on every point's info window, and shapes become clickable too —
    * opens AdminEditPinModal to override colorHex/iconCategory in place. */
   isAdmin?: boolean;
@@ -571,7 +571,7 @@ export function MapScreen({
           ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${escapeHtml(pin.description)}</div>`
           : "";
         infoWindowRef.current?.setContent(
-          `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
+          `<div style="font-family:'Rubik',sans-serif;padding:8px">
             ${photo}
             <strong>📌 ${escapeHtml(pin.name)}</strong>
             ${description}
@@ -785,7 +785,7 @@ export function MapScreen({
       });
       marker.addListener("click", () => {
         infoWindowRef.current?.setContent(
-          `<div style="font-family:'Rubik',sans-serif;padding:2px 4px"><strong>${pin.title}</strong>${
+          `<div style="font-family:'Rubik',sans-serif;padding:8px"><strong>${pin.title}</strong>${
             pin.dateRange ? `<br/><span style="opacity:.6;font-size:12px">${pin.dateRange}</span>` : ""
           }</div>`
         );
@@ -825,7 +825,7 @@ export function MapScreen({
             mapRef.current!.panTo({ lat, lng });
             mapRef.current!.setZoom(16);
             infoWindowRef.current?.setContent(
-              `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">
+              `<div style="font-family:'Rubik',sans-serif;padding:8px">
                 <strong>${name}</strong>
                 ${top.formatted_address ? `<div style="font-size:12px;opacity:.6;margin-top:2px">${top.formatted_address}</div>` : ""}
                 <div style="margin-top:8px">

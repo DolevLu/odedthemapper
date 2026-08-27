@@ -53,7 +53,7 @@ function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, to
           </div>
         </div>`
       : "";
-  return `<div style="font-family:'Rubik',sans-serif;padding:2px 4px">${photo}<strong>${p.name}</strong>${description}${moveButtons}</div>`;
+  return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong>${description}${moveButtons}</div>`;
 }
 
 /** Honest heuristic, not real transit routing: short hops are walkable,

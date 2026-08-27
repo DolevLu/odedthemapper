@@ -48,6 +48,30 @@
   transition: none !important;
 }
 
+/* Google's InfoWindow chrome (the white rounded bubble around our own POI
+ * popup HTML — see infoWindowHtml/richPlaceInfoWindowHtml in MapScreen.tsx)
+ * reserves a large fixed padding + a corner area for its own close button by
+ * default, on top of whatever padding our own content div sets — the result
+ * is a big empty margin of white space above/beside a small popup like a POI
+ * card. Stripping that default padding lets our content's own small
+ * `padding:8px` be the only spacing, so the bubble hugs the actual content
+ * instead of floating inside a mostly-empty box. */
+.gm-style-iw-c {
+  padding: 0 !important;
+}
+.gm-style-iw-d {
+  overflow: hidden !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+.gm-style-iw-t::after {
+  /* keeps the pointer tail attached to the (now edge-to-edge) card */
+  background: var(--surface, #ffffff);
+}
+.gm-ui-hover-effect {
+  top: 4px !important;
+}
+
 /* White fill + a thin black outline (faked via layered text-shadow, since
  * Google's MarkerLabel API has no text-stroke option) keeps POI name tags on
  * the map legible over both light and dark tile colors. */
