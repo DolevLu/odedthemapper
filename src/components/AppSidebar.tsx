@@ -43,7 +43,9 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
 
 /** Small "i" button next to the logo/name — links to the full usage guide
  * (/guide), for anyone who wants the manual rather than the first-login
- * walkthrough (see WalkthroughGuide, which only ever shows once). */
+ * walkthrough (see WalkthroughGuide, which only ever shows once). Filled
+ * brand-gradient circle (not just an outlined letter) so it reads as a real
+ * button, not stray text next to the logo. */
 function GuideInfoButton({ onClick }: { onClick?: () => void }) {
   return (
     <Link
@@ -51,8 +53,8 @@ function GuideInfoButton({ onClick }: { onClick?: () => void }) {
       onClick={onClick}
       title="מדריך שימוש"
       aria-label="מדריך שימוש"
-      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold"
-      style={{ borderColor: "var(--primary, #7C3AED)", color: "var(--primary, #7C3AED)" }}
+      className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white shadow-sm transition-transform hover:scale-110"
+      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)", fontFamily: "Georgia, serif" }}
     >
       i
     </Link>
@@ -195,7 +197,6 @@ export function AppSidebar({
       >
         <div className="mb-3 flex shrink-0 items-center gap-2 px-1">
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
-          <GuideInfoButton />
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8" />
@@ -206,6 +207,7 @@ export function AppSidebar({
               </span>
             </span>
           </Link>
+          <GuideInfoButton />
         </div>
         <div className="mb-2 px-1">
           <DestinationBadge />
