@@ -9,19 +9,52 @@ export function HeroAppPreview() {
         className="relative overflow-hidden rounded-[28px] border shadow-xl"
         style={{ borderColor: "rgba(124,58,237,0.15)", background: "#eef2ed" }}
       >
-        {/* mini map — terrain blocks + road lines so it actually reads as a
-         * map at a glance, not abstract colored blobs */}
+        {/* mini map — a top-down cityscape (street grid + building
+         * footprints + a river/bridge), so it unmistakably reads as "a city
+         * on a map" at a glance rather than an abstract planning canvas. */}
         <div className="relative h-56 w-full overflow-hidden">
-          <div className="absolute inset-0" style={{ background: "#e9efe4" }}>
-            <div className="absolute left-0 top-0 h-32 w-40" style={{ background: "#dbe8d8" }} />
-            <div className="absolute bottom-0 right-0 h-28 w-48" style={{ background: "#e2ecdf" }} />
-            <div className="absolute left-16 top-24 h-16 w-24 rounded-[40%]" style={{ background: "#cfe3cc" }} />
-          </div>
           <svg viewBox="0 0 400 224" className="absolute inset-0 h-full w-full" preserveAspectRatio="none" aria-hidden="true">
-            <line x1="0" y1="70" x2="400" y2="95" stroke="#c9cfc0" strokeWidth="4" />
-            <line x1="0" y1="160" x2="400" y2="140" stroke="#c9cfc0" strokeWidth="5" />
-            <line x1="90" y1="0" x2="130" y2="224" stroke="#c9cfc0" strokeWidth="4" />
-            <line x1="290" y1="0" x2="260" y2="224" stroke="#c9cfc0" strokeWidth="4" />
+            <rect x="0" y="0" width="400" height="224" fill="#eef1ea" />
+
+            {/* park */}
+            <rect x="18" y="16" width="82" height="58" rx="10" fill="#d3e6cf" />
+
+            {/* river + bridge, a nod to the actual itinerary strip below */}
+            <path d="M -20 210 Q 140 150 220 190 T 420 130" stroke="#c3d8e6" strokeWidth="26" fill="none" />
+            <line x1="255" y1="150" x2="285" y2="205" stroke="#eef1ea" strokeWidth="8" />
+
+            {/* street grid */}
+            <g stroke="#d7d3c6" strokeWidth="7">
+              <line x1="0" y1="86" x2="400" y2="86" />
+              <line x1="0" y1="150" x2="400" y2="150" />
+              <line x1="118" y1="0" x2="118" y2="224" />
+              <line x1="232" y1="0" x2="232" y2="224" />
+              <line x1="330" y1="0" x2="330" y2="224" />
+            </g>
+
+            {/* building footprints — varied sizes/shades per city block so it
+             * reads as real structures, not a texture */}
+            <g>
+              <rect x="130" y="10" width="42" height="30" rx="2" fill="#d9d4c8" />
+              <rect x="180" y="14" width="34" height="24" rx="2" fill="#cfc9bb" />
+              <rect x="244" y="8" width="50" height="34" rx="2" fill="#e0dbcf" />
+              <rect x="304" y="14" width="20" height="26" rx="2" fill="#d2ccbe" />
+              <rect x="340" y="10" width="46" height="32" rx="2" fill="#d9d4c8" />
+
+              <rect x="10" y="96" width="36" height="42" rx="2" fill="#dcd7cb" />
+              <rect x="54" y="100" width="30" height="30" rx="2" fill="#cfc9bb" />
+              <rect x="130" y="94" width="44" height="46" rx="2" fill="#e0dbcf" />
+              <rect x="184" y="100" width="26" height="34" rx="2" fill="#d2ccbe" />
+              <rect x="240" y="96" width="38" height="44" rx="2" fill="#d9d4c8" />
+              <rect x="340" y="98" width="48" height="40" rx="2" fill="#dcd7cb" />
+
+              <rect x="8" y="162" width="40" height="30" rx="2" fill="#d2ccbe" />
+              <rect x="56" y="158" width="50" height="36" rx="2" fill="#e0dbcf" />
+              <rect x="130" y="164" width="30" height="28" rx="2" fill="#cfc9bb" />
+              <rect x="244" y="160" width="36" height="34" rx="2" fill="#dcd7cb" />
+              <rect x="290" y="166" width="28" height="26" rx="2" fill="#d9d4c8" />
+              <rect x="336" y="160" width="44" height="34" rx="2" fill="#d2ccbe" />
+            </g>
           </svg>
 
           {[
