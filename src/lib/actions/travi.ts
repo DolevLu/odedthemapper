@@ -1,7 +1,10 @@
 "use server";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { haversineKm } from "@/lib/geo";
+import { getAiChatDailyQuota } from "@/lib/access";
+import { consumeAiChatQuota } from "@/lib/aiChatQuota";
 
 export type TraviSuggestion = { id: string; name: string; categoryName: string; areaName: string; distanceKm: number | null };
 export type TraviReply = { text: string; suggestions: TraviSuggestion[] };
@@ -200,6 +203,25 @@ export async function askTravi(
       text: "היי! אני טראבי 🧭 - אני מכיר את כל הנקודות שיש לכם ביעד הזה. תשאלו אותי דברים כמו \"מסעדה טובה בסביבה\", \"מה יש לעשות היום\", או שאלות על השימוש באפליקציה.",
       suggestions: [],
     };
+  }
+
+  // Every reply past this point calls Gemini (a real per-message cost), so
+  // it's gated by the caller's plan-tier daily quota before doing anything
+  // else — greetings above are free canned replies and don't count.
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return { text: "צריך להתחבר כדי לדבר עם טראבי.", suggestions: [] };
+  }
+  const dailyQuota = await getAiChatDailyQuota(userId);
+  if (dailyQuota !== null) {
+    const { allowed } = await consumeAiChatQuota(userId, dailyQuota);
+    if (!allowed) {
+      return {
+        text: `הגעתם למכסת ${dailyQuota} ההודעות היומיות שלכם לטראבי 🧭 להיום - המכסה מתאפסת מחר. שדרוג לחבילה גדולה יותר מעלה גם את המכסה היומית.`,
+        suggestions: [],
+      };
+    }
   }
 
   const q = normalize(rawQ);

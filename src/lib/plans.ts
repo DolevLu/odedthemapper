@@ -9,6 +9,7 @@ export type Plan = {
   destinationLimit: number | null; // null = unlimited (org tier)
   seats: number | null; // total users allowed under one subscription; null = unlimited
   isOrgTier: boolean;
+  aiChatDailyQuota: number; // Travi AI chat messages per calendar day (Gemini calls cost money — see lib/aiChatQuota.ts)
   tagline: string;
   features: string[];
   highlighted?: boolean;
@@ -24,6 +25,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     destinationLimit: 1,
     seats: 1,
     isOrgTier: false,
+    aiChatDailyQuota: 10,
     tagline: "כל מה שצריך ליעד אחד - מפה, מסלול ותקציב במקום אחד.",
     features: [
       "גישה מלאה ליעד אחד לבחירה, עם אפשרות להחליף יעד פעם ב-14 יום",
@@ -35,6 +37,7 @@ export const PLANS: Record<PlanKey, Plan> = {
       "שיחון, ציוד וצ׳ק ליסט וגלריה",
       "מצב אופליין",
       "משתמש אחד בלבד",
+      "עד 10 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
   },
   family: {
@@ -46,6 +49,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     destinationLimit: 5,
     seats: 5,
     isOrgTier: false,
+    aiChatDailyQuota: 30,
     tagline: "מתכננים כמה יעדים בו-זמנית ורוצים לשתף עם כל המשפחה? קיבלתם.",
     features: [
       "גישה עד 5 יעדים לבחירה, עם אפשרות להחליף כל יעד בנפרד פעם ב-14 יום",
@@ -53,6 +57,7 @@ export const PLANS: Record<PlanKey, Plan> = {
       "עד 5 משתמשים תחת אותו מנוי - מזמינים לפי אימייל",
       "כל משתמש רואה ועורך את אותם מסלולים, מועדפים ותקציב",
       "תמיכה מועדפת",
+      "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
     highlighted: true,
   },
@@ -65,6 +70,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     destinationLimit: null,
     seats: null,
     isOrgTier: true,
+    aiChatDailyQuota: 100,
     tagline: "בונים טיולים ללקוחות? נהלו הכל במקום אחד.",
     features: [
       "גישה לכל היעדים במערכת ללא הגבלה",
@@ -74,6 +80,7 @@ export const PLANS: Record<PlanKey, Plan> = {
       "הרשאות ניהול תוכן: הוספה ועריכה של יעדים ונקודות",
       "ייצוא מסלולים כ-PDF ממותג + קישור צפייה ללקוחות (ללא צורך בחשבון)",
       "מספר משתמשים בלתי מוגבל בצוות",
+      "עד 100 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
   },
 };

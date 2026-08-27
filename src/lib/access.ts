@@ -61,6 +61,17 @@ export async function canManageContent(userId: string): Promise<boolean> {
   return Boolean(sub && PLANS[sub.planKey as keyof typeof PLANS]?.isOrgTier);
 }
 
+/** Daily Gemini-backed AI chat quota for this user's plan — null means
+ * unlimited (admins). Gemini calls cost real money per message, so Travi
+ * enforces this before calling it (see lib/actions/travi.ts + lib/aiChatQuota.ts). */
+export async function getAiChatDailyQuota(userId: string): Promise<number | null> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
+  if (user?.isAdmin) return null;
+  const sub = await getActiveSubscription(userId);
+  if (!sub) return 0;
+  return PLANS[sub.planKey as keyof typeof PLANS]?.aiChatDailyQuota ?? 0;
+}
+
 export type AccessLevel = "none" | "silver" | "gold";
 
 /** silver = this destination is covered by an active subscription (or admin);

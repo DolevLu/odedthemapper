@@ -215,6 +215,7 @@ model User {
   countryPhotos CountryPhoto[]
   pushSubscriptions PushSubscription[]
   expenseSplits ExpenseSplit[]
+  aiChatUsages  AiChatUsage[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -324,6 +325,22 @@ model SubscriptionDestination {
 }
 
 // ---------- In-app trip data ----------
+
+/** Per-user, per-day counter of Travi AI chat messages (see lib/actions/travi.ts
+ * + lib/aiChatQuota.ts) — Gemini calls cost real money per message, so each
+ * plan tier caps how many a user can send per calendar day (Asia/Jerusalem).
+ * "date" is a plain "YYYY-MM-DD" string rather than a DateTime so the unique
+ * constraint below is a simple calendar-day match, no time-range querying. */
+model AiChatUsage {
+  id     String @id @default(cuid())
+  userId String
+  date   String
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
 
 model Favorite {
   id        String   @id @default(cuid())
