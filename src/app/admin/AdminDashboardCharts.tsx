@@ -196,6 +196,17 @@ export function AdminDashboardCharts({
               </LineChart>
             </ResponsiveContainer>
           </ChartCard>
+          <ChartCard title="פעילות לפי מסך (מה עכשיו / מפה / מסלול וכו')">
+            <ResponsiveContainer>
+              <BarChart data={usage.screenActivity} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#0000000f" />
+                <XAxis type="number" fontSize={11} allowDecimals={false} />
+                <YAxis type="category" dataKey="screen" fontSize={10} width={140} />
+                <Tooltip formatter={(v, _n, item) => [`${v} פעולות (${item?.payload?.trendPct > 0 ? "+" : ""}${item?.payload?.trendPct}% בשבוע)`, ""]} />
+                <Bar dataKey="events" fill="#EF4444" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
           <ChartCard title="קטגוריות פופולריות (לפי מועדפים)">
             <ResponsiveContainer>
               <BarChart data={usage.topCategories} layout="vertical">

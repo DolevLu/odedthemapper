@@ -69,11 +69,10 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
     <Link
       href="/admin"
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-2 text-[15px] font-semibold text-white shadow-sm"
-      style={{ borderRadius: "999px", background: "linear-gradient(135deg, #2563EB, #0EA5E9)" }}
+      className="flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+      style={{ background: "linear-gradient(135deg, #2563EB, #0EA5E9)" }}
     >
-      <span className="icon-pop text-lg">🛠️</span>
-      <span>פאנל אדמין</span>
+      🛠️ פאנל אדמין
     </Link>
   );
 }
@@ -265,7 +264,6 @@ export function AppSidebar({
               </Link>
             );
           })}
-          {isAdmin && <AdminPanelLink />}
         </div>
 
         <div className="my-1.5 h-px shrink-0 bg-black/10" />
@@ -316,6 +314,7 @@ export function AppSidebar({
           ✨ שדרג עכשיו
         </Link>
         <DownloadAppLink />
+        {isAdmin && <AdminPanelLink />}
       </nav>
 
       {/* Mobile: no top header bar either — the profile button just floats
@@ -425,7 +424,6 @@ export function AppSidebar({
                 </Link>
               );
             })}
-            {isAdmin && <AdminPanelLink onClick={() => setDrawerOpen(false)} />}
 
             <div className="my-1.5 h-px bg-black/10" />
 
@@ -472,6 +470,7 @@ export function AppSidebar({
               ✨ שדרג עכשיו
             </Link>
             <DownloadAppLink onClick={() => setDrawerOpen(false)} />
+            {isAdmin && <AdminPanelLink onClick={() => setDrawerOpen(false)} />}
           </div>
         </div>
       )}

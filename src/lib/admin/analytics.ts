@@ -155,17 +155,25 @@ export async function getFinancialSummary() {
  * day-of-week/hour-of-day shape and month-over-month trend direction; not a
  * substitute for true analytics instrumentation. */
 export async function getUsageSummary() {
-  const [users, favorites, quizAttempts, pings] = await Promise.all([
+  const [users, favorites, quizAttempts, pings, savedPins, itineraryVotes, expenses, albumMedia] = await Promise.all([
     prisma.user.findMany({ select: { createdAt: true } }),
     prisma.favorite.findMany({ select: { createdAt: true, poi: { select: { category: { select: { name: true }, } } } } }),
     prisma.quizAttempt.findMany({ select: { completedAt: true, destination: { select: { name: true } } } }),
     prisma.locationPing.findMany({ select: { recordedAt: true }, take: 20000, orderBy: { recordedAt: "desc" } }),
+    prisma.savedMapPin.findMany({ select: { createdAt: true } }),
+    prisma.itineraryItemVote.findMany({ select: { createdAt: true } }),
+    prisma.expense.findMany({ select: { spentAt: true } }),
+    prisma.albumMedia.findMany({ select: { createdAt: true } }),
   ]);
 
   const activityTimestamps: Date[] = [
     ...favorites.map((f) => f.createdAt),
     ...quizAttempts.map((q) => q.completedAt),
     ...pings.map((p) => p.recordedAt),
+    ...savedPins.map((p) => p.createdAt),
+    ...itineraryVotes.map((v) => v.createdAt),
+    ...expenses.map((e) => e.spentAt),
+    ...albumMedia.map((a) => a.createdAt),
   ];
 
   const weekdayBuckets = new Array(7).fill(0);
@@ -213,6 +221,28 @@ export async function getUsageSummary() {
     destCounts.set(q.destination.name, (destCounts.get(q.destination.name) ?? 0) + 1);
   }
 
+  // Which screens/features get the most activity — built from whichever
+  // models actually carry a timestamp for the action they represent (not
+  // every screen has one: TripLogistic/PackingCheck/PhrasebookProgress have
+  // no createdAt field at all, so they can't be included honestly). מפה
+  // covers both custom-pin saves and GPS location tracking, since both
+  // happen on the map/now screens and neither is separately attributable.
+  const screenBuckets: { screen: string; timestamps: Date[] }[] = [
+    { screen: "מפה / מה עכשיו (מיקום)", timestamps: [...savedPins.map((p) => p.createdAt), ...pings.map((p) => p.recordedAt)] },
+    { screen: "מועדפים", timestamps: favorites.map((f) => f.createdAt) },
+    { screen: "מסלול (הצבעות)", timestamps: itineraryVotes.map((v) => v.createdAt) },
+    { screen: "הוצאות", timestamps: expenses.map((e) => e.spentAt) },
+    { screen: "חידונים", timestamps: quizAttempts.map((q) => q.completedAt) },
+    { screen: "אלבום", timestamps: albumMedia.map((a) => a.createdAt) },
+  ];
+  const screenActivity = screenBuckets
+    .map(({ screen, timestamps }) => ({
+      screen,
+      events: timestamps.length,
+      trendPct: pctChange(countInRange(timestamps, now - 7 * day, now), countInRange(timestamps, now - 14 * day, now - 7 * day)),
+    }))
+    .sort((a, b) => b.events - a.events);
+
   return {
     signupsByMonth,
     activityByWeekday,
@@ -222,6 +252,7 @@ export async function getUsageSummary() {
     signupsLast7,
     activityLast7: last7,
     topCategories,
+    screenActivity,
     totalUsers: users.length,
   };
 }
@@ -246,6 +277,16 @@ export function getMarketingRecommendations(financial: FinancialSummary, usage: 
     }
     if (top.source === "ישיר" && topPct >= 70) {
       recs.push({ icon: "📣", text: `${topPct}% מהרכישות הן ישירות ללא קוד או הפניה - יש מקום להשקיע יותר בערוצי שיווק חדשים (קופונים, הפניות) כדי לגוון את מקורות ההכנסה.` });
+    }
+  }
+
+  const activeScreens = usage.screenActivity.filter((s) => s.events > 0);
+  if (activeScreens.length > 0) {
+    const top = activeScreens[0];
+    recs.push({ icon: "🔥", text: `המסך הכי פעיל הוא "${top.screen}" (${top.events} פעולות) - שווה להבליט אותו יותר בשיווק ובעמוד הנחיתה כשל-App עצמו.` });
+    const leastActive = activeScreens[activeScreens.length - 1];
+    if (activeScreens.length > 1 && leastActive.events < top.events * 0.1) {
+      recs.push({ icon: "🧊", text: `המסך "${leastActive.screen}" כמעט ולא בשימוש (${leastActive.events} פעולות בלבד) - שווה לבדוק אם הוא נגיש/ברור מספיק למשתמשים, או להדגיש אותו יותר במדריך השימוש.` });
     }
   }
 
