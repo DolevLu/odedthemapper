@@ -53,9 +53,9 @@ export default async function Home() {
               🧭 {stats[0].value} יעדים · {stats[1].value} נקודות עניין
             </span>
             <h1 className="text-4xl font-extrabold leading-tight sm:text-6xl">
-              מפות המלצות אישיות
+              טראבי - פלטפורמת הטיולים
               <br />
-              שהופכות לאפליקציית טיול מלאה
+              שהופכת כל טיסה להרפתקה
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-lg opacity-70 lg:mx-0">
               לכל יעד - עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד.
