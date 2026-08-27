@@ -20,7 +20,7 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
   const forecast = lat != null && lng != null ? await fetchWeatherForecast(lat, lng) : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
         🌤️ מזג אוויר — {destination.name}
       </h1>

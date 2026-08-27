@@ -42,7 +42,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
   const visibleRest = activeCategory ? filteredRest : filteredRest.slice(0, UNFILTERED_CAP);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {wanted.length > 0 && (
         <section>
           <h2 className="mb-3 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>

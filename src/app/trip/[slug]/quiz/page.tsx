@@ -21,7 +21,7 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   ]);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
           🧠 חידונים — {destination.name}

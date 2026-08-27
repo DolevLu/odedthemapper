@@ -55,7 +55,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
   const budgetAction = setTripBudget.bind(null, destination.id, slug);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <h1 className="text-xl font-bold">💸 הוצאות ותקציב</h1>
 
       <CurrencyConverterWidget />

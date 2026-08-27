@@ -54,7 +54,7 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   const holidays = getUpcomingHolidays(slug).slice(0, 5);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {holidays.length > 0 && (
         <section className="border p-3" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
           <h2 className="mb-0.5 text-sm font-bold">📅 חגים וימי חג קרובים</h2>

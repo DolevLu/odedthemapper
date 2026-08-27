@@ -35,7 +35,7 @@ export function PackingChecklist({
   const doneCount = PACKING_LIST.filter((i) => checked.has(i.key)).length;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       <p className="text-sm opacity-70">
         {doneCount}/{PACKING_LIST.length} סומנו
       </p>

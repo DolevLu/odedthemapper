@@ -46,7 +46,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {mustSee.length > 0 && (
         <section>
           <h2 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>

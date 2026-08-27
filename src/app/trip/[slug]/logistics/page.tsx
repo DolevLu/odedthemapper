@@ -47,7 +47,7 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold">✈️ לוגיסטיקת טיול</h1>
         {heatmapPoints.length > 0 && <WhereToStayHeatmap points={heatmapPoints} destinationName={destination.name} />}
