@@ -24,10 +24,20 @@
          underneath them; see MainActivity's window-insets handling, which
          gives the bottom inset back to the content as padding while leaving
          the top inset alone. -->
+    <!-- postSplashScreenTheme (below) is the piece that was missing and is
+         very likely the real cause of a persistent top bar (app icon + name)
+         some users saw stuck on screen, worst on Samsung's OneUI: this theme
+         declares itself a Theme.SplashScreen but the app never actually
+         called the Android 12+ SplashScreen API (see
+         SplashScreen.installSplashScreen in MainActivity) or told it which
+         theme to hand off to once ready — without that hand-off the OS can
+         be left holding onto splash-derived chrome indefinitely on some OEM
+         skins instead of cleanly switching to the real app theme below. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/travi_nav_bar</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

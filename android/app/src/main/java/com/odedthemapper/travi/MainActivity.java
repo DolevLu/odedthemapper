@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
+import androidx.core.splashscreen.SplashScreen;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -36,6 +37,15 @@ public class MainActivity extends BridgeActivity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    // Formally hands the system splash screen (Theme.SplashScreen, see
+    // styles.xml) over to the Android 12+ API instead of leaving the theme
+    // declared but never actually engaged — without this call the OS has no
+    // defined moment to exit the splash and switch to postSplashScreenTheme,
+    // which on some OEM skins (Samsung's OneUI in particular) left its own
+    // icon+label chrome stuck on screen indefinitely instead of properly
+    // dismissing. Must be called before super.onCreate().
+    SplashScreen.installSplashScreen(this);
+
     // Edge-to-edge: lets the WebView draw underneath the (now transparent —
     // see styles.xml) status/nav bars instead of the OS reserving opaque
     // space for them, so there's no visible bar strip in a different color
