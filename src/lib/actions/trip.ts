@@ -825,6 +825,69 @@ export async function applyItineraryTemplate(
   revalidatePath(`/trip/${slug}/${kind === "personal" ? "itinerary" : "client-planner"}`);
 }
 
+export type TemplatePreview = {
+  name: string;
+  days: {
+    dayIndex: number;
+    items: { id: string; name: string; lat: number; lng: number; timeOfDay: string | null; photoUrl: string | null; description: string | null }[];
+  }[];
+};
+
+/** Read-only preview of a saved template's snapshot — resolves its poiIds to
+ * real place data (name/coords/photo) without touching the live itinerary at
+ * all, so clicking a saved route can just show it on screen instead of
+ * overwriting anything (see the confirm-required applyItineraryTemplate
+ * above, which this deliberately does NOT call). */
+export async function getItineraryTemplatePreview(
+  templateId: string,
+  kind: "personal" | "client" = "personal"
+): Promise<TemplatePreview | null> {
+  const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
+  const { extractTextDescription } = await import("@/lib/data/pois");
+  const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });
+  if (!template || template.userId !== userId || template.kind !== kind) return null;
+
+  const snapshot = JSON.parse(template.daysJson) as TemplateDaySnapshot[];
+  const poiIds = Array.from(new Set(snapshot.flatMap((d) => d.items.map((i) => i.poiId).filter((id): id is string => Boolean(id)))));
+  const pois = await prisma.pointOfInterest.findMany({
+    where: { id: { in: poiIds } },
+    include: { photos: { take: 1 } },
+  });
+  const poiById = new Map(pois.map((p) => [p.id, p]));
+
+  return {
+    name: template.name,
+    days: snapshot
+      .sort((a, b) => a.dayIndex - b.dayIndex)
+      .map((day) => ({
+        dayIndex: day.dayIndex,
+        items: day.items
+          .sort((a, b) => a.order - b.order)
+          .flatMap((item): TemplatePreview["days"][number]["items"] => {
+            const poi = item.poiId ? poiById.get(item.poiId) : null;
+            if (!poi) {
+              // A custom (non-POI) stop has no coordinates to show on the
+              // map — still worth listing by name in the day list.
+              return item.customLabel
+                ? [{ id: `${day.dayIndex}-${item.order}`, name: item.customLabel, lat: NaN, lng: NaN, timeOfDay: item.timeOfDay, photoUrl: null, description: null }]
+                : [];
+            }
+            return [
+              {
+                id: poi.id,
+                name: item.customLabel ?? poi.name,
+                lat: poi.lat,
+                lng: poi.lng,
+                timeOfDay: item.timeOfDay,
+                photoUrl: poi.photos[0]?.url ?? null,
+                description: extractTextDescription(poi.rawDescriptionHtml),
+              },
+            ];
+          }),
+      })),
+  };
+}
+
 export async function deleteItineraryTemplate(templateId: string, slug: string, kind: "personal" | "client" = "client") {
   const userId = kind === "personal" ? await requirePersonalItineraryOwnerId() : await requireUserId();
   const template = await prisma.itineraryTemplate.findUnique({ where: { id: templateId } });

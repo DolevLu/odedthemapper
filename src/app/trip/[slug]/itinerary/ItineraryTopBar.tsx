@@ -33,7 +33,8 @@ export function ItineraryTopBar({
     requestConfirm(hasExistingDays, () => router.push(`/trip/${slug}/itinerary/builder`), { allowContinue: true });
   }
 
-  function handleApply(templateId: string) {
+  function handleApply(templateId: string, e: React.MouseEvent) {
+    e.stopPropagation();
     if (applying) return;
     function proceed() {
       setMenuOpen(false);
@@ -45,6 +46,15 @@ export function ItineraryTopBar({
       });
     }
     requestConfirm(hasExistingDays, proceed);
+  }
+
+  // Clicking the saved route itself just shows it (read-only, no popup, no
+  // overwrite-confirm) — applying it over the active itinerary is a
+  // separate, explicit ✅ action next to it, per the user's own distinction
+  // between "view this" and "build a route" (which does prompt).
+  function handleView(templateId: string) {
+    setMenuOpen(false);
+    router.push(`/trip/${slug}/itinerary?previewTemplate=${templateId}`);
   }
 
   function handleDelete(templateId: string, e: React.MouseEvent) {
@@ -83,13 +93,18 @@ export function ItineraryTopBar({
             {templates.map((t) => (
               <button
                 key={t.id}
-                onClick={() => handleApply(t.id)}
+                onClick={() => handleView(t.id)}
                 disabled={applying === t.id}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-start text-sm hover:bg-black/5 disabled:opacity-50"
               >
                 <span className="truncate">{applying === t.id ? "טוען…" : t.name}</span>
-                <span onClick={(e) => handleDelete(t.id, e)} className="shrink-0 opacity-40 hover:opacity-100" role="button" aria-label="מחיקה">
-                  🗑️
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <span onClick={(e) => handleApply(t.id, e)} className="opacity-50 hover:opacity-100" role="button" aria-label="החלה על המסלול הפעיל" title="החלה על המסלול הפעיל">
+                    ✅
+                  </span>
+                  <span onClick={(e) => handleDelete(t.id, e)} className="opacity-40 hover:opacity-100" role="button" aria-label="מחיקה">
+                    🗑️
+                  </span>
                 </span>
               </button>
             ))}

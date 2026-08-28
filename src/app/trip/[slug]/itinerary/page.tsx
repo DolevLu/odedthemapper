@@ -4,16 +4,24 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getPoiOptionsForDestination, extractTextDescription } from "@/lib/data/pois";
 import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { listItineraryTemplates } from "@/lib/actions/trip";
+import { listItineraryTemplates, getItineraryTemplatePreview } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import type { MapDay } from "@/components/map/DayRouteMap";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ItineraryLayoutSwitcher } from "./ItineraryLayoutSwitcher";
+import { ItineraryTemplatePreview } from "./ItineraryTemplatePreview";
 
-export default async function ItineraryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ItineraryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ previewTemplate?: string }>;
+}) {
   const { slug } = await params;
+  const { previewTemplate } = await searchParams;
   const destination = await getDestinationBySlug(slug);
   if (!destination) notFound();
 
@@ -52,6 +60,18 @@ export default async function ItineraryPage({ params }: { params: Promise<{ slug
 
   const categoryNames = Array.from(new Set(poiOptions.map((p) => p.categoryName))).sort();
   const hasExistingDays = Boolean(itinerary && itinerary.days.length > 0);
+
+  // A saved route being viewed (not applied) — see ItineraryTopBar's
+  // "📂 שמורים" list, which now navigates here with ?previewTemplate=
+  // instead of overwriting the active itinerary on click.
+  const templatePreview = previewTemplate ? await getItineraryTemplatePreview(previewTemplate, "personal") : null;
+  if (previewTemplate && templatePreview) {
+    return (
+      <div className="flex flex-col gap-6">
+        <ItineraryTemplatePreview slug={slug} destinationId={destination.id} templateId={previewTemplate} preview={templatePreview} hasExistingDays={hasExistingDays} />
+      </div>
+    );
+  }
 
   const mapDays: MapDay[] = (itinerary?.days ?? []).map((day) => ({
     dayIndex: day.dayIndex,
