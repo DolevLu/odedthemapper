@@ -1151,7 +1151,10 @@ export function MapScreen({
        * flank the pill strip as an alternative to dragging it; the strip's
        * own native scrollbar is hidden (.no-scrollbar) so it just feels
        * like a swipeable strip. */}
-      <div dir="ltr" className="absolute inset-x-0 top-6 z-10 flex items-center gap-1 px-2 sm:top-2">
+      <div
+        dir="ltr"
+        className="absolute inset-x-0 top-[calc(1.5rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
+      >
         <div className="flex shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:text-xs">
           <button
             onClick={() => setMapType("roadmap")}

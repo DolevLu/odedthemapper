@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the app's own CSS background token (src/app/globals.css) —
+         used for the bottom navigation bar so it blends with the app
+         instead of showing a mismatched color once edge-to-edge reserves
+         that space back for it (see styles.xml + MainActivity's
+         window-insets handling). -->
+    <color name="travi_nav_bar">#FBF6EE</color>
+</resources>

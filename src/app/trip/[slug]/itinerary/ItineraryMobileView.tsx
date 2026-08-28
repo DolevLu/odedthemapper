@@ -130,7 +130,7 @@ export function ItineraryMobileView({
        * action buttons stays reachable via a swipe instead of wrapping and
        * eating vertical space over the map. Each button keeps its own
        * existing color instead of being restyled into a uniform set. */}
-      <div dir="ltr" className="absolute inset-x-0 top-3 z-10 flex items-center gap-1 px-2">
+      <div dir="ltr" className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2">
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
