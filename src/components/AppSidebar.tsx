@@ -149,6 +149,20 @@ export function AppSidebar({
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const mobileNavRef = useRef<HTMLElement>(null);
+  // Belt-and-suspenders hard guard for the desktop sidebar (logo/name row +
+  // full nav list) on top of its own `hidden sm:flex` Tailwind classes — a
+  // user reported that exact row (stretched logo included, consistent with
+  // the row rendering unstyled) persistently showing at the top of the
+  // native Android app across multiple fresh installs, something CSS
+  // media-query hiding alone wasn't preventing there. The native app is by
+  // definition always phone-sized, so there's no legitimate case where it
+  // should ever show inside it — forcing display:none via inline style
+  // (which wins over any stylesheet regardless of whether/when it loaded)
+  // removes the ambiguity entirely instead of chasing the CSS timing issue.
+  // Defaults to hidden (matches DownloadAppLink's own same-file precedent)
+  // to avoid flashing it inside the app before this check resolves.
+  const [isNativeApp, setIsNativeApp] = useState(true);
+  useEffect(() => setIsNativeApp(Capacitor.isNativePlatform()), []);
 
   // Publishes the mobile bottom nav's real rendered height as a CSS variable
   // so anything that needs to sit flush against it (the map screen's points
@@ -216,7 +230,11 @@ export function AppSidebar({
           destination nav groups scroll. */}
       <nav
         className="app-sidebar-desktop hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-0 sm:h-screen"
-        style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
+        style={{
+          borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)",
+          background: "var(--background, #FBF6EE)",
+          ...(isNativeApp ? { display: "none" } : {}),
+        }}
       >
         <div className="mb-3 flex shrink-0 items-center gap-2 px-1">
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
