@@ -41,6 +41,27 @@ export default async function TripLayout({
   if (session?.user?.id) {
     const userId = session.user.id;
     after(() => prisma.user.update({ where: { id: userId }, data: { defaultDestinationSlug: slug } }).catch(() => {}));
+
+    // Permanent "you were once here" record for the הטיולים שלי archive
+    // (see DestinationAccess in schema.prisma) — created once per user per
+    // destination the first time they land here with real access, and never
+    // touched again after that (upsert's update is a no-op on repeat
+    // visits). Deliberately NOT tied to the SubscriptionDestination row
+    // itself, which DOES get removed on a 14-day swap — this is what lets
+    // the archive keep showing a past trip forever, independent of current
+    // subscription state.
+    if (accessLevel !== "none") {
+      const destinationId = destination.id;
+      after(() =>
+        prisma.destinationAccess
+          .upsert({
+            where: { userId_destinationId: { userId, destinationId } },
+            update: {},
+            create: { userId, destinationId },
+          })
+          .catch(() => {})
+      );
+    }
   }
 
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;

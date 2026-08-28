@@ -15,6 +15,7 @@ type Tier = "free" | "silver" | "gold";
 const TOP_ITEMS = [
   { href: "/", label: "דף הבית", icon: "🏠" },
   { href: "/destinations", label: "יעדים", icon: "🌍" },
+  { href: "/trips", label: "הטיולים שלי", icon: "🧳" },
 ];
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedthemapper.travi";

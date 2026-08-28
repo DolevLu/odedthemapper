@@ -50,6 +50,26 @@ model Destination {
   tips         DestinationTip[]
   itineraryTemplates ItineraryTemplate[]
   savedMapPins SavedMapPin[]
+  accessLog    DestinationAccess[]
+}
+
+/** A permanent record that a user once had real access to this destination
+ * — created the first time they land on it with access (see
+ * trip/[slug]/layout.tsx), never deleted when a subscription lapses or a
+ * destination gets swapped out. This is what lets the "הטיולים שלי" archive
+ * keep listing a past trip forever, independent of SubscriptionDestination
+ * rows (which DO get removed on a swap) — the archive itself is always
+ * read-only, so it doesn't need live access to keep showing up. */
+model DestinationAccess {
+  id            String   @id @default(cuid())
+  userId        String
+  destinationId String
+  firstAccessAt DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId])
 }
 
 model Area {
@@ -118,8 +138,31 @@ model PointOfInterest {
   photos      PoiPhoto[]
   favorites   Favorite[]
   itineraryItems ItineraryItem[]
+  ratings     PoiRating[]
 
   @@index([categoryId])
+}
+
+/** A personal 1-5 rating (+ optional note) a user leaves on a place they
+ * visited — distinct from Favorite (a plain "save this," no rating) and
+ * from ItineraryItemVote (a like/dislike on a planned stop while still
+ * building the trip). This is the "how was it, in your own words" record
+ * that feeds the trip-memories archive, and it's never gated by an active
+ * subscription — it's the user's own content, not the destination's. */
+model PoiRating {
+  id        String   @id @default(cuid())
+  userId    String
+  poiId     String
+  rating    Int // 1-5
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  poi  PointOfInterest @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poiId])
+  @@index([poiId])
 }
 
 model PoiTag {
@@ -216,6 +259,8 @@ model User {
   pushSubscriptions PushSubscription[]
   expenseSplits ExpenseSplit[]
   aiChatUsages  AiChatUsage[]
+  poiRatings    PoiRating[]
+  destinationAccessLog DestinationAccess[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their

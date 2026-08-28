@@ -8,6 +8,7 @@ import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/use
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin } from "@/lib/actions/trip";
+import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
@@ -60,7 +61,22 @@ const MAIN_STREET_PATTERN = /רחוב.*ראשי|ראשי.*רחוב|main street|m
 const INFO_ACTION_BTN_STYLE =
   "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
 
-function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, isAdmin: boolean): string {
+// Five clickable stars for the info window's personal-rating control — a
+// filled star up through `myRating`, an outlined one after it. Rendered as
+// plain buttons (same data-attribute + domready wiring as every other
+// InfoWindow action) rather than a single <input type="range">-style
+// control, since each star needs its own click target/value.
+function starRatingHtml(poiId: string, myRating: number): string {
+  const stars = [1, 2, 3, 4, 5]
+    .map(
+      (n) =>
+        `<button data-rate-btn data-poi-id="${poiId}" data-value="${n}" style="background:none;border:none;padding:1px;cursor:pointer;font-size:16px;line-height:1">${n <= myRating ? "⭐" : "☆"}</button>`
+    )
+    .join("");
+  return `<div style="display:flex;align-items:center;gap:1px;margin-top:6px" data-rate-row data-poi-id="${poiId}">${stars}</div>`;
+}
+
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, myRating: number, isAdmin: boolean): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
@@ -84,6 +100,7 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
     <strong>${poi.name}</strong><br/>
     <span style="opacity:.6;font-size:12px">${poi.categoryName} · ${poi.areaName}</span>
     ${description}
+    ${starRatingHtml(poi.id, myRating)}
     ${actions}
   </div>`;
 }
@@ -165,6 +182,7 @@ export function MapScreen({
   categoryNames,
   slug,
   favoritedIds,
+  ratingsByPoiId = {},
   logisticPins = [],
   destinationId,
   initialTrail = [],
@@ -177,6 +195,10 @@ export function MapScreen({
   categoryNames: string[];
   slug: string;
   favoritedIds: Set<string>;
+  /** This user's own personal 1-5 rating per POI (see PoiRating) — their own
+   * content, unrelated to the destination's own data, and what powers both
+   * the info-window star control and the "hide places I've been" filter. */
+  ratingsByPoiId?: Record<string, number>;
   logisticPins?: LogisticPin[];
   destinationId: string;
   initialTrail?: { lat: number; lng: number }[];
@@ -245,8 +267,15 @@ export function MapScreen({
   // React re-render, and the "domready" handler below is registered once.
   const favoritedIdsRef = useRef<Set<string>>(new Set(favoritedIds));
   const wantsBookingIdsRef = useRef<Set<string>>(new Set(pois.filter((p) => p.wantsBooking).map((p) => p.id)));
+  const ratingsByPoiIdRef = useRef<Record<string, number>>({ ...ratingsByPoiId });
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // "Hide places I've been" — rated places (any personal rating counts as
+  // "visited," see PoiRating) drop off the map live as this toggles, no
+  // reload. State (not just the ref) since it needs to trigger the marker
+  // rebuild effect below.
+  const [hideVisited, setHideVisited] = useState(false);
+  const [ratingsVersion, setRatingsVersion] = useState(0);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
   const [gpsActive, setGpsActive] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -309,10 +338,15 @@ export function MapScreen({
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const pointPoisById = useMemo(() => new Map(pointPois.map((p) => [p.id, p])), [pointPois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
-  const filtered = useMemo(
-    () => (activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois),
-    [pointPois, activeCategory]
-  );
+  const filtered = useMemo(() => {
+    let list = activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois;
+    if (hideVisited) list = list.filter((p) => !(p.id in ratingsByPoiIdRef.current));
+    return list;
+    // ratingsVersion isn't read directly — it's a manual trigger so this
+    // recomputes right after a rating is added/removed via the info window,
+    // since ratingsByPoiIdRef itself is a ref and doesn't cause re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pointPois, activeCategory, hideVisited, ratingsVersion]);
 
   const sortedList = useMemo(() => {
     if (!gpsActive || !userPosition) return filtered;
@@ -489,6 +523,30 @@ export function MapScreen({
           infoWindowRef.current?.close();
         };
       }
+      // Personal rating stars (see PoiRating) — clicking star N sets the
+      // rating to N, except clicking the currently-set top star again clears
+      // it back to unrated (a natural way to "unrate" without a separate
+      // button). Repaints the whole row on click rather than just toggling
+      // classes, since every star's filled/outline state depends on the new
+      // value, not just the clicked one.
+      const rateBtns = mapDivRef.current?.querySelectorAll<HTMLButtonElement>("[data-rate-btn]");
+      rateBtns?.forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const poiId = btn.getAttribute("data-poi-id")!;
+          const clickedValue = Number(btn.getAttribute("data-value"));
+          const currentValue = ratingsByPoiIdRef.current[poiId] ?? 0;
+          const nextValue = clickedValue === currentValue ? 0 : clickedValue;
+          if (nextValue === 0) delete ratingsByPoiIdRef.current[poiId];
+          else ratingsByPoiIdRef.current[poiId] = nextValue;
+          const row = mapDivRef.current?.querySelector<HTMLElement>(`[data-rate-row][data-poi-id="${poiId}"]`);
+          row?.querySelectorAll<HTMLButtonElement>("[data-rate-btn]").forEach((s) => {
+            s.textContent = Number(s.getAttribute("data-value")) <= nextValue ? "⭐" : "☆";
+          });
+          setRatingsVersion((v) => v + 1);
+          ratePoi(poiId, slug, nextValue === 0 ? null : nextValue);
+        };
+      });
     });
 
     // Clicking one of Google's own native POI icons (only visible when the
@@ -895,7 +953,7 @@ export function MapScreen({
     }
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(
-      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), isAdmin)
+      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), ratingsByPoiIdRef.current[poi.id] ?? 0, isAdmin)
     );
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
@@ -1263,6 +1321,14 @@ export function MapScreen({
           style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A", ...previewDim }}
         >
           🟢 איפה כבר הייתי
+        </button>
+        <button
+          onClick={previewGate(() => setHideVisited((v) => !v))}
+          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          style={{ background: hideVisited ? "#7C3AED" : "rgba(255,255,255,0.94)", color: hideVisited ? "white" : "#6D28D9", ...previewDim }}
+          title="הסתרת נקודות שכבר דירגתם, כדי לראות רק מה שנשאר לגלות"
+        >
+          ⭐ רק מה שלא הייתי
         </button>
         <button
           onClick={previewGate(() => setShadowVisible((v) => !v))}
