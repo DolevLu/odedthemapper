@@ -340,7 +340,14 @@ export function AppSidebar({
           in the same spot the header used to place it, with no bar behind
           it, so it doesn't cost any page height. Logo/name move into the
           drawer below instead of sitting in a persistent top strip. */}
-      <div className="fixed end-3 z-40 sm:hidden" style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}>
+      {/* Physical `right`, deliberately not the logical `end-3` utility — this
+       * app is always RTL so they're equivalent in theory, but end-3 (which
+       * resolves via CSS inset-inline-end + the inherited `direction`) put
+       * the button on the LEFT on at least one real Android WebView, almost
+       * certainly a logical-property support/inheritance quirk on that
+       * WebView build. A hardcoded physical `right` has no such ambiguity —
+       * it means the same thing everywhere, on every engine. */}
+      <div className="fixed right-3 z-40 sm:hidden" style={{ top: "calc(0.75rem + env(safe-area-inset-top))" }}>
         <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
       </div>
 

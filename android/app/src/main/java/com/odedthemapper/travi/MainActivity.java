@@ -9,7 +9,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.webkit.GeolocationPermissions;
@@ -18,11 +17,8 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.BridgeWebViewClient;
@@ -53,7 +49,6 @@ public class MainActivity extends BridgeActivity {
     // onCreate() sets up the bridge's content view/WebView.
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     super.onCreate(savedInstanceState);
-    applyBottomInsetAsPadding();
 
     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         != PackageManager.PERMISSION_GRANTED) {
@@ -86,22 +81,6 @@ public class MainActivity extends BridgeActivity {
     // (onPageCommitVisible — first paint, not full page-load-complete, so it
     // dismisses as early as it honestly can).
     showLoadingOverlay();
-  }
-
-  // Edge-to-edge (above) makes content draw behind BOTH the status bar and
-  // the bottom nav bar — that's only wanted at the top (so the page's own
-  // background reaches the physical top instead of a mismatched status-bar
-  // strip). This gives the bottom back to the system: pads the content root
-  // by exactly the bottom system-bar inset, so the WebView (and everything
-  // in it, including its own bottom nav) sits above the nav buttons like a
-  // normal non-edge-to-edge app, while the top stays untouched/edge-to-edge.
-  private void applyBottomInsetAsPadding() {
-    View root = findViewById(android.R.id.content);
-    ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
-      Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-      view.setPadding(0, 0, 0, systemBars.bottom);
-      return insets;
-    });
   }
 
   private void showLoadingOverlay() {
