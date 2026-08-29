@@ -1391,8 +1391,12 @@ export function MapScreen({
       {/* Route mode: off by default, so clicking a point just opens its
        * info popup. Toggle this on, then click a point to draw a walking
        * route to it. group-hover drives a custom tooltip bubble instead of
-       * relying on the native title tooltip. */}
-      <div className="group absolute bottom-36 end-3 z-10 sm:bottom-6">
+       * relying on the native title tooltip. Mobile bottom offset is
+       * dynamic (same --mobile-nav-height var as the points list below),
+       * stacked above the Travi chat button's own clearance — a static
+       * guess here previously let the points list creep over this button on
+       * devices whose real nav-bar height differed from the guess. */}
+      <div className="group absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+8.25rem)] end-3 z-10 sm:bottom-6">
         <button
           onClick={previewGate(() => setRouteModeActive((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
@@ -1419,8 +1423,9 @@ export function MapScreen({
        * pricing instead). Mirrors the route-mode button's position/style on
        * the opposite side. Desktop: raised to sit above the Travi chat
        * button (bottom-6 h-14) instead of sharing its exact offset, which
-       * was overlapping the two. */}
-      <div className="group absolute bottom-36 start-3 z-10 sm:bottom-24">
+       * was overlapping the two. Mobile offset: same dynamic clearance as
+       * the route-mode button it mirrors (see its own comment). */}
+      <div className="group absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+8.25rem)] start-3 z-10 sm:bottom-24">
         <button
           onClick={previewGate(() => setShowGooglePois((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"

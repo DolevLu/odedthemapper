@@ -15,7 +15,7 @@ export function ProfileMenu({
   planLabel: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; start: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -36,10 +36,16 @@ export function ProfileMenu({
   function toggleOpen() {
     if (!open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      const isRtl = getComputedStyle(document.documentElement).direction === "rtl";
+      // This app is always RTL (dir="rtl" is hardcoded on <html>, never
+      // toggled) — no runtime getComputedStyle direction check needed, and
+      // deliberately none: that same category of runtime RTL detection
+      // silently misfired on at least one real device already (see
+      // AppSidebar's profile-button fix). Anchoring the panel to the
+      // button's own right edge and computing physical `right` directly
+      // (not a logical inset property) has nothing left to misdetect.
       setPos({
         top: rect.bottom + 8,
-        start: isRtl ? window.innerWidth - rect.right : rect.left,
+        right: window.innerWidth - rect.right,
       });
     }
     setOpen((o) => !o);
@@ -66,7 +72,7 @@ export function ProfileMenu({
           <div
             ref={panelRef}
             className="fixed z-[100] w-56 rounded-2xl border border-black/10 bg-white p-3 shadow-xl"
-            style={{ top: pos.top, insetInlineStart: pos.start }}
+            style={{ top: pos.top, right: pos.right }}
           >
             {isLoggedIn ? (
               <div className="flex flex-col gap-2">
