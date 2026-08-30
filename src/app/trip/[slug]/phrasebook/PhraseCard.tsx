@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { TextToSpeech } from "@capacitor-community/text-to-speech";
 import { togglePhrasebookKnown } from "@/lib/actions/trip";
 
 export function PhraseCard({
@@ -27,12 +28,16 @@ export function PhraseCard({
   const [optimisticKnown, setOptimisticKnown] = useState(known);
   const [, startTransition] = useTransition();
 
+  // The browser's own window.speechSynthesis silently produced no sound at
+  // all inside the native Android app — Android's system WebView component
+  // doesn't reliably implement the Web Speech Synthesis API the way a full
+  // Chrome tab does. @capacitor-community/text-to-speech uses Android's own
+  // native TextToSpeech engine inside the app instead, and falls back to
+  // this exact same window.speechSynthesis call in a real browser/PWA — one
+  // API that's actually reliable on both, instead of hand-rolling the
+  // native/web branch here.
   function speak() {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(localPhrase);
-    utterance.lang = locale;
-    window.speechSynthesis.speak(utterance);
+    TextToSpeech.speak({ text: localPhrase, lang: locale }).catch(() => {});
   }
 
   function toggleKnown() {

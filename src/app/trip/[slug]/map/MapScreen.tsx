@@ -427,22 +427,37 @@ export function MapScreen({
       styles: DECLUTTERED_MAP_STYLES,
     });
 
-    // Frames the initial view around the actual data instead of a fixed
-    // zoom 12 + raw average — a single average lat/lng plus a fixed zoom
-    // looks fine for a one-city destination (Prague) but is wrong for a
-    // multi-city one (Italy: Rome/Milan/Florence/Naples/Venice): the average
-    // often lands in an empty stretch between cities, with zoom 12 too close
-    // to show any of them. fitBounds over every point POI instead centers
-    // and zooms to whatever actually contains the data — the city center for
-    // a single-city destination, the country center (wide enough to see
-    // every city cluster) for a multi-city one — the same behavior the user
-    // asked for in both cases, with no per-destination special-casing
-    // needed. Padding keeps points clear of the floating filter pills (top)
-    // and the points-list drawer (bottom).
+    // Before the trip actually starts (!autoLocate — see its own prop
+    // comment), frame the initial view on the destination's own busiest area
+    // (almost always its capital/main city — Prague for Czechia, Rome for
+    // Italy, etc, since that's where curated content concentrates) at a real
+    // city zoom, rather than fitBounds over every point regardless of
+    // destination — for a country whose content leans heavily toward one
+    // city with just a handful of POIs scattered elsewhere, fitBounds
+    // zoomed out to fit those few stray far-away points, wasting most of the
+    // view on empty country instead of the city someone's actually about to
+    // visit. Once the trip has started (autoLocate), real GPS position takes
+    // over via the effect below anyway, so this default doesn't matter —
+    // fitBounds is kept there as it always was, changing nothing for that
+    // case. No per-destination config needed either way: for a single-city
+    // destination the "busiest area" is trivially the whole destination; for
+    // a multi-city one it's whichever city actually has the most curated
+    // points, the same real signal fitBounds itself relied on before.
     if (pointPois.length > 0) {
-      const bounds = new google.maps.LatLngBounds();
-      pointPois.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
-      mapRef.current.fitBounds(bounds, { top: 90, bottom: 140, left: 24, right: 24 });
+      if (autoLocate) {
+        const bounds = new google.maps.LatLngBounds();
+        pointPois.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+        mapRef.current.fitBounds(bounds, { top: 90, bottom: 140, left: 24, right: 24 });
+      } else {
+        const countByArea = new Map<string, number>();
+        for (const p of pointPois) countByArea.set(p.areaName, (countByArea.get(p.areaName) ?? 0) + 1);
+        const busiestArea = [...countByArea.entries()].sort((a, b) => b[1] - a[1])[0][0];
+        const areaPois = pointPois.filter((p) => p.areaName === busiestArea);
+        const cityLat = areaPois.reduce((s, p) => s + p.lat, 0) / areaPois.length;
+        const cityLng = areaPois.reduce((s, p) => s + p.lng, 0) / areaPois.length;
+        mapRef.current.setCenter({ lat: cityLat, lng: cityLng });
+        mapRef.current.setZoom(13);
+      }
     }
 
     infoWindowRef.current = new google.maps.InfoWindow();
@@ -1195,35 +1210,61 @@ export function MapScreen({
         </div>
       )}
 
-      {/* One single row for both breakpoints: our own compact Map/Satellite
-       * toggle (replacing Google's native control) sits shrink-0 at the
-       * physical left, and the filter-pill strip fills the remaining width
-       * right beside it — merged onto the same line so together they take
-       * only one row's worth of height off the top of the map instead of
-       * two stacked rows. `dir="ltr"` pins the toggle as the visually
-       * leftmost item with the filters flowing to its right regardless of
-       * the page's own RTL direction (a plain RTL flex row would put the
-       * first DOM child — the toggle — on the right instead); the Hebrew
-       * pill labels still render correctly since dir only affects layout
-       * order, not a leaf element's own text shaping. Small arrow buttons
-       * flank the pill strip as an alternative to dragging it; the strip's
-       * own native scrollbar is hidden (.no-scrollbar) so it just feels
-       * like a swipeable strip. */}
+      {/* Map/Satellite toggle — standalone on mobile ONLY (sm:hidden),
+       * floating just above the bottom nav/points-list on the same physical
+       * left side it always occupied, using the same dynamic
+       * --mobile-nav-height-based clearance already used for the chat/
+       * route-mode buttons — frees the whole top row for the filter pills.
+       * Mirrors the itinerary screen's own DayRouteMap treatment of this
+       * exact control. A second copy renders inline in the pills row below
+       * for desktop (hidden here, hidden there in reverse) rather than one
+       * element trying to serve both very different layouts — desktop's
+       * row-sharing behavior stays byte-for-byte what it was before. */}
+      <div className="absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)] left-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
+        <button
+          onClick={() => setMapType("roadmap")}
+          className="rounded-full px-2 py-0.5"
+          style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
+        >
+          מפה
+        </button>
+        <button
+          onClick={() => setMapType("satellite")}
+          className="rounded-full px-2 py-0.5"
+          style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
+        >
+          לוויין
+        </button>
+      </div>
+
+      {/* Filter-pill row — on mobile this is now the top strip's only
+       * occupant (the Map/Satellite toggle moved to its own floating spot
+       * above), spanning the full width edge-to-edge instead of sharing the
+       * row, sitting a touch higher than before. On desktop the toggle
+       * rejoins this row as its first (hidden sm:flex) item, exactly as
+       * before. `dir="ltr"` keeps the toggle/search as the visually
+       * leftmost items with pills flowing to their right regardless of the
+       * page's own RTL direction; the Hebrew pill labels still render
+       * correctly since dir only affects layout order, not a leaf
+       * element's own text shaping. Small arrow buttons flank the pill
+       * strip as an alternative to dragging it; the strip's own native
+       * scrollbar is hidden (.no-scrollbar) so it just feels like a
+       * swipeable strip. */}
       <div
         dir="ltr"
-        className="absolute inset-x-0 top-[calc(1.5rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
+        className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
       >
-        <div className="flex shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:text-xs">
+        <div className="hidden shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-xs font-semibold shadow-md sm:flex">
           <button
             onClick={() => setMapType("roadmap")}
-            className="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1"
+            className="rounded-full px-2.5 py-1"
             style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
           >
             מפה
           </button>
           <button
             onClick={() => setMapType("satellite")}
-            className="rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1"
+            className="rounded-full px-2.5 py-1"
             style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
           >
             לוויין
