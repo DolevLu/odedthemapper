@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { auth } from "@/auth";
+import { resolveDefaultDestination } from "@/lib/access";
 import { PLANS, formatIls } from "@/lib/plans";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
@@ -28,6 +31,21 @@ const FAQ = [
 ];
 
 export default async function Home() {
+  // Paying users land straight on their destination's map instead of the
+  // marketing homepage — they already picked a destination, this page has
+  // nothing left to sell them. Anonymous visitors and logged-in users with
+  // no active (silver/gold) access on their default destination still see
+  // the homepage as normal, exactly like before. Same destination the
+  // sidebar itself would show as "current" here (resolveDefaultDestination),
+  // so this never sends anyone somewhere the sidebar disagrees with.
+  const session = await auth();
+  if (session?.user?.id) {
+    const resolved = await resolveDefaultDestination(session.user.id);
+    if (resolved && resolved.accessLevel !== "none") {
+      redirect(`/trip/${resolved.slug}`);
+    }
+  }
+
   const [destinationCount, poiCount] = await Promise.all([
     prisma.destination.count({ where: { status: { in: ["preview", "live"] } } }),
     prisma.pointOfInterest.count(),

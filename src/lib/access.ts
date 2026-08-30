@@ -150,6 +150,49 @@ export function pickDefaultDestinationSlug(userId: string, slugs: string[]): str
   return slugs[hash % slugs.length];
 }
 
+// This account's default is pinned to Prague regardless of last-visited
+// destination or the random pick, per its owner's explicit request — every
+// other user's default instead follows whichever destination they actually
+// selected (see defaultDestinationSlug in resolveDefaultDestination below).
+const PINNED_DEFAULT_DESTINATION: Record<string, string> = {
+  "rogerthemapper@gmail.com": "prague",
+};
+
+/** Same "which destination is this user's default context" cascade the
+ * shell layout uses for the sidebar (pinned account override > last actually
+ * visited > deterministic pick) — pulled out so the homepage can use the
+ * exact same answer to decide whether to skip straight to that destination's
+ * map instead of showing the marketing homepage. Returns null for anyone
+ * with no accessible, bookable destination (anonymous visitors, logged-in
+ * users with no active subscription) — the homepage stays their landing
+ * page. Deliberately NOT React-cache()'d like the other lookups here: it
+ * does its own Promise.all of already-cache()'d/cheap calls, and the one
+ * page.tsx call site importing it doesn't re-derive it multiple times per
+ * request the way layout+page pairs elsewhere do. */
+export async function resolveDefaultDestination(userId: string): Promise<{ slug: string; accessLevel: AccessLevel } | null> {
+  const [user, slugs, allDestinations] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { email: true, defaultDestinationSlug: true } }),
+    getUserPurchasedSlugs(userId),
+    prisma.destination.findMany({ select: { slug: true, status: true } }),
+  ]);
+  const bookableSlugs = new Set(allDestinations.filter((d) => d.status !== "draft").map((d) => d.slug));
+  const accessibleBookableSlugs = slugs.filter((s) => bookableSlugs.has(s));
+
+  const pinned = user?.email ? PINNED_DEFAULT_DESTINATION[user.email] : undefined;
+  const lastVisited = user?.defaultDestinationSlug;
+  const picked =
+    (pinned && bookableSlugs.has(pinned) ? pinned : null) ??
+    (lastVisited && accessibleBookableSlugs.includes(lastVisited) ? lastVisited : null) ??
+    pickDefaultDestinationSlug(userId, accessibleBookableSlugs);
+  if (!picked) return null;
+
+  const destination = await prisma.destination.findUnique({ where: { slug: picked }, select: { id: true } });
+  if (!destination) return null;
+
+  const accessLevel = await getAccessLevel(userId, destination.id);
+  return { slug: picked, accessLevel };
+}
+
 /** Resolves the userId whose "personal" Itinerary this user should read and
  * write — the subscription owner's id when on a family/org plan, so every
  * co-traveler ends up sharing the literal same Itinerary row (and can vote
