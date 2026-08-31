@@ -9,10 +9,9 @@ import { LeadsTable } from "./LeadsTable";
 
 export default async function QuotesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const [session, destination] = await Promise.all([auth(), getDestinationBySlug(slug)]);
   if (!destination) notFound();
 
-  const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   if (accessLevel !== "gold") {
     if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}/quotes`)}`);

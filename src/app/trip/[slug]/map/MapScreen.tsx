@@ -240,6 +240,10 @@ export function MapScreen({
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const markersByPoiId = useRef<Map<string, google.maps.Marker>>(new Map());
   const currentMarkerScaleRef = useRef<number>(MARKER_SCALE_DEFAULT);
+  // Which marker ids currently have a name-tag label showing — lets
+  // updateLabels (below) skip both the whole-loop and the per-marker
+  // setLabel call whenever nothing could have actually changed.
+  const labeledMarkerIdsRef = useRef<Set<string>>(new Set());
   const shapesRef = useRef<(google.maps.Polygon | google.maps.Polyline)[]>([]);
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const watchIdRef = useRef<number | null>(null);
@@ -984,6 +988,10 @@ export function MapScreen({
     clustererRef.current?.clearMarkers();
     markersByPoiId.current.forEach((marker) => marker.setMap(null));
     markersByPoiId.current.clear();
+    // Fresh marker objects start with no label — forget which ids
+    // updateLabels previously considered "labeled" so it doesn't skip
+    // re-labeling them on the next idle event thinking nothing changed.
+    labeledMarkerIdsRef.current.clear();
 
     if (heatmapVisible) return; // the heatmap layer replaces individual pins
 
@@ -1028,15 +1036,30 @@ export function MapScreen({
       const scaleChanged = nextScale !== currentMarkerScaleRef.current;
       if (scaleChanged) currentMarkerScaleRef.current = nextScale;
 
+      // Most pans/zooms happen zoomed out (below the label threshold), where
+      // nothing here has ever had a label to clear — skip touching every
+      // single marker just to re-confirm that. With a few hundred+ points
+      // this whole loop was real, measurable work running after *every*
+      // pan/zoom gesture (the "idle" event), which is exactly what reads as
+      // "the map hangs for a moment after I move it."
+      if (!showLabels && !scaleChanged && labeledMarkerIdsRef.current.size === 0) return;
+
+      const nextLabeled = new Set<string>();
       markersByPoiId.current.forEach((marker, id) => {
         const position = marker.getPosition();
         // O(1) lookup — with 1000+ points this ran as an O(n) .find() per
         // marker on every drag/zoom idle event, which was the real source
         // of the reported lag right after panning the map.
         const poi = showLabels && position && bounds!.contains(position) ? pointPoisById.get(id) : null;
-        marker.setLabel(
-          poi ? { text: poi.name, color: "#FFFFFF", fontSize: "11px", fontWeight: "700", className: "poi-marker-label" } : ""
-        );
+        if (poi) nextLabeled.add(id);
+        // Only call setLabel when this marker's labeled state actually
+        // flips — calling it unconditionally on every marker on every idle
+        // event (even to re-set the same "" it already had) is itself real,
+        // avoidable per-pan work at a few hundred+ markers.
+        const wasLabeled = labeledMarkerIdsRef.current.has(id);
+        if (Boolean(poi) !== wasLabeled) {
+          marker.setLabel(poi ? { text: poi.name, color: "#FFFFFF", fontSize: "11px", fontWeight: "700", className: "poi-marker-label" } : "");
+        }
         if (scaleChanged) {
           const fullPoi = pointPoisById.get(id);
           if (fullPoi) {
@@ -1046,6 +1069,7 @@ export function MapScreen({
           }
         }
       });
+      labeledMarkerIdsRef.current = nextLabeled;
     }
 
     const listener = map.addListener("idle", updateLabels);
