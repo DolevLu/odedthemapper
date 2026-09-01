@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { fetchWeatherForecast, weatherIcon, weatherLabel } from "@/lib/weather";
+import { isGenericAreaName } from "@/lib/geo";
 
 const WEEKDAY_FMT = new Intl.DateTimeFormat("he-IL", { weekday: "short" });
 const DATE_FMT = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "numeric" });
@@ -20,24 +21,25 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
   // shows sun for Prague" symptom. Same "busiest area = the main/capital
   // city" heuristic the map's default zoom already uses (see MapScreen),
   // now reused here: average only the coordinates of the area with the most
-  // points, not every area combined.
+  // points, not every area combined — and same fix as the map: skip generic
+  // "Road Trip"/"כללי"/"שאר X" catch-all folders (see isGenericAreaName),
+  // which otherwise almost always outnumber any single real named city.
   const areas = await prisma.area.findMany({
     where: { destinationId: destination.id },
     select: {
+      name: true,
       categories: { select: { pois: { where: { geometryType: "point" }, select: { lat: true, lng: true } } } },
     },
   });
-  let lat: number | null = null;
-  let lng: number | null = null;
-  let bestCount = 0;
-  for (const area of areas) {
-    const points = area.categories.flatMap((c) => c.pois);
-    if (points.length > bestCount) {
-      bestCount = points.length;
-      lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
-      lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
-    }
-  }
+  const areaPointCounts = areas.map((area) => ({ name: area.name, points: area.categories.flatMap((c) => c.pois) }));
+  const namedAreas = areaPointCounts.filter((a) => !isGenericAreaName(a.name));
+  const candidates = namedAreas.length > 0 ? namedAreas : areaPointCounts;
+  const busiest = candidates.reduce<{ name: string; points: { lat: number; lng: number }[] } | null>(
+    (best, area) => (area.points.length > (best?.points.length ?? 0) ? area : best),
+    null
+  );
+  const lat = busiest && busiest.points.length > 0 ? busiest.points.reduce((sum, p) => sum + p.lat, 0) / busiest.points.length : null;
+  const lng = busiest && busiest.points.length > 0 ? busiest.points.reduce((sum, p) => sum + p.lng, 0) / busiest.points.length : null;
   const forecast = lat != null && lng != null ? await fetchWeatherForecast(lat, lng) : null;
 
   return (

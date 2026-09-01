@@ -12,7 +12,7 @@ import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
-import { haversineKm } from "@/lib/geo";
+import { haversineKm, isGenericAreaName } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 import { sunPosition, shadedSidePath } from "@/lib/shadow";
@@ -465,7 +465,18 @@ export function MapScreen({
       } else {
         const countByArea = new Map<string, number>();
         for (const p of pointPois) countByArea.set(p.areaName, (countByArea.get(p.areaName) ?? 0) + 1);
-        const busiestArea = [...countByArea.entries()].sort((a, b) => b[1] - a[1])[0][0];
+        // A country-wide "Road Trip"/"כללי"/"שאר X" catch-all folder almost
+        // always has more POIs than any single real city (it aggregates
+        // everything not assigned to one) — without excluding those, this
+        // ended up centering on the whole country's average instead of the
+        // actual busiest named city for most multi-city destinations (e.g.
+        // France's "Road Trip" folder outnumbering "פריז"/Paris outright).
+        // Falls back to the unfiltered list for a destination with no named
+        // city area at all, so a single-city destination still gets a
+        // sensible center instead of nothing.
+        const namedEntries = [...countByArea.entries()].filter(([name]) => !isGenericAreaName(name));
+        const candidates = namedEntries.length > 0 ? namedEntries : [...countByArea.entries()];
+        const busiestArea = candidates.sort((a, b) => b[1] - a[1])[0][0];
         const areaPois = pointPois.filter((p) => p.areaName === busiestArea);
         const cityLat = areaPois.reduce((s, p) => s + p.lat, 0) / areaPois.length;
         const cityLng = areaPois.reduce((s, p) => s + p.lng, 0) / areaPois.length;

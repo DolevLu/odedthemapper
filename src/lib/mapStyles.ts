@@ -51,6 +51,19 @@ export const SAVED_PIN_CATEGORY_OPTIONS = [
 ];
 export const SAVED_PIN_FALLBACK_COLOR = "#6B7280";
 
+// A destination has only a handful of distinct (color, category, scale,
+// favorited, override) combinations, but every marker was rebuilding its own
+// icon from scratch on every zoom-tier change (see markerScaleForZoom in
+// MapScreen) — a full SVG string build + encodeURIComponent + fresh
+// google.maps.Icon/Size/Point allocation, run synchronously for every one of
+// up to 1000+ markers the instant a zoom gesture crossed that threshold.
+// That's exactly what read as "the map hangs for a moment when I zoom."
+// Caching by the same inputs collapses that down to a handful of real builds
+// (one per distinct combination) plus cheap Map lookups for every repeat —
+// sharing the same Icon object across markers is safe since Marker only
+// reads it, never mutates it.
+const iconCache = new Map<string, google.maps.Icon>();
+
 /** Builds a small colored-circle marker icon with the category's glyph
  * baked in (as a data: SVG), so a marker's category is readable at a glance
  * without opening it or memorizing colors. Falls back to the destination's
@@ -67,6 +80,10 @@ export function categoryMarkerIcon(
   // effect for the majority of POIs, which do match one of those.
   overrideColor?: string | null
 ): google.maps.Icon {
+  const cacheKey = `${fallbackColor}|${categoryName}|${scale}|${favorited}|${overrideColor ?? ""}`;
+  const cached = iconCache.get(cacheKey);
+  if (cached) return cached;
+
   const standard = STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName));
   const color = overrideColor || standard?.color || fallbackColor;
   // Favorited points get a bright yellow glyph instead of white so they
@@ -85,7 +102,7 @@ export function categoryMarkerIcon(
         ${glyph}
       </g>
     </svg>`;
-  return {
+  const icon: google.maps.Icon = {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new google.maps.Size(scale * 2, scale * 2),
     anchor: new google.maps.Point(scale, scale),
@@ -93,6 +110,8 @@ export function categoryMarkerIcon(
     // instead of centered on top of it.
     labelOrigin: new google.maps.Point(scale, -8),
   };
+  iconCache.set(cacheKey, icon);
+  return icon;
 }
 
 /** A pulsing "you are here" pinpoint, styled like Google Maps' own blue dot. */

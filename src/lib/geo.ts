@@ -1,3 +1,19 @@
+// Area names used as a country-wide catch-all bucket (a KML folder for
+// general/touring content not tied to one specific city) rather than a real
+// named place — "Road Trip", "כללי" (general), "שאר X" (the rest of X),
+// "חלוקה לאזורים" (region breakdown), etc. Matters for anything that picks a
+// destination's "busiest" area as a stand-in for its main/capital city (map
+// default zoom, weather forecast location): a generic bucket that
+// aggregates every point NOT assigned to one specific city almost always
+// has more POIs than any single real city does, so without filtering these
+// out, "busiest area" ended up meaning "scattered across the whole country"
+// instead of the capital/main city it was meant to approximate.
+const GENERIC_AREA_PATTERN = /^(road[\s-]?trip|רואד\s*טריפ|כללי|חלוקה\s*לאזורים|בונוס|הנחות(\s|$)|שאר\s)/i;
+
+export function isGenericAreaName(name: string): boolean {
+  return GENERIC_AREA_PATTERN.test(name.trim());
+}
+
 export function haversineKm(a: [number, number], b: [number, number]): number {
   const [lat1, lng1] = a;
   const [lat2, lng2] = b;
