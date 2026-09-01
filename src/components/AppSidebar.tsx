@@ -13,7 +13,12 @@ import { DestinationBadge } from "@/components/header/DestinationBadge";
 type Tier = "free" | "silver" | "gold";
 
 const TOP_ITEMS = [
-  { href: "/", label: "דף הבית", icon: "🏠" },
+  // Deliberately /home, not "/" — "/" redirects paying users straight to
+  // their destination's map (see (shell)/page.tsx), so a Home nav item
+  // pointing there would just bounce them right back to the map they're
+  // already on with no way to ever reach the real homepage again. /home
+  // renders the exact same content with no redirect check.
+  { href: "/home", label: "דף הבית", icon: "🏠" },
   { href: "/destinations", label: "יעדים", icon: "🌍" },
   { href: "/trips", label: "הטיולים שלי", icon: "🧳" },
 ];
@@ -365,7 +370,7 @@ export function AppSidebar({
         className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
-        <MobileTab href="/" icon="🏠" label="דף הבית" active={pathname === "/"} />
+        <MobileTab href="/home" icon="🏠" label="דף הבית" active={pathname === "/home"} />
         {!hasDestContext && <MobileTab href="/destinations" icon="🌍" label="יעדים" active={pathname === "/destinations"} />}
         {hasDestContext && nowItem && (
           <MobileTab
