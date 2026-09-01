@@ -17,7 +17,14 @@ type PoiOption = { id: string; name: string; areaName: string; categoryName: str
 type Template = { id: string; name: string };
 
 const OPEN_VH = 76;
-const PEEK_PX = 108;
+// Was 108 — too short for its own content (the day-switcher header row plus
+// the collapsed card no longer fit, so the card was clipped by the
+// overflow-hidden container and read as "barely visible"). The redesigned
+// peek layout drops that separate header row (arrows now sit beside the
+// card itself, see below) and gives the card more breathing room, so this
+// needs to be tall enough for: drag handle + hint (~40px) + the day-nav
+// row with the current-stop card (~92px) + bottom padding.
+const PEEK_PX = 156;
 
 /** Same "last timestamped stop at or before now" rule DayItemsList uses for
  * its green "עכשיו" badge — reused here so the collapsed drawer's single
@@ -80,6 +87,22 @@ export function ItineraryMobileView({
   const dragging = useRef(false);
   const dragStartY = useRef(0);
   const dragStartHeightPx = useRef(0);
+
+  const focusedIdx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
+
+  function goToPreviousDay() {
+    if (focusedIdx > 0) {
+      setFocusedDayIndex(dayListDays[focusedIdx - 1].dayIndex);
+      setMapAllDays(false);
+    }
+  }
+
+  function goToNextDay() {
+    if (focusedIdx < dayListDays.length - 1) {
+      setFocusedDayIndex(dayListDays[focusedIdx + 1].dayIndex);
+      setMapAllDays(false);
+    }
+  }
 
   async function handleMoveToDay(itemId: string, dayIndex: number) {
     const result = await moveItineraryItemToDay(itemId, dayIndex, slug);
@@ -191,73 +214,82 @@ export function ItineraryMobileView({
           <span className="text-xs opacity-50">{drawerState === "open" ? "⌄ גררו למטה לצמצום" : "⌃ גררו למעלה להרחבה"}</span>
         </div>
 
-        {dayListDays.length > 1 && (
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 pb-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+        {drawerState === "open" ? (
+          <>
+            {dayListDays.length > 1 && (
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 pb-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+                <button
+                  onClick={goToPreviousDay}
+                  disabled={focusedIdx === 0}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+                  style={{ borderColor: "var(--primary)" }}
+                >
+                  ‹
+                </button>
+                <p className="min-w-0 truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
+                  יום {focusedDayIndex}
+                </p>
+                <button
+                  onClick={() => setMapAllDays((v) => !v)}
+                  className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold"
+                  style={{
+                    borderColor: "var(--primary)",
+                    background: mapAllDays ? "var(--primary)" : "transparent",
+                    color: mapAllDays ? "white" : "var(--text)",
+                  }}
+                  title="הצגת כל הימים על גבי המפה"
+                >
+                  🗺️ כל הימים
+                </button>
+                <button
+                  onClick={goToNextDay}
+                  disabled={focusedIdx === dayListDays.length - 1}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+                  style={{ borderColor: "var(--primary)" }}
+                >
+                  ›
+                </button>
+              </div>
+            )}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <ItineraryDaysView
+                slug={slug}
+                poiOptions={poiOptions}
+                days={dayListDays}
+                focusedDayIndex={focusedDayIndex}
+                onFocusedDayIndexChange={setFocusedDayIndex}
+                hideHeader
+              />
+            </div>
+          </>
+        ) : (
+          // Collapsed: no separate header row — the day-switch arrows sit
+          // directly beside the one current-stop card instead, so this whole
+          // state is just one comfortably-sized row instead of a header plus
+          // a second, barely-visible sliver of content underneath it.
+          <div className="flex min-h-0 flex-1 items-center gap-2 px-3 pb-3">
             <button
-              onClick={() => {
-                const idx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
-                if (idx > 0) {
-                  setFocusedDayIndex(dayListDays[idx - 1].dayIndex);
-                  setMapAllDays(false);
-                }
-              }}
-              disabled={dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex) === 0}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+              onClick={goToPreviousDay}
+              disabled={dayListDays.length <= 1 || focusedIdx === 0}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}
+              aria-label="היום הקודם"
             >
               ‹
             </button>
-            <p className="min-w-0 truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
-              יום {focusedDayIndex}
-            </p>
-            {drawerState === "open" && (
-              <button
-                onClick={() => setMapAllDays((v) => !v)}
-                className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold"
-                style={{
-                  borderColor: "var(--primary)",
-                  background: mapAllDays ? "var(--primary)" : "transparent",
-                  color: mapAllDays ? "white" : "var(--text)",
-                }}
-                title="הצגת כל הימים על גבי המפה"
-              >
-                🗺️ כל הימים
-              </button>
-            )}
-            <button
-              onClick={() => {
-                const idx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
-                if (idx < dayListDays.length - 1) {
-                  setFocusedDayIndex(dayListDays[idx + 1].dayIndex);
-                  setMapAllDays(false);
-                }
-              }}
-              disabled={dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex) === dayListDays.length - 1}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
-              style={{ borderColor: "var(--primary)" }}
-            >
-              ›
-            </button>
-          </div>
-        )}
-
-        {drawerState === "open" ? (
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <ItineraryDaysView
-              slug={slug}
-              poiOptions={poiOptions}
-              days={dayListDays}
-              focusedDayIndex={focusedDayIndex}
-              onFocusedDayIndexChange={setFocusedDayIndex}
-              hideHeader
-            />
-          </div>
-        ) : (
-          <div className="min-h-0 flex-1 overflow-hidden px-4 pb-3">
             <CollapsedCurrentStop
               item={currentStopOf(dayListDays.find((d) => d.dayIndex === focusedDayIndex)?.items ?? [])}
               onExpand={() => setDrawerState("open")}
             />
+            <button
+              onClick={goToNextDay}
+              disabled={dayListDays.length <= 1 || focusedIdx === dayListDays.length - 1}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+              style={{ borderColor: "var(--primary)" }}
+              aria-label="היום הבא"
+            >
+              ›
+            </button>
           </div>
         )}
       </div>
@@ -266,24 +298,33 @@ export function ItineraryMobileView({
 }
 
 /** The single stop shown while the drawer is collapsed — deliberately just
- * one compact card (not a shrunk peek of the open list, which used to just
- * show whatever the fixed 170px height happened to scroll to). Tapping it
+ * one card (not a shrunk peek of the open list, which used to just show
+ * whatever the fixed height happened to scroll to). Green background/border
+ * — same "current" color the open list's time badge uses (see
+ * DayItemsList's timeStatusMap) — makes it read as "this is what's
+ * happening now," matching how the open list highlights it. Tapping it
  * expands the drawer, same as tapping the drag handle above it. */
 function CollapsedCurrentStop({ item, onExpand }: { item: DayListItem | null; onExpand: () => void }) {
-  if (!item) return <p className="text-center text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
+  if (!item) {
+    return (
+      <div className="flex flex-1 items-center justify-center rounded-2xl border p-3 text-center text-xs opacity-50" style={{ borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)" }}>
+        אין עדיין נקודות ביום הזה.
+      </div>
+    );
+  }
   const name = item.poi ? item.poi.name : (item.customLabel ?? "");
   return (
     <button
       onClick={onExpand}
-      className="flex w-full items-center gap-2 rounded-2xl border p-3 text-start text-sm shadow-sm"
-      style={{ borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)", background: "var(--surface)" }}
+      className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl border p-3 text-center shadow-sm"
+      style={{ borderColor: "#22C55E", background: "color-mix(in srgb, #22C55E 14%, var(--surface))" }}
     >
       {item.timeOfDay && (
-        <span className="shrink-0 rounded-full px-2 py-1 font-mono text-xs font-bold text-white" style={{ background: "#22C55E" }}>
+        <span className="shrink-0 rounded-full px-2 py-0.5 font-mono text-xs font-bold text-white" style={{ background: "#22C55E" }}>
           {item.timeOfDay}
         </span>
       )}
-      <span className="min-w-0 flex-1 truncate font-medium">
+      <span className="min-w-0 max-w-full truncate text-sm font-bold">
         {item.poi?.categoryName && <span className="opacity-60">{shortCategoryLabel(item.poi.categoryName)} · </span>}
         {name}
       </span>

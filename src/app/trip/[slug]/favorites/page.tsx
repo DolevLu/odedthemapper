@@ -6,6 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { PoiCard } from "@/components/PoiCard";
 
+const TIP_CATEGORY_LABELS: Record<string, string> = {
+  money: "💰 כסף",
+  customs: "🤝 נהגים ותרבות",
+  transport: "🚌 תחבורה",
+  visa: "🛂 ויזה וכניסה",
+  general: "ℹ️ כללי",
+};
+
 export default async function FavoritesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
@@ -18,7 +26,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
 
   const userId = session!.user!.id;
 
-  const [favorites, coupons, mustSee] = await Promise.all([
+  const [favorites, coupons, mustSee, tips] = await Promise.all([
     prisma.favorite.findMany({
       where: { userId, poi: { category: { area: { destinationId: destination.id } } } },
       include: { poi: { include: { category: { include: { area: true } }, photos: { take: 1 }, tags: true } } },
@@ -30,6 +38,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
       include: { category: { include: { area: true } }, photos: { take: 1 }, tags: true },
       take: 8,
     }),
+    prisma.destinationTip.findMany({ where: { destinationId: destination.id } }),
   ]);
 
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
@@ -92,6 +101,26 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
           </div>
         )}
       </section>
+
+      {tips.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+            💡 טיפים חשובים לפני הנסיעה
+          </h2>
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            {tips.map((tip) => (
+              <div
+                key={tip.id}
+                className="game-pop-in border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
+                style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
+              >
+                <p className="mb-0.5 text-[11px] font-semibold opacity-60">{TIP_CATEGORY_LABELS[tip.category] ?? tip.category}</p>
+                <p>{tip.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>

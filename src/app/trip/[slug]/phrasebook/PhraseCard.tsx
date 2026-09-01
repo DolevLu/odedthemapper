@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Capacitor } from "@capacitor/core";
 import { TextToSpeech } from "@capacitor-community/text-to-speech";
 import { togglePhrasebookKnown } from "@/lib/actions/trip";
 
@@ -45,17 +44,18 @@ export function PhraseCard({
   // installed — which a bare .catch(() => {}) was swallowing with zero
   // feedback, so it looked identical to total silence. Android's engine
   // often does have the bare language ("cs") installed even when the
-  // region variant isn't, so that's tried as a fallback before giving up;
-  // only if both fail do we tell the user why, since that's a real device
-  // limitation (no voice pack for this language) they can act on.
+  // region variant isn't, so that's tried first. If neither is installed,
+  // this device genuinely has no voice for that language at all — rather
+  // than sending the user off to their phone's settings, it falls back to
+  // whatever voice IS installed (omitting `lang` lets the plugin use its
+  // own default, effectively always present) so pressing the button always
+  // produces some sound, even if the pronunciation isn't native.
   function speak() {
     TextToSpeech.speak({ text: localPhrase, lang: locale }).catch(() => {
       const baseLang = locale.split("-")[0];
       const fallback = baseLang !== locale ? TextToSpeech.speak({ text: localPhrase, lang: baseLang }) : Promise.reject();
       fallback.catch(() => {
-        if (Capacitor.isNativePlatform()) {
-          window.alert("קול לשפה הזו לא מותקן על המכשיר. ניתן להתקין קול נוסף דרך הגדרות הטלפון > נגישות > המרת טקסט לדיבור.");
-        }
+        TextToSpeech.speak({ text: localPhrase }).catch(() => {});
       });
     });
   }

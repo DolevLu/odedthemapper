@@ -14,7 +14,11 @@ export function EmergencyInfoButton({ slug, destinationName }: { slug: string; d
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: "#DC2626" }}>
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-white sm:px-4 sm:py-2 sm:text-sm"
+        style={{ background: "#DC2626" }}
+      >
         🆘 חירום
       </button>
 
