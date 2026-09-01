@@ -273,7 +273,17 @@ export function MapScreen({
   const wantsBookingIdsRef = useRef<Set<string>>(new Set(pois.filter((p) => p.wantsBooking).map((p) => p.id)));
   const ratingsByPoiIdRef = useRef<Record<string, number>>({ ...ratingsByPoiId });
 
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // Defaults to "general attractions" instead of "הכל" (every point at
+  // once) — opening a destination's map straight into hundreds of pins is
+  // overwhelming; starting narrower and letting people open up to "הכל"
+  // themselves is the calmer default. Matched by pattern (contains both
+  // "אטרקצי" and "כללי"), not an exact string — category names are free
+  // text per destination's own KML import, not a fixed enum, so an exact
+  // match would only work for however this one destination happened to spell
+  // it. Falls back to "הכל" (null) for any destination with no such category.
+  const [activeCategory, setActiveCategory] = useState<string | null>(
+    () => categoryNames.find((c) => /אטרקצי/.test(c) && /כללי/.test(c)) ?? null
+  );
   // "Hide places I've been" — rated places (any personal rating counts as
   // "visited," see PoiRating) drop off the map live as this toggles, no
   // reload. State (not just the ref) since it needs to trigger the marker

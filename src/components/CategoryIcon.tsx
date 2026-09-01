@@ -98,3 +98,16 @@ export function CategoryIcon({ name, size = 18 }: { name: string; size?: number 
     </span>
   );
 }
+
+/** Same category glyph set as the map's own pins (categoryMarkerIcon in
+ * lib/mapStyles.ts), reused here as a plain white SVG — an outline glyph on
+ * a colored circle reads as one calm, uniform icon system, unlike a full-
+ * color emoji per tile (which is what the "מה עכשיו" category grid used to
+ * use) sitting on top of an already-colored background. */
+export function CategoryGlyphWhite({ name, size = 18 }: { name: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d={pathForCategory(name)} fill="white" />
+    </svg>
+  );
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { setTripStartDateTime, togglePackingCheck } from "@/lib/actions/trip";
+import { setTripStartDateTime } from "@/lib/actions/trip";
 import { flagForSlug } from "@/lib/countryFlags";
 
 /** Formats a Date as the value a <input type="datetime-local"> expects
@@ -34,7 +34,6 @@ export function TodayCard({
   logisticId,
   targetDateTimeIso,
   todayDayItems,
-  bookableItems,
   myDestinations,
 }: {
   destinationId: string;
@@ -44,7 +43,6 @@ export function TodayCard({
   logisticId: string | null;
   targetDateTimeIso: string | null;
   todayDayItems: { time: string | null; label: string }[] | null;
-  bookableItems: { id: string; name: string }[];
   /** Every other destination this user's subscription currently covers —
    * lets a paying customer with more than one active destination (family/org
    * plans) jump straight between them instead of going through /destinations
@@ -57,7 +55,6 @@ export function TodayCard({
   const [dateTimeInput, setDateTimeInput] = useState(() =>
     targetDateTimeIso ? toDateTimeLocalValue(new Date(targetDateTimeIso)) : ""
   );
-  const [handledIds, setHandledIds] = useState<Set<string>>(new Set());
   const [now, setNow] = useState<Date | null>(null);
 
   // Ticks the live countdown every minute — started only after mount so the
@@ -97,22 +94,34 @@ export function TodayCard({
     });
   }
 
-  /** Both outcomes remove the item from THIS user's own list — "booked" and
-   * "not interested" both just mean "stop showing me this," they just log
-   * different itemKeys so a real checklist (packing screen) can still tell
-   * the difference. wantsBooking itself is shared across every traveler on
-   * the destination, so neither button touches it — see now/page.tsx. */
-  function markHandled(poiId: string, kind: "booked" | "dismissed") {
-    setHandledIds((s) => new Set(s).add(poiId));
-    startTransition(() => {
-      togglePackingCheck(destinationId, kind === "booked" ? `booking:${poiId}` : `booking-dismissed:${poiId}`, slug);
-    });
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      {/* Countdown / mascot card — a hero photo of the destination (Colosseum
-       * for Italy, Eiffel Tower for France, etc. — whatever the destination's
+      {/* Quick-switch between every destination this subscription covers (1
+       * for solo, up to 5 for family, chosen by the user and swappable every
+       * 14 days — see SwapDestinationButton) — jumps straight there instead
+       * of going through /destinations. Only shows up when there's actually
+       * more than one, i.e. never for solo-plan users. Its own row above the
+       * countdown card, centered, rather than an overlay inside it — reads
+       * as a real destination switcher instead of a decoration on the card. */}
+      {myDestinations.length > 0 && (
+        <div className="flex items-center justify-center gap-1.5">
+          {myDestinations.map((d) => (
+            <Link
+              key={d.slug}
+              href={`/trip/${d.slug}/now`}
+              title={d.name}
+              aria-label={d.name}
+              className="flex h-7 w-7 items-center justify-center rounded-full border bg-white text-sm shadow-sm transition-transform hover:scale-110 sm:h-8 sm:w-8 sm:text-base"
+              style={{ borderColor: "var(--primary)" }}
+            >
+              {flagForSlug(d.slug)}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Countdown card — a hero photo of the destination (Colosseum for
+       * Italy, Eiffel Tower for France, etc. — whatever the destination's
        * own heroImage is) sits behind the content, shown near-full strength
        * so it actually reads as a photo rather than faint texture. The
        * gradient still fades to solid surface toward the bottom (kicking in
@@ -136,42 +145,10 @@ export function TodayCard({
           </>
         )}
 
-        {/* Quick-switch between every destination this subscription covers
-         * (1 for solo, up to 5 for family, chosen by the user and swappable
-         * every 14 days — see SwapDestinationButton) — jumps straight there
-         * instead of going through /destinations. Only shows up when there's
-         * actually more than one, i.e. never for solo-plan users. */}
-        {myDestinations.length > 0 && (
-          <div className="absolute start-3 top-3 z-20 flex items-center gap-1">
-            {myDestinations.map((d) => (
-              <Link
-                key={d.slug}
-                href={`/trip/${d.slug}/now`}
-                title={d.name}
-                aria-label={d.name}
-                className="flex h-6 w-6 items-center justify-center rounded-full border bg-white text-xs shadow-sm transition-transform hover:scale-110 sm:h-8 sm:w-8 sm:text-base"
-                style={{ borderColor: "var(--primary)" }}
-              >
-                {flagForSlug(d.slug)}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className={`relative z-10 flex w-full flex-col items-center gap-3 ${myDestinations.length > 0 ? "pt-7 sm:pt-8" : ""}`}>
+        <div className="relative z-10 flex w-full flex-col items-center gap-3">
           <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
             {destinationName} מחכה לנו
           </h1>
-          <div className="flex items-center gap-2 text-4xl">
-            <span className="inline-block animate-float-drift" style={{ ["--float-duration" as string]: "4s", ["--float-rot" as string]: "-6deg" }}>
-              🧑‍🦱
-            </span>
-            <span className="text-2xl">🎒</span>
-            <span className="inline-block animate-float-drift" style={{ ["--float-duration" as string]: "4.5s", ["--float-rot" as string]: "6deg" }}>
-              🧑
-            </span>
-            <span className="text-2xl">✈️</span>
-          </div>
 
           {!editing && countdown ? (
             <>
@@ -252,49 +229,6 @@ export function TodayCard({
               </div>
             ))}
           </div>
-        </section>
-      )}
-
-      {/* Things to remember to book */}
-      {bookableItems.some((item) => !handledIds.has(item.id)) && (
-        <section>
-          <h2 className="mb-3 text-lg font-bold">🎟️ לזכור להזמין</h2>
-          <div className="flex flex-col gap-2">
-            {bookableItems
-              .filter((item) => !handledIds.has(item.id))
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-2 border p-2 text-xs sm:p-3 sm:text-sm"
-                  style={{ borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
-                >
-                  <span>{item.name}</span>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <button
-                      onClick={() => markHandled(item.id, "booked")}
-                      aria-label="הוזמן"
-                      title="הוזמן"
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white sm:h-7 sm:w-7 sm:text-sm"
-                      style={{ background: "#22C55E" }}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      onClick={() => markHandled(item.id, "dismissed")}
-                      aria-label="לא מעוניין/ת"
-                      title="לא מעוניין/ת"
-                      className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white sm:h-7 sm:w-7 sm:text-sm"
-                      style={{ background: "#DC2626" }}
-                    >
-                      ✗
-                    </button>
-                  </span>
-                </div>
-              ))}
-          </div>
-          <Link href={`/trip/${slug}/packing`} className="mt-2 inline-block text-xs underline opacity-60">
-            לצ׳ק ליסט המלא ←
-          </Link>
         </section>
       )}
     </div>

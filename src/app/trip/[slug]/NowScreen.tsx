@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FlatPoi } from "@/lib/data/pois";
-import { CategoryIcon } from "@/components/CategoryIcon";
+import { CategoryIcon, CategoryGlyphWhite } from "@/components/CategoryIcon";
 import { PoiDetailModal } from "@/components/PoiDetailModal";
 import { TodayCard } from "@/components/TodayCard";
 import { PoiCard } from "@/components/PoiCard";
 import { HomeLocalTime } from "@/components/HomeLocalTime";
+import { BookableReminders } from "@/components/BookableReminders";
 import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
 import { OnboardingNudge } from "@/components/OnboardingNudge";
 
@@ -140,11 +141,12 @@ export function NowScreen({
         logisticId={today.logisticId}
         targetDateTimeIso={today.targetDateTimeIso}
         todayDayItems={today.todayDayItems}
-        bookableItems={today.bookableItems}
         myDestinations={today.myDestinations}
       />
 
       <HomeLocalTime slug={slug} />
+
+      <BookableReminders destinationId={today.destinationId} slug={slug} bookableItems={today.bookableItems} />
 
       <div
         className="flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -227,12 +229,12 @@ export function NowScreen({
       )}
 
       {!activeCategory ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4">
           {categorySummary.map((cat, i) => (
             <button
               key={cat.name}
               onClick={() => setActiveCategory(cat.name)}
-              className="game-pop-in group flex flex-col items-center gap-2 border p-5 text-center transition-transform hover:-translate-y-1 hover:shadow-md hover:rotate-1"
+              className="game-pop-in group flex flex-col items-center gap-1.5 border p-2.5 text-center transition-transform hover:-translate-y-1 hover:shadow-md hover:rotate-1 sm:gap-2 sm:p-5"
               style={{
                 borderRadius: "var(--radius)",
                 borderColor: `color-mix(in srgb, ${cat.color} 30%, transparent)`,
@@ -241,13 +243,13 @@ export function NowScreen({
               }}
             >
               <span
-                className="flex h-16 w-16 items-center justify-center rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
+                className="flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6 sm:h-16 sm:w-16"
                 style={{ background: cat.color }}
               >
-                <CategoryIcon name={cat.name} size={32} />
+                <CategoryGlyphWhite name={cat.name} size={20} />
               </span>
-              <span className="font-bold">{cat.name}</span>
-              <span className="text-xs opacity-60">{cat.count} נקודות</span>
+              <span className="text-xs font-bold sm:text-base">{cat.name}</span>
+              <span className="text-[10px] opacity-60 sm:text-xs">{cat.count} נקודות</span>
             </button>
           ))}
         </div>

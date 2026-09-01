@@ -10,13 +10,31 @@ import type { DayListItem } from "./DayItemsList";
 import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
+import { shortCategoryLabel } from "@/lib/categoryLabels";
 
 type Day = { id: string; dayIndex: number; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
 type Template = { id: string; name: string };
 
 const OPEN_VH = 76;
-const PEEK_PX = 170;
+const PEEK_PX = 108;
+
+/** Same "last timestamped stop at or before now" rule DayItemsList uses for
+ * its green "עכשיו" badge — reused here so the collapsed drawer's single
+ * card always agrees with whichever stop the open list highlights as
+ * current, falling back to the day's first stop before anything is
+ * timestamped or once the whole day's stops are past. */
+function currentStopOf(items: DayListItem[]): DayListItem | null {
+  if (items.length === 0) return null;
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  let current: DayListItem | null = null;
+  for (const item of items) {
+    if (!item.timeOfDay) continue;
+    const [h, m] = item.timeOfDay.split(":").map(Number);
+    if (h * 60 + m <= nowMinutes) current = item;
+  }
+  return current ?? items[0];
+}
 
 /**
  * Mobile itinerary layout: the route map fills the screen (same fixed
@@ -173,7 +191,7 @@ export function ItineraryMobileView({
           <span className="text-xs opacity-50">{drawerState === "open" ? "⌄ גררו למטה לצמצום" : "⌃ גררו למעלה להרחבה"}</span>
         </div>
 
-        {dayListDays.length > 1 && drawerState === "open" && (
+        {dayListDays.length > 1 && (
           <div className="flex shrink-0 items-center justify-between gap-2 border-b px-4 pb-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
             <button
               onClick={() => {
@@ -192,18 +210,20 @@ export function ItineraryMobileView({
             <p className="min-w-0 truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
               יום {focusedDayIndex}
             </p>
-            <button
-              onClick={() => setMapAllDays((v) => !v)}
-              className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold"
-              style={{
-                borderColor: "var(--primary)",
-                background: mapAllDays ? "var(--primary)" : "transparent",
-                color: mapAllDays ? "white" : "var(--text)",
-              }}
-              title="הצגת כל הימים על גבי המפה"
-            >
-              🗺️ כל הימים
-            </button>
+            {drawerState === "open" && (
+              <button
+                onClick={() => setMapAllDays((v) => !v)}
+                className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  borderColor: "var(--primary)",
+                  background: mapAllDays ? "var(--primary)" : "transparent",
+                  color: mapAllDays ? "white" : "var(--text)",
+                }}
+                title="הצגת כל הימים על גבי המפה"
+              >
+                🗺️ כל הימים
+              </button>
+            )}
             <button
               onClick={() => {
                 const idx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
@@ -221,17 +241,52 @@ export function ItineraryMobileView({
           </div>
         )}
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <ItineraryDaysView
-            slug={slug}
-            poiOptions={poiOptions}
-            days={dayListDays}
-            focusedDayIndex={focusedDayIndex}
-            onFocusedDayIndexChange={setFocusedDayIndex}
-            hideHeader
-          />
-        </div>
+        {drawerState === "open" ? (
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <ItineraryDaysView
+              slug={slug}
+              poiOptions={poiOptions}
+              days={dayListDays}
+              focusedDayIndex={focusedDayIndex}
+              onFocusedDayIndexChange={setFocusedDayIndex}
+              hideHeader
+            />
+          </div>
+        ) : (
+          <div className="min-h-0 flex-1 overflow-hidden px-4 pb-3">
+            <CollapsedCurrentStop
+              item={currentStopOf(dayListDays.find((d) => d.dayIndex === focusedDayIndex)?.items ?? [])}
+              onExpand={() => setDrawerState("open")}
+            />
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+/** The single stop shown while the drawer is collapsed — deliberately just
+ * one compact card (not a shrunk peek of the open list, which used to just
+ * show whatever the fixed 170px height happened to scroll to). Tapping it
+ * expands the drawer, same as tapping the drag handle above it. */
+function CollapsedCurrentStop({ item, onExpand }: { item: DayListItem | null; onExpand: () => void }) {
+  if (!item) return <p className="text-center text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
+  const name = item.poi ? item.poi.name : (item.customLabel ?? "");
+  return (
+    <button
+      onClick={onExpand}
+      className="flex w-full items-center gap-2 rounded-2xl border p-3 text-start text-sm shadow-sm"
+      style={{ borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)", background: "var(--surface)" }}
+    >
+      {item.timeOfDay && (
+        <span className="shrink-0 rounded-full px-2 py-1 font-mono text-xs font-bold text-white" style={{ background: "#22C55E" }}>
+          {item.timeOfDay}
+        </span>
+      )}
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {item.poi?.categoryName && <span className="opacity-60">{shortCategoryLabel(item.poi.categoryName)} · </span>}
+        {name}
+      </span>
+    </button>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { askTravi, type TraviSuggestion } from "@/lib/actions/travi";
 import { FavoriteButton } from "@/components/FavoriteButton";
 
@@ -12,6 +13,12 @@ function formatDistance(km: number): string {
 }
 
 export function TraviChat({ destinationId, slug }: { destinationId: string; slug: string }) {
+  const pathname = usePathname();
+  // The Map screen (root of a destination, "/trip/[slug]" with nothing
+  // after it) has its own collapsed points-list bar to clear on mobile;
+  // every other screen only has the plain bottom nav, so the button should
+  // sit lower there instead of floating unnecessarily high.
+  const isMapScreen = pathname === `/trip/${slug}`;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: "travi", text: "היי! אני טראבי 🧭 שאלו אותי על מסעדות, ברים, אטרקציות בסביבה, או איך להשתמש באפליקציה." },
@@ -47,20 +54,22 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
     <>
       {/* Mobile bottom offset is dynamic (--mobile-nav-height, the same var
        * AppSidebar's ResizeObserver publishes and the Map screen's own
-       * floating buttons/points-list use) plus the map's collapsed
-       * points-list height — this button renders on every trip screen, not
-       * just Map, so it needs a clearance that's always at least enough to
-       * clear the bottom nav bar everywhere, and happens to also clear the
-       * points-list bar specifically on Map (a fixed guess here previously
-       * drifted out of sync with the nav bar's real height and ended up
-       * sitting ON it). Desktop: right-64 exactly matched the sidebar's own
-       * width (w-64), so the button's edge was flush against it with zero
-       * gap — right-[268px] adds the sidebar width's usual 12px clearance
-       * (same gap the map's Google-tags toggle button already keeps from
-       * that same edge), without touching bottom (unchanged height). */}
+       * floating buttons/points-list use). This button renders on every trip
+       * screen, not just Map — on Map it needs the taller clearance to also
+       * clear the collapsed points-list bar; everywhere else there's only
+       * the plain bottom nav to clear, so it sits lower (closer to the nav)
+       * instead of floating unnecessarily high above screens that have no
+       * points-list at all. Desktop: right-64 exactly matched the sidebar's
+       * own width (w-64), so the button's edge was flush against it with
+       * zero gap — right-[268px] adds the sidebar width's usual 12px
+       * clearance (same gap the map's Google-tags toggle button already
+       * keeps from that same edge), without touching bottom (unchanged
+       * height, same on every screen). */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)] right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px]"
+        className={`fixed right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px] ${
+          isMapScreen ? "bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)]" : "bottom-[calc(var(--mobile-nav-height,3.5rem)+0.75rem)]"
+        }`}
         style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         aria-label="טראבי - עוזר הטיול"
       >
