@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Capacitor } from "@capacitor/core";
 import { TextToSpeech } from "@capacitor-community/text-to-speech";
 import { togglePhrasebookKnown } from "@/lib/actions/trip";
 
@@ -36,8 +37,27 @@ export function PhraseCard({
   // this exact same window.speechSynthesis call in a real browser/PWA — one
   // API that's actually reliable on both, instead of hand-rolling the
   // native/web branch here.
+  //
+  // Switching to the native plugin didn't fully fix silent playback: its
+  // Android side (TextToSpeechPlugin.speak) checks isLanguageSupported(lang)
+  // BEFORE speaking and rejects outright with "This language is not
+  // supported" when the full region tag (e.g. "cs-CZ") has no voice data
+  // installed — which a bare .catch(() => {}) was swallowing with zero
+  // feedback, so it looked identical to total silence. Android's engine
+  // often does have the bare language ("cs") installed even when the
+  // region variant isn't, so that's tried as a fallback before giving up;
+  // only if both fail do we tell the user why, since that's a real device
+  // limitation (no voice pack for this language) they can act on.
   function speak() {
-    TextToSpeech.speak({ text: localPhrase, lang: locale }).catch(() => {});
+    TextToSpeech.speak({ text: localPhrase, lang: locale }).catch(() => {
+      const baseLang = locale.split("-")[0];
+      const fallback = baseLang !== locale ? TextToSpeech.speak({ text: localPhrase, lang: baseLang }) : Promise.reject();
+      fallback.catch(() => {
+        if (Capacitor.isNativePlatform()) {
+          window.alert("קול לשפה הזו לא מותקן על המכשיר. ניתן להתקין קול נוסף דרך הגדרות הטלפון > נגישות > המרת טקסט לדיבור.");
+        }
+      });
+    });
   }
 
   function toggleKnown() {

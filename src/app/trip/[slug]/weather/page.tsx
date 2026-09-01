@@ -11,12 +11,33 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
   const destination = await getDestinationBySlug(slug);
   if (!destination) notFound();
 
-  const avg = await prisma.pointOfInterest.aggregate({
-    where: { geometryType: "point", category: { area: { destinationId: destination.id } } },
-    _avg: { lat: true, lng: true },
+  // Averaging every POI's coordinates across the WHOLE destination used to
+  // land the forecast point wherever the country's points happen to be
+  // scattered (rural areas included) rather than the main city travelers
+  // actually care about — for a destination like Czech Republic, that could
+  // pull the average well outside Prague into a spot with a different
+  // microclimate entirely, which is exactly the "shows rain when Google
+  // shows sun for Prague" symptom. Same "busiest area = the main/capital
+  // city" heuristic the map's default zoom already uses (see MapScreen),
+  // now reused here: average only the coordinates of the area with the most
+  // points, not every area combined.
+  const areas = await prisma.area.findMany({
+    where: { destinationId: destination.id },
+    select: {
+      categories: { select: { pois: { where: { geometryType: "point" }, select: { lat: true, lng: true } } } },
+    },
   });
-  const lat = avg._avg.lat;
-  const lng = avg._avg.lng;
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let bestCount = 0;
+  for (const area of areas) {
+    const points = area.categories.flatMap((c) => c.pois);
+    if (points.length > bestCount) {
+      bestCount = points.length;
+      lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+      lng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
+    }
+  }
   const forecast = lat != null && lng != null ? await fetchWeatherForecast(lat, lng) : null;
 
   return (
