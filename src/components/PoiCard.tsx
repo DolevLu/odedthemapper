@@ -18,16 +18,6 @@ export type PoiCardData = {
 
 const STATUS_TAG_MATCH = /vegan|טבעוני|צמחוני|כשר|kosher|halal|חלאל/i;
 
-// A deterministic, gentle tilt per card (not perfectly grid-straight) —
-// derived from the POI id so it's stable across re-renders instead of
-// re-randomizing and jittering the layout.
-const ROTATION_OPTIONS = [-2.5, -1.5, 1.5, 2.5, -2, 2];
-function cardRotation(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  return ROTATION_OPTIONS[Math.abs(hash) % ROTATION_OPTIONS.length];
-}
-
 function statusTag(tags?: string[]): string | null {
   if (!tags || tags.length === 0) return null;
   return tags.find((t) => STATUS_TAG_MATCH.test(t)) ?? tags[0];
@@ -90,11 +80,7 @@ export function PoiCard({
     // The tape overhangs the top edge on purpose, so it lives on this
     // outer (non-clipping) wrapper — the inner card below is what actually
     // clips its rounded corners + photo.
-    <div
-      onClick={onClick}
-      className="hand-card group relative cursor-pointer"
-      style={{ transform: `rotate(${cardRotation(poi.id)}deg)` }}
-    >
+    <div onClick={onClick} className="hand-card group relative cursor-pointer">
       <span className="washi-tape" />
       <div
         className="overflow-hidden border shadow-sm transition-shadow hover:z-10 hover:shadow-lg"
