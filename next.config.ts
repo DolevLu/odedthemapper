@@ -18,6 +18,20 @@ const nextConfig: NextConfig = {
       // uploads worked with small desktop test images but failed on mobile.
       bodySizeLimit: "50mb",
     },
+    // Every trip screen (Now/Map/Itinerary/...) is a dynamic route (reads
+    // the session + does DB queries), so it falls in the "dynamic" client
+    // router cache bucket, whose default is 0 seconds — every single tab
+    // switch, even hopping right back to a screen visited seconds ago, was
+    // discarding the client cache instantly and doing a full server round
+    // trip. The underlying data itself is normally already cache-hot
+    // server-side (getFlatPoisForDestination and friends are wrapped in
+    // unstable_cache with a 1h revalidate), so the round trip was pure
+    // wasted network + RSC-render latency, not real DB work. 30s (the
+    // pre-Next-15 default) lets quick back-and-forth navigation between
+    // screens reuse the client cache instead of re-fetching every time.
+    staleTimes: {
+      dynamic: 30,
+    },
   },
 };
 

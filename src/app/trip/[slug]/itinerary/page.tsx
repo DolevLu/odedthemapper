@@ -22,10 +22,8 @@ export default async function ItineraryPage({
 }) {
   const { slug } = await params;
   const { previewTemplate } = await searchParams;
-  const destination = await getDestinationBySlug(slug);
+  const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
-
-  const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   if (accessLevel === "none") {
     if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}/itinerary`)}`);

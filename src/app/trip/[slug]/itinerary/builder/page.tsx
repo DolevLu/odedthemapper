@@ -13,10 +13,8 @@ import { SwipeBuilder } from "./SwipeBuilder";
 // is submitted, not shipped up front.
 export default async function ItineraryBuilderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
-
-  const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   if (accessLevel === "none") {
     if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}/itinerary/builder`)}`);

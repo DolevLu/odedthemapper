@@ -13,10 +13,9 @@ function startOfDay(d: Date): Date {
 
 export default async function TripNowPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
 
-  const session = await auth();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   if (accessLevel === "none") {
     if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}/now`)}`);
@@ -53,15 +52,6 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   ]);
 
   const handledPoiIds = bookingChecks.map((c) => c.itemKey.replace(/^booking(-dismissed)?:/, ""));
-  const bookablePois = await prisma.pointOfInterest.findMany({
-    where: {
-      wantsBooking: true,
-      category: { area: { destinationId: destination.id } },
-      ...(handledPoiIds.length > 0 ? { id: { notIn: handledPoiIds } } : {}),
-    },
-    select: { id: true, name: true },
-    take: 5,
-  });
 
   // Every destination this user's subscription currently covers (1 for solo,
   // up to 5 for family, all of them for org) — always read live from the
@@ -72,7 +62,20 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   // meant for quick access, not a full directory (that's what /destinations
   // is for).
   // accessLevel is already guaranteed not "none" here (redirected/blocked above).
-  const purchasedSlugs = await getUserPurchasedSlugs(userId);
+  // Independent of bookablePois (neither depends on the other's result), so
+  // fetched together rather than as two separate sequential round trips.
+  const [bookablePois, purchasedSlugs] = await Promise.all([
+    prisma.pointOfInterest.findMany({
+      where: {
+        wantsBooking: true,
+        category: { area: { destinationId: destination.id } },
+        ...(handledPoiIds.length > 0 ? { id: { notIn: handledPoiIds } } : {}),
+      },
+      select: { id: true, name: true },
+      take: 5,
+    }),
+    getUserPurchasedSlugs(userId),
+  ]);
   const myDestinations = await prisma.destination.findMany({
     where: { slug: { in: purchasedSlugs, not: slug } },
     select: { slug: true, name: true },

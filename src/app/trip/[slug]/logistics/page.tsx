@@ -11,10 +11,8 @@ import type { LogisticItem } from "./LogisticTicketCard";
 
 export default async function LogisticsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
-
-  const session = await auth();
   const userId = session?.user?.id;
   const [items, heatmapPoints] = await Promise.all([
     userId

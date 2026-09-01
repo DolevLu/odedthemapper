@@ -576,8 +576,15 @@ function MobileTab({
   onClick?: (e: React.MouseEvent) => void;
 }) {
   return (
+    // prefetch (not the default partial prefetch) so these few, always-
+    // visible bottom-nav tabs land in the router cache's "static" bucket
+    // (5min) instead of "dynamic" (0-30s, see next.config.ts) — the small,
+    // fixed set here makes fully prefetching all of them cheap, and it's
+    // the primary nav surface on mobile, which is exactly what "switching
+    // between screens feels slow" was about.
     <Link
       href={href}
+      prefetch
       onClick={onClick}
       className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
       style={{ color: active ? "var(--primary, #7C3AED)" : "var(--text, #1a1a1a)" }}

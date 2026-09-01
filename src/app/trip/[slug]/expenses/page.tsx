@@ -18,10 +18,8 @@ function dayKey(d: Date) {
 
 export default async function ExpensesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const destination = await getDestinationBySlug(slug);
+  const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
-
-  const session = await auth();
   const userId = session?.user?.id;
 
   const [expenses, budget, groupMembers, settleUp] = userId
