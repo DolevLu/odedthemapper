@@ -12,7 +12,7 @@
 // as the direct connection does.
 import { PrismaClient } from "@prisma/client";
 import { extractTextDescription } from "../src/lib/data/pois";
-import { findWikipediaPhoto, generateDescriptionAndWebsite } from "../src/lib/kml/enrichPoi";
+import { findWikipediaPhotos, generateDescriptionAndWebsite } from "../src/lib/kml/enrichPoi";
 
 const prisma = new PrismaClient({ datasourceUrl: process.env.POSTGRES_URL_NON_POOLING });
 
@@ -77,7 +77,7 @@ async function enrichDestination(destinationId: string, destinationName: string,
           `${slug}: mark ${poi.name} enriched`
         );
       } else {
-        const photoUrl = needsPhoto ? await findWikipediaPhoto(poi.name, poi.lat, poi.lng) : null;
+        const photoUrls = needsPhoto ? await findWikipediaPhotos(poi.name, poi.lat, poi.lng, 2) : [];
         const aiResult =
           needsDescription || needsWebsite
             ? await generateDescriptionAndWebsite(poi.name, poi.category.name, poi.category.area.name, destinationName, poi.lat, poi.lng)
@@ -95,10 +95,10 @@ async function enrichDestination(destinationId: string, destinationName: string,
             }),
           `${slug}: update ${poi.name}`
         );
-        if (needsPhoto && photoUrl) {
+        if (needsPhoto && photoUrls.length > 0) {
           await withRetry(
-            () => prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } }),
-            `${slug}: create photo for ${poi.name}`
+            () => prisma.poiPhoto.createMany({ data: photoUrls.map((url) => ({ poiId: poi.id, url })) }),
+            `${slug}: create photos for ${poi.name}`
           );
         }
       }

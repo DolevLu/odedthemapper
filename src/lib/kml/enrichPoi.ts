@@ -158,18 +158,11 @@ async function findMatchingWikiArticle(name: string, lat: number, lng: number): 
   return null;
 }
 
-/** Finds a real photo for a real-world place via Wikipedia — see
+/** Finds real photos for a real-world place via Wikipedia — see
  * findMatchingWikiArticle for the matching logic. Free, no API key, no
- * per-call cost. */
-export async function findWikipediaPhoto(name: string, lat: number, lng: number): Promise<string | null> {
-  const match = await findMatchingWikiArticle(name, lat, lng);
-  if (!match) return null;
-  return fetchWikiSummaryPhoto(match.lang, match.title);
-}
-
-/** Like findWikipediaPhoto, but returns up to `count` distinct photos from
- * the same matched article — the summary endpoint's single "main" image
- * plus additional ones pulled from the article's full media list (see
+ * per-call cost. Returns up to `count` distinct photos from the same
+ * matched article — the summary endpoint's single "main" image plus
+ * additional ones pulled from the article's full media list (see
  * fetchSecondWikiPhoto). Still only ever pulls from the one article already
  * confirmed to actually match the place — never a second, less-certain
  * match — so a place with just one good photo available simply returns one

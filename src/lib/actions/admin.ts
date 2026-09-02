@@ -4,7 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { importKmlFilesToDestination } from "@/lib/kml/importToDb";
-import { findWikipediaPhoto, generateDescriptionAndWebsite } from "@/lib/kml/enrichPoi";
+import { findWikipediaPhotos, generateDescriptionAndWebsite } from "@/lib/kml/enrichPoi";
 import { extractTextDescription } from "@/lib/data/pois";
 import { canManageContent } from "@/lib/access";
 import { getPhrasebookSeedForSlug } from "@/lib/phrasebookSeeds";
@@ -216,7 +216,7 @@ export async function enrichDestinationPoisBatch(destinationId: string, slug: st
       continue;
     }
 
-    const photoUrl = needsPhoto ? await findWikipediaPhoto(poi.name, poi.lat, poi.lng) : null;
+    const photoUrls = needsPhoto ? await findWikipediaPhotos(poi.name, poi.lat, poi.lng, 2) : [];
     const aiResult =
       needsDescription || needsWebsite
         ? await generateDescriptionAndWebsite(poi.name, poi.category.name, poi.category.area.name, destination.name, poi.lat, poi.lng)
@@ -230,8 +230,8 @@ export async function enrichDestinationPoisBatch(destinationId: string, slug: st
         ...(needsDescription && aiResult.description ? { rawDescriptionHtml: `<p>${escapeHtml(aiResult.description)}</p>` } : {}),
       },
     });
-    if (needsPhoto && photoUrl) {
-      await prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } });
+    if (needsPhoto && photoUrls.length > 0) {
+      await prisma.poiPhoto.createMany({ data: photoUrls.map((url) => ({ poiId: poi.id, url })) });
     }
   }
 
