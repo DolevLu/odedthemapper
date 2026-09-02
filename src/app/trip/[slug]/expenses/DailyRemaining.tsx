@@ -24,12 +24,12 @@ export function DailyRemaining({
 
   return (
     <div>
-      <label className="text-xs opacity-60">
+      <label className="text-[10px] opacity-60 sm:text-xs">
         נשאר ליום:
         <select
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
-          className="mt-1 block w-full rounded-lg border px-2 py-1 text-sm"
+          className="mt-1 block w-full rounded-lg border px-1.5 py-1 text-xs sm:px-2 sm:text-sm"
           style={{ borderColor: "var(--primary)" }}
         >
           {options.map((o) => (
@@ -39,7 +39,7 @@ export function DailyRemaining({
           ))}
         </select>
       </label>
-      <div className="mt-1 text-lg font-extrabold" style={{ color: remaining !== null && remaining < 0 ? "#DC2626" : "var(--primary)" }}>
+      <div className="mt-1 text-sm font-extrabold sm:text-lg" style={{ color: remaining !== null && remaining < 0 ? "#DC2626" : "var(--primary)" }}>
         {remaining !== null ? `₪${remaining.toFixed(0)}` : "—"}
       </div>
     </div>
