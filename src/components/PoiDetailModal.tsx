@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { FlatPoi } from "@/lib/data/pois";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 
 export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => void }) {
   return (
@@ -12,7 +13,7 @@ export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => 
       >
         {poi.photoUrl && (
           <div className="relative h-48 w-full shrink-0">
-            <Image src={poi.photoUrl} alt={poi.name} fill sizes="448px" className="object-cover" />
+            <Image src={proxiedImageUrl(poi.photoUrl)} alt={poi.name} fill sizes="448px" className="object-cover" />
           </div>
         )}
         <div className="flex flex-col gap-2 overflow-y-auto p-5">

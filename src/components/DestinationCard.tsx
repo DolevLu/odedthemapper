@@ -1,7 +1,9 @@
 import Link from "next/link";
+import Image from "next/image";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
 import type { DestinationSummary } from "@/lib/data/destinations";
 import { PLANS, formatIls } from "@/lib/plans";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 
 export function DestinationCard({ destination }: { destination: DestinationSummary }) {
   const isComingSoon = destination.status === "draft";
@@ -21,13 +23,22 @@ export function DestinationCard({ destination }: { destination: DestinationSumma
       >
         <div className="relative h-40 overflow-hidden">
           {thumb ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={thumb}
+            // A raw <img> here was downloading each photo at its full
+            // original resolution (often several MB straight from Wikipedia/
+            // admin uploads) just to paint a 160px-tall card thumbnail — the
+            // exact same bug PoiCard/PoiDetailModal had before switching to
+            // next/image (see next.config.ts), which resizes and serves a
+            // properly sized version instead. proxiedImageUrl routes
+            // Wikimedia URLs (most hero photos) through our own proxy — see
+            // lib/imageProxy.ts — since Wikimedia otherwise 429s next/image's
+            // optimizer outright over its User-Agent policy.
+            <Image
+              src={proxiedImageUrl(thumb)}
               alt={destination.name}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div

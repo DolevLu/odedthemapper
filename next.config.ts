@@ -10,6 +10,21 @@ const nextConfig: NextConfig = {
     // PoiDetailModal used before) is what actually fixes list screens
     // downloading full-size photos for every card just to show a thumbnail.
     remotePatterns: [{ protocol: "https", hostname: "**" }],
+    // Wikimedia rejects next/image's own remote fetch outright (429 — its
+    // generic User-Agent trips Wikimedia's policy, and next/image never
+    // forwards custom headers to a remote src for security reasons), so
+    // those specific photos are proxied same-origin through
+    // /api/image-proxy/wikimedia/[...path] instead (see lib/imageProxy.ts),
+    // which needs no query string (the target is encoded in the path
+    // itself). Next 16 requires local image srcs WITH a query string to be
+    // explicitly allowed via localPatterns — but configuring localPatterns
+    // at all makes it the sole allowlist for every local src, query string
+    // or not (confirmed: adding a narrow entry here broke every existing
+    // local image, e.g. /hero-prague.jpg, until this line was widened).
+    // "/**" with no query string preserves the original default (any local
+    // path is fine as long as it has no query string) while still requiring
+    // an explicit entry for one that does — nothing here actually needs one.
+    localPatterns: [{ pathname: "/**", search: "" }],
   },
   experimental: {
     serverActions: {

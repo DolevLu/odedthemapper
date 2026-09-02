@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 
 export type PoiCardData = {
   id: string;
@@ -52,7 +53,7 @@ export function PoiCard({
         style={{ borderRadius: "var(--radius)", borderColor: `color-mix(in srgb, ${poi.categoryColor} 35%, transparent)`, background: "var(--surface)" }}
       >
         {poi.photoUrl ? (
-          <Image src={poi.photoUrl} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-lg object-cover" loading="lazy" />
+          <Image src={proxiedImageUrl(poi.photoUrl)} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-lg object-cover" loading="lazy" />
         ) : (
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
             <CategoryIcon name={poi.categoryName} size={24} />
@@ -93,7 +94,7 @@ export function PoiCard({
         <div className="relative aspect-[2.5/1] w-full overflow-hidden" style={{ background: `color-mix(in srgb, ${poi.categoryColor} 18%, var(--surface))` }}>
           {poi.photoUrl ? (
             <Image
-              src={poi.photoUrl}
+              src={proxiedImageUrl(poi.photoUrl)}
               alt=""
               fill
               sizes="(max-width: 640px) 50vw, 240px"

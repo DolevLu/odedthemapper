@@ -113,6 +113,16 @@ export async function HomePageContent() {
           <Suspense fallback={<DestinationsGridSkeleton />}>
             <DestinationsGrid />
           </Suspense>
+
+          <div className="mt-8 flex justify-center">
+            <Link
+              href="/destinations"
+              className="rounded-full px-6 py-3 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+              style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+            >
+              לכל היעדים ←
+            </Link>
+          </div>
         </ScrollReveal>
       </section>
 
