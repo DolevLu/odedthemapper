@@ -27,29 +27,66 @@ export async function getTripArchiveSummaries(userId: string): Promise<TripArchi
   });
   if (log.length === 0) return [];
 
+  const destinationIds = log.map((e) => e.destinationId);
   const ownerId = await resolveItineraryOwnerId(userId);
+
+  // Used to fire one Promise.all of 5 queries PER destination — fine with a
+  // couple of destinations, but fatal once a real archive grows large
+  // enough: confirmed directly against production, a 30-destination archive
+  // fired 150 simultaneous connection requests on a single page load and
+  // blew straight through Supabase's pooled connection limit ("FATAL: max
+  // clients reached... pool_size: 15" — exactly the "trips couldn't load"
+  // report this was chasing). Replaced with a small fixed number of
+  // aggregate queries across every destination at once, so this scales to
+  // any archive size instead of just raising the threshold. hasAccessTo-
+  // Destination is left as one call per destination deliberately: its
+  // underlying getActiveSubscription lookup is React cache()-wrapped, so
+  // only the first call does real DB work — every other destination's call
+  // resolves from that same cached result, not a fresh query.
+  const [itineraries, albumCounts, ratingRows, hotelCounts] = await Promise.all([
+    prisma.itinerary.findMany({
+      where: { userId: ownerId, kind: "personal", destinationId: { in: destinationIds } },
+      select: { destinationId: true, _count: { select: { days: true } } },
+    }),
+    prisma.albumMedia.groupBy({
+      by: ["destinationId"],
+      where: { userId, destinationId: { in: destinationIds } },
+      _count: { _all: true },
+    }),
+    prisma.poiRating.findMany({
+      where: { userId, poi: { category: { area: { destinationId: { in: destinationIds } } } } },
+      select: { poi: { select: { category: { select: { area: { select: { destinationId: true } } } } } } },
+    }),
+    prisma.tripLogistic.groupBy({
+      by: ["destinationId"],
+      where: { userId, type: "hotel", destinationId: { in: destinationIds } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const dayCountByDest = new Map(itineraries.map((i) => [i.destinationId, i._count.days]));
+  const albumCountByDest = new Map(albumCounts.map((a) => [a.destinationId, a._count._all]));
+  const hotelCountByDest = new Map(hotelCounts.map((h) => [h.destinationId, h._count._all]));
+  const ratedCountByDest = new Map<string, number>();
+  for (const r of ratingRows) {
+    const destId = r.poi.category.area.destinationId;
+    ratedCountByDest.set(destId, (ratedCountByDest.get(destId) ?? 0) + 1);
+  }
 
   return Promise.all(
     log.map(async (entry) => {
       const destinationId = entry.destinationId;
-      const [dayCount, photoCount, ratedCount, hotelCount, liveAccess] = await Promise.all([
-        prisma.itineraryDay.count({ where: { itinerary: { userId: ownerId, destinationId, kind: "personal" } } }),
-        prisma.albumMedia.count({ where: { userId, destinationId } }),
-        prisma.poiRating.count({ where: { userId, poi: { category: { area: { destinationId } } } } }),
-        prisma.tripLogistic.count({ where: { userId, destinationId, type: "hotel" } }),
-        hasAccessToDestination(userId, destinationId),
-      ]);
       return {
         destinationId,
         slug: entry.destination.slug,
         name: entry.destination.name,
         heroImage: entry.destination.heroImage,
         firstAccessAt: entry.firstAccessAt,
-        hasLiveAccess: liveAccess,
-        dayCount,
-        photoCount,
-        ratedCount,
-        hotelCount,
+        hasLiveAccess: await hasAccessToDestination(userId, destinationId),
+        dayCount: dayCountByDest.get(destinationId) ?? 0,
+        photoCount: albumCountByDest.get(destinationId) ?? 0,
+        ratedCount: ratedCountByDest.get(destinationId) ?? 0,
+        hotelCount: hotelCountByDest.get(destinationId) ?? 0,
       };
     })
   );
