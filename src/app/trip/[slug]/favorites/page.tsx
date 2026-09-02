@@ -5,6 +5,7 @@ import { getAccessLevel } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { PoiCard } from "@/components/PoiCard";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 const TIP_CATEGORY_LABELS: Record<string, string> = {
   money: "💰 כסף",
@@ -35,7 +36,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
     prisma.coupon.findMany({ where: { OR: [{ destinationId: destination.id }, { destinationId: null }] } }),
     prisma.pointOfInterest.findMany({
       where: { isMustSee: true, category: { area: { destinationId: destination.id } } },
-      include: { category: { include: { area: true } }, photos: { take: 1 }, tags: true },
+      select: { id: true, name: true, category: { select: { colorHex: true } } },
       take: 8,
     }),
     prisma.destinationTip.findMany({ where: { destinationId: destination.id } }),
@@ -50,24 +51,24 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
           <h2 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
             ⭐ המומלצים שלנו - אסור לפספס
           </h2>
-          <p className="mb-4 text-sm opacity-60">האתרים והאטרקציות הידועים והאהובים ביותר ב{destination.name}.</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6">
+          <p className="mb-2 text-sm opacity-60">האתרים והאטרקציות הידועים והאהובים ביותר ב{destination.name}.</p>
+          <div className="grid grid-cols-2 gap-1.5">
             {mustSee.map((poi) => (
-              <PoiCard
+              <div
                 key={poi.id}
-                poi={{
-                  id: poi.id,
-                  name: poi.name,
-                  areaName: poi.category.area.name,
-                  categoryName: poi.category.name,
-                  categoryColor: poi.category.colorHex,
-                  photoUrl: poi.photos[0]?.url ?? null,
-                  hours: poi.hours,
-                  tags: poi.tags.map((t) => t.label),
-                }}
-                slug={slug}
-                favorited={favoritedIds.has(poi.id)}
-              />
+                className="flex items-center justify-between gap-1.5 border px-2 py-1.5 text-xs"
+                style={{ borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: poi.category.colorHex }} />
+                  <span className="min-w-0 truncate" title={poi.name}>
+                    {poi.name}
+                  </span>
+                </span>
+                <span className="shrink-0">
+                  <FavoriteButton poiId={poi.id} slug={slug} initialFavorited={favoritedIds.has(poi.id)} />
+                </span>
+              </div>
             ))}
           </div>
         </section>
