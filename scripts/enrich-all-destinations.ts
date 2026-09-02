@@ -104,9 +104,21 @@ async function enrichDestination(destinationId: string, destinationName: string,
       }
       processed++;
       if (processed % 25 === 0) console.log(`  [${slug}] ${processed} processed so far...`);
+      // A sustained, unthrottled run of this (hundreds of POIs, each with
+      // several DB round trips) measurably competes with the live app's own
+      // queries against the same small production Postgres instance — this
+      // was confirmed the likely cause of a real page failing to load for a
+      // real user while an earlier run of this script was going. One
+      // connection stays open the whole time either way; this pause exists
+      // to cap sustained throughput, not connection count.
+      await sleep(400);
     }
   }
   return processed;
+}
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 async function main() {
