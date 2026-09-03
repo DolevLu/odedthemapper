@@ -10,6 +10,8 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin } from "@/lib/actions/trip";
 import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
+import { pathForCategory } from "@/components/CategoryIcon";
+import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
 import { haversineKm, isGenericAreaName } from "@/lib/geo";
@@ -190,6 +192,9 @@ export function MapScreen({
   preview = false,
   autoLocate = true,
   isAdmin = false,
+  isLoggedIn = false,
+  name = null,
+  planLabel = null,
 }: {
   pois: FlatPoi[];
   categoryNames: string[];
@@ -229,6 +234,13 @@ export function MapScreen({
    * action on every point's info window, and shapes become clickable too —
    * opens AdminEditPinModal to override colorHex/iconCategory in place. */
   isAdmin?: boolean;
+  /** Rendered inline inside the mobile search bar's own white pill (see
+   * ProfileMenu) — this screen's search bar replaces the sidebar's usual
+   * floating profile button, so the same account state is passed straight
+   * through instead of AppSidebar fetching it a second time. */
+  isLoggedIn?: boolean;
+  name?: string | null;
+  planLabel?: string | null;
 }) {
   const router = useRouter();
   const { loaded, error } = useGoogleMaps();
@@ -273,17 +285,10 @@ export function MapScreen({
   const wantsBookingIdsRef = useRef<Set<string>>(new Set(pois.filter((p) => p.wantsBooking).map((p) => p.id)));
   const ratingsByPoiIdRef = useRef<Record<string, number>>({ ...ratingsByPoiId });
 
-  // Defaults to "general attractions" instead of "הכל" (every point at
-  // once) — opening a destination's map straight into hundreds of pins is
-  // overwhelming; starting narrower and letting people open up to "הכל"
-  // themselves is the calmer default. Matched by pattern (contains both
-  // "אטרקצי" and "כללי"), not an exact string — category names are free
-  // text per destination's own KML import, not a fixed enum, so an exact
-  // match would only work for however this one destination happened to spell
-  // it. Falls back to "הכל" (null) for any destination with no such category.
-  const [activeCategory, setActiveCategory] = useState<string | null>(
-    () => categoryNames.find((c) => /אטרקצי/.test(c) && /כללי/.test(c)) ?? null
-  );
+  // Reverted back to "הכל" (every point at once, null) as the default —
+  // the earlier "general attractions" default was tried and explicitly
+  // undone.
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   // "Hide places I've been" — rated places (any personal rating counts as
   // "visited," see PoiRating) drop off the map live as this toggles, no
   // reload. State (not just the ref) since it needs to trigger the marker
@@ -321,7 +326,6 @@ export function MapScreen({
     return () => clearTimeout(t);
   }, [routeError]);
   const [listOpen, setListOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchNoResults, setSearchNoResults] = useState(false);
@@ -352,6 +356,15 @@ export function MapScreen({
   const pointPois = useMemo(() => pois.filter((p) => p.geometryType === "point"), [pois]);
   const pointPoisById = useMemo(() => new Map(pointPois.map((p) => [p.id, p])), [pointPois]);
   const shapePois = useMemo(() => pois.filter((p) => p.geometryType !== "point" && p.geometryCoords), [pois]);
+  // Gives each category filter pill its own tinted background (its real
+  // categoryColor, same one its map markers use) instead of every pill
+  // sharing one uniform white/purple look — first match wins, which is fine
+  // since every POI in a given category already shares that category's color.
+  const categoryColorByName = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const poi of pointPois) if (!map.has(poi.categoryName)) map.set(poi.categoryName, poi.categoryColor);
+    return map;
+  }, [pointPois]);
   const filtered = useMemo(() => {
     let list = activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois;
     if (hideVisited) list = list.filter((p) => !(p.id in ratingsByPoiIdRef.current));
@@ -933,7 +946,6 @@ export function MapScreen({
             );
             infoWindowRef.current?.setPosition({ lat, lng });
             infoWindowRef.current?.open({ map: mapRef.current! });
-            setSearchOpen(false);
           }
         );
       })
@@ -1282,22 +1294,73 @@ export function MapScreen({
         </button>
       </div>
 
-      {/* Filter-pill row — on mobile this is now the top strip's only
-       * occupant (the Map/Satellite toggle moved to its own floating spot
-       * above), spanning the full width edge-to-edge instead of sharing the
-       * row, sitting a touch higher than before. On desktop the toggle
-       * rejoins this row as its first (hidden sm:flex) item, exactly as
-       * before. `dir="ltr"` keeps the toggle/search as the visually
-       * leftmost items with pills flowing to their right regardless of the
-       * page's own RTL direction; the Hebrew pill labels still render
-       * correctly since dir only affects layout order, not a leaf
-       * element's own text shaping. Small arrow buttons flank the pill
-       * strip as an alternative to dragging it; the strip's own native
-       * scrollbar is hidden (.no-scrollbar) so it just feels like a
-       * swipeable strip. */}
+      {/* Search bar — always open now (not a toggle you have to tap first),
+       * matching Google Maps' own persistent search field. The profile
+       * button lives inside this same white pill's own right edge instead
+       * of floating separately elsewhere on screen (AppSidebar suppresses
+       * its own floating copy specifically on this route — see
+       * isMapScreen there — so there's exactly one, not two). */}
+      <div className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]">
+        <div className="flex items-center gap-2 rounded-full bg-white/95 py-1.5 ps-3 pe-1.5 shadow-md">
+          {/* Desktop already has a persistent profile button in the sidebar
+           * itself — only mobile needs one here (AppSidebar's own floating
+           * copy is suppressed on this route specifically to avoid a
+           * redundant second one; see there). */}
+          <div className="shrink-0 sm:hidden">
+            <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+          </div>
+          <span className="shrink-0 text-base opacity-40" aria-hidden="true">🔍</span>
+          <input
+            dir="rtl"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchNoResults(false);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && previewGate(runPlaceSearch)()}
+            placeholder="זה המקום לחפש"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            style={{ color: "var(--text)", ...previewDim }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSearchNoResults(false);
+              }}
+              className="shrink-0 px-1 text-base opacity-50 hover:opacity-100"
+              aria-label="ניקוי חיפוש"
+            >
+              ✕
+            </button>
+          )}
+          <button
+            onClick={previewGate(runPlaceSearch)}
+            disabled={searching || !searchQuery.trim()}
+            className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: "var(--primary)" }}
+          >
+            {searching ? "…" : "חיפוש"}
+          </button>
+        </div>
+      </div>
+
+      {/* Filter-pill row — sits below the search bar now that search has its
+       * own persistent row above (used to share one row via a toggle).
+       * Bigger pills than before, each category tinted in its own real
+       * categoryColor (the same color its map markers use) with a black
+       * outline glyph, matching Google Maps' own filter-chip look instead
+       * of every pill sharing one uniform white/purple background.
+       * `dir="ltr"` keeps the toggle as the visually leftmost item with
+       * pills flowing to their right regardless of the page's own RTL
+       * direction; the Hebrew pill labels still render correctly since dir
+       * only affects layout order, not a leaf element's own text shaping.
+       * Small arrow buttons flank the pill strip as an alternative to
+       * dragging it; the strip's own native scrollbar is hidden
+       * (.no-scrollbar) so it just feels like a swipeable strip. */}
       <div
         dir="ltr"
-        className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
+        className="absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(3.75rem+env(safe-area-inset-top))]"
       >
         <div className="hidden shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-xs font-semibold shadow-md sm:flex">
           <button
@@ -1316,62 +1379,17 @@ export function MapScreen({
           </button>
         </div>
         <button
-          onClick={previewGate(() => setSearchOpen((v) => !v))}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
-          style={{ background: searchOpen ? "var(--primary)" : "rgba(255,255,255,0.94)", color: searchOpen ? "white" : "var(--text)", ...previewDim }}
-          aria-label="חיפוש מקום בגוגל מפות"
+          onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+          aria-label="גלילה שמאלה"
         >
-          🔍
+          ‹
         </button>
-        {searchOpen ? (
-          <div className="flex flex-1 items-center gap-1 rounded-full bg-white/95 p-1 shadow-md">
-            <input
-              autoFocus
-              dir="rtl"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setSearchNoResults(false);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && runPlaceSearch()}
-              placeholder="חיפוש מקום בגוגל מפות..."
-              className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none"
-              style={{ color: "var(--text)" }}
-            />
-            <button
-              onClick={runPlaceSearch}
-              disabled={searching || !searchQuery.trim()}
-              className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-white disabled:opacity-50"
-              style={{ background: "var(--primary)" }}
-            >
-              {searching ? "…" : "חיפוש"}
-            </button>
-            <button
-              onClick={() => {
-                setSearchOpen(false);
-                setSearchQuery("");
-                setSearchNoResults(false);
-              }}
-              className="shrink-0 px-1 text-lg opacity-50 hover:opacity-100"
-              aria-label="סגירת חיפוש"
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <>
-            <button
-              onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
-              style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-              aria-label="גלילה שמאלה"
-            >
-              ‹
-            </button>
-            <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1 overflow-x-auto scroll-smooth p-1">
+        <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto scroll-smooth p-1">
         <button
           onClick={previewGate(() => setActiveCategory(null))}
-          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{
             background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
             color: activeCategory === null ? "white" : "var(--text)",
@@ -1380,37 +1398,44 @@ export function MapScreen({
         >
           הכל
         </button>
-        {categoryNames.map((name) => (
-          <button
-            key={name}
-            onClick={previewGate(() => setActiveCategory(name))}
-            className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
-            style={{
-              background: activeCategory === name ? "var(--primary)" : "rgba(255,255,255,0.94)",
-              color: activeCategory === name ? "white" : "var(--text)",
-              ...previewDim,
-            }}
-          >
-            {name}
-          </button>
-        ))}
+        {categoryNames.map((catName) => {
+          const catColor = categoryColorByName.get(catName) ?? "#888888";
+          const catActive = activeCategory === catName;
+          return (
+            <button
+              key={catName}
+              onClick={previewGate(() => setActiveCategory(catName))}
+              className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+              style={{
+                background: catActive ? catColor : `color-mix(in srgb, ${catColor} 22%, white)`,
+                color: catActive ? "white" : "var(--text)",
+                ...previewDim,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-4 sm:w-4">
+                <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
+              </svg>
+              {catName}
+            </button>
+          );
+        })}
         <button
           onClick={previewGate(() => setHeatmapVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C", ...previewDim }}
         >
           🔥 מפת חום
         </button>
         <button
           onClick={previewGate(() => setTrailVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A", ...previewDim }}
         >
           🟢 איפה כבר הייתי
         </button>
         <button
           onClick={previewGate(() => setHideVisited((v) => !v))}
-          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: hideVisited ? "#7C3AED" : "rgba(255,255,255,0.94)", color: hideVisited ? "white" : "#6D28D9", ...previewDim }}
           title="הסתרת נקודות שכבר דירגתם, כדי לראות רק מה שנשאר לגלות"
         >
@@ -1418,7 +1443,7 @@ export function MapScreen({
         </button>
         <button
           onClick={previewGate(() => setShadowVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-sm"
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
           title="הערכה גסה - לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
         >
@@ -1429,32 +1454,30 @@ export function MapScreen({
               : "🌑 צל"}
         </button>
         </div>
-            <button
-              onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
-              style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-              aria-label="גלילה ימינה"
-            >
-              ›
-            </button>
-          </>
-        )}
+        <button
+          onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
+          aria-label="גלילה ימינה"
+        >
+          ›
+        </button>
       </div>
 
       {searchNoResults && (
-        <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">
+        <div className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">
           לא נמצאו תוצאות לחיפוש הזה
         </div>
       )}
 
       {!isOnline && (
-        <div className="absolute inset-x-3 top-16 z-10 rounded-lg bg-white/95 p-2.5 text-center text-xs font-semibold shadow-md" style={{ color: "#92400E" }}>
+        <div className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2.5 text-center text-xs font-semibold shadow-md" style={{ color: "#92400E" }}>
           📡 אין חיבור לאינטרנט - המפה החיה דורשת רשת, מוצגת הרשימה השמורה בלבד
         </div>
       )}
 
       {(gpsError || routeError) && (
-        <div className="absolute inset-x-0 top-28 z-10 flex justify-center px-3">
+        <div className="absolute inset-x-0 top-36 z-10 flex justify-center px-3">
           <div className="flex max-w-[85%] items-center gap-2 rounded-lg bg-white/95 py-1.5 ps-3 pe-1.5 text-xs text-red-600 shadow-md">
             <span>{gpsError || routeError}</span>
             <button

@@ -351,18 +351,26 @@ export function AppSidebar({
        * generated stylesheet class for the one property that actually
        * matters here. Inline styles apply unconditionally, with no class
        * generation, purging, specificity, or logical-property-resolution
-       * question involved at all — there's nothing left to go wrong. */}
-      <div
-        className="sm:hidden"
-        style={{
-          position: "fixed",
-          top: "calc(0.75rem + env(safe-area-inset-top))",
-          right: "0.75rem",
-          zIndex: 40,
-        }}
-      >
-        <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
-      </div>
+       * question involved at all — there's nothing left to go wrong.
+       *
+       * Suppressed on the map screen specifically — MapScreen embeds its
+       * own copy inline in the right edge of its search bar instead (see
+       * its isLoggedIn/name/planLabel props), so this floating one would
+       * otherwise be a redundant second profile button stacked right above
+       * the first. */}
+      {pathname !== `/trip/${currentSlug}` && (
+        <div
+          className="sm:hidden"
+          style={{
+            position: "fixed",
+            top: "calc(0.75rem + env(safe-area-inset-top))",
+            right: "0.75rem",
+            zIndex: 40,
+          }}
+        >
+          <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+        </div>
+      )}
 
       {/* Mobile bottom bar — 5 pinned icons, native-app style */}
       <nav

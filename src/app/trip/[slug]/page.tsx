@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
-import { getAccessLevel, canManageContent } from "@/lib/access";
+import { getAccessLevel, canManageContent, getActiveSubscriptionSummary } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { MapScreen } from "./map/MapScreen";
 
@@ -50,6 +50,13 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
     userId ? canManageContent(userId) : Promise.resolve(false),
   ]);
 
+  // Same computation as (shell)'s own layout.tsx uses for the sidebar's
+  // ProfileMenu — needed again here because this screen embeds its own copy
+  // inline in the search bar instead of using the sidebar's floating one
+  // (see MapScreen's isLoggedIn/name/planLabel props).
+  const summary = userId ? await getActiveSubscriptionSummary(userId) : null;
+  const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
+
   // Only auto-locates once a real flight is logged AND its date has passed —
   // no flight logged at all must NOT auto-locate (was `!nextFlight?.startsAt
   // || ...`, which defaulted to true with nothing logged, auto-centering on
@@ -86,6 +93,9 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
       preview={!isFullAccess}
       autoLocate={autoLocate}
       isAdmin={isAdmin}
+      isLoggedIn={Boolean(session?.user?.id)}
+      name={session?.user?.name ?? null}
+      planLabel={planLabel}
     />
   );
 }
