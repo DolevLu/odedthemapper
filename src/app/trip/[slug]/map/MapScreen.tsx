@@ -1299,8 +1299,10 @@ export function MapScreen({
        * button lives inside this same white pill's own right edge instead
        * of floating separately elsewhere on screen (AppSidebar suppresses
        * its own floating copy specifically on this route — see
-       * isMapScreen there — so there's exactly one, not two). */}
-      <div className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]">
+       * isMapScreen there — so there's exactly one, not two).
+       * Mobile only (sm:hidden) — desktop has plenty of width to share the
+       * filter row instead, see the compact copy inside that row below. */}
+      <div className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 px-2 sm:hidden">
         <div className="flex items-center gap-2 rounded-full bg-white/95 py-1.5 ps-3 pe-1.5 shadow-md">
           {/* Desktop already has a persistent profile button in the sidebar
            * itself — only mobile needs one here (AppSidebar's own floating
@@ -1345,8 +1347,13 @@ export function MapScreen({
         </div>
       </div>
 
-      {/* Filter-pill row — sits below the search bar now that search has its
-       * own persistent row above (used to share one row via a toggle).
+      {/* Filter-pill row — sits below the search bar on mobile (which has
+       * its own persistent row above). On desktop the search bar is hidden
+       * and this row moves up to take its place instead (sm:top matches
+       * the search row's own desktop offset), with a compact copy of the
+       * search bar joining this same row at its physical right edge —
+       * desktop has enough width to share one row instead of two, and
+       * there's no need for a full-width search field there.
        * Bigger pills than before, each category tinted in its own real
        * categoryColor (the same color its map markers use) with a black
        * outline glyph, matching Google Maps' own filter-chip look instead
@@ -1355,12 +1362,14 @@ export function MapScreen({
        * pills flowing to their right regardless of the page's own RTL
        * direction; the Hebrew pill labels still render correctly since dir
        * only affects layout order, not a leaf element's own text shaping.
-       * Small arrow buttons flank the pill strip as an alternative to
-       * dragging it; the strip's own native scrollbar is hidden
-       * (.no-scrollbar) so it just feels like a swipeable strip. */}
+       * The compact search bar is the last child so it lands at the row's
+       * physical right end in this dir="ltr" row. Small arrow buttons
+       * flank the pill strip as an alternative to dragging it; the strip's
+       * own native scrollbar is hidden (.no-scrollbar) so it just feels
+       * like a swipeable strip. */}
       <div
         dir="ltr"
-        className="absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(3.75rem+env(safe-area-inset-top))]"
+        className="absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
       >
         <div className="hidden shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-xs font-semibold shadow-md sm:flex">
           <button
@@ -1462,6 +1471,40 @@ export function MapScreen({
         >
           ›
         </button>
+
+        {/* Compact desktop-only search bar, sharing this row instead of a
+         * full-width row of its own — narrow (w-52) and the same height as
+         * the pills next to it, last child so it lands at the row's
+         * physical right edge in this dir="ltr" row (i.e. to the right of
+         * the filters, matching the RTL page's own "right" side). No
+         * profile button here — desktop already has one in the sidebar. */}
+        <div className="hidden shrink-0 items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 shadow-md sm:flex sm:w-52">
+          <span className="shrink-0 text-sm opacity-40" aria-hidden="true">🔍</span>
+          <input
+            dir="rtl"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchNoResults(false);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && previewGate(runPlaceSearch)()}
+            placeholder="זה המקום לחפש"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+            style={{ color: "var(--text)", ...previewDim }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSearchNoResults(false);
+              }}
+              className="shrink-0 text-sm opacity-50 hover:opacity-100"
+              aria-label="ניקוי חיפוש"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {searchNoResults && (
