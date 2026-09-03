@@ -1407,7 +1407,7 @@ export function MapScreen({
               onClick={previewGate(() => setActiveCategory(catName))}
               className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
               style={{
-                background: catActive ? catColor : `color-mix(in srgb, ${catColor} 22%, white)`,
+                background: catActive ? catColor : "rgba(255,255,255,0.94)",
                 color: catActive ? "white" : "var(--text)",
                 ...previewDim,
               }}
