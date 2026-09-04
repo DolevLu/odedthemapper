@@ -97,3 +97,18 @@ export function annualSavingsPercent(plan: Plan): number {
 export function formatIls(cents: number): string {
   return `${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)} ₪`;
 }
+
+// Short English badge shown under the logo in the sidebar — deliberately a
+// separate naming scheme from the plan's own Hebrew name/audience copy (and
+// from the unrelated "silver"/"gold" AccessLevel gating vocabulary used
+// elsewhere): just a small status marker, not a rename of the plans
+// themselves.
+const TIER_BADGES: Record<PlanKey, string> = {
+  solo: "GOLD",
+  family: "DIAMOND",
+  org: "PRO",
+};
+
+export function tierBadgeForPlanKey(planKey: PlanKey | null): string {
+  return planKey ? TIER_BADGES[planKey] : "FREE";
+}

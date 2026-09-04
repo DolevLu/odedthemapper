@@ -3,6 +3,8 @@ import { after } from "next/server";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel, getActiveSubscriptionSummary } from "@/lib/access";
+import { tierBadgeForPlanKey } from "@/lib/plans";
+import { AdSenseScript } from "@/components/AdSenseScript";
 import { prisma } from "@/lib/prisma";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -66,6 +68,7 @@ export default async function TripLayout({
 
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
   const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
+  const tierBadge = tierBadgeForPlanKey(summary?.plan.key ?? null);
 
   return (
     <DestinationThemeProvider theme={destination.theme} as="main" className="flex min-h-screen flex-1 flex-col">
@@ -76,6 +79,7 @@ export default async function TripLayout({
           isLoggedIn={isLoggedIn}
           name={session?.user?.name ?? null}
           planLabel={planLabel}
+          tierBadge={tierBadge}
           isAdmin={session?.user?.isAdmin ?? false}
         />
         <TripContentArea slug={slug}>{children}</TripContentArea>
@@ -83,6 +87,7 @@ export default async function TripLayout({
 
       {accessLevel !== "none" && <TraviChat destinationId={destination.id} slug={slug} />}
       {accessLevel !== "none" && <WalkthroughGuide slug={slug} />}
+      <AdSenseScript show={summary === null} />
     </DestinationThemeProvider>
   );
 }

@@ -137,6 +137,7 @@ export function AppSidebar({
   isLoggedIn,
   name,
   planLabel,
+  tierBadge,
   isAdmin,
 }: {
   currentSlug: string | null;
@@ -144,6 +145,11 @@ export function AppSidebar({
   isLoggedIn: boolean;
   name: string | null;
   planLabel: string | null;
+  /** Short English status marker under the logo — FREE / GOLD / DIAMOND /
+   * PRO (see tierBadgeForPlanKey). A separate naming scheme from planLabel
+   * (the plan's real Hebrew name) and from the "silver"/"gold" AccessLevel
+   * gating vocabulary below — just a small badge, not a rename of either. */
+  tierBadge?: string;
   /** Site-admin only (User.isAdmin) — deliberately NOT the same as org-tier
    * "gold" access, which also unlocks /admin's content-management tools for
    * paying customers. This surfaces the actual admin dashboard shortcut, so
@@ -251,6 +257,9 @@ export function AppSidebar({
               <span className="text-xs font-extrabold" style={{ color: "#F97316" }}>
                 טראבי
               </span>
+              {tierBadge && (
+                <span className="text-[10px] font-bold tracking-wide opacity-50">{tierBadge}</span>
+              )}
             </span>
           </Link>
           <GuideInfoButton />
