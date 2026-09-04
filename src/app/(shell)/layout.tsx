@@ -25,6 +25,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
   const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
   const tierBadge = tierBadgeForPlanKey(summary?.plan.key ?? null);
+  const trialEndsAt = summary?.plan.key === "trial" ? summary.currentPeriodEnd.toISOString() : null;
 
   return (
     <div className="flex min-h-screen flex-1 flex-col">
@@ -36,11 +37,12 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           name={session?.user?.name ?? null}
           planLabel={planLabel}
           tierBadge={tierBadge}
+          trialEndsAt={trialEndsAt}
           isAdmin={session?.user?.isAdmin ?? false}
         />
         <div className="min-w-0 flex-1 pb-32 sm:pb-0">{children}</div>
       </div>
-      <AdSenseScript show={summary === null} />
+      <AdSenseScript show={summary === null || summary.plan.key === "trial"} />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANS, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
+import { PLANS, TRIAL_PLAN, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
 
 export function PricingCards() {
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
@@ -25,7 +25,51 @@ export function PricingCards() {
         ))}
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+      <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-4">
+        {/* Trial card — first in DOM order, which in this always-RTL app
+         * lands it at the physical right (the "first" spot), matching the
+         * other three plans' own reading order. Deliberately not part of
+         * the Object.values(PLANS) map below: it has no monthly/annual
+         * price, its CTA starts the trial directly instead of linking to
+         * the paid checkout flow, and TRIAL_PLAN itself isn't a PLANS
+         * entry (see plans.ts for why). */}
+        <div
+          className="game-pop-in flex flex-col gap-3 rounded-3xl border p-4 transition-transform duration-300 hover:-translate-y-2 sm:gap-5 sm:p-8"
+          style={{ borderColor: "rgba(0,0,0,0.08)", background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}
+        >
+          <div>
+            <p className="text-xs font-semibold opacity-60 sm:text-sm">{TRIAL_PLAN.audience}</p>
+            <h3 className="mt-1 text-lg font-extrabold sm:text-2xl">🎁 {TRIAL_PLAN.name}</h3>
+            <p className="mt-2 text-xs opacity-70 sm:text-sm">{TRIAL_PLAN.tagline}</p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-semibold sm:px-3 sm:py-1 sm:text-xs">🌍 יעד אחד</span>
+            <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-semibold sm:px-3 sm:py-1 sm:text-xs">⏱️ 24 שעות</span>
+          </div>
+
+          <div>
+            <span className="text-2xl font-extrabold sm:text-4xl">חינם</span>
+          </div>
+
+          <ul className="flex flex-col gap-1.5 text-xs sm:gap-2 sm:text-sm">
+            {TRIAL_PLAN.features.map((f) => (
+              <li key={f} className="flex items-start gap-2">
+                <span className="mt-0.5 text-emerald-500">✓</span>
+                <span className="opacity-80">{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            href="/trial"
+            className="mt-auto rounded-full px-4 py-2 text-center text-sm font-semibold text-white sm:px-5 sm:py-3 sm:text-base"
+            style={{ background: "#1A1A1A" }}
+          >
+            התחלת ניסיון חינם
+          </Link>
+        </div>
+
         {Object.values(PLANS).map((plan) => {
           const price = cycle === "monthly" ? plan.monthlyCents : annualMonthlyEquivalent(plan);
           return (

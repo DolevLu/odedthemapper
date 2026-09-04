@@ -9,6 +9,7 @@ import { DiamondIcon } from "@/components/DiamondIcon";
 import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { DestinationBadge } from "@/components/header/DestinationBadge";
+import { TrialCountdown } from "@/components/TrialCountdown";
 
 type Tier = "free" | "silver" | "gold";
 
@@ -138,6 +139,7 @@ export function AppSidebar({
   name,
   planLabel,
   tierBadge,
+  trialEndsAt,
   isAdmin,
 }: {
   currentSlug: string | null;
@@ -146,10 +148,16 @@ export function AppSidebar({
   name: string | null;
   planLabel: string | null;
   /** Short English status marker under the logo — FREE / GOLD / DIAMOND /
-   * PRO (see tierBadgeForPlanKey). A separate naming scheme from planLabel
-   * (the plan's real Hebrew name) and from the "silver"/"gold" AccessLevel
-   * gating vocabulary below — just a small badge, not a rename of either. */
+   * PRO / TRIAL (see tierBadgeForPlanKey). A separate naming scheme from
+   * planLabel (the plan's real Hebrew name) and from the "silver"/"gold"
+   * AccessLevel gating vocabulary below — just a small badge, not a rename
+   * of either. */
   tierBadge?: string;
+  /** ISO timestamp the active free trial (see lib/actions/trial.ts) ends at
+   * — when set, a live countdown (TrialCountdown) renders instead of the
+   * plain tierBadge, since "23:59:41 left" is more useful there than a
+   * static "TRIAL" label. */
+  trialEndsAt?: string | null;
   /** Site-admin only (User.isAdmin) — deliberately NOT the same as org-tier
    * "gold" access, which also unlocks /admin's content-management tools for
    * paying customers. This surfaces the actual admin dashboard shortcut, so
@@ -257,8 +265,10 @@ export function AppSidebar({
               <span className="text-xs font-extrabold" style={{ color: "#F97316" }}>
                 טראבי
               </span>
-              {tierBadge && (
-                <span className="text-[10px] font-bold tracking-wide opacity-50">{tierBadge}</span>
+              {trialEndsAt ? (
+                <TrialCountdown endsAt={trialEndsAt} />
+              ) : (
+                tierBadge && <span className="text-[10px] font-bold tracking-wide opacity-50">{tierBadge}</span>
               )}
             </span>
           </Link>

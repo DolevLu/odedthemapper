@@ -69,6 +69,7 @@ export default async function TripLayout({
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
   const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
   const tierBadge = tierBadgeForPlanKey(summary?.plan.key ?? null);
+  const trialEndsAt = summary?.plan.key === "trial" ? summary.currentPeriodEnd.toISOString() : null;
 
   return (
     <DestinationThemeProvider theme={destination.theme} as="main" className="flex min-h-screen flex-1 flex-col">
@@ -80,6 +81,7 @@ export default async function TripLayout({
           name={session?.user?.name ?? null}
           planLabel={planLabel}
           tierBadge={tierBadge}
+          trialEndsAt={trialEndsAt}
           isAdmin={session?.user?.isAdmin ?? false}
         />
         <TripContentArea slug={slug}>{children}</TripContentArea>
@@ -87,7 +89,7 @@ export default async function TripLayout({
 
       {accessLevel !== "none" && <TraviChat destinationId={destination.id} slug={slug} />}
       {accessLevel !== "none" && <WalkthroughGuide slug={slug} />}
-      <AdSenseScript show={summary === null} />
+      <AdSenseScript show={summary === null || summary.plan.key === "trial"} />
     </DestinationThemeProvider>
   );
 }

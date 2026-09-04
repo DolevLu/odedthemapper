@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
-import { PLANS } from "@/lib/plans";
+import { PLANS, TRIAL_PLAN } from "@/lib/plans";
 
 /** Resolves the subscription that grants this user access — either one they
  * own directly, or one they were invited into as a seat (matched by email).
@@ -69,6 +69,8 @@ export async function getAiChatDailyQuota(userId: string): Promise<number | null
   if (user?.isAdmin) return null;
   const sub = await getActiveSubscription(userId);
   if (!sub) return 0;
+  // Not a real PLANS entry (see plans.ts) — handled here directly instead.
+  if (sub.planKey === "trial") return TRIAL_PLAN.aiChatDailyQuota;
   return PLANS[sub.planKey as keyof typeof PLANS]?.aiChatDailyQuota ?? 0;
 }
 
@@ -207,7 +209,8 @@ export const resolveItineraryOwnerId = cache(async (userId: string): Promise<str
 export async function getActiveSubscriptionSummary(userId: string) {
   const sub = await getActiveSubscription(userId);
   if (!sub) return null;
-  const plan = PLANS[sub.planKey as keyof typeof PLANS];
+  // Not a real PLANS entry (see plans.ts) — handled here directly instead.
+  const plan = sub.planKey === "trial" ? TRIAL_PLAN : PLANS[sub.planKey as keyof typeof PLANS];
   return {
     plan,
     billingCycle: sub.billingCycle,

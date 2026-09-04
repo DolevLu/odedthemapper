@@ -15,6 +15,36 @@ export type Plan = {
   highlighted?: boolean;
 };
 
+// A 24h/1-destination self-serve free trial — deliberately NOT part of
+// PLANS/PlanKey. PLANS is used throughout the real payment/checkout flow
+// (/subscribe/[planKey], /api/subscribe, /api/payme/charge, the admin grant
+// form, revenue analytics) — folding a non-payable trial into that same
+// record would mean explicitly excluding it from over a dozen call sites
+// instead of just this one. access.ts special-cases Subscription rows with
+// planKey === "trial" directly wherever it actually matters (AI chat quota,
+// the subscription summary); every other access check already works
+// correctly for an unrecognized plan key with no PLANS entry (falls through
+// to the real per-destination check, same as any non-org plan).
+export const TRIAL_PLAN = {
+  key: "trial" as const,
+  name: "ניסיון חינם",
+  audience: "לכל מי שרוצה לנסות לפני שמשלמים",
+  monthlyCents: 0,
+  annualCents: 0,
+  destinationLimit: 1,
+  seats: 1,
+  isOrgTier: false,
+  aiChatDailyQuota: 10,
+  durationHours: 24,
+  tagline: "24 שעות, יעד אחד, כל התכונות פתוחות - בלי כרטיס אשראי.",
+  features: [
+    "גישה מלאה ליעד אחד לבחירה, ל-24 שעות",
+    "כל התכונות של שאר התוכניות - מפה, מסלול, AI, שיחון ועוד",
+    "עד 10 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
+    "פעם אחת בלבד למשתמש",
+  ],
+};
+
 export const PLANS: Record<PlanKey, Plan> = {
   solo: {
     key: "solo",
@@ -109,6 +139,8 @@ const TIER_BADGES: Record<PlanKey, string> = {
   org: "PRO",
 };
 
-export function tierBadgeForPlanKey(planKey: PlanKey | null): string {
-  return planKey ? TIER_BADGES[planKey] : "FREE";
+export function tierBadgeForPlanKey(planKey: PlanKey | "trial" | null): string {
+  if (!planKey) return "FREE";
+  if (planKey === "trial") return "TRIAL";
+  return TIER_BADGES[planKey];
 }

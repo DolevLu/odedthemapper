@@ -337,10 +337,32 @@ model Subscription {
   // distinguishes "we gave this away" from a real PayMe sale in the
   // financial dashboard's revenue numbers.
   grantedByAdmin     Boolean  @default(false)
+  // planKey "trial" — a self-serve 24h/1-destination free trial (see
+  // lib/actions/trial.ts), distinct from grantedByAdmin (that's an admin
+  // manually comping someone; this is the self-serve free-trial button).
+  // Also not a real sale, kept separate for the same revenue-reporting
+  // reason.
+  isTrial            Boolean  @default(false)
 
   user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   destinations SubscriptionDestination[]
   members      SubscriptionMember[]
+
+  @@index([userId])
+}
+
+/** One row per IP address that has ever claimed the free trial — checked
+ * before granting a new one (alongside "has this userId ever had a trial
+ * Subscription row", checked directly against Subscription) so a blocked
+ * user can't just sign up again with a new email from the same
+ * browser/network to get another free 24h. ip is the sole unique key: the
+ * row exists purely to answer "has this IP been used," not to look anything
+ * up by user. */
+model TrialClaim {
+  id        String   @id @default(cuid())
+  ip        String   @unique
+  userId    String
+  claimedAt DateTime @default(now())
 
   @@index([userId])
 }

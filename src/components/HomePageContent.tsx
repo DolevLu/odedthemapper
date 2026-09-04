@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { PLANS, formatIls } from "@/lib/plans";
+import { PLANS, TRIAL_PLAN, formatIls } from "@/lib/plans";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { FloatingTravelIcons } from "@/components/FloatingTravelIcons";
@@ -128,10 +128,23 @@ export async function HomePageContent() {
 
       <section className="relative overflow-hidden px-6 pb-20">
         <FloatingTravelIcons variant="plans" />
-        <ScrollReveal className="relative mx-auto w-full max-w-4xl rounded-3xl border border-black/5 bg-white p-10 text-center shadow-sm">
+        <ScrollReveal className="relative mx-auto w-full max-w-5xl rounded-3xl border border-black/5 bg-white p-10 text-center shadow-sm">
           <h2 className="text-2xl font-extrabold">תוכנית לכל סוג מטייל</h2>
           <p className="mt-2 opacity-70">ממטייל בודד ועד ארגוני נסיעות - יש לנו תוכנית שמתאימה לכם.</p>
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* First in DOM order — the trial, right-most in this always-RTL
+           * layout and top-most once the grid wraps to one column on
+           * mobile, same as the /pricing page's own card order. A touch
+           * more detail than before (each card's tagline, not just name +
+           * price) but still far short of the full pricing page. */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
+              <p className="text-xs font-semibold opacity-60">{TRIAL_PLAN.audience}</p>
+              <p className="mt-1 text-lg font-extrabold">🎁 {TRIAL_PLAN.name}</p>
+              <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
+                חינם
+              </p>
+              <p className="mt-2 text-xs opacity-70">{TRIAL_PLAN.tagline}</p>
+            </div>
             {Object.values(PLANS).map((plan) => (
               <div key={plan.key} className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
                 <p className="text-xs font-semibold opacity-60">{plan.audience}</p>
@@ -139,6 +152,7 @@ export async function HomePageContent() {
                 <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
                   {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">/חודש</span>
                 </p>
+                <p className="mt-2 text-xs opacity-70">{plan.tagline}</p>
               </div>
             ))}
           </div>
