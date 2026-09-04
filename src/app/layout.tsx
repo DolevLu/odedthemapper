@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { GOOGLE_FONTS_HREF } from "@/lib/theme/fonts";
 import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -48,6 +49,21 @@ export default function RootLayout({
         <FocusModeExitButton />
         <ServiceWorkerRegister />
       </body>
+      {/* Google AdSense — loaded once here in the root layout so every route
+       * in the app gets it, per next/script's own "Application Scripts"
+       * guidance (a hand-placed <script> in <head> the way AdSense's own
+       * setup instructions describe is the pages-router/plain-HTML idiom;
+       * this is the App Router equivalent — Next places and dedupes the
+       * actual tag itself, regardless of where in the JSX it's written).
+       * strategy="afterInteractive" (the default, stated explicitly) mirrors
+       * the snippet's own `async` attribute: non-blocking, loaded once
+       * hydration is underway rather than delaying first paint. */}
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5202285396043100"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
     </html>
   );
 }
