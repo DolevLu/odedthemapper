@@ -17,6 +17,11 @@ export const DECLUTTERED_MAP_STYLES: google.maps.MapTypeStyle[] = [
 const STAR_PATH = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
 const CHECK_PATH = "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z";
 
+/** Shared with the map's kosher-only filter checkbox (rendered inside the
+ * restaurants filter pill specifically) — exported so that check and this
+ * style rule can't drift apart. */
+export const RESTAURANT_CATEGORY_MATCH = /מסעד|אוכל|food|restaurant/i;
+
 /**
  * Fixed color+icon per category *type*, applied the same way on every
  * destination's map regardless of what color the KML import happened to
@@ -25,13 +30,24 @@ const CHECK_PATH = "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z";
  */
 const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "path"; d: string } | { type: "text"; char: string } }[] = [
   { match: /קפה|בראנץ|גלידה|coffee|cafe/i, color: "#F97316", icon: { type: "path", d: pathForCategory("קפה") } },
-  { match: /מסעד|אוכל|food|restaurant/i, color: "#F97316", icon: { type: "path", d: pathForCategory("מסעדות") } },
+  { match: RESTAURANT_CATEGORY_MATCH, color: "#F97316", icon: { type: "path", d: pathForCategory("מסעדות") } },
   { match: /פארק|גן|park|garden/i, color: "#16A34A", icon: { type: "path", d: pathForCategory("פארק") } },
   { match: /בר|לילה|pub|drink|מועדונ|club/i, color: "#1E3A5F", icon: { type: "path", d: pathForCategory("בר") } },
   { match: /מטרו|רכבת|תחבורה|תחב"צ|metro|train|station/i, color: "#8B5A2B", icon: { type: "text", char: "M" } },
   { match: /עיר|עיירה|יישוב|town|city/i, color: "#2563EB", icon: { type: "path", d: CHECK_PATH } },
   { match: /אטרקצי|attraction/i, color: "#7C3AED", icon: { type: "path", d: STAR_PATH } },
 ];
+
+/** The same standardized color categoryMarkerIcon draws map pins with, for
+ * UI that shows a category's color WITHOUT drawing a full marker icon (e.g.
+ * the map's filter pills) — kept as its own export so the two can't drift
+ * apart the way they did before this existed (pins already went through
+ * STANDARD_CATEGORY_STYLES and were correctly purple for attractions; filter
+ * pills used the raw per-destination KML color instead and showed whatever
+ * shade that KML's folder happened to have). */
+export function standardCategoryColor(categoryName: string, fallbackColor: string): string {
+  return STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName))?.color ?? fallbackColor;
+}
 
 // Offered to users saving a personal pin (see SavePinModal) — each label is
 // written to match one of STANDARD_CATEGORY_STYLES's regexes above, so

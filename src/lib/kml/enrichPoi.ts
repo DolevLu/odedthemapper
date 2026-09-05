@@ -22,9 +22,31 @@ function normalize(s: string): string {
 // personal note and a totally different real square's Wikipedia title was
 // enough to trigger a wrong photo match before this was excluded). Real
 // matches need to agree on something more specific than this.
+//
+// The English half was added after a real wrong match: Singapore's "Wings
+// of Time" (a real Sentosa show) matched Wikipedia's "Until the End of
+// Time" (a 2Pac album) on the shared word "time" alone — the original list
+// was Hebrew-only, so any English POI was checked against zero generic
+// words. This list covers common geography/attraction terms and stopwords,
+// not every possible false-positive, so it's a mitigation, not a guarantee.
 const GENERIC_WORDS = new Set([
   "כיכר", "חוף", "פארק", "גן", "רחוב", "שביל", "נוף", "אזור", "מקום", "נקודה",
   "מרכז", "מסעדה", "בית", "קפה", "בר", "מוזיאון", "שוק", "מצפור", "טיילת",
+  "the", "and", "for", "with", "of", "in", "at", "on", "to", "from",
+  "time", "world", "new", "old", "great", "grand", "royal", "national",
+  "central", "main", "house", "garden", "gardens", "park", "parks",
+  "street", "road", "avenue", "square", "market", "temple", "palace",
+  "museum", "gallery", "point", "view", "tower", "bridge", "island",
+  "beach", "hill", "hills", "lake", "river", "city", "town", "village",
+  "center", "centre", "station", "area", "zone", "district", "walk",
+  "trail", "way", "day", "night", "life", "story", "land", "wonder",
+  "wonders", "show", "shows", "place", "spot", "corner", "quarter",
+  "harbor", "harbour", "port", "bay", "coast", "shore", "monument",
+  "memorial", "plaza", "mall", "shopping", "food", "court", "hall",
+  "building", "tour", "tours", "trip", "heritage", "historic",
+  "historical", "cultural", "culture", "art", "arts", "end", "until",
+  "top", "best", "famous", "popular", "walking", "bar", "cafe", "restaurant",
+  "hotel", "club", "inn", "resort", "lounge",
 ]);
 
 /** Many of a real user's KML pins are personal notes, not real named venues
@@ -48,7 +70,12 @@ function looksLikeARealName(name: string): boolean {
  * an unrelated nearby article's photo just because it happened to be the
  * closest geosearch result, or because both mention "square"/"beach"/etc.
  * without actually being the same place. A wrong photo is worse than no
- * photo. */
+ * photo.
+ *
+ * Substring containment (t.includes(w)) is only allowed when BOTH words are
+ * 5+ chars — found live against Singapore's data: "Tantric Bar" matched
+ * "Rhubarb Le Restaurant" purely because "bar" (3 chars) happens to be a
+ * substring of "rhubarb". Short words must match exactly. */
 function looksRelated(poiName: string, candidateTitle: string): boolean {
   const nameWords = normalize(poiName)
     .split(/\s+/)
@@ -56,7 +83,33 @@ function looksRelated(poiName: string, candidateTitle: string): boolean {
   const titleWords = normalize(candidateTitle)
     .split(/\s+/)
     .filter((w) => w.length >= 3 && !GENERIC_WORDS.has(w));
-  return nameWords.some((w) => titleWords.some((t) => t.includes(w) || w.includes(t)));
+  return nameWords.some((w) =>
+    titleWords.some((t) => w === t || (w.length >= 5 && t.length >= 5 && (t.includes(w) || w.includes(t))))
+  );
+}
+
+// A candidate Wikipedia article can share a specific word with the POI name
+// while being about something else entirely — "The Forum" (a real Singapore
+// venue) matched "Live Concert at the Forum" (a Barbra Streisand album) on
+// the word "forum" alone, confirmed live. Wikipedia's summary endpoint's own
+// short `description` field (Wikidata-derived, e.g. "1972 live album by...")
+// is a cheap, reliable signal for "this isn't a place" that a word-overlap
+// check alone can't catch.
+const NON_PLACE_DESCRIPTION_RE =
+  /\balbums?\b|\bsongs?\b|\bsingles?\b|\bEPs?\b|\bfilms?\b|\bmovies?\b|\btv series\b|\btelevision series\b|\bvideo games?\b|\bnovels?\b|\bbooks?\b|\bbands?\b|\bmusicians?\b|\bsingers?\b|\brappers?\b|\bactors?\b|\bactress(es)?\b|\bfootballers?\b|\bathletes?\b|\bpoliticians?\b|\bwriters?\b|\bcomposers?\b|\bpainters?\b|\bplayers?\b|\bwrestlers?\b|\bcomedians?\b|\bborn\b/i;
+
+async function isConfirmedPlace(lang: "he" | "en", title: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return true; // can't tell — don't block a real match on a lookup failure
+    const data = await res.json();
+    const description = typeof data?.description === "string" ? data.description : "";
+    return !NON_PLACE_DESCRIPTION_RE.test(description);
+  } catch {
+    return true;
+  }
 }
 
 async function fetchWikiSummaryPhoto(lang: "he" | "en", title: string): Promise<string | null> {
@@ -70,6 +123,43 @@ async function fetchWikiSummaryPhoto(lang: "he" | "en", title: string): Promise<
   } catch {
     return null;
   }
+}
+
+/** Same summary endpoint as fetchWikiSummaryPhoto, but also pulls the
+ * article's own `extract` (Wikipedia's short lead paragraph) — real,
+ * human-written text about the exact place already confirmed to match by
+ * findMatchingWikiArticle, not a model's guess. Used as a free, no-API-key
+ * alternative to asking Gemini for a description (see
+ * findWikipediaEnrichment) — literally "look the place up and summarize
+ * it," just done against the encyclopedia entry that's already confirmed to
+ * be about this specific place. */
+async function fetchWikiSummary(lang: "he" | "en", title: string): Promise<{ photo: string | null; extract: string | null }> {
+  try {
+    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { photo: null, extract: null };
+    const data = await res.json();
+    const photo = data?.originalimage?.source ?? data?.thumbnail?.source ?? null;
+    const extract = typeof data?.extract === "string" && data.extract.trim() ? data.extract.trim() : null;
+    return { photo, extract };
+  } catch {
+    return { photo: null, extract: null };
+  }
+}
+
+/** Trims a Wikipedia extract down to a Gemini-description-sized chunk (a
+ * couple of sentences) rather than dumping the whole lead paragraph into a
+ * POI card — cuts at a sentence boundary within the target range where
+ * possible instead of a mid-sentence word count, so it still reads as a
+ * complete thought. */
+function trimExtract(text: string, maxChars = 220): string {
+  if (text.length <= maxChars) return text;
+  const truncated = text.slice(0, maxChars);
+  const lastSentenceEnd = Math.max(truncated.lastIndexOf(". "), truncated.lastIndexOf(".\n"));
+  if (lastSentenceEnd > maxChars * 0.4) return truncated.slice(0, lastSentenceEnd + 1);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return `${truncated.slice(0, lastSpace > 0 ? lastSpace : maxChars)}…`;
 }
 
 // File names that are real content images but never a good "photo of the
@@ -134,8 +224,10 @@ async function findMatchingWikiArticle(name: string, lat: number, lng: number): 
       if (geoRes.ok) {
         const geoData = await geoRes.json();
         const candidates: { title: string }[] = geoData?.query?.geosearch ?? [];
-        const match = candidates.find((c) => looksRelated(name, c.title));
-        if (match) return { lang, title: match.title };
+        for (const c of candidates) {
+          if (!looksRelated(name, c.title)) continue;
+          if (await isConfirmedPlace(lang, c.title)) return { lang, title: c.title };
+        }
       }
     } catch {
       // try the next language / fall through to name search
@@ -149,7 +241,7 @@ async function findMatchingWikiArticle(name: string, lat: number, lng: number): 
       if (searchRes.ok) {
         const searchData = await searchRes.json();
         const title: string | undefined = searchData?.query?.search?.[0]?.title;
-        if (title && looksRelated(name, title)) return { lang, title };
+        if (title && looksRelated(name, title) && (await isConfirmedPlace(lang, title))) return { lang, title };
       }
     } catch {
       // try the next language
@@ -181,6 +273,35 @@ export async function findWikipediaPhotos(name: string, lat: number, lng: number
   }
 
   return photos.slice(0, count);
+}
+
+export type WikipediaEnrichment = { photos: string[]; description: string | null };
+
+/** Gemini-free alternative to findWikipediaPhotos + generateDescriptionAndWebsite:
+ * locates the same one confirmed-matching Wikipedia article and pulls BOTH a
+ * real description (the article's own lead extract, trimmed) and up to
+ * `count` photos from it in one pass — no per-POI LLM call, so no quota to
+ * exhaust and no risk of a hallucinated fact. Trade-off vs. Gemini: only
+ * covers places with an actual matching Wikipedia article (roughly the
+ * notable/named subset — a generic reverse-geocoded street segment won't
+ * have one), so this alone will leave plenty of POIs with no description,
+ * same as it always would for Wikipedia photos. No website field — the
+ * summary endpoint doesn't carry one and inferring it isn't safe without a
+ * confirming source. */
+export async function findWikipediaEnrichment(name: string, lat: number, lng: number, count = 2): Promise<WikipediaEnrichment> {
+  const match = await findMatchingWikiArticle(name, lat, lng);
+  if (!match) return { photos: [], description: null };
+
+  const summary = await fetchWikiSummary(match.lang, match.title);
+  const photos: string[] = [];
+  if (summary.photo) photos.push(summary.photo);
+  if (photos.length < count) {
+    const second = await fetchSecondWikiPhoto(match.lang, match.title, summary.photo);
+    if (second) photos.push(second);
+  }
+
+  const description = summary.extract ? trimExtract(summary.extract) : null;
+  return { photos: photos.slice(0, count), description };
 }
 
 export type PoiEnrichment = { description: string | null; website: string | null };

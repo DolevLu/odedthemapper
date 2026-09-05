@@ -9,8 +9,9 @@ import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile } from "@/lib/actions/trip";
 import { ratePoi } from "@/lib/actions/memories";
-import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket } from "@/lib/mapStyles";
+import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket, standardCategoryColor, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { pathForCategory } from "@/components/CategoryIcon";
+import { KosherStar, KOSHER_TAG_MATCH } from "@/components/KosherStar";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
@@ -374,18 +375,20 @@ export function MapScreen({
   // since every POI in a given category already shares that category's color.
   const categoryColorByName = useMemo(() => {
     const map = new Map<string, string>();
-    for (const poi of pointPois) if (!map.has(poi.categoryName)) map.set(poi.categoryName, poi.categoryColor);
+    for (const poi of pointPois) if (!map.has(poi.categoryName)) map.set(poi.categoryName, standardCategoryColor(poi.categoryName, poi.categoryColor));
     return map;
   }, [pointPois]);
+  const [kosherOnly, setKosherOnly] = useState(false);
   const filtered = useMemo(() => {
     let list = activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois;
     if (hideVisited) list = list.filter((p) => !(p.id in ratingsByPoiIdRef.current));
+    if (kosherOnly) list = list.filter((p) => p.tags.some((t) => KOSHER_TAG_MATCH.test(t)));
     return list;
     // ratingsVersion isn't read directly — it's a manual trigger so this
     // recomputes right after a rating is added/removed via the info window,
     // since ratingsByPoiIdRef itself is a ref and doesn't cause re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pointPois, activeCategory, hideVisited, ratingsVersion]);
+  }, [pointPois, activeCategory, hideVisited, kosherOnly, ratingsVersion]);
 
   // Personal saved pins (see uploadPersonalMapFile) participate in the same
   // category filter as the destination's own curated points — their exact
@@ -1475,6 +1478,7 @@ export function MapScreen({
         {categoryNames.map((catName) => {
           const catColor = categoryColorByName.get(catName) ?? "#888888";
           const catActive = activeCategory === catName;
+          const isRestaurantPill = RESTAURANT_CATEGORY_MATCH.test(catName);
           return (
             <button
               key={catName}
@@ -1490,6 +1494,22 @@ export function MapScreen({
                 <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
               </svg>
               {catName}
+              {isRestaurantPill && (
+                <span
+                  role="checkbox"
+                  aria-checked={kosherOnly}
+                  title="כשר"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveCategory(catName);
+                    setKosherOnly((v) => !v);
+                  }}
+                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full sm:h-5 sm:w-5"
+                  style={{ background: kosherOnly ? "#F97316" : "rgba(255,255,255,0.85)" }}
+                >
+                  <KosherStar size={11} />
+                </span>
+              )}
             </button>
           );
         })}

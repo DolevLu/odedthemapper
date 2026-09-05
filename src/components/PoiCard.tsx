@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { KosherStar, KOSHER_TAG_MATCH } from "@/components/KosherStar";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 
 export type PoiCardData = {
@@ -65,7 +66,19 @@ export function PoiCard({
             <CategoryIcon name={poi.categoryName} size={11} /> {poi.categoryName} · {poi.areaName}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-1">
-            {tag && <Badge>{STATUS_TAG_MATCH.test(tag) ? `🌱 ${tag}` : tag}</Badge>}
+            {tag && (
+              <Badge>
+                {KOSHER_TAG_MATCH.test(tag) ? (
+                  <span className="inline-flex items-center gap-1">
+                    <KosherStar size={10} /> {tag}
+                  </span>
+                ) : STATUS_TAG_MATCH.test(tag) ? (
+                  `🌱 ${tag}`
+                ) : (
+                  tag
+                )}
+              </Badge>
+            )}
             {poi.hours && <Badge>🕐 {poi.hours}</Badge>}
             {scheduled !== undefined && <SchedulePill scheduled={scheduled} />}
           </div>
@@ -125,7 +138,19 @@ export function PoiCard({
           <p className="truncate text-[10px] leading-tight opacity-60">{poi.areaName}</p>
           {(tag || poi.hours || scheduled !== undefined) && (
             <div className="flex flex-wrap items-center gap-1">
-              {tag && <Badge>{STATUS_TAG_MATCH.test(tag) ? `🌱 ${tag}` : tag}</Badge>}
+              {tag && (
+              <Badge>
+                {KOSHER_TAG_MATCH.test(tag) ? (
+                  <span className="inline-flex items-center gap-1">
+                    <KosherStar size={10} /> {tag}
+                  </span>
+                ) : STATUS_TAG_MATCH.test(tag) ? (
+                  `🌱 ${tag}`
+                ) : (
+                  tag
+                )}
+              </Badge>
+            )}
               {poi.hours && <Badge>🕐 {poi.hours}</Badge>}
               {scheduled !== undefined && <SchedulePill scheduled={scheduled} />}
             </div>
