@@ -7,7 +7,7 @@ import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile } from "@/lib/actions/trip";
+import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile, getMyRouteDays } from "@/lib/actions/trip";
 import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket, standardCategoryColor, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { pathForCategory } from "@/components/CategoryIcon";
@@ -15,7 +15,8 @@ import { KosherStar, KOSHER_TAG_MATCH } from "@/components/KosherStar";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
-import { haversineKm, isGenericAreaName } from "@/lib/geo";
+import type { MapDay } from "@/components/map/DayRouteMap";
+import { haversineKm, isGenericAreaName, colorForDay } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 import { sunPosition, shadedSidePath } from "@/lib/shadow";
@@ -265,6 +266,7 @@ export function MapScreen({
   const trailPolylineRef = useRef<google.maps.Polyline | null>(null);
   const lastTrailPointRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
   const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
+  const myRouteOverlaysRef = useRef<(google.maps.Marker | google.maps.Polyline)[]>([]);
   const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const savedPinMarkersRef = useRef<google.maps.Marker[]>([]);
@@ -305,6 +307,16 @@ export function MapScreen({
   const [trailVisible, setTrailVisible] = useState(false);
   const [trailPoints, setTrailPoints] = useState(initialTrail);
   const [heatmapVisible, setHeatmapVisible] = useState(false);
+  // "המסלول שלי" — the user's own built itinerary, overlaid as colored
+  // per-day routes (see DayRouteMap, whose MapDay shape/colorForDay this
+  // reuses so the two draw identically). Fetched lazily on first activation
+  // via getMyRouteDays rather than on every map load — most visits to the
+  // map screen never touch this, so paying that query's cost upfront for
+  // everyone would be wasted work.
+  const [myRouteVisible, setMyRouteVisible] = useState(false);
+  const [myRouteDays, setMyRouteDays] = useState<MapDay[] | null>(null);
+  const [myRouteLoading, setMyRouteLoading] = useState(false);
+  const [myRouteActiveDay, setMyRouteActiveDay] = useState<number | null>(null);
   const [shadowVisible, setShadowVisible] = useState(false);
   const [shadowStreets, setShadowStreets] = useState<StreetWay[]>([]);
   const [shadowLoading, setShadowLoading] = useState(false);
@@ -845,6 +857,68 @@ export function MapScreen({
       });
     });
   }, [loaded, heatmapVisible, pointPois]);
+
+  // "המסלול שלי" overlay — same polyline+numbered-stop drawing as
+  // DayRouteMap's own effect (kept independent rather than shared, since
+  // that component owns its own separate Map instance), just targeting this
+  // screen's shared map and filterable by myRouteActiveDay instead of
+  // DayRouteMap's own day switcher.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    myRouteOverlaysRef.current.forEach((o) => o.setMap(null));
+    myRouteOverlaysRef.current = [];
+    if (!myRouteVisible || !myRouteDays) return;
+
+    const visibleDays = myRouteActiveDay == null ? myRouteDays : myRouteDays.filter((d) => d.dayIndex === myRouteActiveDay);
+
+    visibleDays.forEach((day) => {
+      if (day.points.length === 0) return;
+      const color = colorForDay(day.dayIndex - 1);
+
+      const polyline = new google.maps.Polyline({
+        path: day.points.map((p) => ({ lat: p.lat, lng: p.lng })),
+        strokeColor: color,
+        strokeWeight: 3,
+        strokeOpacity: 0.85,
+        zIndex: 60,
+        map: mapRef.current!,
+      });
+      myRouteOverlaysRef.current.push(polyline);
+
+      day.points.forEach((p, idx) => {
+        const marker = new google.maps.Marker({
+          position: { lat: p.lat, lng: p.lng },
+          map: mapRef.current!,
+          label: { text: String(idx + 1), color: "white", fontSize: "11px", fontWeight: "bold" },
+          title: `יום ${day.dayIndex} · ${p.name}`,
+          zIndex: 550,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: "#fff",
+            strokeWeight: 2,
+          },
+        });
+        myRouteOverlaysRef.current.push(marker);
+      });
+    });
+  }, [loaded, myRouteVisible, myRouteDays, myRouteActiveDay]);
+
+  async function handleToggleMyRoute() {
+    if (!myRouteVisible) {
+      setMyRouteVisible(true);
+      if (myRouteDays === null) {
+        setMyRouteLoading(true);
+        const days = await getMyRouteDays(destinationId);
+        setMyRouteDays(days);
+        setMyRouteLoading(false);
+      }
+    } else {
+      setMyRouteVisible(false);
+    }
+  }
 
   // Approximate "which side of the street is shaded" — a heuristic (street
   // bearing vs. real sun position for the map's current center/time), not a
@@ -1514,6 +1588,13 @@ export function MapScreen({
           );
         })}
         <button
+          onClick={previewGate(handleToggleMyRoute)}
+          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          style={{ background: myRouteVisible ? "#0EA5E9" : "rgba(255,255,255,0.94)", color: myRouteVisible ? "white" : "#0369A1", ...previewDim }}
+        >
+          {myRouteLoading ? "⏳" : "🧭"} המסלול שלי
+        </button>
+        <button
           onClick={previewGate(() => setHeatmapVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C", ...previewDim }}
@@ -1591,6 +1672,43 @@ export function MapScreen({
           )}
         </div>
       </div>
+
+      {/* Day sub-filter for "המסלול שלי" — only appears once that layer is
+       * active, and only when there's an actual multi-day route to narrow
+       * down (a single-day itinerary has nothing to sub-filter). */}
+      {myRouteVisible && myRouteDays && myRouteDays.length > 1 && (
+        <div
+          dir="rtl"
+          className="no-scrollbar absolute inset-x-2 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 flex gap-1.5 overflow-x-auto rounded-full bg-white/95 p-1 shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))] sm:w-fit"
+        >
+          <button
+            onClick={() => setMyRouteActiveDay(null)}
+            className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+            style={{ background: myRouteActiveDay == null ? "#0EA5E9" : "transparent", color: myRouteActiveDay == null ? "white" : "#0369A1" }}
+          >
+            כל הימים
+          </button>
+          {myRouteDays.map((day) => {
+            const color = colorForDay(day.dayIndex - 1);
+            const active = myRouteActiveDay === day.dayIndex;
+            return (
+              <button
+                key={day.dayIndex}
+                onClick={() => setMyRouteActiveDay(day.dayIndex)}
+                className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+                style={{ background: active ? color : "transparent", color: active ? "white" : color }}
+              >
+                יום {day.dayIndex}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {myRouteVisible && myRouteDays && myRouteDays.length === 0 && (
+        <div className="absolute inset-x-3 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 rounded-lg bg-white/95 p-2 text-center text-xs font-semibold shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))]">
+          עדיין לא בנית מסלול ליעד הזה — אפשר לבנות אחד במסך &quot;מסלול&quot;
+        </div>
+      )}
 
       {searchNoResults && (
         <div className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">

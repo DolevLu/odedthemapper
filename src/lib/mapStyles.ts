@@ -22,6 +22,37 @@ const CHECK_PATH = "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z";
  * style rule can't drift apart. */
 export const RESTAURANT_CATEGORY_MATCH = /מסעד|אוכל|food|restaurant/i;
 
+// Fixed right-to-left reading order for the map's category filter pills
+// (after the always-first "הכל"), rather than each destination showing its
+// categories in whatever order the KML happened to list them. `test` is
+// checked in the order written here (so e.g. Christmas markets is tested
+// before the general shopping pattern, since "שווקי כריסמס" would otherwise
+// match "שוק"/market first) — independent of `rank`, which is each
+// category's actual position in the final sorted list. A name matching none
+// of these sorts after everything that does, alphabetically among itself.
+const CATEGORY_ORDER_PRIORITY: { test: RegExp; rank: number }[] = [
+  { test: /אטרקציות\s*כללי/, rank: 0 },
+  { test: /קפה|בראנץ|גלידה|coffee|cafe/i, rank: 1 },
+  { test: RESTAURANT_CATEGORY_MATCH, rank: 2 },
+  { test: /בר|pub|drink/i, rank: 3 },
+  { test: /כריסמס|חג/i, rank: 8 },
+  { test: /שופינג|קניות|שוק|shop|market/i, rank: 4 },
+  { test: /מוזיאון|museum/i, rank: 5 },
+  { test: /פארק|גן|park|garden/i, rank: 6 },
+  { test: /מועדונ|מסיב|club|party/i, rank: 7 },
+  { test: /מטרו|רכבת|תחבורה|metro|train|station/i, rank: 9 },
+  { test: /אטרקצי|attraction/i, rank: 10 },
+  { test: /עיר|עיירה|town|city/i, rank: 11 },
+];
+
+export function sortCategoryNames(names: string[]): string[] {
+  const rankOf = (name: string) => CATEGORY_ORDER_PRIORITY.find((p) => p.test.test(name))?.rank ?? 999;
+  return [...names].sort((a, b) => {
+    const diff = rankOf(a) - rankOf(b);
+    return diff !== 0 ? diff : a.localeCompare(b, "he");
+  });
+}
+
 /**
  * Fixed color+icon per category *type*, applied the same way on every
  * destination's map regardless of what color the KML import happened to

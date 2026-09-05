@@ -8,6 +8,8 @@ import { saveUploadedFile } from "@/lib/uploads";
 import { resolveItineraryOwnerId, canManageContent } from "@/lib/access";
 import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { parsePersonalMapFile } from "@/lib/kml/parsePersonalPoints";
+import { extractTextDescription } from "@/lib/data/pois";
+import type { MapDay } from "@/components/map/DayRouteMap";
 
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -1155,4 +1157,44 @@ export async function setItineraryShareEnabled(itineraryId: string, slug: string
     await prisma.itinerary.update({ where: { id: itineraryId }, data: { shareToken: crypto.randomUUID() } });
   }
   revalidatePath(`/trip/${slug}/${path}`);
+}
+
+/** Fetched lazily by the Map screen's "המסלול שלי" filter (only on first
+ * activation, not on every map load) to overlay the user's own built
+ * itinerary as colored per-day routes — same days/points shape as the
+ * itinerary screen's own DayRouteMap, just reused here so the two draw
+ * identically. Returns [] rather than throwing for a logged-out visitor or
+ * one with no itinerary built yet — both are just "nothing to show", not
+ * error states, on a screen anonymous visitors can otherwise browse. */
+export async function getMyRouteDays(destinationId: string): Promise<MapDay[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+  const ownerId = await resolveItineraryOwnerId(session.user.id);
+
+  const itinerary = await prisma.itinerary.findUnique({
+    where: { userId_destinationId_kind: { userId: ownerId, destinationId, kind: "personal" } },
+    include: {
+      days: {
+        orderBy: { dayIndex: "asc" },
+        include: {
+          items: { orderBy: { order: "asc" }, include: { poi: { include: { photos: { take: 1 } } } } },
+        },
+      },
+    },
+  });
+
+  return (itinerary?.days ?? []).map((day) => ({
+    dayIndex: day.dayIndex,
+    points: day.items
+      .filter((i) => i.poi)
+      .map((i) => ({
+        id: i.id,
+        name: i.poi!.name,
+        lat: i.poi!.lat,
+        lng: i.poi!.lng,
+        description: extractTextDescription(i.poi!.rawDescriptionHtml),
+        photoUrl: i.poi!.photos[0]?.url ?? null,
+        timeOfDay: i.timeOfDay,
+      })),
+  }));
 }

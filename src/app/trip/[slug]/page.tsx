@@ -5,6 +5,7 @@ import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { getAccessLevel, canManageContent, getActiveSubscriptionSummary } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { MapScreen } from "./map/MapScreen";
+import { sortCategoryNames } from "@/lib/mapStyles";
 
 export default async function TripHomePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -66,7 +67,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
   // trip has actually started per a logged flight" behavior).
   const autoLocate = Boolean(nextFlight?.startsAt && nextFlight.startsAt.getTime() <= Date.now());
 
-  const categoryNames = Array.from(new Set(pois.map((p) => p.categoryName))).sort();
+  const categoryNames = sortCategoryNames(Array.from(new Set(pois.map((p) => p.categoryName))));
   const favoritedIds = new Set(favorites.map((f) => f.poiId));
   const ratingsByPoiId = Object.fromEntries(ratings.map((r) => [r.poiId, r.rating]));
   const logisticPins = logisticPinRows.map((l) => {
