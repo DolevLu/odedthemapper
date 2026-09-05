@@ -1,7 +1,11 @@
 const SVG_ICONS: { match: RegExp; path: string }[] = [
   {
+    // A beer mug (foam bumps on top + a handle), deliberately distinct from
+    // the coffee cup glyph below it — the plain mug-with-handle shape this
+    // replaced read as a coffee cup at map-pin size with no way to tell them
+    // apart.
     match: /בר|לילה|drink|pub/i,
-    path: "M5 3h9v2h2a3 3 0 0 1 3 3v2a3 3 0 0 1-3 3h-1.17A5 5 0 0 1 10 15H8a5 5 0 0 1-5-5V3zm11 4v4a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zM6 19h8v2H6v-2z",
+    path: "M5 8h10v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V8zM15 9h1.5A2.5 2.5 0 0 1 19 11.5v2A2.5 2.5 0 0 1 16.5 16H15V9zM9 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM12.5 4.2a2.2 2.2 0 1 1-4.4 0 2.2 2.2 0 0 1 4.4 0zM15.2 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z",
   },
   {
     match: /מסעד|אוכל|food|restaurant/i,
