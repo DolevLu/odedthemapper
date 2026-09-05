@@ -31,12 +31,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className="h-full antialiased">
+    // suppressHydrationWarning: the theme-init script below sets data-theme
+    // (and this element's own font-size) from localStorage before React
+    // hydrates, so the server-rendered markup never has them — an expected,
+    // deliberate mismatch on this one element, not a real bug to warn about.
+    <html lang="he" dir="rtl" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        {/* Applies the saved theme/font-size preference (see SettingsModal)
+         * before first paint — a synchronous head script runs and blocks
+         * rendering before any CSS/hydration, which is what avoids a
+         * flash-of-wrong-theme that setting these from a React effect would
+         * cause. No DB/auth lookup, so this doesn't affect this layout's
+         * static-route status (see the AdSense comment below for why that
+         * matters here). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("theme")||"system";document.documentElement.dataset.theme=t==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;var f=localStorage.getItem("fontScale");if(f)document.documentElement.style.fontSize=f;}catch(e){}`,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <PortraitOnlyGate />

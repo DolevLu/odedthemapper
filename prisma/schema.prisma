@@ -261,6 +261,7 @@ model User {
   aiChatUsages  AiChatUsage[]
   poiRatings    PoiRating[]
   destinationAccessLog DestinationAccess[]
+  feedback      Feedback[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -852,4 +853,23 @@ model ItineraryTemplate {
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
 
   @@index([userId, destinationId, kind])
+}
+
+/** Submitted via the sidebar's report menu (see FeedbackModal) — a bug
+ * report or a feature suggestion, with an optional screenshot. userId is
+ * nullable since an anonymous visitor can still see the sidebar's report
+ * option; reviewed by an admin at /admin/feedback. */
+model Feedback {
+  id          String   @id @default(cuid())
+  userId      String?
+  kind        String // bug | suggestion
+  description String
+  imageUrl    String?
+  pageUrl     String? // where the reporter was when they opened the form, for reproduction context
+  status      String   @default("open") // open | reviewed
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
 }

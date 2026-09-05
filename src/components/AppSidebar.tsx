@@ -10,6 +10,8 @@ import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { DestinationBadge } from "@/components/header/DestinationBadge";
 import { TrialCountdown } from "@/components/TrialCountdown";
+import { GuideMenuButton } from "@/components/GuideMenuButton";
+import { SettingsButton } from "@/components/SettingsModal";
 
 type Tier = "free" | "silver" | "gold";
 
@@ -45,26 +47,6 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
     >
       📲 הורידו את האפליקציה
     </a>
-  );
-}
-
-/** Small "i" button next to the logo/name — links to the full usage guide
- * (/guide), for anyone who wants the manual rather than the first-login
- * walkthrough (see WalkthroughGuide, which only ever shows once). Filled
- * brand-gradient circle (not just an outlined letter) so it reads as a real
- * button, not stray text next to the logo. */
-function GuideInfoButton({ onClick }: { onClick?: () => void }) {
-  return (
-    <Link
-      href="/guide"
-      onClick={onClick}
-      title="מדריך שימוש"
-      aria-label="מדריך שימוש"
-      className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white shadow-sm transition-transform hover:scale-110"
-      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)", fontFamily: "Georgia, serif" }}
-    >
-      i
-    </Link>
   );
 }
 
@@ -272,7 +254,8 @@ export function AppSidebar({
               )}
             </span>
           </Link>
-          <GuideInfoButton />
+          <GuideMenuButton />
+          <SettingsButton />
         </div>
         <div className="mb-2 px-1">
           <DestinationBadge />
@@ -461,7 +444,8 @@ export function AppSidebar({
           <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <GuideInfoButton onClick={() => setDrawerOpen(false)} />
+                <GuideMenuButton onNavigate={() => setDrawerOpen(false)} />
+                <SettingsButton />
                 <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />

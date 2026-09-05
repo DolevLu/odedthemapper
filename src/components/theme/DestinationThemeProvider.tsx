@@ -33,7 +33,10 @@ export function DestinationThemeProvider({
   };
 
   return (
-    <Tag className={className} style={style}>
+    // destination-theme-root: targeted by globals.css's dark-mode override
+    // (see the :root[data-theme="dark"] rule) — that's the only thing that
+    // can beat this element's own inline --background/--surface/--text.
+    <Tag className={className ? `destination-theme-root ${className}` : "destination-theme-root"} style={style}>
       {children}
     </Tag>
   );

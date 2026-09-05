@@ -29,6 +29,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/promo-codes" className="opacity-70 hover:opacity-100">
             קודי קופון
           </Link>
+          <Link href="/admin/feedback" className="opacity-70 hover:opacity-100">
+            משוב ודיווחים
+          </Link>
           <Link href="/" className="opacity-70 hover:opacity-100">
             לאתר
           </Link>

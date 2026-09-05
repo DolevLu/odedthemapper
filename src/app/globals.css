@@ -18,6 +18,31 @@
   --radius: 0.75rem;
 }
 
+/* Dark mode (see SettingsModal + the inline no-flash script in layout.tsx,
+ * which sets data-theme on <html> before first paint from localStorage/
+ * prefers-color-scheme). Only the structural background/surface/text tokens
+ * change — --primary/--secondary/--accent stay each destination's own brand
+ * colors in both modes, same as light mode today.
+ *
+ * .destination-theme-root is the element DestinationThemeProvider renders —
+ * it sets --background/--surface/--text as an INLINE style per destination,
+ * which normally beats any selector-based rule. The !important overrides
+ * below are the one deliberate way to still win: CSS's cascade sorts
+ * !important declarations ahead of a non-important inline style regardless
+ * of specificity, so this successfully replaces a destination's light
+ * palette with the one shared dark palette while every non-destination page
+ * (home, login, admin, settings...) picks up the plain :root rule instead. */
+:root[data-theme="dark"] {
+  --background: #17140f;
+  --surface: #241f19;
+  --text: #f2ece1;
+}
+:root[data-theme="dark"] .destination-theme-root {
+  --background: #17140f !important;
+  --surface: #241f19 !important;
+  --text: #f2ece1 !important;
+}
+
 @theme inline {
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
