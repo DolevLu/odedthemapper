@@ -28,6 +28,7 @@
     "@xmldom/xmldom": "^0.9.10",
     "bcryptjs": "^3.0.3",
     "date-holidays": "^3.34.0",
+    "jszip": "^3.10.1",
     "next": "16.2.11",
     "next-auth": "^5.0.0-beta.32",
     "pdf-lib": "^1.17.1",

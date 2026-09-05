@@ -7,9 +7,9 @@ import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin } from "@/lib/actions/trip";
+import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile } from "@/lib/actions/trip";
 import { ratePoi } from "@/lib/actions/memories";
-import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
+import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket } from "@/lib/mapStyles";
 import { pathForCategory } from "@/components/CategoryIcon";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
@@ -332,6 +332,18 @@ export function MapScreen({
   const [isOnline, setIsOnline] = useState(true);
   const [offlineSaved, setOfflineSaved] = useState(false);
   const [offlineSaving, setOfflineSaving] = useState(false);
+  // "+" button: upload a personal KML/KMZ (e.g. exported from Google My
+  // Maps) and overlay its points on this destination's map as personal
+  // saved pins. See uploadPersonalMapFile.
+  const personalUploadInputRef = useRef<HTMLInputElement>(null);
+  const [personalUploadStatus, setPersonalUploadStatus] = useState<{ kind: "working" | "error" | "success"; message: string } | null>(
+    null
+  );
+  useEffect(() => {
+    if (!personalUploadStatus || personalUploadStatus.kind === "working") return;
+    const t = setTimeout(() => setPersonalUploadStatus(null), 6000);
+    return () => clearTimeout(t);
+  }, [personalUploadStatus]);
   const [offlineProgress, setOfflineProgress] = useState<{ done: number; total: number } | null>(null);
   const [routeModeActive, setRouteModeActive] = useState(false);
   const [showGooglePois, setShowGooglePois] = useState(false);
@@ -374,6 +386,20 @@ export function MapScreen({
     // since ratingsByPoiIdRef itself is a ref and doesn't cause re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pointPois, activeCategory, hideVisited, ratingsVersion]);
+
+  // Personal saved pins (see uploadPersonalMapFile) participate in the same
+  // category filter as the destination's own curated points — their exact
+  // category names rarely match (a personal pin's fixed "בתי קפה" vs. a
+  // destination's own "קפה"), so equivalence is checked via the shared
+  // standardCategoryBucket regex bucket instead of a literal string match.
+  // "הכל" (activeCategory === null) always shows every personal pin, same as
+  // it always did before filtering existed for them.
+  const visibleSavedPins = useMemo(() => {
+    if (!activeCategory) return savedPins;
+    const activeBucket = standardCategoryBucket(activeCategory);
+    if (activeBucket === null) return [];
+    return savedPins.filter((p) => p.categoryName != null && standardCategoryBucket(p.categoryName) === activeBucket);
+  }, [savedPins, activeCategory]);
 
   const sortedList = useMemo(() => {
     if (!gpsActive || !userPosition) return filtered;
@@ -422,6 +448,28 @@ export function MapScreen({
     } finally {
       setOfflineSaving(false);
       setOfflineProgress(null);
+    }
+  }
+
+  async function handlePersonalFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file name later
+    if (!file) return;
+
+    setPersonalUploadStatus({ kind: "working", message: "מעלים ומעבדים את הקובץ..." });
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const result = await uploadPersonalMapFile(destinationId, slug, formData);
+      setPersonalUploadStatus({
+        kind: "success",
+        message: result.truncated
+          ? `נוספו ${result.count} נקודות (הקובץ הכיל יותר, חלקן לא נוספו)`
+          : `נוספו ${result.count} נקודות אישיות למפה 🎉`,
+      });
+      router.refresh();
+    } catch (err) {
+      setPersonalUploadStatus({ kind: "error", message: err instanceof Error ? err.message : "העלאת הקובץ נכשלה" });
     }
   }
 
@@ -666,7 +714,7 @@ export function MapScreen({
     savedPinMarkersRef.current = [];
 
     const scale = markerScaleForZoom(mapRef.current.getZoom());
-    savedPins.forEach((pin) => {
+    visibleSavedPins.forEach((pin) => {
       const marker = new google.maps.Marker({
         position: { lat: pin.lat, lng: pin.lng },
         map: mapRef.current!,
@@ -695,7 +743,7 @@ export function MapScreen({
       });
       savedPinMarkersRef.current.push(marker);
     });
-  }, [loaded, savedPins]);
+  }, [loaded, visibleSavedPins]);
 
   // Render line/polygon geometries (metro lines, walking routes, districts,
   // etc.) — each in its own category's color (poi.categoryColor, sourced
@@ -1387,6 +1435,23 @@ export function MapScreen({
             לוויין
           </button>
         </div>
+        <input
+          ref={personalUploadInputRef}
+          type="file"
+          accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz"
+          className="hidden"
+          onChange={handlePersonalFileSelected}
+        />
+        <button
+          onClick={previewGate(() => personalUploadInputRef.current?.click())}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-md sm:h-7 sm:w-7"
+          style={{ background: "rgba(255,255,255,0.94)", color: "var(--primary)", ...previewDim }}
+          disabled={personalUploadStatus?.kind === "working"}
+          aria-label="העלאת מפה אישית (KML / KMZ)"
+          title="העלאת מפה אישית (KML / KMZ)"
+        >
+          {personalUploadStatus?.kind === "working" ? "⏳" : "+"}
+        </button>
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
@@ -1510,6 +1575,15 @@ export function MapScreen({
       {searchNoResults && (
         <div className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">
           לא נמצאו תוצאות לחיפוש הזה
+        </div>
+      )}
+
+      {personalUploadStatus && (
+        <div
+          className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2 text-center text-xs font-semibold shadow-md"
+          style={{ color: personalUploadStatus.kind === "error" ? "#DC2626" : personalUploadStatus.kind === "success" ? "#16A34A" : "var(--text)" }}
+        >
+          {personalUploadStatus.message}
         </div>
       )}
 

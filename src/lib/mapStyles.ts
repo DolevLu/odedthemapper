@@ -51,6 +51,32 @@ export const SAVED_PIN_CATEGORY_OPTIONS = [
 ];
 export const SAVED_PIN_FALLBACK_COLOR = "#6B7280";
 
+// Index-aligned with STANDARD_CATEGORY_STYLES — the SAVED_PIN_CATEGORY_OPTIONS
+// label that corresponds to each standard bucket.
+const CATEGORY_OPTION_BY_BUCKET = ["בתי קפה", "מסעדות", "פארקים", "ברים", "תחנות מטרו ורכבת", "ערים ועיירות", "אטרקציות"];
+
+/** Which STANDARD_CATEGORY_STYLES bucket (if any) a free-text category name
+ * falls into, by index. Used both to file an uploaded personal map point
+ * under one of SAVED_PIN_CATEGORY_OPTIONS's fixed labels (categoryOptionForName)
+ * and to let the map's category filter show personal points under a
+ * destination category of the same real-world type — their exact names
+ * rarely match (a KML's own "קפה" vs. the fixed pin option "בתי קפה"), but
+ * both match the same regex bucket. */
+export function standardCategoryBucket(name: string): number | null {
+  const idx = STANDARD_CATEGORY_STYLES.findIndex((s) => s.match.test(name));
+  return idx === -1 ? null : idx;
+}
+
+/** Best-effort match of a free-text category/folder name (from an uploaded
+ * personal KML/KMZ) to one of the fixed SAVED_PIN_CATEGORY_OPTIONS labels,
+ * so an uploaded point renders with a real, recognizable icon+color instead
+ * of always falling back to the generic pin. Falls back to "אחר" (the same
+ * catch-all a user picks manually when saving a place from the map). */
+export function categoryOptionForName(name: string): string {
+  const idx = standardCategoryBucket(name);
+  return idx === null ? "אחר" : CATEGORY_OPTION_BY_BUCKET[idx];
+}
+
 // A destination has only a handful of distinct (color, category, scale,
 // favorited, override) combinations, but every marker was rebuilding its own
 // icon from scratch on every zoom-tier change (see markerScaleForZoom in

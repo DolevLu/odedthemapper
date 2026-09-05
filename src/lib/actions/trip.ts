@@ -3,9 +3,11 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { randomUUID } from "crypto";
 import { saveUploadedFile } from "@/lib/uploads";
 import { resolveItineraryOwnerId, canManageContent } from "@/lib/access";
 import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
+import { parsePersonalMapFile } from "@/lib/kml/parsePersonalPoints";
 
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -119,6 +121,47 @@ export async function deleteSavedMapPin(id: string, slug: string) {
   const userId = await requireUserId();
   await prisma.savedMapPin.deleteMany({ where: { id, userId } });
   revalidatePath(`/trip/${slug}`);
+}
+
+// A personal upload could in principle contain far more points than anyone
+// would realistically want as individual pins on their own map (a My Maps
+// export with thousands of entries) — capped generously rather than
+// silently truncated with no explanation.
+const MAX_PERSONAL_POINTS_PER_UPLOAD = 3000;
+
+/** Lets a user overlay their OWN personal map (exported from Google My Maps
+ * or Google Maps' "your places", as .kml or .kmz) on top of a destination's
+ * curated map — every point becomes a normal SavedMapPin (see saveMapPin
+ * above), so it renders, filters, and deletes exactly like a place saved one
+ * at a time from the Google POI layer; the only difference is arriving in
+ * bulk from a file instead of one info-window click. `placeId` has no real
+ * Google place behind an uploaded point, so a random one is generated per
+ * point purely to satisfy SavedMapPin's uniqueness constraint. */
+export async function uploadPersonalMapFile(destinationId: string, slug: string, formData: FormData) {
+  const userId = await requireUserId();
+  const file = formData.get("file") as File | null;
+  if (!file || file.size === 0) throw new Error("לא נבחר קובץ");
+
+  const points = await parsePersonalMapFile(file);
+  if (points.length === 0) throw new Error("לא נמצאו נקודות (Placemarks) בקובץ שהועלה");
+
+  const trimmed = points.slice(0, MAX_PERSONAL_POINTS_PER_UPLOAD);
+
+  await prisma.savedMapPin.createMany({
+    data: trimmed.map((p) => ({
+      userId,
+      destinationId,
+      placeId: `upload:${randomUUID()}`,
+      name: p.name,
+      lat: p.lat,
+      lng: p.lng,
+      description: p.description,
+      categoryName: p.categoryName,
+    })),
+  });
+
+  revalidatePath(`/trip/${slug}`);
+  return { count: trimmed.length, truncated: points.length > trimmed.length };
 }
 
 /** Admin/content-manager map editing: overrides a POI's (or shape's) marker

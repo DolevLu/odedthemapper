@@ -29,7 +29,7 @@ export type ParsedKml = {
 const DEFAULT_CATEGORY_NAME = "כללי";
 const DEFAULT_COLOR = "#3388ff";
 
-function el(node: Element, tag: string): Element | null {
+export function el(node: Element, tag: string): Element | null {
   for (let i = 0; i < node.childNodes.length; i++) {
     const child = node.childNodes[i];
     if (child.nodeType === 1 && (child as Element).tagName === tag) {
@@ -39,7 +39,7 @@ function el(node: Element, tag: string): Element | null {
   return null;
 }
 
-function elAll(node: Element, tag: string): Element[] {
+export function elAll(node: Element, tag: string): Element[] {
   const out: Element[] = [];
   for (let i = 0; i < node.childNodes.length; i++) {
     const child = node.childNodes[i];
@@ -50,12 +50,12 @@ function elAll(node: Element, tag: string): Element[] {
   return out;
 }
 
-function text(node: Element | null): string | null {
+export function text(node: Element | null): string | null {
   if (!node) return null;
   return node.textContent?.trim() || null;
 }
 
-function parseCoordinateBlock(raw: string): [number, number][] {
+export function parseCoordinateBlock(raw: string): [number, number][] {
   return raw
     .trim()
     .split(/\s+/)
@@ -74,7 +74,7 @@ function colorFromIconHref(href: string | null): string | null {
 }
 
 /** Build a map of style id -> icon color by walking Style / gx:CascadingStyle / StyleMap nodes. */
-function buildStyleColorMap(root: Element): Map<string, string> {
+export function buildStyleColorMap(root: Element): Map<string, string> {
   const colorById = new Map<string, string>();
   const styleMapNormalRef = new Map<string, string>(); // StyleMap id -> normal styleUrl id
 
