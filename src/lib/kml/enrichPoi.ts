@@ -208,25 +208,30 @@ export async function generateDescriptionAndWebsite(
   areaName: string,
   destinationName: string,
   lat: number,
-  lng: number
+  lng: number,
+  language: "he" | "en" = "he"
 ): Promise<PoiEnrichment> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || !looksLikeARealName(name)) return { description: null, website: null };
 
+  const systemInstruction =
+    language === "en"
+      ? `You are a research assistant for a travel app. Given a place's name, its category, and the city/destination it's in - if you know with reasonable confidence what this real place actually is (from your own knowledge, not a live search), return ONLY a JSON object (no extra text, no markdown) shaped like {"description": "..." or null, "website": "..." or null}. description: a short, real, in-English description (up to 30 words) explaining what this place is and why it's worth visiting - not a generic sentence that could fit any place. website: the place's real official website (including https://) only if you're confident of it, otherwise null. Note: some names are a traveler's personal notes rather than real place names (e.g. "40" or a nickname), and some are small/local places you have no reliable information about - in any such case, or if you're unsure, return {"description": null, "website": null} without inventing anything. null beats a guess.`
+      : `אתם עוזרי מחקר לאפליקציית טיולים. בהינתן שם מקום, הקטגוריה שלו, והעיר/יעד שבו הוא נמצא - אם אתם יודעים בוודאות סבירה מהו המקום האמיתי הזה (מהידע שלכם, לא מחיפוש חי), החזירו אך ורק אובייקט JSON (ללא טקסט נוסף, ללא markdown) בצורה {"description": "..." או null, "website": "..." או null}. description: תיאור קצר ואמיתי בעברית (עד 30 מילים) שמסביר מה המקום הזה ולמה שווה לבקר בו - לא משפט גנרי שמתאים לכל מקום. website: כתובת האתר הרשמי האמיתי של המקום (כולל https://) רק אם אתם בטוחים בה, אחרת null. שימו לב: חלק מהשמות הם פתקים אישיים של מטייל ולא שמות מקומות אמיתיים (למשל "40" או כינוי), וחלק הם מקומות קטנים/מקומיים שאין לכם מידע אמין עליהם - בכל מקרה כזה, או אם אינכם בטוחים, החזירו {"description": null, "website": null} בלי להמציא כלום. עדיף null על ניחוש.`;
+
   const body = JSON.stringify({
     system_instruction: {
-      parts: [
-        {
-          text: `אתם עוזרי מחקר לאפליקציית טיולים. בהינתן שם מקום, הקטגוריה שלו, והעיר/יעד שבו הוא נמצא - אם אתם יודעים בוודאות סבירה מהו המקום האמיתי הזה (מהידע שלכם, לא מחיפוש חי), החזירו אך ורק אובייקט JSON (ללא טקסט נוסף, ללא markdown) בצורה {"description": "..." או null, "website": "..." או null}. description: תיאור קצר ואמיתי בעברית (עד 30 מילים) שמסביר מה המקום הזה ולמה שווה לבקר בו - לא משפט גנרי שמתאים לכל מקום. website: כתובת האתר הרשמי האמיתי של המקום (כולל https://) רק אם אתם בטוחים בה, אחרת null. שימו לב: חלק מהשמות הם פתקים אישיים של מטייל ולא שמות מקומות אמיתיים (למשל "40" או כינוי), וחלק הם מקומות קטנים/מקומיים שאין לכם מידע אמין עליהם - בכל מקרה כזה, או אם אינכם בטוחים, החזירו {"description": null, "website": null} בלי להמציא כלום. עדיף null על ניחוש.`,
-        },
-      ],
+      parts: [{ text: systemInstruction }],
     },
     contents: [
       {
         role: "user",
         parts: [
           {
-            text: `מקום: "${name}", קטגוריה: ${categoryName}, אזור: ${areaName}, יעד: ${destinationName}, קואורדינטות בקירוב: ${lat}, ${lng}`,
+            text:
+              language === "en"
+                ? `Place: "${name}", category: ${categoryName}, area: ${areaName}, destination: ${destinationName}, approximate coordinates: ${lat}, ${lng}`
+                : `מקום: "${name}", קטגוריה: ${categoryName}, אזור: ${areaName}, יעד: ${destinationName}, קואורדינטות בקירוב: ${lat}, ${lng}`,
           },
         ],
       },
