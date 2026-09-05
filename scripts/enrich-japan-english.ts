@@ -8,7 +8,7 @@
 // Every other destination keeps the default Hebrew behavior untouched.
 import { PrismaClient } from "@prisma/client";
 import { extractTextDescription } from "../src/lib/data/pois";
-import { findWikipediaPhotos, generateDescriptionAndWebsite } from "../src/lib/kml/enrichPoi";
+import { findWikipediaPhotos, generateDescriptionAndWebsite, GeminiQuotaExceededError } from "../src/lib/kml/enrichPoi";
 
 const prisma = new PrismaClient({ datasourceUrl: process.env.POSTGRES_URL_NON_POOLING });
 
@@ -78,11 +78,34 @@ async function main() {
         );
       } else {
         const photoUrls = needsPhoto ? await findWikipediaPhotos(poi.name, poi.lat, poi.lng, 2) : [];
-        const aiResult =
-          needsDescription || needsWebsite
-            ? await generateDescriptionAndWebsite(poi.name, poi.category.name, poi.category.area.name, dest.name, poi.lat, poi.lng, "en")
-            : { description: null, website: null };
+        if (needsPhoto && photoUrls.length > 0) {
+          await withRetry(
+            () => prisma.poiPhoto.createMany({ data: photoUrls.map((url) => ({ poiId: poi.id, url })) }),
+            `${SLUG}: create photos for ${poi.name}`
+          );
+        }
 
+        let aiResult: { description: string | null; website: string | null };
+        try {
+          aiResult =
+            needsDescription || needsWebsite
+              ? await generateDescriptionAndWebsite(poi.name, poi.category.name, poi.category.area.name, dest.name, poi.lat, poi.lng, "en")
+              : { description: null, website: null };
+        } catch (err) {
+          if (err instanceof GeminiQuotaExceededError) {
+            console.log(`Gemini daily quota exhausted at "${poi.name}" (processed ${processed} so far) — stopping run, will resume later.`);
+            console.log(`DONE — processed ${processed} total (stopped early: quota exhausted)`);
+            await prisma.$disconnect();
+            process.exit(0);
+          }
+          throw err;
+        }
+
+        // Only claim "enriched" for what we actually got a real answer for —
+        // a null description/website here means Gemini WAS reachable and
+        // confidently said "I don't know", which is a legitimate final
+        // answer worth caching (unlike the quota case above, which never
+        // reaches this line).
         await withRetry(
           () =>
             prisma.pointOfInterest.update({
@@ -95,12 +118,6 @@ async function main() {
             }),
           `${SLUG}: update ${poi.name}`
         );
-        if (needsPhoto && photoUrls.length > 0) {
-          await withRetry(
-            () => prisma.poiPhoto.createMany({ data: photoUrls.map((url) => ({ poiId: poi.id, url })) }),
-            `${SLUG}: create photos for ${poi.name}`
-          );
-        }
       }
       processed++;
       if (processed % 25 === 0) console.log(`  [${SLUG}] ${processed} processed so far...`);

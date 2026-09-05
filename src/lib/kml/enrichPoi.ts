@@ -189,6 +189,17 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Thrown instead of the usual "null means Gemini isn't confident" fallback
+ * when the API call failed because of a hard daily quota (RESOURCE_EXHAUSTED)
+ * rather than genuine model uncertainty — silently swallowing this into a
+ * null description used to permanently mark hundreds of POIs "enriched" with
+ * nothing to show for it (confirmed live: 887 of 889 Japan POIs came back
+ * null in one run because the free-tier daily cap for gemini-flash-latest's
+ * current model was exhausted after the first ~20 calls). Callers should let
+ * this abort the run rather than catch-and-continue, so the POI stays
+ * un-enriched and gets a real attempt on a future run instead. */
+export class GeminiQuotaExceededError extends Error {}
+
 /** Asks Gemini for a real short description and the place's real official
  * website, from its own trained knowledge — NOT live-grounded search: the
  * "Google Search" grounding tool was tried first and dropped after testing
@@ -249,7 +260,18 @@ export async function generateDescriptionAndWebsite(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
         { method: "POST", headers: { "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(30000) }
       );
-      if (res.status === 429 || res.status === 503) {
+      if (res.status === 429) {
+        const bodyText = await res.text();
+        if (bodyText.includes("RESOURCE_EXHAUSTED") || bodyText.includes("quota")) {
+          throw new GeminiQuotaExceededError(bodyText);
+        }
+        if (attempt === 0) {
+          await sleep(4000);
+          continue;
+        }
+        return { description: null, website: null };
+      }
+      if (res.status === 503) {
         if (attempt === 0) {
           await sleep(4000);
           continue;
@@ -268,7 +290,8 @@ export async function generateDescriptionAndWebsite(
         description: typeof parsed.description === "string" && parsed.description.trim() ? parsed.description.trim() : null,
         website: typeof parsed.website === "string" && /^https?:\/\//.test(parsed.website.trim()) ? parsed.website.trim() : null,
       };
-    } catch {
+    } catch (err) {
+      if (err instanceof GeminiQuotaExceededError) throw err;
       if (attempt === 0) {
         await sleep(2000);
         continue;
