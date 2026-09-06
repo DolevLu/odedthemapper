@@ -7,6 +7,9 @@ import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
 import { ItineraryDaysView } from "./ItineraryDaysView";
 import type { DayListItem } from "./DayItemsList";
 import { ItineraryMobileView } from "./ItineraryMobileView";
+import { ItineraryTopBar } from "./ItineraryTopBar";
+import { ItineraryWizard } from "./ItineraryWizard";
+import { ExportPdfButton } from "./ExportPdfButton";
 
 type Day = { id: string; dayIndex: number; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
@@ -67,16 +70,33 @@ export function ItineraryLayoutSwitcher({
   }
 
   return (
-    <div className="flex flex-col gap-6 lg:h-[calc(100vh-200px)] lg:min-h-[480px] lg:flex-row lg:items-stretch">
-      <div className="lg:min-h-0 lg:w-[420px] lg:shrink-0">
-        <ItineraryDaysView slug={slug} poiOptions={poiOptions} days={dayListDays} />
+    <div className="flex h-full flex-col">
+      {/* A slim pill toolbar spanning the full width, above the side
+       * panel+map split — same rounded-pill visual language as the map
+       * screen's own category filters, instead of a page-header block. */}
+      <div
+        className="flex flex-wrap shrink-0 items-center gap-1.5 border-b p-3"
+        style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)", background: "var(--surface)" }}
+      >
+        <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
+        <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
+        <ExportPdfButton destinationId={destinationId} slug={slug} />
       </div>
 
-      {mapDays.some((d) => d.points.length > 0) && (
-        <div className="lg:min-h-0 lg:flex-1">
-          <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} />
+      <div className="flex min-h-0 flex-1 items-stretch">
+        <div
+          className="flex h-full min-h-0 w-[380px] shrink-0 flex-col border-e p-4"
+          style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)", background: "var(--surface)" }}
+        >
+          <ItineraryDaysView slug={slug} poiOptions={poiOptions} days={dayListDays} />
         </div>
-      )}
+
+        {mapDays.some((d) => d.points.length > 0) && (
+          <div className="min-h-0 flex-1">
+            <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

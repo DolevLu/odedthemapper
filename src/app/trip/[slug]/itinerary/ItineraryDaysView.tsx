@@ -57,7 +57,12 @@ export function ItineraryDaysView({
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:h-full lg:min-h-0">
+    // No lg: gating here — this branch (hideHeader=false) only ever renders
+    // from the desktop ItineraryLayoutSwitcher, which already gates entry at
+    // useIsDesktop's 640px breakpoint; an lg: (1024px) prefix left a real
+    // gap between 640-1023px where the outer layout was full-height but this
+    // component's own height-fitting classes hadn't kicked in yet.
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex justify-end gap-1">
         <button
           onClick={() => setMode("grid")}
@@ -84,13 +89,13 @@ export function ItineraryDaysView({
       </div>
 
       {mode === "grid" ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-2 gap-4">
           {days.map((day) => (
             <DayCard key={day.id} day={day} slug={slug} poiOptions={poiOptions} path={path} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div className="flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}>
             <button
               onClick={() => goToIndex(Math.max(0, clampedIndex - 1))}
@@ -119,7 +124,7 @@ export function ItineraryDaysView({
           </div>
           {/* Independently scrollable on desktop so a long day's stop list
            * doesn't push this column taller than the route map beside it. */}
-          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pe-1">
+          <div className="min-h-0 flex-1 overflow-y-auto pe-1">
             <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} large />
           </div>
         </div>

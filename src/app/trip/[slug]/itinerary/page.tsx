@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { listItineraryTemplates, getItineraryTemplatePreview } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import type { MapDay } from "@/components/map/DayRouteMap";
-import { ExportPdfButton } from "./ExportPdfButton";
 import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ItineraryLayoutSwitcher } from "./ItineraryLayoutSwitcher";
@@ -65,7 +64,7 @@ export default async function ItineraryPage({
   const templatePreview = previewTemplate ? await getItineraryTemplatePreview(previewTemplate, "personal") : null;
   if (previewTemplate && templatePreview) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 p-6">
         <ItineraryTemplatePreview slug={slug} destinationId={destination.id} templateId={previewTemplate} preview={templatePreview} hasExistingDays={hasExistingDays} />
       </div>
     );
@@ -109,37 +108,39 @@ export default async function ItineraryPage({
   }));
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Once there's an itinerary to show, mobile switches to the
-       * full-screen map+drawer layout below (which floats its own compact
-       * copy of this same top bar over the map) — this in-flow header would
-       * otherwise just double up with it. Desktop keeps it in-flow always;
-       * mobile still needs it when there's nothing to show yet. */}
-      <div className={`flex-wrap items-center justify-between gap-3 sm:flex ${hasExistingDays ? "hidden" : "flex"}`}>
-        <h1 className="text-xl font-bold">📅 מתכנן מסלול יומי</h1>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ItineraryTopBar destinationId={destination.id} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
-          {hasExistingDays && <ExportPdfButton destinationId={destination.id} slug={slug} />}
-        </div>
-      </div>
+    <div className={hasExistingDays ? "flex h-full flex-col" : "flex flex-col gap-6 p-6"}>
+      {/* Once there's an itinerary to show, both mobile (its own draggable
+       * drawer) and desktop (ItineraryLayoutSwitcher's own toolbar, over its
+       * full-bleed side-panel+map view) render their own copy of this same
+       * top bar instead — this in-flow onboarding header would otherwise
+       * double up with it. Only shown here for the "nothing built yet" state,
+       * on every screen size. */}
+      {!hasExistingDays && (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-xl font-bold">📅 מתכנן מסלול יומי</h1>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <ItineraryTopBar destinationId={destination.id} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
+            </div>
+          </div>
 
-      <div className={`sm:block ${hasExistingDays ? "hidden" : "block"}`}>
-        <ItineraryWizard
-          destinationId={destination.id}
-          slug={slug}
-          categories={categoryNames}
-          areas={areas}
-          hasExistingDays={hasExistingDays}
-        />
-      </div>
+          <ItineraryWizard
+            destinationId={destination.id}
+            slug={slug}
+            categories={categoryNames}
+            areas={areas}
+            hasExistingDays={hasExistingDays}
+          />
 
-      {(!itinerary || itinerary.days.length === 0) && (
-        <p className="text-sm opacity-60">עדיין אין ימים במסלול. לחצו על &quot;הוספת יום&quot; או השתמשו בבנאי האוטומטי כדי להתחיל.</p>
+          <p className="text-sm opacity-60">עדיין אין ימים במסלול. לחצו על &quot;הוספת יום&quot; או השתמשו בבנאי האוטומטי כדי להתחיל.</p>
+        </>
       )}
 
-      {/* Desktop: itinerary (narrower, tall) beside the route map,
-       * side-by-side. Mobile: full-screen map with the day's stop list in a
-       * draggable bottom drawer (see ItineraryLayoutSwitcher). */}
+      {/* Desktop (once there are days): a docked full-height side panel next
+       * to the route map, filling the whole content area edge-to-edge, with
+       * its own pill toolbar up top — see ItineraryLayoutSwitcher. Mobile:
+       * full-screen map with the day's stop list in a draggable bottom
+       * drawer (ItineraryMobileView). */}
       <ItineraryLayoutSwitcher
         slug={slug}
         destinationId={destination.id}
