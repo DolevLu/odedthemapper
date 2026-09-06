@@ -235,8 +235,8 @@ export function TodayCard({
       </div>
 
       {/* The one stop happening right now, if any — a shortcut to the full
-       * itinerary rather than a duplicate of the list below it (which still
-       * shows the whole day for context). */}
+       * itinerary. Deliberately just this one stop, not the whole day's
+       * list: showing "what's now" is the point of this screen. */}
       {currentStop && (
         <Link
           href={`/trip/${slug}/itinerary`}
@@ -275,25 +275,6 @@ export function TodayCard({
             </span>
           </div>
         </Link>
-      )}
-
-      {/* Today's itinerary, if mid-trip */}
-      {todayDayItems && todayDayItems.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-lg font-bold">📅 המסלול שלכם היום</h2>
-          <div className="flex flex-col gap-2">
-            {todayDayItems.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 border p-3 text-sm"
-                style={{ borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", background: "var(--surface)" }}
-              >
-                {item.time && <span className="font-mono text-xs opacity-70">{item.time}</span>}
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
       )}
     </div>
   );
