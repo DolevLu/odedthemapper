@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { applyItineraryTemplate, deleteItineraryTemplate, createItineraryDay } from "@/lib/actions/trip";
+import { applyItineraryTemplate, deleteItineraryTemplate } from "@/lib/actions/trip";
 import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
+import { AddDayButton } from "./AddDayButton";
 
 type Template = { id: string; name: string };
 
@@ -17,11 +18,16 @@ export function ItineraryTopBar({
   slug,
   hasExistingDays,
   templates,
+  hideAddDay = false,
 }: {
   destinationId: string;
   slug: string;
   hasExistingDays: boolean;
   templates: Template[];
+  /** Desktop's full-bleed layout puts "+ day" next to the day view's own
+   * grid/focused toggle instead (see ItineraryDaysView's extraAction), to
+   * fit everything else onto one action row without wrapping. */
+  hideAddDay?: boolean;
 }) {
   const router = useRouter();
   const { requestConfirm, modal } = useSaveOrDiscardFlow(destinationId, slug);
@@ -63,12 +69,6 @@ export function ItineraryTopBar({
     startTransition(() => {
       deleteItineraryTemplate(templateId, slug, "personal");
       router.refresh();
-    });
-  }
-
-  function handleAddDay() {
-    startTransition(() => {
-      createItineraryDay(destinationId, slug);
     });
   }
 
@@ -120,13 +120,7 @@ export function ItineraryTopBar({
         🔥 מסלול טינדר
       </button>
 
-      <button
-        onClick={handleAddDay}
-        className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-        style={{ background: "var(--primary)" }}
-      >
-        + הוספת יום
-      </button>
+      {!hideAddDay && <AddDayButton destinationId={destinationId} slug={slug} />}
 
       {modal}
     </div>

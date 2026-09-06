@@ -10,6 +10,7 @@ import { ItineraryMobileView } from "./ItineraryMobileView";
 import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
+import { AddDayButton } from "./AddDayButton";
 
 type Day = { id: string; dayIndex: number; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
@@ -81,14 +82,29 @@ export function ItineraryLayoutSwitcher({
         className="flex h-full min-h-0 w-[420px] shrink-0 flex-col border-e"
         style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)", background: "var(--surface)" }}
       >
-        <div className="flex flex-wrap shrink-0 items-center gap-1.5 border-b p-3" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
-          <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
-          <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
+        {/* "+ הוספת יום" deliberately lives down with the grid/focused toggle
+         * instead (see ItineraryDaysView's extraAction) — with 5 pills this
+         * row wrapped onto 2 lines at 420px; 4 fits on one. */}
+        <div className="flex flex-nowrap shrink-0 items-center gap-1.5 border-b p-2.5" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
+          <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} hideAddDay />
+          <ItineraryWizard
+            destinationId={destinationId}
+            slug={slug}
+            categories={categoryNames}
+            areas={areas}
+            hasExistingDays={hasExistingDays}
+            triggerLabel="✨ מסלול AI"
+          />
           <ExportPdfButton destinationId={destinationId} slug={slug} />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <ItineraryDaysView slug={slug} poiOptions={poiOptions} days={dayListDays} />
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <ItineraryDaysView
+            slug={slug}
+            poiOptions={poiOptions}
+            days={dayListDays}
+            extraAction={<AddDayButton destinationId={destinationId} slug={slug} />}
+          />
         </div>
       </div>
 

@@ -17,6 +17,7 @@ export function ItineraryDaysView({
   focusedDayIndex: controlledFocusedDayIndex,
   onFocusedDayIndexChange,
   hideHeader = false,
+  extraAction,
 }: {
   days: Day[];
   slug: string;
@@ -30,6 +31,10 @@ export function ItineraryDaysView({
   /** Skips the built-in switcher/mode-toggle header — the mobile drawer
    * renders its own (shared with the map above it) instead. */
   hideHeader?: boolean;
+  /** Rendered on the opposite side of the grid/focused toggle row — desktop
+   * puts "+ הוספת יום" here instead of its own action row, so the row of
+   * pills above doesn't have to fit it too. */
+  extraAction?: React.ReactNode;
 }) {
   // Defaults to the single-day focused view everywhere (desktop pairs it
   // side-by-side with the route map; mobile pairs it with the route map
@@ -63,7 +68,9 @@ export function ItineraryDaysView({
     // gap between 640-1023px where the outer layout was full-height but this
     // component's own height-fitting classes hadn't kicked in yet.
     <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className="flex justify-end gap-1">
+      <div className={`flex items-center gap-1 ${extraAction ? "justify-between" : "justify-end"}`}>
+        {extraAction}
+        <div className="flex gap-1">
         <button
           onClick={() => setMode("grid")}
           className="rounded-full border px-3 py-1 text-xs font-semibold"
@@ -86,6 +93,7 @@ export function ItineraryDaysView({
         >
           📖 תצוגת יום
         </button>
+        </div>
       </div>
 
       {mode === "grid" ? (

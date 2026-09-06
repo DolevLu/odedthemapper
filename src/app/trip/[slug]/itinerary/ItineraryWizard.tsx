@@ -12,12 +12,17 @@ export function ItineraryWizard({
   categories,
   areas,
   hasExistingDays,
+  triggerLabel = "✨ צרו מסלול AI",
 }: {
   destinationId: string;
   slug: string;
   categories: string[];
   areas: { id: string; name: string }[];
   hasExistingDays: boolean;
+  /** Desktop's action row has to fit this alongside 3 other pills without
+   * wrapping — a shorter label there ("✨ מסלול AI") than the onboarding/
+   * mobile default. */
+  triggerLabel?: string;
 }) {
   const router = useRouter();
   const { requestConfirm, modal: confirmModal } = useSaveOrDiscardFlow(destinationId, slug);
@@ -67,7 +72,7 @@ export function ItineraryWizard({
       className="game-pop-in shrink-0 self-start rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
       style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
     >
-      ✨ צרו מסלול AI
+      {triggerLabel}
     </button>
   );
 
