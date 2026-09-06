@@ -14,3 +14,12 @@ export function KosherStar({ size = 14, color = "#DC2626" }: { size?: number; co
 }
 
 export const KOSHER_TAG_MATCH = /כשר|kosher/i;
+export const VEGETARIAN_TAG_MATCH = /צמחוני|vegetarian|טבעוני|vegan/i;
+export const GLUTEN_FREE_TAG_MATCH = /גלוטן|gluten/i;
+
+export const DIETARY_FILTERS = [
+  { key: "kosher" as const, label: "כשר", match: KOSHER_TAG_MATCH, icon: "⭐" },
+  { key: "vegetarian" as const, label: "צמחוני", match: VEGETARIAN_TAG_MATCH, icon: "🌱" },
+  { key: "glutenFree" as const, label: "ללא גלוטן", match: GLUTEN_FREE_TAG_MATCH, icon: "🌾" },
+];
+export type DietaryFilterKey = (typeof DIETARY_FILTERS)[number]["key"];

@@ -18,7 +18,7 @@ export type PoiCardData = {
   distanceKm?: number;
 };
 
-const STATUS_TAG_MATCH = /vegan|טבעוני|צמחוני|כשר|kosher|halal|חלאל/i;
+const STATUS_TAG_MATCH = /vegan|טבעוני|צמחוני|כשר|kosher|halal|חלאל|גלוטן|gluten/i;
 
 function statusTag(tags?: string[]): string | null {
   if (!tags || tags.length === 0) return null;

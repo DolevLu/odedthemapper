@@ -11,7 +11,7 @@ import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMa
 import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket, standardCategoryColor, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { pathForCategory } from "@/components/CategoryIcon";
-import { KosherStar, KOSHER_TAG_MATCH } from "@/components/KosherStar";
+import { DIETARY_FILTERS, type DietaryFilterKey } from "@/components/KosherStar";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { SavePinModal, type PendingSavePin } from "./SavePinModal";
 import { AdminEditPinModal, type EditablePin } from "./AdminEditPinModal";
@@ -390,17 +390,24 @@ export function MapScreen({
     for (const poi of pointPois) if (!map.has(poi.categoryName)) map.set(poi.categoryName, standardCategoryColor(poi.categoryName, poi.categoryColor));
     return map;
   }, [pointPois]);
-  const [kosherOnly, setKosherOnly] = useState(false);
+  // Multi-select (OR): a restaurant matching ANY selected dietary tag shows
+  // — same "cast a wide net" logic dietary filters typically use elsewhere,
+  // since requiring ALL of e.g. kosher AND gluten-free at once would hide
+  // most real matches for little benefit.
+  const [dietaryFilters, setDietaryFilters] = useState<Set<DietaryFilterKey>>(new Set());
   const filtered = useMemo(() => {
     let list = activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois;
     if (hideVisited) list = list.filter((p) => !(p.id in ratingsByPoiIdRef.current));
-    if (kosherOnly) list = list.filter((p) => p.tags.some((t) => KOSHER_TAG_MATCH.test(t)));
+    if (dietaryFilters.size > 0) {
+      const activeMatchers = DIETARY_FILTERS.filter((f) => dietaryFilters.has(f.key)).map((f) => f.match);
+      list = list.filter((p) => p.tags.some((t) => activeMatchers.some((match) => match.test(t))));
+    }
     return list;
     // ratingsVersion isn't read directly — it's a manual trigger so this
     // recomputes right after a rating is added/removed via the info window,
     // since ratingsByPoiIdRef itself is a ref and doesn't cause re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pointPois, activeCategory, hideVisited, kosherOnly, ratingsVersion]);
+  }, [pointPois, activeCategory, hideVisited, dietaryFilters, ratingsVersion]);
 
   // Personal saved pins (see uploadPersonalMapFile) participate in the same
   // category filter as the destination's own curated points — their exact
@@ -1552,7 +1559,6 @@ export function MapScreen({
         {categoryNames.map((catName) => {
           const catColor = categoryColorByName.get(catName) ?? "#888888";
           const catActive = activeCategory === catName;
-          const isRestaurantPill = RESTAURANT_CATEGORY_MATCH.test(catName);
           return (
             <button
               key={catName}
@@ -1568,22 +1574,6 @@ export function MapScreen({
                 <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
               </svg>
               {catName}
-              {isRestaurantPill && (
-                <span
-                  role="checkbox"
-                  aria-checked={kosherOnly}
-                  title="כשר"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveCategory(catName);
-                    setKosherOnly((v) => !v);
-                  }}
-                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full sm:h-5 sm:w-5"
-                  style={{ background: kosherOnly ? "#F97316" : "rgba(255,255,255,0.85)" }}
-                >
-                  <KosherStar size={11} />
-                </span>
-              )}
             </button>
           );
         })}
@@ -1672,6 +1662,39 @@ export function MapScreen({
           )}
         </div>
       </div>
+
+      {/* Dietary sub-filter for the restaurants category — same pattern as
+       * "המסלול שלי"'s day sub-filter below: only appears once that specific
+       * category is the active one, multi-select (a place can be both
+       * kosher and vegetarian). */}
+      {activeCategory && RESTAURANT_CATEGORY_MATCH.test(activeCategory) && (
+        <div
+          dir="rtl"
+          className="no-scrollbar absolute inset-x-2 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 flex gap-1.5 overflow-x-auto rounded-full bg-white/95 p-1 shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))] sm:w-fit"
+        >
+          {DIETARY_FILTERS.map((f) => {
+            const active = dietaryFilters.has(f.key);
+            return (
+              <button
+                key={f.key}
+                onClick={() =>
+                  setDietaryFilters((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(f.key)) next.delete(f.key);
+                    else next.add(f.key);
+                    return next;
+                  })
+                }
+                className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold"
+                style={{ background: active ? "#F97316" : "transparent", color: active ? "white" : "#9A3412" }}
+              >
+                <span aria-hidden>{f.icon}</span>
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Day sub-filter for "המסלול שלי" — only appears once that layer is
        * active, and only when there's an actual multi-day route to narrow
