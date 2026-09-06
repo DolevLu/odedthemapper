@@ -68,14 +68,19 @@ export function AddItemToDay({
       </div>
 
       {mode === "pick" ? (
-        <div className="flex flex-col gap-2 sm:flex-row">
+        // Deliberately always flex-col (no sm:flex-row) — this lives inside
+        // a fixed-width side panel, not the full viewport, and sm: reacts to
+        // VIEWPORT width, not the panel's — at desktop viewport widths it
+        // was forcing two selects + a button into a ~380px column, which
+        // overflowed the panel.
+        <div className="flex flex-col gap-2">
           <select
             value={category}
             onChange={(e) => {
               setCategory(e.target.value);
               setPoiId("");
             }}
-            className="flex-1 rounded-lg border px-2 py-1.5 text-sm"
+            className="w-full min-w-0 rounded-lg border px-2 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           >
             <option value="">בחרו קטגוריה...</option>
@@ -89,7 +94,7 @@ export function AddItemToDay({
             value={poiId}
             onChange={(e) => setPoiId(e.target.value)}
             disabled={!category}
-            className="flex-1 rounded-lg border px-2 py-1.5 text-sm disabled:opacity-50"
+            className="w-full min-w-0 rounded-lg border px-2 py-1.5 text-sm disabled:opacity-50"
             style={{ borderColor: "var(--primary)" }}
           >
             <option value="">בחרו נקודה...</option>
@@ -102,25 +107,25 @@ export function AddItemToDay({
           <button
             onClick={handleAddPoi}
             disabled={!poiId}
-            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="w-full rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
             style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
           >
             הוספה
           </button>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <input
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
             placeholder='למשל: "נסיעה לעיירה סמוכה" או תחנה שלא ברשימה'
-            className="flex-1 rounded-lg border px-3 py-1.5 text-sm"
+            className="w-full min-w-0 rounded-lg border px-3 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
           <button
             onClick={handleAddCustom}
             disabled={!customLabel.trim()}
-            className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+            className="w-full rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
             style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
           >
             הוספה

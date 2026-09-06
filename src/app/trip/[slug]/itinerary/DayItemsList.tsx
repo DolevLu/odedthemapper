@@ -4,6 +4,20 @@ import { useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, voteItineraryItem } from "@/lib/actions/trip";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
+import { emojiForCategory } from "@/components/CategoryIcon";
+import { standardCategoryColor } from "@/lib/mapStyles";
+
+// A neutral, always-legible time chip — deliberately NOT var(--primary) or
+// colorForDay (either of which can land on a dark/saturated tone depending
+// on the destination's theme or which day this is, making the actual time
+// hard to read at a glance). current/next reuse the same green/amber the
+// rest of the app already uses for "where am I" cues; everything else gets
+// one calm, destination-independent slate tone.
+const TIME_CHIP_STYLE: Record<"default" | "current" | "next", { background: string; color: string }> = {
+  default: { background: "#F1F5F9", color: "#334155" },
+  current: { background: "#22C55E", color: "white" },
+  next: { background: "#FEF3C7", color: "#B45309" },
+};
 
 export type DayListItem = {
   id: string;
@@ -43,16 +57,6 @@ function timeStatusMap(items: { id: string; timeOfDay: string | null }[]): Map<s
   if (currentId) map.set(currentId, "current");
   if (nextId) map.set(nextId, "next");
   return map;
-}
-
-/** "קטגוריה · שם" — the Hebrew category always comes first purely for
- * accessibility (immediately clear whether a stop is a restaurant, bar,
- * attraction... before reading the venue name, which is very often in
- * English/the local language and gives no hint on its own). */
-function displayLabel(item: DayListItem): string {
-  const name = item.poi ? item.poi.name : (item.customLabel ?? "");
-  if (!item.poi?.categoryName) return name;
-  return `${shortCategoryLabel(item.poi.categoryName)} · ${name}`;
 }
 
 // Debounced rather than saved on every keystroke, so typing a note doesn't
@@ -215,11 +219,13 @@ export function DayItemsList({
   const detailItem = detailItemId ? byId.get(detailItemId) ?? null : null;
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-2.5">
       {ordered.map((item) => {
         const status = timeStatus.get(item.id);
+        const chip = TIME_CHIP_STYLE[status ?? "default"];
+        const categoryColor = standardCategoryColor(item.poi?.categoryName ?? "", "#94A3B8");
         return (
-          <div key={item.id} className="pb-2 last:pb-0">
+          <div key={item.id}>
             <div className="relative overflow-hidden rounded-2xl">
               {/* Revealed behind the card as it's dragged left — mirrors the
                * delete affordance so the gesture reads clearly before release. */}
@@ -239,9 +245,9 @@ export function DayItemsList({
                 onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
                 onPointerUp={() => handleSwipePointerEnd(item.id)}
                 onPointerCancel={() => handleSwipePointerEnd(item.id)}
-                className="relative flex cursor-pointer items-center gap-2 overflow-hidden rounded-2xl border p-3 text-sm shadow-sm touch-pan-y"
+                className="relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3.5 shadow-sm touch-pan-y"
                 style={{
-                  borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)",
+                  borderColor: "color-mix(in srgb, var(--text) 10%, transparent)",
                   background: "var(--surface)",
                   opacity: dragId === item.id ? 0.6 : 1,
                   transform: `translateX(${swipeX[item.id] ?? 0}px)`,
@@ -257,32 +263,37 @@ export function DayItemsList({
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
-                  className="shrink-0 cursor-grab touch-none select-none px-0.5 text-base opacity-30 active:cursor-grabbing"
+                  className="shrink-0 cursor-grab touch-none select-none self-stretch px-0.5 text-base opacity-25 active:cursor-grabbing"
                   aria-label="גרירה לשינוי סדר"
                 >
                   ⠿
                 </span>
 
-                {item.timeOfDay && (
-                  <span
-                    className="shrink-0 rounded-full px-2 py-1 font-mono text-xs font-bold text-white"
-                    style={{ background: status === "current" ? "#22C55E" : "var(--primary)" }}
-                  >
-                    {item.timeOfDay}
-                  </span>
-                )}
-                <span className="min-w-0 flex-1 truncate font-medium">{displayLabel(item)}</span>
-                {status === "current" && (
-                  <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ background: "#22C55E" }}>
-                    עכשיו
-                  </span>
-                )}
-                {status === "next" && (
-                  <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ color: "#B45309", background: "color-mix(in srgb, #F59E0B 14%, transparent)" }}>
-                    הבא
-                  </span>
-                )}
-                {notes[item.id] && <span className="shrink-0 text-xs opacity-40">✎</span>}
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg"
+                  style={{ background: `color-mix(in srgb, ${categoryColor} 18%, var(--surface))` }}
+                  aria-hidden
+                >
+                  {emojiForCategory(item.poi?.categoryName ?? "")}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
+                  <p className="truncate text-xs leading-snug opacity-55">
+                    {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : "פריט מותאם אישית"}
+                    {notes[item.id] ? " · ✎ יש הערה" : ""}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {item.timeOfDay && (
+                    <span className="rounded-full px-2.5 py-1 font-mono text-xs font-bold" style={chip}>
+                      {item.timeOfDay}
+                    </span>
+                  )}
+                  {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>עכשיו</span>}
+                  {status === "next" && <span className="text-[10px] font-bold" style={{ color: "#B45309" }}>הבא</span>}
+                </div>
               </div>
             </div>
           </div>

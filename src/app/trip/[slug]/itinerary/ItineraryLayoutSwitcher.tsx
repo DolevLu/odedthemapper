@@ -70,33 +70,36 @@ export function ItineraryLayoutSwitcher({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* A slim pill toolbar spanning the full width, above the side
-       * panel+map split — same rounded-pill visual language as the map
-       * screen's own category filters, instead of a page-header block. */}
+    <div className="flex h-full items-stretch">
+      {/* Everything (route actions + the day panel itself) lives in this one
+       * docked side panel now — nothing floats over the map anymore (it used
+       * to get both this toolbar AND DayRouteMap's own separate day-pill row
+       * as full-width banners above it). */}
       <div
-        className="flex flex-wrap shrink-0 items-center gap-1.5 border-b p-3"
-        style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)", background: "var(--surface)" }}
+        className="flex h-full min-h-0 w-[420px] shrink-0 flex-col border-e"
+        style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)", background: "var(--surface)" }}
       >
-        <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
-        <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
-        <ExportPdfButton destinationId={destinationId} slug={slug} />
-      </div>
-
-      <div className="flex min-h-0 flex-1 items-stretch">
-        <div
-          className="flex h-full min-h-0 w-[380px] shrink-0 flex-col border-e p-4"
-          style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)", background: "var(--surface)" }}
-        >
-          <ItineraryDaysView slug={slug} poiOptions={poiOptions} days={dayListDays} />
+        <div className="flex flex-wrap shrink-0 items-center gap-1.5 border-b p-3" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
+          <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
+          <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
+          <ExportPdfButton destinationId={destinationId} slug={slug} />
         </div>
 
-        {mapDays.some((d) => d.points.length > 0) && (
-          <div className="min-h-0 flex-1">
-            <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} />
-          </div>
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          <ItineraryDaysView slug={slug} poiOptions={poiOptions} days={dayListDays} />
+        </div>
       </div>
+
+      {mapDays.some((d) => d.points.length > 0) && (
+        <div className="min-h-0 flex-1">
+          {/* showDaySwitcher off: that control duplicated the panel's own
+           * day switcher as a second banner sitting over the map. The map
+           * always shows the full multi-day route (still color-coded per
+           * day) rather than trying to stay in sync with the panel's
+           * focused day. */}
+          <DayRouteMap days={mapDays} fillHeight showDaySwitcher={false} onMoveToDay={handleMoveToDay} />
+        </div>
+      )}
     </div>
   );
 }
