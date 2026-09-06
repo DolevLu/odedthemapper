@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MarkerClusterer } from "@googlemaps/markerclusterer";
+import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -37,6 +37,13 @@ const METERS_PER_DEGREE_LAT = 111320;
 // Only label individual pins once zoomed in enough that a name tag per
 // marker is legible rather than overlapping clutter.
 const LABEL_ZOOM_THRESHOLD = 16;
+
+// The clustering library's own default (maxZoom: 16) kept blue "N nearby
+// points" bubbles up almost to the same zoom where per-pin labels start
+// appearing — plenty zoomed in enough to just show every pin on its own.
+// Below this zoom (a whole city/district at once) clusters still group
+// nearby points, same as before.
+const CLUSTER_MAX_ZOOM = LABEL_ZOOM_THRESHOLD - 2;
 
 // The map opens at zoom 12 (see the Map constructor below) — a whole city
 // fitting on screen, with many pins visible at once — where the default
@@ -1205,7 +1212,11 @@ export function MapScreen({
       return marker;
     });
 
-    clustererRef.current = new MarkerClusterer({ map: mapRef.current, markers });
+    clustererRef.current = new MarkerClusterer({
+      map: mapRef.current,
+      markers,
+      algorithm: new SuperClusterAlgorithm({ maxZoom: CLUSTER_MAX_ZOOM }),
+    });
     // gpsActive/userPosition are intentionally excluded — openPoi/drawRouteTo
     // read them from refs, so markers don't need rebuilding on every GPS
     // tick (that was the actual cause of laggy panning: a full marker
