@@ -6,6 +6,7 @@ import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, voteIti
 import { shortCategoryLabel } from "@/lib/categoryLabels";
 import { emojiForCategory } from "@/components/CategoryIcon";
 import { standardCategoryColor } from "@/lib/mapStyles";
+import { haversineKm, transportIconFor, transportColorFor, googleMapsDirectionsUrl } from "@/lib/geo";
 
 // A neutral, always-legible time chip — deliberately NOT var(--primary) or
 // colorForDay (either of which can land on a dark/saturated tone depending
@@ -24,7 +25,7 @@ export type DayListItem = {
   timeOfDay: string | null;
   customLabel: string | null;
   note: string | null;
-  poi: { name: string; photoUrl: string | null; categoryName?: string; description?: string | null } | null;
+  poi: { name: string; lat: number; lng: number; photoUrl: string | null; categoryName?: string; description?: string | null } | null;
   likeCount: number;
   dislikeCount: number;
   myVote: -1 | 0 | 1;
@@ -219,13 +220,14 @@ export function DayItemsList({
   const detailItem = detailItemId ? byId.get(detailItemId) ?? null : null;
 
   return (
-    <div className="flex flex-col gap-2.5">
-      {ordered.map((item) => {
+    <div className="flex flex-col gap-1.5">
+      {ordered.map((item, idx) => {
         const status = timeStatus.get(item.id);
         const chip = TIME_CHIP_STYLE[status ?? "default"];
         const categoryColor = standardCategoryColor(item.poi?.categoryName ?? "", "#94A3B8");
+        const nextItem = ordered[idx + 1];
         return (
-          <div key={item.id}>
+          <div key={item.id} className="flex flex-col gap-1.5">
             <div className="relative overflow-hidden rounded-2xl">
               {/* Revealed behind the card as it's dragged left — mirrors the
                * delete affordance so the gesture reads clearly before release. */}
@@ -296,6 +298,8 @@ export function DayItemsList({
                 </div>
               </div>
             </div>
+
+            {nextItem && item.poi && nextItem.poi && <TransportConnector from={item.poi} to={nextItem.poi} />}
           </div>
         );
       })}
@@ -314,6 +318,48 @@ export function DayItemsList({
         />
       )}
     </div>
+  );
+}
+
+/** Between two consecutive stops — a dashed line + transport-mode icon
+ * (same heuristic DayRouteMap's own hop markers use, so the two always
+ * agree), clickable straight through to a real Google Maps directions link
+ * between the exact two coordinates. Deliberately just a link, not routing
+ * rendered in our own app: real turn-by-turn/transit routing needs Google's
+ * Directions API, which is a billing-enabled service (see enrichPoi.ts's
+ * own "no paid APIs" reasoning) — this gets the same practical result
+ * (tap it, see how to get there) for free, no API key, no quota. */
+function TransportConnector({ from, to }: { from: { name: string; lat: number; lng: number }; to: { name: string; lat: number; lng: number } }) {
+  const distanceKm = haversineKm([from.lat, from.lng], [to.lat, to.lng]);
+  const icon = transportIconFor(distanceKm);
+  const color = transportColorFor(distanceKm);
+  const url = googleMapsDirectionsUrl(from, to, distanceKm);
+  const distanceLabel = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} מ׳` : `${distanceKm.toFixed(1)} ק"מ`;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-stretch gap-3 no-underline"
+      title={`מסלול הגעה מ-${from.name} ל-${to.name} ב-Google Maps`}
+      aria-label={`מסלול הגעה מ-${from.name} ל-${to.name}`}
+    >
+      <div className="flex w-10 shrink-0 flex-col items-center">
+        <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
+        <span
+          className="my-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] shadow-sm transition-transform group-hover:scale-110"
+          style={{ background: color }}
+          aria-hidden
+        >
+          {icon}
+        </span>
+        <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
+      </div>
+      <div className="flex flex-1 items-center text-xs font-medium opacity-45 transition-opacity group-hover:opacity-90">
+        {distanceLabel} · מסלול הגעה ב-Google Maps ↗
+      </div>
+    </a>
   );
 }
 

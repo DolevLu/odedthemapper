@@ -96,6 +96,8 @@ export default async function ItineraryPage({
       poi: i.poi
         ? {
             name: i.poi.name,
+            lat: i.poi.lat,
+            lng: i.poi.lng,
             photoUrl: i.poi.photos[0]?.url ?? null,
             categoryName: i.poi.category.name,
             description: extractTextDescription(i.poi.rawDescriptionHtml),

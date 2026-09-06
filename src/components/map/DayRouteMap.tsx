@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
-import { colorForDay, haversineKm } from "@/lib/geo";
+import { colorForDay, haversineKm, transportIconFor } from "@/lib/geo";
 import { DECLUTTERED_MAP_STYLES } from "@/lib/mapStyles";
 
 export type MapDay = {
@@ -54,14 +54,6 @@ function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, to
         </div>`
       : "";
   return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong>${description}${moveButtons}</div>`;
-}
-
-/** Honest heuristic, not real transit routing: short hops are walkable,
- * medium ones are bus-distance, long ones are more likely a metro/train. */
-function transportIconFor(distanceKm: number): string {
-  if (distanceKm < 1) return "🚶";
-  if (distanceKm < 4) return "🚌";
-  return "🚇";
 }
 
 export function DayRouteMap({

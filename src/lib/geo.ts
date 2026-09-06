@@ -40,3 +40,39 @@ export const DAY_COLORS = [
 export function colorForDay(index: number): string {
   return DAY_COLORS[index % DAY_COLORS.length];
 }
+
+/** Honest heuristic, not real transit routing: short hops are walkable,
+ * medium ones are bus-distance, long ones are more likely a metro/train.
+ * Shared between DayRouteMap's own hop markers and DayItemsList's between-
+ * stops connector so the two always agree on the same icon for the same
+ * pair of points. */
+export function transportIconFor(distanceKm: number): string {
+  if (distanceKm < 1) return "🚶";
+  if (distanceKm < 4) return "🚌";
+  return "🚇";
+}
+
+/** Color to match transportIconFor's mode — not a real transit line color
+ * (we have no live transit data to know the actual bus/metro line), just a
+ * consistent per-mode accent so the connector reads at a glance. Metro
+ * reuses the exact brown mapStyles.ts already uses for its own metro/train
+ * category marker, for one consistent "metro" color across the app. */
+export function transportColorFor(distanceKm: number): string {
+  if (distanceKm < 1) return "#94A3B8"; // walking — neutral gray
+  if (distanceKm < 4) return "#2563EB"; // bus — blue
+  return "#8B5A2B"; // metro/train — matches mapStyles' metro category color
+}
+
+/** A same-tab-free "how do I get there" link between two points — Google
+ * Maps' documented URL scheme (maps.google.com/maps/dir, no API key, no
+ * cost) rather than anything routed through our own Directions API calls,
+ * which would need a billing-enabled Google Cloud project (see
+ * enrichPoi.ts's own "no paid APIs" reasoning for why that's avoided
+ * elsewhere in this app too). travelmode is "walking" for a walkable hop,
+ * "transit" (real buses/trains, whichever Google's own data says is best)
+ * for anything longer — our own bus-vs-metro icon guess isn't reliable
+ * enough to force a specific mode Google might reject as unreachable. */
+export function googleMapsDirectionsUrl(from: { lat: number; lng: number }, to: { lat: number; lng: number }, distanceKm: number): string {
+  const travelmode = distanceKm < 1 ? "walking" : "transit";
+  return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lng}&destination=${to.lat},${to.lng}&travelmode=${travelmode}`;
+}
