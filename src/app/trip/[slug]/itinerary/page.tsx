@@ -110,7 +110,16 @@ export default async function ItineraryPage({
   }));
 
   return (
-    <div className={hasExistingDays ? "flex h-full flex-col" : "flex flex-col gap-6 p-6"}>
+    // h-screen (not h-full): body/main only set min-height, never an actual
+    // capped height, so a percentage h-full here resolves against an
+    // uncapped ancestor and just grows to fit content instead of being
+    // bounded — harmless for the map screen (Google Maps has no intrinsic
+    // content size to grow with), but a real bug here once a day's item
+    // list is long enough to have genuine height of its own: the whole page
+    // grew and scrolled instead of just this panel. h-screen is an absolute
+    // viewport value, immune to that — correct here since nothing (no
+    // header) sits above the sidebar+content row.
+    <div className={hasExistingDays ? "flex h-screen flex-col" : "flex flex-col gap-6 p-6"}>
       {/* Once there's an itinerary to show, both mobile (its own draggable
        * drawer) and desktop (ItineraryLayoutSwitcher's own toolbar, over its
        * full-bleed side-panel+map view) render their own copy of this same
