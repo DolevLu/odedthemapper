@@ -2,9 +2,22 @@
 
 import { useState } from "react";
 import { updatePoiStyle, deletePoi } from "@/lib/actions/trip";
-import { SAVED_PIN_CATEGORY_OPTIONS } from "@/lib/mapStyles";
+import { SAVED_PIN_CATEGORY_OPTIONS, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
+import { DIETARY_FILTERS, type DietaryFilterKey } from "@/components/KosherStar";
 
-export type EditablePin = { id: string; name: string; colorHex: string | null; iconCategory: string | null; isShape: boolean };
+export type EditablePin = {
+  id: string;
+  name: string;
+  colorHex: string | null;
+  iconCategory: string | null;
+  isShape: boolean;
+  /** The POI's real underlying category (not the display-only iconCategory
+   * override) — whether to show the dietary sub-selection checks THIS, since
+   * an admin restyling a non-restaurant point's icon shouldn't suddenly gain
+   * "kosher/vegetarian" checkboxes that have nothing to do with it. */
+  categoryName?: string;
+  tags?: string[];
+};
 
 const DEFAULT_PICKER_COLOR = "#7C3AED";
 
@@ -27,14 +40,19 @@ export function AdminEditPinModal({
   const [useCustomColor, setUseCustomColor] = useState(Boolean(pin.colorHex));
   const [color, setColor] = useState(pin.colorHex ?? DEFAULT_PICKER_COLOR);
   const [iconCategory, setIconCategory] = useState(pin.iconCategory ?? "");
+  const [dietaryTags, setDietaryTags] = useState<Set<DietaryFilterKey>>(
+    () => new Set(DIETARY_FILTERS.filter((f) => pin.tags?.some((t) => f.match.test(t))).map((f) => f.key))
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const isRestaurant = RESTAURANT_CATEGORY_MATCH.test(pin.categoryName ?? "");
 
   async function handleSave() {
     setSaving(true);
     await updatePoiStyle(pin.id, destinationId, slug, {
       colorHex: useCustomColor ? color : null,
       iconCategory: iconCategory || null,
+      ...(isRestaurant ? { dietaryTags: DIETARY_FILTERS.filter((f) => dietaryTags.has(f.key)).map((f) => f.label) } : {}),
     });
     setSaving(false);
     onClose();
@@ -107,6 +125,35 @@ export function AdminEditPinModal({
               ))}
             </select>
           </label>
+        )}
+
+        {isRestaurant && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs opacity-60">מאפייני תזונה (רשות)</span>
+            <div className="flex flex-wrap gap-2">
+              {DIETARY_FILTERS.map((f) => (
+                <label
+                  key={f.key}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm"
+                  style={{ borderColor: "var(--primary)" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={dietaryTags.has(f.key)}
+                    onChange={() =>
+                      setDietaryTags((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(f.key)) next.delete(f.key);
+                        else next.add(f.key);
+                        return next;
+                      })
+                    }
+                  />
+                  {f.icon} {f.label}
+                </label>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="mt-2 flex gap-2">

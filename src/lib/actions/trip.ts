@@ -9,9 +9,28 @@ import { resolveItineraryOwnerId, canManageContent } from "@/lib/access";
 import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { parsePersonalMapFile } from "@/lib/kml/parsePersonalPoints";
 import { extractTextDescription } from "@/lib/data/pois";
+import { DIETARY_FILTERS } from "@/components/KosherStar";
 import type { MapDay } from "@/components/map/DayRouteMap";
 
 const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const DIETARY_LABELS = DIETARY_FILTERS.map((f) => f.label);
+
+/** Adds/removes PoiTag rows so a POI ends up tagged with exactly
+ * `selectedLabels` among the fixed dietary set (כשר/צמחוני/ללא גלוטן) —
+ * touches only those, leaving any other tag on the POI untouched. Shared by
+ * both the admin edit modal and the "save a point" flow so the two stay in
+ * sync with the exact same label strings the map's dietary filter matches
+ * against. */
+async function syncDietaryTags(poiId: string, selectedLabels: string[]) {
+  const existing = await prisma.poiTag.findMany({ where: { poiId, label: { in: DIETARY_LABELS } } });
+  const toRemove = existing.filter((t) => !selectedLabels.includes(t.label));
+  const toAdd = selectedLabels.filter((label) => !existing.some((t) => t.label === label));
+  await Promise.all([
+    ...toRemove.map((t) => prisma.poiTag.delete({ where: { id: t.id } })),
+    ...toAdd.map((label) => prisma.poiTag.create({ data: { poiId, label } })),
+  ]);
+}
 
 async function requireUserId() {
   const session = await auth();
@@ -106,6 +125,8 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
     if (photoUrl) {
       await prisma.poiPhoto.create({ data: { poiId: poi.id, url: photoUrl } });
     }
+    const dietaryTags = formData.getAll("dietaryTags") as string[];
+    if (dietaryTags.length > 0) await syncDietaryTags(poi.id, dietaryTags);
     revalidateTag(`pois-${destinationId}`, "max");
     revalidatePath(`/trip/${slug}`);
     return;
@@ -176,7 +197,7 @@ export async function updatePoiStyle(
   poiId: string,
   destinationId: string,
   slug: string,
-  style: { colorHex: string | null; iconCategory: string | null }
+  style: { colorHex: string | null; iconCategory: string | null; dietaryTags?: string[] }
 ) {
   const session = await auth();
   if (!session?.user?.id || !(await canManageContent(session.user.id))) {
@@ -186,6 +207,7 @@ export async function updatePoiStyle(
     where: { id: poiId },
     data: { colorHex: style.colorHex, iconCategory: style.iconCategory },
   });
+  if (style.dietaryTags) await syncDietaryTags(poiId, style.dietaryTags);
   revalidateTag(`pois-${destinationId}`, "max");
   revalidatePath(`/trip/${slug}`);
 }

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { saveMapPin } from "@/lib/actions/trip";
-import { SAVED_PIN_CATEGORY_OPTIONS } from "@/lib/mapStyles";
+import { SAVED_PIN_CATEGORY_OPTIONS, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
+import { DIETARY_FILTERS } from "@/components/KosherStar";
 
 export type PendingSavePin = { placeId: string; name: string; lat: number; lng: number };
 
@@ -15,14 +16,22 @@ export function SavePinModal({
   destinationId,
   slug,
   pin,
+  isAdmin = false,
   onClose,
 }: {
   destinationId: string;
   slug: string;
   pin: PendingSavePin;
+  /** The dietary checkboxes only matter for a real shared POI (the admin
+   * branch of saveMapPin) — a non-admin's SavedMapPin has no tags to attach
+   * them to, so showing checkboxes that silently do nothing would just be
+   * confusing. */
+  isAdmin?: boolean;
   onClose: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [categoryName, setCategoryName] = useState(SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]);
+  const isRestaurant = isAdmin && RESTAURANT_CATEGORY_MATCH.test(categoryName);
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -60,7 +69,8 @@ export function SavePinModal({
           קטגוריה (קובעת את האייקון והצבע - כמו בשאר הנקודות במפה)
           <select
             name="categoryName"
-            defaultValue={SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]}
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
             className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: "var(--primary)" }}
           >
@@ -71,6 +81,24 @@ export function SavePinModal({
             ))}
           </select>
         </label>
+
+        {isRestaurant && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs opacity-60">מאפייני תזונה (רשות)</span>
+            <div className="flex flex-wrap gap-2">
+              {DIETARY_FILTERS.map((f) => (
+                <label
+                  key={f.key}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm"
+                  style={{ borderColor: "var(--primary)" }}
+                >
+                  <input type="checkbox" name="dietaryTags" value={f.label} />
+                  {f.icon} {f.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         <label className="text-xs opacity-60">
           תיאור (רשות)

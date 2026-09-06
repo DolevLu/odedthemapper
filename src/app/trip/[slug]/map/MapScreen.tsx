@@ -620,7 +620,15 @@ export function MapScreen({
           const poiId = editStyleBtn.getAttribute("data-poi-id")!;
           const target = pointPoisById.get(poiId);
           if (target) {
-            setEditingPin({ id: target.id, name: target.name, colorHex: target.colorHex, iconCategory: target.iconCategory, isShape: false });
+            setEditingPin({
+              id: target.id,
+              name: target.name,
+              colorHex: target.colorHex,
+              iconCategory: target.iconCategory,
+              isShape: false,
+              categoryName: target.categoryName,
+              tags: target.tags,
+            });
             infoWindowRef.current?.close();
           }
         };
@@ -1873,7 +1881,7 @@ export function MapScreen({
       </div>
     </div>
     {pendingSavePin && (
-      <SavePinModal destinationId={destinationId} slug={slug} pin={pendingSavePin} onClose={() => setPendingSavePin(null)} />
+      <SavePinModal destinationId={destinationId} slug={slug} pin={pendingSavePin} isAdmin={isAdmin} onClose={() => setPendingSavePin(null)} />
     )}
     {editingPin && (
       <AdminEditPinModal destinationId={destinationId} slug={slug} pin={editingPin} onClose={() => setEditingPin(null)} />
