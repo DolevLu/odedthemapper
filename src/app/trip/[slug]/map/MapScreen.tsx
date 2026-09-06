@@ -270,6 +270,7 @@ export function MapScreen({
   const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   const savedPinMarkersRef = useRef<google.maps.Marker[]>([]);
+  const savedPinsRef = useRef(savedPins);
   const showGooglePoisRef = useRef(false);
   const previewRef = useRef(preview);
   const autoLocationStartedRef = useRef(false);
@@ -367,6 +368,9 @@ export function MapScreen({
   useEffect(() => {
     showGooglePoisRef.current = showGooglePois;
   }, [showGooglePois]);
+  useEffect(() => {
+    savedPinsRef.current = savedPins;
+  }, [savedPins]);
   useEffect(() => {
     previewRef.current = preview;
   }, [preview]);
@@ -654,6 +658,25 @@ export function MapScreen({
           infoWindowRef.current?.close();
         };
       }
+      const editPinBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-edit-pin-btn]");
+      if (editPinBtn) {
+        editPinBtn.onclick = (e) => {
+          e.stopPropagation();
+          const pin = savedPinsRef.current.find((p) => p.id === editPinBtn.getAttribute("data-pin-id"));
+          if (pin) {
+            setPendingSavePin({
+              placeId: pin.placeId,
+              name: pin.name,
+              lat: pin.lat,
+              lng: pin.lng,
+              description: pin.description,
+              photoUrl: pin.photoUrl,
+              categoryName: pin.categoryName,
+            });
+          }
+          infoWindowRef.current?.close();
+        };
+      }
       // Personal rating stars (see PoiRating) — clicking star N sets the
       // rating to N, except clicking the currently-set top star again clears
       // it back to unrated (a natural way to "unrate" without a separate
@@ -764,7 +787,8 @@ export function MapScreen({
             ${photo}
             <strong>📌 ${escapeHtml(pin.name)}</strong>
             ${description}
-            <div style="margin-top:8px">
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <button data-edit-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">✏️ עריכה</button>
               <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">🗑️ הסרה מהמפה שלי</button>
             </div>
           </div>`

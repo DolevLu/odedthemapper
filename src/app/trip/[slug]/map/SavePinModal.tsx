@@ -5,7 +5,19 @@ import { saveMapPin } from "@/lib/actions/trip";
 import { SAVED_PIN_CATEGORY_OPTIONS, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { DIETARY_FILTERS } from "@/components/KosherStar";
 
-export type PendingSavePin = { placeId: string; name: string; lat: number; lng: number };
+export type PendingSavePin = {
+  placeId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  /** Present when reopening this modal to edit an already-saved personal pin
+   * (as opposed to saving a brand-new Google POI) — prefills the form, and
+   * since saveMapPin upserts on (userId, destinationId, placeId), resaving
+   * with the same placeId updates the existing SavedMapPin in place. */
+  description?: string | null;
+  photoUrl?: string | null;
+  categoryName?: string | null;
+};
 
 /** Opened from the "💾 שמירה למפה" button (on a native Google POI or the
  * user's own personal pin) instead of saving immediately — lets them curate
@@ -29,8 +41,11 @@ export function SavePinModal({
   isAdmin?: boolean;
   onClose: () => void;
 }) {
+  const isEditing = pin.description !== undefined || pin.photoUrl !== undefined || pin.categoryName !== undefined;
   const [saving, setSaving] = useState(false);
-  const [categoryName, setCategoryName] = useState(SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]);
+  const [categoryName, setCategoryName] = useState(
+    pin.categoryName ?? SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]
+  );
   const isRestaurant = isAdmin && RESTAURANT_CATEGORY_MATCH.test(categoryName);
 
   async function handleSubmit(formData: FormData) {
@@ -48,7 +63,7 @@ export function SavePinModal({
         className="flex w-full max-w-sm flex-col gap-3 rounded-2xl p-5 shadow-2xl"
         style={{ background: "var(--surface)" }}
       >
-        <h2 className="text-lg font-bold">💾 שמירת נקודה למפה שלי</h2>
+        <h2 className="text-lg font-bold">{isEditing ? "✏️ עריכת נקודה" : "💾 שמירת נקודה למפה שלי"}</h2>
 
         <input type="hidden" name="placeId" value={pin.placeId} />
         <input type="hidden" name="lat" value={pin.lat} />
@@ -105,6 +120,7 @@ export function SavePinModal({
           <textarea
             name="description"
             rows={3}
+            defaultValue={pin.description ?? ""}
             placeholder="למה שמרתם את הנקודה הזו?"
             className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: "var(--primary)" }}
@@ -112,7 +128,11 @@ export function SavePinModal({
         </label>
 
         <label className="text-xs opacity-60">
-          תמונה (רשות)
+          תמונה (רשות{isEditing && pin.photoUrl ? " - העלאה תחליף את התמונה הקיימת" : ""})
+          {isEditing && pin.photoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pin.photoUrl} alt="" className="mt-1 mb-1 h-20 w-full rounded-lg object-cover" />
+          )}
           <input
             name="photo"
             type="file"
