@@ -25,6 +25,16 @@ export function isWikimediaUrl(url: string): boolean {
  * string at all (see next.config.ts's localPatterns entry). */
 export function proxiedImageUrl(url: string): string {
   if (!isWikimediaUrl(url)) return url;
-  const tail = url.slice(WIKIMEDIA_UPLOAD_PREFIX.length);
+  // Strip any query string (Wikipedia's imageinfo/media-list APIs now
+  // return photo URLs with their own ?utm_source=... tracking params on
+  // them) before it becomes part of this route's own path — otherwise the
+  // resulting local src carries a non-empty query string, which
+  // next.config.ts's images.localPatterns (search: "") rejects outright,
+  // silently failing the whole image (confirmed live: every photo pulled
+  // via fetchSecondWikiPhoto's imageinfo call broke this way). The proxy
+  // route itself never uses a query string anyway — the image is fully
+  // identified by its path alone.
+  const withoutQuery = url.split("?")[0];
+  const tail = withoutQuery.slice(WIKIMEDIA_UPLOAD_PREFIX.length);
   return `/api/image-proxy/wikimedia/${tail}`;
 }
