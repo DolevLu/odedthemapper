@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getPoiOptionsForDestination, extractTextDescription } from "@/lib/data/pois";
 import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
-import { resolveTodayDayIndex } from "@/lib/tripSchedule";
+import { resolveEffectiveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
 import { listItineraryTemplates, getItineraryTemplatePreview } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
@@ -56,10 +56,10 @@ export default async function ItineraryPage({
     listItineraryTemplates(destination.id, "personal"),
     // Same userId (not ownerId) the Now screen keys its own trip-start
     // lookup on, so the two screens agree on which single day is "today"
-    // instead of each computing it a different way (see resolveTodayDayIndex).
+    // instead of each computing it a different way (see resolveEffectiveTodayDayIndex).
     prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id, startsAt: { not: null } } }),
   ]);
-  const todayDayIndex = resolveTodayDayIndex(logistics);
+  const todayDayIndex = resolveEffectiveTodayDayIndex(logistics, itinerary?.days.map((d) => d.dayIndex) ?? []);
 
   const categoryNames = Array.from(new Set(poiOptions.map((p) => p.categoryName))).sort();
   const hasExistingDays = Boolean(itinerary && itinerary.days.length > 0);

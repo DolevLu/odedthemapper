@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { getAccessLevel, getUserPurchasedSlugs } from "@/lib/access";
-import { resolveTodayDayIndex } from "@/lib/tripSchedule";
+import { resolveEffectiveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NowScreen } from "../NowScreen";
@@ -97,7 +97,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   // Full timestamp (not truncated to midnight) so the Now screen can show a
   // real days/hours/minutes countdown, not just a day count.
   const tripStartExact = logistics[0]?.startsAt ?? null;
-  const todayDayIndex = resolveTodayDayIndex(logistics);
+  const todayDayIndex = resolveEffectiveTodayDayIndex(logistics, itinerary?.days.map((d) => d.dayIndex) ?? []);
 
   let todayDayItems:
     | { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[]

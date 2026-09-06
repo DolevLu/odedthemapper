@@ -29,3 +29,18 @@ export function resolveTodayDayIndex(logistics: { startsAt: Date | null; endsAt:
 
   return Math.round((today.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
+
+/** Which itinerary day the "מה עכשיו"/current-stop UI should treat as
+ * "today": the calendar-accurate resolveTodayDayIndex when it resolves,
+ * else the itinerary's own earliest day. The whole point of "what's
+ * happening now" is to always surface something from the traveler's real
+ * itinerary — going blank just because no flight/hotel date was entered,
+ * or because the trip's dates don't happen to straddle today, defeats
+ * that, so this falls back to day 1 rather than showing nothing. Pass
+ * every existing dayIndex, ascending. */
+export function resolveEffectiveTodayDayIndex(
+  logistics: { startsAt: Date | null; endsAt: Date | null }[],
+  dayIndexesAscending: number[]
+): number | null {
+  return resolveTodayDayIndex(logistics) ?? dayIndexesAscending[0] ?? null;
+}
