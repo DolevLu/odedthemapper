@@ -37,12 +37,19 @@ const CATEGORY_ORDER_PRIORITY: { test: RegExp; rank: number }[] = [
   { test: /בר|pub|drink/i, rank: 3 },
   { test: /כריסמס|חג/i, rank: 8 },
   { test: /שופינג|קניות|שוק|shop|market/i, rank: 4 },
-  { test: /מוזיאון|museum/i, rank: 5 },
-  { test: /פארק|גן|park|garden/i, rank: 6 },
-  { test: /מועדונ|מסיב|club|party/i, rank: 7 },
+  // "מוזיא" (not "מוזיאון") on purpose: the plural "מוזיאונים" ends with a
+  // regular נ rather than the final-form ן that a literal "מוזיאון" needs,
+  // so a full-word match silently misses the actual category name.
+  { test: /מוזיא|museum/i, rank: 5 },
+  { test: /מועדונ|מסיב|club|party/i, rank: 6 },
+  { test: /פארק|גן|park|garden/i, rank: 7 },
   { test: /מטרו|רכבת|תחבורה|metro|train|station/i, rank: 9 },
   { test: /אטרקצי|attraction/i, rank: 10 },
-  { test: /עיר|עיירה|town|city/i, rank: 11 },
+  // "ערים" (cities) reorders the letters of "עיר" in its plural, and
+  // "עיירות" (towns) doubles the י instead of reusing "עיר" as a prefix —
+  // neither actually contains the substring "עיר", so both need their own
+  // alternative rather than relying on the singular word to cover them.
+  { test: /עייר|ערים|עיר|יישוב|town|city/i, rank: 11 },
 ];
 
 export function sortCategoryNames(names: string[]): string[] {
@@ -65,7 +72,7 @@ const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "p
   { match: /פארק|גן|park|garden/i, color: "#16A34A", icon: { type: "path", d: pathForCategory("פארק") } },
   { match: /בר|לילה|pub|drink|מועדונ|club/i, color: "#1E3A5F", icon: { type: "path", d: pathForCategory("בר") } },
   { match: /מטרו|רכבת|תחבורה|תחב"צ|metro|train|station/i, color: "#8B5A2B", icon: { type: "text", char: "M" } },
-  { match: /עיר|עיירה|יישוב|town|city/i, color: "#2563EB", icon: { type: "path", d: CHECK_PATH } },
+  { match: /עייר|ערים|עיר|יישוב|town|city/i, color: "#2563EB", icon: { type: "path", d: CHECK_PATH } },
   { match: /אטרקצי|attraction/i, color: "#7C3AED", icon: { type: "path", d: STAR_PATH } },
 ];
 

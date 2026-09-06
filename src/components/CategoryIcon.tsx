@@ -44,8 +44,12 @@ const SVG_ICONS: { match: RegExp; path: string }[] = [
     path: "M3 7h2v6h7V9a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v9h-2v-3H5v3H3zm5 1a2 2 0 1 1-2 2 2 2 0 0 1 2-2z",
   },
   {
-    match: /עיר|עיירה|road trip|town/i,
-    path: "M4 2v20h2v-7h11l-2-4 2-4H6V2z",
+    // A checkmark ("וי") — matches the same glyph the map's own pins use
+    // for this category (CHECK_PATH in lib/mapStyles.ts). "עייר"/"ערים"
+    // catch the plural forms "עיירות"/"ערים", neither of which actually
+    // contains "עיר" as a substring (see lib/mapStyles.ts).
+    match: /עייר|ערים|עיר|road trip|town/i,
+    path: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
   },
 ];
 
@@ -81,7 +85,7 @@ const EMOJI_ICONS: { match: RegExp; emoji: string }[] = [
   { match: /מסיב|party|club/i, emoji: "🎉" },
   { match: /חג|כריסמס|market/i, emoji: "🎄" },
   { match: /מלונ|hotel/i, emoji: "🏨" },
-  { match: /עיר|עיירה|יישוב|road trip|town/i, emoji: "🏙️" },
+  { match: /עייר|ערים|עיר|יישוב|road trip|town/i, emoji: "🏙️" },
 ];
 
 const DEFAULT_EMOJI = "📍";
