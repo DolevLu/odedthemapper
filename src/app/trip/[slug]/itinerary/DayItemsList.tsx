@@ -38,11 +38,13 @@ const SWIPE_DELETE_THRESHOLD = 90;
 
 /** "Where am I" cue: the last time-stamped stop at or before right-now is
  * highlighted green (currently happening), the next one after it gets a
- * lighter accent (coming up) — purely a clock-time comparison against each
- * stop's timeOfDay, not validated against which calendar day the trip is
- * actually on, so it's a same-schedule-shape cue rather than a literal
- * "you're here today" guarantee. Same logic the map's route view and the
- * Now screen already use, kept in sync deliberately. */
+ * lighter accent (coming up) — a clock-time comparison against each stop's
+ * timeOfDay. Only called by the caller when this day's dayIndex is actually
+ * today's real calendar day (see resolveTodayDayIndex) — otherwise a stop
+ * scheduled for some other day of the trip would light up green just
+ * because its time-of-day happens to match the current clock time, which
+ * read as "happening now" even for a trip weeks away. Same logic the map's
+ * route view and the Now screen already use, kept in sync deliberately. */
 function timeStatusMap(items: { id: string; timeOfDay: string | null }[]): Map<string, "current" | "next"> {
   const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
   const map = new Map<string, "current" | "next">();
@@ -69,11 +71,16 @@ export function DayItemsList({
   slug,
   items,
   path = "itinerary",
+  isToday = false,
 }: {
   dayId: string;
   slug: string;
   items: DayListItem[];
   path?: string;
+  /** Whether this day's dayIndex is actually today's real calendar date
+   * (see resolveTodayDayIndex) — gates the current/next highlighting so it
+   * never lights up on some other day of the trip. */
+  isToday?: boolean;
 }) {
   const [order, setOrder] = useState(() => items.map((i) => i.id));
   const [prevItems, setPrevItems] = useState(items);
@@ -216,7 +223,7 @@ export function DayItemsList({
 
   if (items.length === 0) return <p className="text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
 
-  const timeStatus = timeStatusMap(ordered);
+  const timeStatus = isToday ? timeStatusMap(ordered) : new Map<string, "current" | "next">();
   const detailItem = detailItemId ? byId.get(detailItemId) ?? null : null;
 
   return (

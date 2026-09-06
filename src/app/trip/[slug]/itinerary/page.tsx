@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getPoiOptionsForDestination, extractTextDescription } from "@/lib/data/pois";
 import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
+import { resolveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
 import { listItineraryTemplates, getItineraryTemplatePreview } from "@/lib/actions/trip";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
@@ -32,7 +33,7 @@ export default async function ItineraryPage({
   const userId = session!.user!.id;
   const ownerId = await resolveItineraryOwnerId(userId);
 
-  const [itinerary, poiOptions, areas, templates] = await Promise.all([
+  const [itinerary, poiOptions, areas, templates, logistics] = await Promise.all([
     prisma.itinerary.findUnique({
       where: { userId_destinationId_kind: { userId: ownerId, destinationId: destination.id, kind: "personal" } },
       include: {
@@ -53,7 +54,12 @@ export default async function ItineraryPage({
     getPoiOptionsForDestination(destination.id),
     prisma.area.findMany({ where: { destinationId: destination.id }, select: { id: true, name: true } }),
     listItineraryTemplates(destination.id, "personal"),
+    // Same userId (not ownerId) the Now screen keys its own trip-start
+    // lookup on, so the two screens agree on which single day is "today"
+    // instead of each computing it a different way (see resolveTodayDayIndex).
+    prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id, startsAt: { not: null } } }),
   ]);
+  const todayDayIndex = resolveTodayDayIndex(logistics);
 
   const categoryNames = Array.from(new Set(poiOptions.map((p) => p.categoryName))).sort();
   const hasExistingDays = Boolean(itinerary && itinerary.days.length > 0);
@@ -162,6 +168,7 @@ export default async function ItineraryPage({
         poiOptions={poiOptions}
         categoryNames={categoryNames}
         areas={areas}
+        todayDayIndex={todayDayIndex}
       />
     </div>
   );

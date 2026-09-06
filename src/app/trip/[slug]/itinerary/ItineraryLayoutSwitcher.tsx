@@ -29,6 +29,7 @@ export function ItineraryLayoutSwitcher({
   poiOptions,
   categoryNames,
   areas,
+  todayDayIndex,
 }: {
   slug: string;
   destinationId: string;
@@ -39,6 +40,10 @@ export function ItineraryLayoutSwitcher({
   poiOptions: PoiOption[];
   categoryNames: string[];
   areas: { id: string; name: string }[];
+  /** Which dayIndex is actually today's real calendar date (see
+   * resolveTodayDayIndex) — null when there's no trip-start date set or
+   * today falls outside the trip's span. */
+  todayDayIndex: number | null;
 }) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -66,6 +71,7 @@ export function ItineraryLayoutSwitcher({
         poiOptions={poiOptions}
         categoryNames={categoryNames}
         areas={areas}
+        todayDayIndex={todayDayIndex}
       />
     );
   }
@@ -104,6 +110,7 @@ export function ItineraryLayoutSwitcher({
             poiOptions={poiOptions}
             days={dayListDays}
             extraAction={<AddDayButton destinationId={destinationId} slug={slug} />}
+            todayDayIndex={todayDayIndex}
           />
         </div>
       </div>
@@ -116,7 +123,7 @@ export function ItineraryLayoutSwitcher({
            * switcher for space — independent selections (map filter vs.
            * panel focus) is fine since they answer different questions
            * ("which route do I want to see" vs. "which day am I editing"). */}
-          <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} />
+          <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} todayDayIndex={todayDayIndex} />
         </div>
       )}
     </div>

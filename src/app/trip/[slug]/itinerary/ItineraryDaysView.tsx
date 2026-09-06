@@ -18,6 +18,7 @@ export function ItineraryDaysView({
   onFocusedDayIndexChange,
   hideHeader = false,
   extraAction,
+  todayDayIndex = null,
 }: {
   days: Day[];
   slug: string;
@@ -35,6 +36,12 @@ export function ItineraryDaysView({
    * puts "+ הוספת יום" here instead of its own action row, so the row of
    * pills above doesn't have to fit it too. */
   extraAction?: React.ReactNode;
+  /** Which dayIndex is actually today's real calendar date (see
+   * resolveTodayDayIndex) — null when there's no trip-start date or today
+   * falls outside the trip's span. Passed down to gate DayItemsList's
+   * current/next highlighting so it only ever lights up on the one day
+   * that's genuinely happening right now. */
+  todayDayIndex?: number | null;
 }) {
   // Defaults to the single-day focused view everywhere (desktop pairs it
   // side-by-side with the route map; mobile pairs it with the route map
@@ -58,7 +65,9 @@ export function ItineraryDaysView({
   }
 
   if (hideHeader) {
-    return <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} large />;
+    return (
+      <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large />
+    );
   }
 
   return (
@@ -99,7 +108,7 @@ export function ItineraryDaysView({
       {mode === "grid" ? (
         <div className="grid grid-cols-2 gap-4">
           {days.map((day) => (
-            <DayCard key={day.id} day={day} slug={slug} poiOptions={poiOptions} path={path} />
+            <DayCard key={day.id} day={day} slug={slug} poiOptions={poiOptions} path={path} isToday={day.dayIndex === todayDayIndex} />
           ))}
         </div>
       ) : (
@@ -133,7 +142,7 @@ export function ItineraryDaysView({
           {/* Independently scrollable on desktop so a long day's stop list
            * doesn't push this column taller than the route map beside it. */}
           <div className="min-h-0 flex-1 overflow-y-auto pe-1">
-            <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} large />
+            <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large />
           </div>
         </div>
       )}
@@ -146,12 +155,14 @@ function DayCard({
   slug,
   poiOptions,
   path,
+  isToday = false,
   large,
 }: {
   day: Day;
   slug: string;
   poiOptions: PoiOption[];
   path: string;
+  isToday?: boolean;
   large?: boolean;
 }) {
   const color = colorForDay(day.dayIndex - 1);
@@ -190,7 +201,7 @@ function DayCard({
       </div>
 
       <div className="flex flex-col gap-3 px-4 pb-4">
-        <DayItemsList dayId={day.id} slug={slug} path={path} items={day.items} />
+        <DayItemsList dayId={day.id} slug={slug} path={path} items={day.items} isToday={isToday} />
         <AddItemToDay dayId={day.id} slug={slug} pois={poiOptions} />
       </div>
     </div>

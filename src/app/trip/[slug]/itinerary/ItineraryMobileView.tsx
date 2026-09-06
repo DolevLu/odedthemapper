@@ -62,6 +62,7 @@ export function ItineraryMobileView({
   poiOptions,
   categoryNames,
   areas,
+  todayDayIndex,
 }: {
   slug: string;
   destinationId: string;
@@ -72,6 +73,10 @@ export function ItineraryMobileView({
   poiOptions: PoiOption[];
   categoryNames: string[];
   areas: { id: string; name: string }[];
+  /** Which dayIndex is actually today's real calendar date (see
+   * resolveTodayDayIndex) — null when there's no trip-start date set or
+   * today falls outside the trip's span. */
+  todayDayIndex: number | null;
 }) {
   const router = useRouter();
   const pillRowRef = useRef<HTMLDivElement>(null);
@@ -160,6 +165,7 @@ export function ItineraryMobileView({
         activeDayIndex={mapAllDays ? null : focusedDayIndex}
         onActiveDayIndexChange={(d) => d != null && setFocusedDayIndex(d)}
         onMoveToDay={handleMoveToDay}
+        todayDayIndex={todayDayIndex}
       />
 
       {/* Floats over the map, at the very top — the map's own Map/Satellite
@@ -259,6 +265,7 @@ export function ItineraryMobileView({
                 focusedDayIndex={focusedDayIndex}
                 onFocusedDayIndexChange={setFocusedDayIndex}
                 hideHeader
+                todayDayIndex={todayDayIndex}
               />
             </div>
           </>
@@ -279,6 +286,7 @@ export function ItineraryMobileView({
             </button>
             <CollapsedCurrentStop
               item={currentStopOf(dayListDays.find((d) => d.dayIndex === focusedDayIndex)?.items ?? [])}
+              isToday={focusedDayIndex === todayDayIndex}
               onExpand={() => setDrawerState("open")}
             />
             <button
@@ -304,7 +312,19 @@ export function ItineraryMobileView({
  * DayItemsList's timeStatusMap) — makes it read as "this is what's
  * happening now," matching how the open list highlights it. Tapping it
  * expands the drawer, same as tapping the drag handle above it. */
-function CollapsedCurrentStop({ item, onExpand }: { item: DayListItem | null; onExpand: () => void }) {
+function CollapsedCurrentStop({
+  item,
+  isToday,
+  onExpand,
+}: {
+  item: DayListItem | null;
+  /** Whether the focused day is actually today's real calendar date (see
+   * resolveTodayDayIndex) — the green "happening now" treatment only makes
+   * sense then; otherwise this is just a preview of the day's first stop,
+   * shown in a neutral style so it doesn't falsely claim to be current. */
+  isToday: boolean;
+  onExpand: () => void;
+}) {
   if (!item) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-2xl border p-3 text-center text-xs opacity-50" style={{ borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)" }}>
@@ -313,14 +333,15 @@ function CollapsedCurrentStop({ item, onExpand }: { item: DayListItem | null; on
     );
   }
   const name = item.poi ? item.poi.name : (item.customLabel ?? "");
+  const accent = isToday ? "#22C55E" : "var(--primary)";
   return (
     <button
       onClick={onExpand}
       className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl border p-3 text-center shadow-sm"
-      style={{ borderColor: "#22C55E", background: "color-mix(in srgb, #22C55E 14%, var(--surface))" }}
+      style={{ borderColor: accent, background: `color-mix(in srgb, ${accent} 14%, var(--surface))` }}
     >
       {item.timeOfDay && (
-        <span className="shrink-0 rounded-full px-2 py-0.5 font-mono text-xs font-bold text-white" style={{ background: "#22C55E" }}>
+        <span className="shrink-0 rounded-full px-2 py-0.5 font-mono text-xs font-bold text-white" style={{ background: accent }}>
           {item.timeOfDay}
         </span>
       )}

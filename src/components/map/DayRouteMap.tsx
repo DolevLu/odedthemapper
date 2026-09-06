@@ -64,6 +64,7 @@ export function DayRouteMap({
   activeDayIndex: controlledActiveDayIndex,
   onActiveDayIndexChange,
   onMoveToDay,
+  todayDayIndex = null,
 }: {
   days: MapDay[];
   fillHeight?: boolean;
@@ -81,6 +82,11 @@ export function DayRouteMap({
   /** When provided, marker popups show "move to day N" buttons; clicking one
    * calls this with the point's id (an ItineraryItem id) and the target day. */
   onMoveToDay?: (itemId: string, dayIndex: number) => void;
+  /** Which dayIndex is actually today's real calendar date (see
+   * resolveTodayDayIndex) — gates the "current stop" green marker so it
+   * only ever appears on the one day genuinely happening right now, not on
+   * any day whose stop time-of-day happens to match the clock. */
+  todayDayIndex?: number | null;
 }) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -181,7 +187,7 @@ export function DayRouteMap({
         overlaysRef.current.push(transportMarker);
       }
 
-      const currentId = currentPointId(day.points);
+      const currentId = day.dayIndex === todayDayIndex ? currentPointId(day.points) : null;
       day.points.forEach((p, idx) => {
         const isCurrent = p.id === currentId;
         const marker = new google.maps.Marker({
@@ -212,7 +218,7 @@ export function DayRouteMap({
     });
 
     if (!bounds.isEmpty()) mapRef.current.fitBounds(bounds);
-  }, [loaded, days, visibleDays]);
+  }, [loaded, days, visibleDays, todayDayIndex]);
 
   useEffect(() => {
     if (!loaded || !mapRef.current) return;

@@ -3,13 +3,10 @@ import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { getAccessLevel, getUserPurchasedSlugs } from "@/lib/access";
+import { resolveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NowScreen } from "../NowScreen";
-
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
 
 export default async function TripNowPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -97,31 +94,25 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
     (itinerary?.days ?? []).flatMap((day) => day.items.map((i) => i.poiId).filter((id): id is string => Boolean(id)))
   );
 
-  const today = startOfDay(new Date());
   // Full timestamp (not truncated to midnight) so the Now screen can show a
   // real days/hours/minutes countdown, not just a day count.
   const tripStartExact = logistics[0]?.startsAt ?? null;
-  const tripStart = tripStartExact ? startOfDay(tripStartExact) : null;
-  const tripEnd = logistics.length > 0 ? startOfDay(logistics[logistics.length - 1].endsAt ?? logistics[logistics.length - 1].startsAt!) : null;
+  const todayDayIndex = resolveTodayDayIndex(logistics);
 
   let todayDayItems:
     | { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[]
     | null = null;
 
-  if (tripStart) {
-    const diffDays = Math.round((tripStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0 && tripEnd && today <= tripEnd) {
-      const dayIndex = Math.round((today.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const day = itinerary?.days.find((d) => d.dayIndex === dayIndex);
-      if (day) {
-        todayDayItems = day.items.map((item) => ({
-          time: item.timeOfDay,
-          label: item.poi?.name ?? item.customLabel ?? "",
-          poiId: item.poi?.id ?? null,
-          categoryName: item.poi?.category.name ?? null,
-          photoUrl: item.poi?.photos[0]?.url ?? null,
-        }));
-      }
+  if (todayDayIndex !== null) {
+    const day = itinerary?.days.find((d) => d.dayIndex === todayDayIndex);
+    if (day) {
+      todayDayItems = day.items.map((item) => ({
+        time: item.timeOfDay,
+        label: item.poi?.name ?? item.customLabel ?? "",
+        poiId: item.poi?.id ?? null,
+        categoryName: item.poi?.category.name ?? null,
+        photoUrl: item.poi?.photos[0]?.url ?? null,
+      }));
     }
   }
 
