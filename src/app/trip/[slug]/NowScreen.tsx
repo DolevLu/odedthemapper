@@ -18,7 +18,7 @@ type TodayData = {
   heroImage: string | null;
   logisticId: string | null;
   targetDateTimeIso: string | null;
-  todayDayItems: { time: string | null; label: string }[] | null;
+  todayDayItems: { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[] | null;
   bookableItems: { id: string; name: string }[];
   myDestinations: { slug: string; name: string }[];
   showOnboarding: boolean;

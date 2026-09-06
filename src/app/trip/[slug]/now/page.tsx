@@ -36,7 +36,16 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
       include: {
         days: {
           orderBy: { dayIndex: "asc" },
-          include: { items: { orderBy: { order: "asc" }, include: { poi: { select: { id: true, name: true } } } } },
+          include: {
+            items: {
+              orderBy: { order: "asc" },
+              include: {
+                poi: {
+                  select: { id: true, name: true, category: { select: { name: true } }, photos: { take: 1, select: { url: true } } },
+                },
+              },
+            },
+          },
         },
       },
     }),
@@ -95,7 +104,9 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   const tripStart = tripStartExact ? startOfDay(tripStartExact) : null;
   const tripEnd = logistics.length > 0 ? startOfDay(logistics[logistics.length - 1].endsAt ?? logistics[logistics.length - 1].startsAt!) : null;
 
-  let todayDayItems: { time: string | null; label: string }[] | null = null;
+  let todayDayItems:
+    | { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[]
+    | null = null;
 
   if (tripStart) {
     const diffDays = Math.round((tripStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -103,7 +114,13 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
       const dayIndex = Math.round((today.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       const day = itinerary?.days.find((d) => d.dayIndex === dayIndex);
       if (day) {
-        todayDayItems = day.items.map((item) => ({ time: item.timeOfDay, label: item.poi?.name ?? item.customLabel ?? "" }));
+        todayDayItems = day.items.map((item) => ({
+          time: item.timeOfDay,
+          label: item.poi?.name ?? item.customLabel ?? "",
+          poiId: item.poi?.id ?? null,
+          categoryName: item.poi?.category.name ?? null,
+          photoUrl: item.poi?.photos[0]?.url ?? null,
+        }));
       }
     }
   }
