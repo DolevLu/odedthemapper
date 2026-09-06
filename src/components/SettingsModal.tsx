@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ThemeChoice = "light" | "dark" | "system";
 type FontChoice = "small" | "medium" | "large";
@@ -28,38 +29,11 @@ function applyFontScale(choice: FontChoice) {
   localStorage.setItem("fontScale", FONT_SCALE[choice]);
 }
 
-/** Small gear button next to the sidebar logo — opens the settings popup
- * (theme + font size). Self-contained: owns its own open state, same
- * pattern as the report-menu button next to it. */
-export function SettingsButton({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        onClick={() => {
-          setOpen(true);
-          onOpenChange?.(true);
-        }}
-        title="הגדרות"
-        aria-label="הגדרות"
-        className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[13px] shadow-sm transition-transform hover:scale-110"
-        style={{ background: "rgba(0,0,0,0.06)" }}
-      >
-        ⚙️
-      </button>
-      {open && (
-        <SettingsModal
-          onClose={() => {
-            setOpen(false);
-            onOpenChange?.(false);
-          }}
-        />
-      )}
-    </>
-  );
-}
-
-function SettingsModal({ onClose }: { onClose: () => void }) {
+/** Opened from GuideMenuButton's 3-dot menu (not its own sidebar button —
+ * see that component for why: this and its sibling modals are portaled to
+ * document.body since the sticky desktop sidebar traps regular fixed
+ * children inside its own stacking context). */
+export function SettingsModal({ onClose }: { onClose: () => void }) {
   // Read the current values on mount only — before that, this must render
   // the same default on server and client to avoid a hydration mismatch, so
   // the "real" localStorage-derived state is applied via this effect rather
@@ -75,8 +49,8 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
     if (matchedFont) setFont(matchedFont);
   }, []);
 
-  return (
-    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="flex w-full max-w-sm flex-col gap-4 rounded-2xl p-5 shadow-2xl"
@@ -134,6 +108,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

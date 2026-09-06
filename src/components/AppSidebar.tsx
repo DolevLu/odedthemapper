@@ -11,7 +11,6 @@ import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { DestinationBadge } from "@/components/header/DestinationBadge";
 import { TrialCountdown } from "@/components/TrialCountdown";
 import { GuideMenuButton } from "@/components/GuideMenuButton";
-import { SettingsButton } from "@/components/SettingsModal";
 
 type Tier = "free" | "silver" | "gold";
 
@@ -255,7 +254,6 @@ export function AppSidebar({
             </span>
           </Link>
           <GuideMenuButton />
-          <SettingsButton />
         </div>
         <div className="mb-2 px-1">
           <DestinationBadge />
@@ -445,7 +443,6 @@ export function AppSidebar({
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <GuideMenuButton onNavigate={() => setDrawerOpen(false)} />
-                <SettingsButton />
                 <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />

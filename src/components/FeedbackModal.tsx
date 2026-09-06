@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { submitFeedback } from "@/lib/actions/feedback";
 
@@ -30,8 +31,8 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
   }
 
   if (status === "sent") {
-    return (
-      <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+    return createPortal(
+      <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
         <div
           onClick={(e) => e.stopPropagation()}
           className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl p-6 text-center shadow-2xl"
@@ -44,12 +45,13 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
             סגירה
           </button>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-[300] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
       <form
         action={handleSubmit}
         onClick={(e) => e.stopPropagation()}
@@ -109,6 +111,7 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
           {status === "sending" ? "שולח..." : "שליחה"}
         </button>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }
