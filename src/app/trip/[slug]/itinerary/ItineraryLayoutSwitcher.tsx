@@ -71,10 +71,12 @@ export function ItineraryLayoutSwitcher({
 
   return (
     <div className="flex h-full items-stretch">
-      {/* Everything (route actions + the day panel itself) lives in this one
-       * docked side panel now — nothing floats over the map anymore (it used
-       * to get both this toolbar AND DayRouteMap's own separate day-pill row
-       * as full-width banners above it). */}
+      {/* Route actions + the day panel itself live in this one docked side
+       * panel — no full-width banner sits above the map anymore (it used to
+       * get both this toolbar AND DayRouteMap's own day-pill row as
+       * block-level rows pushing it down). The map keeps its own small
+       * floating day filter (see DayRouteMap) — that one overlays the map
+       * itself rather than taking up separate space above it. */}
       <div
         className="flex h-full min-h-0 w-[420px] shrink-0 flex-col border-e"
         style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)", background: "var(--surface)" }}
@@ -92,12 +94,13 @@ export function ItineraryLayoutSwitcher({
 
       {mapDays.some((d) => d.points.length > 0) && (
         <div className="min-h-0 flex-1">
-          {/* showDaySwitcher off: that control duplicated the panel's own
-           * day switcher as a second banner sitting over the map. The map
-           * always shows the full multi-day route (still color-coded per
-           * day) rather than trying to stay in sync with the panel's
-           * focused day. */}
-          <DayRouteMap days={mapDays} fillHeight showDaySwitcher={false} onMoveToDay={handleMoveToDay} />
+          {/* DayRouteMap's day-pill filter now floats over the map itself
+           * (see DayRouteMap) rather than sitting above it as a block-level
+           * banner, so it no longer competes with this panel's own day
+           * switcher for space — independent selections (map filter vs.
+           * panel focus) is fine since they answer different questions
+           * ("which route do I want to see" vs. "which day am I editing"). */}
+          <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} />
         </div>
       )}
     </div>

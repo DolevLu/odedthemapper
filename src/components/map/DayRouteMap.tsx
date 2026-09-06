@@ -243,45 +243,47 @@ export function DayRouteMap({
 
   return (
     <div className={containerClass}>
-      {showDaySwitcher && days.length > 1 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => setActiveDayIndex(null)}
-            className="rounded-full border px-3 py-1 text-xs font-semibold"
-            style={{
-              borderColor: "var(--primary)",
-              background: activeDayIndex == null ? "var(--primary)" : "transparent",
-              color: activeDayIndex == null ? "white" : "var(--text)",
-            }}
-          >
-            כל הימים
-          </button>
-          {days.map((day) => {
-            const color = colorForDay(day.dayIndex - 1);
-            const active = activeDayIndex === day.dayIndex;
-            return (
-              <button
-                key={day.dayIndex}
-                onClick={() => setActiveDayIndex(day.dayIndex)}
-                className="rounded-full border px-3 py-1 text-xs font-semibold"
-                style={{
-                  borderColor: color,
-                  background: active ? color : "transparent",
-                  color: active ? "white" : "var(--text)",
-                }}
-              >
-                יום {day.dayIndex}
-              </button>
-            );
-          })}
-        </div>
-      )}
       <div className={mobileFullScreen || fillHeight ? "relative w-full flex-1 min-h-0" : "relative h-[420px] w-full"}>
         <div
           ref={mapDivRef}
           className={mobileFullScreen ? "h-full w-full sm:rounded-[var(--radius)] sm:border" : "h-full w-full"}
           style={mobileFullScreen ? undefined : { borderRadius: "var(--radius)", border: "1px solid var(--primary)" }}
         />
+        {/* Floating over the map itself (not a block above it, which used to
+         * push the map down as its own banner row) — same floating-pill
+         * treatment as the main map screen's own category filters. Opposite
+         * corner from the map/satellite toggle. */}
+        {showDaySwitcher && days.length > 1 && (
+          <div className={`absolute start-2 z-10 flex flex-wrap gap-1 ${mobileFullScreen ? "bottom-[190px] sm:top-2" : "top-2"}`}>
+            <button
+              onClick={() => setActiveDayIndex(null)}
+              className="rounded-full px-3 py-1 text-xs font-semibold shadow-md"
+              style={{
+                background: activeDayIndex == null ? "var(--primary)" : "rgba(255,255,255,0.95)",
+                color: activeDayIndex == null ? "white" : "var(--text)",
+              }}
+            >
+              כל הימים
+            </button>
+            {days.map((day) => {
+              const color = colorForDay(day.dayIndex - 1);
+              const active = activeDayIndex === day.dayIndex;
+              return (
+                <button
+                  key={day.dayIndex}
+                  onClick={() => setActiveDayIndex(day.dayIndex)}
+                  className="rounded-full px-3 py-1 text-xs font-semibold shadow-md"
+                  style={{
+                    background: active ? color : "rgba(255,255,255,0.95)",
+                    color: active ? "white" : "var(--text)",
+                  }}
+                >
+                  יום {day.dayIndex}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {/* Small Hebrew Map/Satellite toggle — top-left on desktop (matches
          * the main Map screen's own control). In the mobile full-screen
          * layout it moves to the bottom-left instead, well above the
