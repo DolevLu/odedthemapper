@@ -1,5 +1,11 @@
 export type PlanKey = "solo" | "family" | "org";
 
+// Shown (and specially emphasized, see PricingCards) only on the real paid
+// plans below — the free trial still shows ads (see AdSenseScript's own
+// `summary.plan.key === "trial"` check), so it's deliberately absent from
+// TRIAL_PLAN's own features list.
+export const AD_FREE_FEATURE = "חוויה נקייה - בלי פרסומות 🚫📢";
+
 export type Plan = {
   key: PlanKey;
   name: string;
@@ -58,6 +64,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     aiChatDailyQuota: 10,
     tagline: "כל מה שצריך ליעד אחד - מפה, מסלול ותקציב במקום אחד.",
     features: [
+      AD_FREE_FEATURE,
       "גישה מלאה ליעד אחד לבחירה, עם אפשרות להחליף יעד פעם ב-14 יום",
       "מפה אינטראקטיבית עם כל הנקודות והקטגוריות",
       "מסך \"מה עכשיו\" - המלצות לפי קרבה אליכם",
@@ -82,6 +89,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     aiChatDailyQuota: 30,
     tagline: "מתכננים כמה יעדים בו-זמנית ורוצים לשתף עם כל המשפחה? קיבלתם.",
     features: [
+      AD_FREE_FEATURE,
       "גישה עד 5 יעדים לבחירה, עם אפשרות להחליף כל יעד בנפרד פעם ב-14 יום",
       "כל התכונות של תוכנית המטייל הבודד",
       "עד 5 משתמשים תחת אותו מנוי - מזמינים לפי אימייל",
@@ -103,6 +111,7 @@ export const PLANS: Record<PlanKey, Plan> = {
     aiChatDailyQuota: 100,
     tagline: "בונים טיולים ללקוחות? נהלו הכל במקום אחד.",
     features: [
+      AD_FREE_FEATURE,
       "גישה לכל היעדים במערכת ללא הגבלה",
       "תכנון מסלול מקצועי ללקוחות - ימים, שעות ואופטימיזציית מרחקים",
       "הצעות מחיר וחוזים: מסמך מקצועי עם קישור לאישור הלקוח",

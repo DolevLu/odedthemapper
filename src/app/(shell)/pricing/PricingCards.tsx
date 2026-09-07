@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANS, TRIAL_PLAN, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
+import { PLANS, TRIAL_PLAN, AD_FREE_FEATURE, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
 
 export function PricingCards() {
   const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
@@ -116,12 +116,15 @@ export function PricingCards() {
               </div>
 
               <ul className="flex flex-col gap-1.5 text-xs sm:gap-2 sm:text-sm">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <span className="mt-0.5 text-emerald-500">✓</span>
-                    <span className="opacity-80">{f}</span>
-                  </li>
-                ))}
+                {plan.features.map((f) => {
+                  const isAdFree = f === AD_FREE_FEATURE;
+                  return (
+                    <li key={f} className="flex items-start gap-2">
+                      <span className="mt-0.5 text-emerald-500">✓</span>
+                      <span className={isAdFree ? "font-bold" : "opacity-80"}>{f}</span>
+                    </li>
+                  );
+                })}
               </ul>
 
               <Link
