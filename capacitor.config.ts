@@ -9,7 +9,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // use for their "app" wrappers.
 const config: CapacitorConfig = {
   appId: "com.odedthemapper.travi",
-  appName: "עודד המנקד",
+  appName: "טראבי",
   webDir: "public",
   server: {
     url: "https://travi.odedthemapper.com",

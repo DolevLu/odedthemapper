@@ -21,7 +21,7 @@ export const PACKING_LIST: PackingListItem[] = [
   { key: "id_copy", label: "צילום/סריקה של דרכון ומסמכים חשובים", category: "documents" },
 
   // לפני טיסה
-  { key: "insurance", label: "ביטוח נסיעות לחו״ל", category: "before-flight", couponPartner: "ביטוח נסיעות (סוכן הביטוח של עודד המנקד)" },
+  { key: "insurance", label: "ביטוח נסיעות לחו״ל", category: "before-flight", couponPartner: "ביטוח נסיעות (סוכן הביטוח של טראבי)" },
   { key: "esim", label: "סים מקומי או eSIM לאינטרנט בחו״ל", category: "before-flight", couponPartner: "Holafly" },
   { key: "currency", label: "המרת מטבע / כרטיס אשראי מתאים לחו״ל", category: "before-flight" },
   { key: "checkin", label: "צ׳ק אין מקוון לטיסה", category: "before-flight" },

@@ -15,7 +15,7 @@ self.addEventListener("push", (event) => {
   } catch {
     data = {};
   }
-  const title = data.title || "עודד המנקד";
+  const title = data.title || "טראבי";
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",

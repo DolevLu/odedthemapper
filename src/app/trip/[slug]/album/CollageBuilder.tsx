@@ -226,7 +226,7 @@ export function CollageBuilder({
           const t = f / framesPerPhoto;
           const start = performance.now();
           renderFrame(ctx, images, photoIndex, t, transitionMode, CANVAS_W, CANVAS_H);
-          drawCaption(ctx, `✈️ ${destinationName} · עודד המנקד`, CANVAS_W, CANVAS_H);
+          drawCaption(ctx, `✈️ ${destinationName} · טראבי`, CANVAS_W, CANVAS_H);
           frame++;
           setProgress(Math.round((frame / totalFrames) * 100));
           const elapsed = performance.now() - start;

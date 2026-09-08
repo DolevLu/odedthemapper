@@ -30,9 +30,9 @@ export default async function SharedAlbumPage({ params }: { params: Promise<{ to
       <div className="flex items-center justify-between gap-3 border-b pb-4 print:hidden" style={{ borderColor: "#1A1A1A22" }}>
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.svg" alt="עודד המנקד" className="h-10 w-10" />
+          <img src="/logo-mark.svg" alt="טראבי" className="h-10 w-10" />
           <div>
-            <p className="text-xs font-bold tracking-wide opacity-70">עודד המנקד</p>
+            <p className="text-xs font-bold tracking-wide opacity-70">טראבי</p>
             <p className="text-sm opacity-60">אלבום טיול - תצוגת אורח</p>
           </div>
         </div>

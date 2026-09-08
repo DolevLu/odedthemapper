@@ -9,7 +9,7 @@ import { FocusModeExitButton } from "@/components/FocusModeExitButton";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "עודד המנקד",
+  title: "טראבי",
   description: "מפות טיולים אינטראקטיביות ומדריכים אישיים לכל יעד",
   manifest: "/manifest.json",
 };

@@ -247,9 +247,9 @@ export function AppSidebar({
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
           <Link href="/" className="flex min-w-0 flex-1 items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8 shrink-0" />
+            <img src="/logo-mark.svg" alt="טראבי" className="h-8 w-8 shrink-0" />
             <span className="flex flex-col leading-tight">
-              <span className="text-[15px] font-extrabold">עודד המנקד</span>
+              <span className="text-[15px] font-extrabold">טראבי</span>
               {trialEndsAt ? (
                 <TrialCountdown endsAt={trialEndsAt} />
               ) : (
@@ -468,8 +468,8 @@ export function AppSidebar({
               <GuideMenuButton onNavigate={() => setDrawerOpen(false)} />
               <Link href="/" onClick={() => setDrawerOpen(false)} className="flex min-w-0 flex-1 items-center gap-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8 shrink-0" />
-                <span className="text-[15px] font-extrabold">עודד המנקד</span>
+                <img src="/logo-mark.svg" alt="טראבי" className="site-logo h-8 w-8 shrink-0" />
+                <span className="text-[15px] font-extrabold">טראבי</span>
               </Link>
               <button onClick={() => setDrawerOpen(false)} className="shrink-0 rounded-full px-2 py-1 text-lg opacity-60">
                 ✕

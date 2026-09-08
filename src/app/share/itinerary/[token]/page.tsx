@@ -35,10 +35,10 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
             <img src={plannerProfile.logoUrl} alt={plannerProfile.companyName ?? ""} className="h-10 w-10 rounded-lg object-contain" />
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.svg" alt="עודד המנקד" className="h-10 w-10" />
+          <img src="/logo-mark.svg" alt="טראבי" className="h-10 w-10" />
           <div>
             <p className="text-xs font-bold tracking-wide opacity-70">
-              {plannerProfile?.companyName ? `${plannerProfile.companyName} · עודד המנקד` : "עודד המנקד"}
+              {plannerProfile?.companyName ? `${plannerProfile.companyName} · טראבי` : "טראבי"}
             </p>
             <p className="text-sm opacity-60">{isClientPlan ? "מסלול מקצועי - תצוגת לקוח" : "מסלול טיול - תצוגת אורח"}</p>
           </div>
@@ -78,7 +78,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
         })}
       </div>
 
-      <p className="print:hidden mt-4 text-center text-xs opacity-50">נוצר עם עודד המנקד</p>
+      <p className="print:hidden mt-4 text-center text-xs opacity-50">נוצר עם טראבי</p>
     </div>
   );
 }

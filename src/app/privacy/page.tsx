@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "מדיניות פרטיות | עודד המנקד" };
+export const metadata = { title: "מדיניות פרטיות | טראבי" };
 
 /** Standalone (no sidebar/auth) — a privacy policy needs a stable, always-
  * public URL regardless of login state, mainly for Google Cloud Console /
@@ -13,12 +13,12 @@ export default function PrivacyPage() {
       </Link>
 
       <div>
-        <h1 className="mb-1 text-2xl font-bold">מדיניות פרטיות ותנאי שימוש - עודד המנקד</h1>
+        <h1 className="mb-1 text-2xl font-bold">מדיניות פרטיות ותנאי שימוש - טראבי</h1>
         <p className="text-xs opacity-50">עודכן לאחרונה: 24 באוגוסט 2026</p>
       </div>
 
       <p>
-        עודד המנקד (&quot;האפליקציה&quot;, &quot;השירות&quot;, &quot;אנחנו&quot;) מכבדת את פרטיות המשתמשים שלה. מסמך זה מסביר אילו
+        טראבי (&quot;האפליקציה&quot;, &quot;השירות&quot;, &quot;אנחנו&quot;) מכבדת את פרטיות המשתמשים שלה. מסמך זה מסביר אילו
         מידע אנו אוספים, כיצד אנו משתמשים בו, עם מי אנו משתפים אותו, וכיצד ניתן לפנות אלינו בנוגע לפרטיותכם - וכן את תנאי
         השימוש הבסיסיים בשירות.
       </p>

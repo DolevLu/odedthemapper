@@ -1,7 +1,7 @@
 export type QuoteDocParams = {
   quoteNumber: string;
   createdAt: Date;
-  plannerName: string; // company name if set, otherwise "עודד המנקד"
+  plannerName: string; // company name if set, otherwise "טראבי"
   clientName: string;
   destinationName: string;
   tripDays: number;

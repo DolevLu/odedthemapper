@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "מדריך שימוש - עודד המנקד" };
+export const metadata: Metadata = { title: "מדריך שימוש - טראבי" };
 
 type Feature = {
   icon: string;
@@ -130,7 +130,7 @@ export default function GuidePage() {
         />
         <div className="relative mx-auto max-w-3xl">
           <span className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-semibold shadow-sm">📖 מדריך שימוש</span>
-          <h1 className="text-3xl font-extrabold leading-tight sm:text-5xl">איך משתמשים בעודד המנקד</h1>
+          <h1 className="text-3xl font-extrabold leading-tight sm:text-5xl">איך משתמשים בטראבי</h1>
           <p className="mx-auto mt-4 max-w-xl text-lg opacity-70">כל מסך, כל כפתור, כל פיצ׳ר - במקום אחד. מוזמנים לחזור לכאן בכל שלב.</p>
         </div>
       </section>

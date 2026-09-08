@@ -140,7 +140,7 @@ export function DigitalAlbumView({
     <div className="overflow-hidden border p-8" style={{ borderRadius: "var(--radius)", borderColor: theme.palette.primary, background }}>
       <div className="mb-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: theme.palette.secondary }}>
-          עודד המנקד · אלבום דיגיטלי
+          טראבי · אלבום דיגיטלי
         </p>
         <h2 className="mt-2 text-3xl font-extrabold" style={{ fontFamily: "var(--font-heading)", color: theme.palette.primary }}>
           {destinationName}

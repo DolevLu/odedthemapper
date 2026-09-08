@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   const testMode = process.env.PAYME_TEST_MODE !== "false";
   const baseUrl = testMode ? "https://sandbox.payme.io/api" : "https://live.payme.io/api";
-  const planName = PLANS[subscription.planKey as PlanKey]?.name ?? "מנוי עודד המנקד";
+  const planName = PLANS[subscription.planKey as PlanKey]?.name ?? "מנוי טראבי";
 
   let payMeResponse: Response;
   try {

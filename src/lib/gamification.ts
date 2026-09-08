@@ -8,13 +8,13 @@ const LEVEL_TITLES = [
   "אלוף מסלולים", // 7
   "לגנדת הדרכים", // 8
   "כובש היבשות", // 9
-  "אגדת עודד המנקד", // 10+
+  "אגדת טראבי", // 10+
 ];
 
 // Points required to REACH each level (index 0 = level 1's threshold, 0
 // points). Fixed table, not a formula — early levels come quickly (hooks
 // new users), later ones need real sustained engagement. Levels past the
-// table's length (11+) never unlock — level 10 ("אגדת עודד המנקד") is the
+// table's length (11+) never unlock — level 10 ("אגדת טראבי") is the
 // permanent top tier, matching LEVEL_TITLES' own "10+" framing.
 const LEVEL_THRESHOLDS = [0, 50, 100, 250, 500, 1000, 2000, 5000, 10000, 20000];
 

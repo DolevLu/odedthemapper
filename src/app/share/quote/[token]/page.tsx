@@ -13,7 +13,7 @@ export default async function SharedQuotePage({ params }: { params: Promise<{ to
   });
   if (!quote) notFound();
 
-  const plannerName = quote.user.plannerProfile?.companyName ?? "עודד המנקד";
+  const plannerName = quote.user.plannerProfile?.companyName ?? "טראבי";
   const { totalCents, sections } = generateQuoteDocument({
     quoteNumber: quote.id.slice(-8).toUpperCase(),
     createdAt: quote.createdAt,
@@ -37,10 +37,10 @@ export default async function SharedQuotePage({ params }: { params: Promise<{ to
             <img src={quote.user.plannerProfile.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain" />
           )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.svg" alt="עודד המנקד" className="h-10 w-10" />
+          <img src="/logo-mark.svg" alt="טראבי" className="h-10 w-10" />
           <div>
             <p className="text-xs font-bold tracking-wide opacity-70">
-              {quote.user.plannerProfile?.companyName ? `${quote.user.plannerProfile.companyName} · עודד המנקד` : "עודד המנקד"}
+              {quote.user.plannerProfile?.companyName ? `${quote.user.plannerProfile.companyName} · טראבי` : "טראבי"}
             </p>
             <p className="text-sm opacity-60">הצעת מחיר והסכם התקשרות</p>
           </div>
@@ -85,7 +85,7 @@ export default async function SharedQuotePage({ params }: { params: Promise<{ to
       )}
 
       <p className="print:hidden mt-2 text-center text-xs opacity-50">
-        מסמך זה נוצר אוטומטית מתבנית מקצועית של עודד המנקד ואינו מהווה ייעוץ משפטי.
+        מסמך זה נוצר אוטומטית מתבנית מקצועית של טראבי ואינו מהווה ייעוץ משפטי.
       </p>
     </div>
   );

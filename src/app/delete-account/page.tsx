@@ -2,7 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { DeleteAccountForm } from "./DeleteAccountForm";
 
-export const metadata = { title: "מחיקת חשבון | עודד המנקד" };
+export const metadata = { title: "מחיקת חשבון | טראבי" };
 
 /** Standalone, publicly reachable URL (no app chrome) — this is the "Delete
  * account" link Google Play's Data Safety form requires for any app that
@@ -21,7 +21,7 @@ export default async function DeleteAccountPage() {
 
       <div>
         <h1 className="mb-1 text-2xl font-bold">מחיקת חשבון</h1>
-        <p className="text-xs opacity-50">עודד המנקד</p>
+        <p className="text-xs opacity-50">טראבי</p>
       </div>
 
       <p>
