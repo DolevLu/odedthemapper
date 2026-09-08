@@ -22,7 +22,7 @@ export function generateViewport() {
   // top of the screen instead of a visible OS-colored bar sitting above it;
   // content that shouldn't sit under the notch/status bar uses
   // env(safe-area-inset-top) padding (see AppSidebar's mobile header).
-  return { themeColor: "#B5502A", viewportFit: "cover" };
+  return { themeColor: "#7C3AED", viewportFit: "cover" };
 }
 
 export default function RootLayout({
