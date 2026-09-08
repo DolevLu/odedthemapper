@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
-import { getAccessLevel, getUserPurchasedSlugs } from "@/lib/access";
+import { getAccessLevel, getUserPurchasedSlugs, shouldShowAds } from "@/lib/access";
 import { resolveEffectiveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
@@ -21,7 +21,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
 
   const userId = session!.user!.id;
 
-  const [pois, favorites, logistics, itinerary, bookingChecks] = await Promise.all([
+  const [pois, favorites, logistics, itinerary, bookingChecks, showAds] = await Promise.all([
     getFlatPoisForDestination(destination.id),
     prisma.favorite.findMany({ where: { userId }, select: { poiId: true } }),
     prisma.tripLogistic.findMany({
@@ -55,6 +55,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
       where: { userId, destinationId: destination.id, itemKey: { startsWith: "booking" } },
       select: { itemKey: true },
     }),
+    shouldShowAds(userId),
   ]);
 
   const handledPoiIds = bookingChecks.map((c) => c.itemKey.replace(/^booking(-dismissed)?:/, ""));
@@ -123,6 +124,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
       slug={slug}
       favoritedIds={favoritedIds}
       scheduledPoiIds={scheduledPoiIds}
+      showAds={showAds}
       today={{
         destinationId: destination.id,
         destinationName: destination.name,

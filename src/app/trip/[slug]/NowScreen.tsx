@@ -11,6 +11,7 @@ import { HomeLocalTime } from "@/components/HomeLocalTime";
 import { BookableReminders } from "@/components/BookableReminders";
 import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
 import { OnboardingNudge } from "@/components/OnboardingNudge";
+import { AdUnit } from "@/components/AdUnit";
 
 type TodayData = {
   destinationId: string;
@@ -63,6 +64,7 @@ export function NowScreen({
   slug,
   favoritedIds,
   scheduledPoiIds,
+  showAds,
   today,
 }: {
   pois: FlatPoi[];
@@ -70,6 +72,9 @@ export function NowScreen({
   slug: string;
   favoritedIds: Set<string>;
   scheduledPoiIds: Set<string>;
+  /** Free/anonymous/trial viewers only — never a real paid plan (see
+   * shouldShowAds in lib/access.ts). */
+  showAds: boolean;
   today: TodayData;
 }) {
   const router = useRouter();
@@ -145,6 +150,8 @@ export function NowScreen({
       />
 
       <HomeLocalTime slug={slug} />
+
+      <AdUnit slot="6290998567" format="auto" fullWidthResponsive show={showAds} />
 
       <BookableReminders destinationId={today.destinationId} slug={slug} bookableItems={today.bookableItems} />
 

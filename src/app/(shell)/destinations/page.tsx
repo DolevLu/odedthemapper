@@ -1,15 +1,20 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { auth } from "@/auth";
 import { getAllDestinations } from "@/lib/data/destinations";
+import { shouldShowAds } from "@/lib/access";
 import { DestinationsBrowser } from "@/components/DestinationsBrowser";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
+import { AdUnit } from "@/components/AdUnit";
 
 async function DestinationsBrowserSection() {
   const destinations = await getAllDestinations();
   return <DestinationsBrowser destinations={destinations} />;
 }
 
-export default function DestinationsPage() {
+export default async function DestinationsPage() {
+  const session = await auth();
+  const showAds = await shouldShowAds(session?.user?.id);
   return (
     <div className="px-6 py-10" style={{ background: "#FBF6EE", minHeight: "100%" }}>
       <div className="mx-auto w-full max-w-6xl">
@@ -33,6 +38,10 @@ export default function DestinationsPage() {
         <Suspense fallback={<DestinationsGridSkeleton />}>
           <DestinationsBrowserSection />
         </Suspense>
+
+        <div className="mt-8">
+          <AdUnit slot="8309340591" format="autorelaxed" show={showAds} />
+        </div>
       </div>
     </div>
   );

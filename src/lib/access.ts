@@ -218,3 +218,14 @@ export async function getActiveSubscriptionSummary(userId: string) {
     destinationIds: sub.destinations.map((d) => d.destinationId),
   };
 }
+
+/** Ads show for anonymous visitors, logged-in users with no subscription,
+ * and the 24h free trial — never for a real paid plan (see AD_FREE_FEATURE
+ * in plans.ts, which advertises exactly this on the pricing page). Single
+ * source of truth so every ad placement (the site-wide AdSense script plus
+ * each individual AdUnit) agrees on who sees ads. */
+export async function shouldShowAds(userId: string | undefined): Promise<boolean> {
+  if (!userId) return true;
+  const summary = await getActiveSubscriptionSummary(userId);
+  return summary === null || summary.plan.key === "trial";
+}
