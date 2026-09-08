@@ -11,18 +11,19 @@ import { ProfileMenu } from "@/components/header/ProfileMenu";
 import { DestinationBadge } from "@/components/header/DestinationBadge";
 import { TrialCountdown } from "@/components/TrialCountdown";
 import { GuideMenuButton } from "@/components/GuideMenuButton";
+import { NavIcon, NavIconSprite, type NavIconName } from "@/components/nav/NavIcons";
 
 type Tier = "free" | "silver" | "gold";
 
-const TOP_ITEMS = [
+const TOP_ITEMS: { href: string; label: string; icon: NavIconName }[] = [
   // Deliberately /home, not "/" — "/" redirects paying users straight to
   // their destination's map (see (shell)/page.tsx), so a Home nav item
   // pointing there would just bounce them right back to the map they're
   // already on with no way to ever reach the real homepage again. /home
   // renders the exact same content with no redirect check.
-  { href: "/home", label: "דף הבית", icon: "🏠" },
-  { href: "/destinations", label: "יעדים", icon: "🌍" },
-  { href: "/trips", label: "הטיולים שלי", icon: "🧳" },
+  { href: "/home", label: "דף הבית", icon: "home" },
+  { href: "/destinations", label: "יעדים", icon: "globe" },
+  { href: "/trips", label: "הטיולים שלי", icon: "suitcase" },
 ];
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedthemapper.travi";
@@ -44,7 +45,8 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
       className="mt-2 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
       style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
     >
-      📲 הורידו את האפליקציה
+      <NavIcon name="download" size={16} />
+      הורידו את האפליקציה
     </a>
   );
 }
@@ -60,12 +62,13 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
       className="mt-2 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
       style={{ background: "linear-gradient(135deg, #2563EB, #0EA5E9)" }}
     >
-      🛠️ פאנל אדמין
+      <NavIcon name="tool" size={16} />
+      פאנל אדמין
     </Link>
   );
 }
 
-type DestItem = { href: string; label: string; icon: string; tier: Tier };
+type DestItem = { href: string; label: string; icon: NavIconName; tier: Tier };
 
 // The destination-scoped items pinned in the mobile bottom bar — everything
 // else lives behind the hamburger menu. Without a destination context,
@@ -80,35 +83,35 @@ const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
   {
     title: "תכנון הטיול",
     items: [
-      { href: "/now", label: "מה עכשיו", icon: "🧭", tier: "silver" },
-      { href: "", label: "מפה", icon: "🗺️", tier: "silver" },
-      { href: "/itinerary", label: "מסלול", icon: "📅", tier: "silver" },
+      { href: "/now", label: "מה עכשיו", icon: "compass", tier: "silver" },
+      { href: "", label: "מפה", icon: "map", tier: "silver" },
+      { href: "/itinerary", label: "מסלול", icon: "calendar", tier: "silver" },
     ],
   },
   {
     title: "במהלך הטיול",
     items: [
-      { href: "/favorites", label: "מועדפים והטבות", icon: "❤️", tier: "silver" },
-      { href: "/bookable", label: "להזמנה", icon: "🎟️", tier: "silver" },
-      { href: "/logistics", label: "לוגיסטיקה", icon: "✈️", tier: "free" },
-      { href: "/expenses", label: "הוצאות", icon: "💸", tier: "free" },
+      { href: "/favorites", label: "מועדפים והטבות", icon: "heart", tier: "silver" },
+      { href: "/bookable", label: "להזמנה", icon: "ticket", tier: "silver" },
+      { href: "/logistics", label: "לוגיסטיקה", icon: "plane", tier: "free" },
+      { href: "/expenses", label: "הוצאות", icon: "wallet", tier: "free" },
     ],
   },
   {
     title: "כלים ללקוחות",
     items: [
-      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "🧑‍💼", tier: "gold" },
-      { href: "/quotes", label: "CRM", icon: "📄", tier: "gold" },
+      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "briefcase", tier: "gold" },
+      { href: "/quotes", label: "CRM", icon: "file", tier: "gold" },
     ],
   },
   {
     title: "עזרים וזיכרונות",
     items: [
-      { href: "/weather", label: "מזג אוויר", icon: "🌤️", tier: "free" },
-      { href: "/quiz", label: "חידונים", icon: "🧠", tier: "free" },
-      { href: "/phrasebook", label: "שיחון", icon: "💬", tier: "free" },
-      { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "🧳", tier: "free" },
-      { href: "/album", label: "אלבום", icon: "📸", tier: "free" },
+      { href: "/weather", label: "מזג אוויר", icon: "weather", tier: "free" },
+      { href: "/quiz", label: "חידונים", icon: "quiz", tier: "free" },
+      { href: "/phrasebook", label: "שיחון", icon: "chat", tier: "free" },
+      { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "checklist", tier: "free" },
+      { href: "/album", label: "אלבום", icon: "camera", tier: "free" },
     ],
   },
 ];
@@ -223,6 +226,7 @@ export function AppSidebar({
 
   return (
     <>
+      <NavIconSprite />
       {/* Desktop sidebar — no separate top header bar anymore (reclaims that
           strip of height for the app itself); the profile button + logo/name
           now live as the sidebar's own first row instead. Home/destinations
@@ -236,20 +240,27 @@ export function AppSidebar({
           ...(isNativeApp ? { display: "none" } : {}),
         }}
       >
-        <div className="mb-3 flex shrink-0 items-center gap-2 px-1">
+        <div
+          className="mb-3 flex shrink-0 items-center gap-2.5 p-2.5"
+          style={{ borderRadius: "var(--radius, 10px)", background: "var(--surface, #fff)", border: "1px solid color-mix(in srgb, var(--primary, #333) 14%, transparent)" }}
+        >
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex min-w-0 flex-1 items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8" />
+            <img src="/logo-mark.svg" alt="עודד המנקד" className="h-8 w-8 shrink-0" />
             <span className="flex flex-col leading-tight">
-              <span className="text-base font-extrabold">עודד המנקד</span>
-              <span className="text-xs font-extrabold" style={{ color: "#F97316" }}>
-                טראבי
-              </span>
+              <span className="text-[15px] font-extrabold">עודד המנקד</span>
               {trialEndsAt ? (
                 <TrialCountdown endsAt={trialEndsAt} />
               ) : (
-                tierBadge && <span className="text-[10px] font-bold tracking-wide opacity-50">{tierBadge}</span>
+                tierBadge && (
+                  <span
+                    className="mt-0.5 inline-flex w-fit rounded-full px-1.5 py-0.5 text-[10px] font-bold tracking-wide"
+                    style={{ color: "var(--primary, #7C3AED)", background: "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)" }}
+                  >
+                    {tierBadge}
+                  </span>
+                )
               )}
             </span>
           </Link>
@@ -259,8 +270,7 @@ export function AppSidebar({
           <DestinationBadge />
         </div>
 
-        <div className="mb-1 flex shrink-0 items-center justify-between px-1">
-          <span className="text-xs font-bold uppercase tracking-wide opacity-45">תפריט</span>
+        <div className="mb-1 flex shrink-0 items-center justify-end px-1">
           <FocusModeCollapseButton />
         </div>
 
@@ -271,20 +281,20 @@ export function AppSidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-2 text-[15px] font-semibold"
-                style={{
-                  borderRadius: "999px",
-                  // A soft tint instead of a solid fill — the old solid
-                  // var(--primary) background read as a harsh black block on
-                  // the default (non-destination) theme, where --primary and
-                  // --text happen to be the same dark brown, so a solid pill
-                  // also erased any color contrast with the label text.
-                  background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 12%, transparent)" : "transparent",
-                  color: "var(--text, #1a1a1a)",
-                }}
+                className="flex items-center gap-2.5 px-2.5 py-1.5 text-[14px]"
+                style={{ borderRadius: 14, background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)" : "transparent" }}
               >
-                <span className="icon-pop text-lg">{item.icon}</span>
-                <span>{item.label}</span>
+                <span
+                  className="flex h-[30px] w-[30px] shrink-0 items-center justify-center"
+                  style={{
+                    borderRadius: 9,
+                    background: active ? "var(--primary, #7C3AED)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
+                    color: active ? "white" : "var(--primary, #7C3AED)",
+                  }}
+                >
+                  <NavIcon name={item.icon} size={17} />
+                </span>
+                <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{item.label}</span>
               </Link>
             );
           })}
@@ -295,7 +305,7 @@ export function AppSidebar({
         <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {DEST_GROUPS.map((group) => (
             <div key={group.title} className="contents">
-              <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
+              <p className="mb-1 mt-3 px-2.5 text-[10.5px] font-bold uppercase tracking-wide opacity-40 first:mt-0">{group.title}</p>
               {group.items.map((item) => {
                 const active = isDestActive(item);
                 const unlocked = isUnlocked(item);
@@ -304,20 +314,30 @@ export function AppSidebar({
                     key={item.href}
                     href={destHref(item)}
                     onClick={(e) => handleDestItemClick(item, e)}
-                    className="flex items-center gap-2.5 px-4 py-1.5 text-[15px] font-medium"
+                    className="flex items-center gap-2.5 px-2.5 py-1.5 text-[13.5px] font-medium"
                     style={{
-                      borderRadius: "999px",
+                      borderRadius: 12,
                       background: active ? "var(--primary, #7C3AED)" : "transparent",
                       color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
                     }}
                     onMouseEnter={(e) => {
-                      if (!active) e.currentTarget.style.background = "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)";
+                      if (!active) e.currentTarget.style.background = "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)";
                     }}
                     onMouseLeave={(e) => {
                       if (!active) e.currentTarget.style.background = "transparent";
                     }}
                   >
-                    <span className="icon-pop">{item.icon}</span>
+                    <span
+                      className="flex h-[26px] w-[26px] shrink-0 items-center justify-center"
+                      style={{
+                        borderRadius: 8,
+                        background: active ? "rgba(255,255,255,.18)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
+                        color: active ? "white" : "var(--primary, #7C3AED)",
+                        opacity: unlocked ? 1 : 0.55,
+                      }}
+                    >
+                      <NavIcon name={item.icon} size={15} />
+                    </span>
                     <span className="flex-1">{item.label}</span>
                     {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                   </Link>
@@ -325,7 +345,7 @@ export function AppSidebar({
               })}
             </div>
           ))}
-          <Link href="/privacy" className="mt-2 block px-4 py-1 text-xs opacity-40 hover:opacity-70">
+          <Link href="/privacy" className="mt-2 block px-2.5 py-1 text-xs opacity-40 hover:opacity-70">
             מדיניות פרטיות
           </Link>
         </div>
@@ -335,7 +355,8 @@ export function AppSidebar({
           className="mt-3 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
           style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
         >
-          ✨ שדרג עכשיו
+          <NavIcon name="sparkle" size={16} />
+          שדרג עכשיו
         </Link>
         <DownloadAppLink />
         {isAdmin && <AdminPanelLink />}
@@ -378,8 +399,8 @@ export function AppSidebar({
         className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
-        <MobileTab href="/home" icon="🏠" label="דף הבית" active={pathname === "/home"} />
-        {!hasDestContext && <MobileTab href="/destinations" icon="🌍" label="יעדים" active={pathname === "/destinations"} />}
+        <MobileTab href="/home" icon="home" label="דף הבית" active={pathname === "/home"} />
+        {!hasDestContext && <MobileTab href="/destinations" icon="globe" label="יעדים" active={pathname === "/destinations"} />}
         {hasDestContext && nowItem && (
           <MobileTab
             href={destHref(nowItem)}
@@ -418,10 +439,10 @@ export function AppSidebar({
         )}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
-          style={{ color: "var(--text, #1a1a1a)" }}
+          className="flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-medium"
+          style={{ color: "color-mix(in srgb, var(--text, #1a1a1a) 65%, transparent)" }}
         >
-          <span className="text-xl leading-none">☰</span>
+          <NavIcon name="menu" size={20} />
           <span>עוד</span>
         </button>
       </nav>
@@ -440,16 +461,17 @@ export function AppSidebar({
            * (matching the desktop sidebar's own layout: only the nav list
            * scrolls, the upgrade/download/admin buttons never move). */}
           <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <GuideMenuButton onNavigate={() => setDrawerOpen(false)} />
-                <Link href="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8" />
-                  <span className="text-base font-extrabold">עודד המנקד</span>
-                </Link>
-              </div>
-              <button onClick={() => setDrawerOpen(false)} className="rounded-full px-2 py-1 text-lg opacity-60">
+            <div
+              className="mb-2 flex items-center gap-2.5 p-2.5"
+              style={{ borderRadius: "var(--radius, 10px)", background: "var(--surface, #fff)", border: "1px solid color-mix(in srgb, var(--primary, #333) 14%, transparent)" }}
+            >
+              <GuideMenuButton onNavigate={() => setDrawerOpen(false)} />
+              <Link href="/" onClick={() => setDrawerOpen(false)} className="flex min-w-0 flex-1 items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo-mark.svg" alt="עודד המנקד" className="site-logo h-8 w-8 shrink-0" />
+                <span className="text-[15px] font-extrabold">עודד המנקד</span>
+              </Link>
+              <button onClick={() => setDrawerOpen(false)} className="shrink-0 rounded-full px-2 py-1 text-lg opacity-60">
                 ✕
               </button>
             </div>
@@ -464,15 +486,20 @@ export function AppSidebar({
                   key={item.href}
                   href={item.href}
                   onClick={() => setDrawerOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2 text-sm font-semibold"
-                  style={{
-                    borderRadius: "999px",
-                    background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 12%, transparent)" : "transparent",
-                    color: "var(--text, #1a1a1a)",
-                  }}
+                  className="flex items-center gap-2.5 px-2.5 py-1.5 text-[14px]"
+                  style={{ borderRadius: 14, background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)" : "transparent" }}
                 >
-                  <span className="icon-pop text-lg">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span
+                    className="flex h-[30px] w-[30px] shrink-0 items-center justify-center"
+                    style={{
+                      borderRadius: 9,
+                      background: active ? "var(--primary, #7C3AED)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
+                      color: active ? "white" : "var(--primary, #7C3AED)",
+                    }}
+                  >
+                    <NavIcon name={item.icon} size={17} />
+                  </span>
+                  <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{item.label}</span>
                 </Link>
               );
             })}
@@ -484,7 +511,7 @@ export function AppSidebar({
               if (items.length === 0) return null;
               return (
                 <div key={group.title} className="contents">
-                  <p className="mb-1 mt-3 px-4 text-xs font-bold uppercase tracking-wide opacity-45 first:mt-0">{group.title}</p>
+                  <p className="mb-1 mt-3 px-2.5 text-[10.5px] font-bold uppercase tracking-wide opacity-40 first:mt-0">{group.title}</p>
                   {items.map((item) => {
                     const active = isDestActive(item);
                     const unlocked = isUnlocked(item);
@@ -493,14 +520,24 @@ export function AppSidebar({
                         key={item.href}
                         href={destHref(item)}
                         onClick={(e) => handleDestItemClick(item, e)}
-                        className="flex items-center gap-2.5 px-4 py-2 text-sm font-medium"
+                        className="flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium"
                         style={{
-                          borderRadius: "999px",
+                          borderRadius: 12,
                           background: active ? "var(--primary, #7C3AED)" : "transparent",
                           color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
                         }}
                       >
-                        <span className="icon-pop">{item.icon}</span>
+                        <span
+                          className="flex h-[28px] w-[28px] shrink-0 items-center justify-center"
+                          style={{
+                            borderRadius: 8,
+                            background: active ? "rgba(255,255,255,.18)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
+                            color: active ? "white" : "var(--primary, #7C3AED)",
+                            opacity: unlocked ? 1 : 0.55,
+                          }}
+                        >
+                          <NavIcon name={item.icon} size={16} />
+                        </span>
                         <span className="flex-1">{item.label}</span>
                         {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                       </Link>
@@ -509,7 +546,7 @@ export function AppSidebar({
                 </div>
               );
             })}
-            <Link href="/privacy" onClick={() => setDrawerOpen(false)} className="mt-2 block px-4 py-1 text-xs opacity-40">
+            <Link href="/privacy" onClick={() => setDrawerOpen(false)} className="mt-2 block px-2.5 py-1 text-xs opacity-40">
               מדיניות פרטיות
             </Link>
           </div>
@@ -521,7 +558,8 @@ export function AppSidebar({
               className="flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
               style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
             >
-              ✨ שדרג עכשיו
+              <NavIcon name="sparkle" size={16} />
+              שדרג עכשיו
             </Link>
             <DownloadAppLink onClick={() => setDrawerOpen(false)} />
             {isAdmin && <AdminPanelLink onClick={() => setDrawerOpen(false)} />}
@@ -578,7 +616,7 @@ function MobileTab({
   onClick,
 }: {
   href: string;
-  icon: string;
+  icon: NavIconName;
   label: string;
   active: boolean;
   onClick?: (e: React.MouseEvent) => void;
@@ -594,11 +632,25 @@ function MobileTab({
       href={href}
       prefetch
       onClick={onClick}
-      className="flex flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium"
-      style={{ color: active ? "var(--primary, #7C3AED)" : "var(--text, #1a1a1a)" }}
+      className="flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-medium"
+      style={{ color: active ? "var(--primary, #7C3AED)" : "color-mix(in srgb, var(--text, #1a1a1a) 65%, transparent)" }}
     >
-      <span className={`icon-pop text-xl leading-none ${active ? "game-pop-in" : ""}`}>{icon}</span>
-      <span className="max-w-full truncate px-0.5">{label}</span>
+      <span
+        className={active ? "game-pop-in" : ""}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: active ? 38 : 22,
+          height: active ? 26 : 22,
+          borderRadius: 13,
+          background: active ? "var(--primary, #7C3AED)" : "transparent",
+          color: active ? "white" : "inherit",
+        }}
+      >
+        <NavIcon name={icon} size={active ? 20 : 22} />
+      </span>
+      <span className={`max-w-full truncate px-0.5 ${active ? "font-bold" : ""}`}>{label}</span>
     </Link>
   );
 }
