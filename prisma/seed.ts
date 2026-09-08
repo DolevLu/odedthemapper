@@ -46,6 +46,12 @@ const DESTINATIONS: {
   { slug: "argentina", name: "ארגנטינה", tagline: "טנגו, פטגוניה וקסם בואנוס איירס", themeKey: "argentina", continent: "americas" },
   { slug: "austria", name: "אוסטריה", tagline: "האלפים, וינה הקיסרית ומוזיקה קלאסית", themeKey: "austria", continent: "europe" },
   { slug: "philippines", name: "הפיליפינים", tagline: "אלפי איים, חופים טרופיים וצלילה עולמית", themeKey: "philippines", continent: "asia" },
+  { slug: "estonia", name: "אסטוניה", tagline: "טאלין - העיר העתיקה השמורה ביותר בבלטים", themeKey: "estonia", continent: "europe" },
+  { slug: "latvia", name: "לטביה", tagline: "ריגה - אדריכלות ארט-נובו וקסם בלטי", themeKey: "latvia", continent: "europe" },
+  { slug: "lithuania", name: "ליטא", tagline: "וילנה - עיר עתיקה בארוקית וענבר בלטי", themeKey: "lithuania", continent: "europe" },
+  { slug: "malta", name: "מלטה", tagline: "איי גיר ושמש בין מבצרים לים התיכון", themeKey: "malta", continent: "europe" },
+  { slug: "switzerland", name: "שוויץ", tagline: "האלפים, אגמים כחולים וערים נקיות", themeKey: "switzerland", continent: "europe" },
+  { slug: "hongkong", name: "הונג קונג ומקאו", tagline: "גורדי שחקים, נאונים ומקאו הקולוניאלית", themeKey: "hongkong", continent: "asia" },
 ];
 
 const KML_DESTINATIONS = [
