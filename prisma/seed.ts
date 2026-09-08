@@ -70,7 +70,7 @@ const GLOBAL_COUPONS = [
     url: "https://klook.tpo.lv/ieXtbiWP",
   },
   {
-    partnerName: "ביטוח נסיעות (סוכן הביטוח של עודד המנקד)",
+    partnerName: "ביטוח נסיעות (סוכן הביטוח של טראבי)",
     discountDesc: "ביטוח נסיעות לחו״ל במחירים תחרותיים עם ליווי אישי.",
     url: "https://buy.passportcard.co.il/?AffiliateId=6IULeHdTlwCep2R9tqqd0A%3D%3D",
   },
