@@ -22,6 +22,8 @@ import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 import { sunPosition, shadedSidePath } from "@/lib/shadow";
 import { fetchStreetsInBounds, type StreetWay } from "@/lib/streetNetwork";
 import { saveDestinationOffline, isDestinationSavedOffline, isOfflineStorageSupported } from "@/lib/offlineStore";
+import { CAPITAL_AREA_MATCH_BY_SLUG, CAPITAL_COORDS_BY_SLUG } from "@/lib/capitalCities";
+import { suppressMapsErrorDialog } from "@/lib/suppressMapsErrorDialog";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
@@ -257,6 +259,7 @@ export function MapScreen({
   const focusPoiId = searchParams.get("focus");
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
+  const stopSuppressingMapsErrorDialogRef = useRef<(() => void) | null>(null);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const markersByPoiId = useRef<Map<string, google.maps.Marker>>(new Map());
@@ -346,6 +349,26 @@ export function MapScreen({
     const t = setTimeout(() => setRouteError(null), 5000);
     return () => clearTimeout(t);
   }, [routeError]);
+  // Mobile on-screen keyboard fix: this screen's own root (below) is
+  // `position: fixed` anchored to both top and bottom, independent of the
+  // bottom nav's own separate fixed element in AppSidebar — when a mobile
+  // keyboard opens (typing into the search bar), the two don't reliably
+  // shrink together, leaving the points-list drawer (anchored to *this*
+  // root's own bottom edge) floating above where the keyboard visually
+  // starts, with an odd gap below it before the real bottom nav. Tracking
+  // window.visualViewport's own height (which mobile browsers do shrink
+  // correctly for the keyboard) and using it to size the root explicitly
+  // keeps everything anchored to *it* flush against the real visible
+  // bottom regardless of keyboard state, sidestepping that inconsistency
+  // instead of trying to explain it.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => document.documentElement.style.setProperty("--visual-vh", `${vv.height}px`);
+    update();
+    vv.addEventListener("resize", update);
+    return () => vv.removeEventListener("resize", update);
+  }, []);
   const [listOpen, setListOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
@@ -535,6 +558,8 @@ export function MapScreen({
       styles: DECLUTTERED_MAP_STYLES,
     });
 
+    stopSuppressingMapsErrorDialogRef.current = suppressMapsErrorDialog(mapDivRef.current);
+
     // Before the trip actually starts (!autoLocate — see its own prop
     // comment), frame the initial view on the destination's own busiest area
     // (almost always its capital/main city — Prague for Czechia, Rome for
@@ -557,25 +582,44 @@ export function MapScreen({
         pointPois.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
         mapRef.current.fitBounds(bounds, { top: 90, bottom: 140, left: 24, right: 24 });
       } else {
-        const countByArea = new Map<string, number>();
-        for (const p of pointPois) countByArea.set(p.areaName, (countByArea.get(p.areaName) ?? 0) + 1);
-        // A country-wide "Road Trip"/"כללי"/"שאר X" catch-all folder almost
-        // always has more POIs than any single real city (it aggregates
-        // everything not assigned to one) — without excluding those, this
-        // ended up centering on the whole country's average instead of the
-        // actual busiest named city for most multi-city destinations (e.g.
-        // France's "Road Trip" folder outnumbering "פריז"/Paris outright).
-        // Falls back to the unfiltered list for a destination with no named
-        // city area at all, so a single-city destination still gets a
-        // sensible center instead of nothing.
-        const namedEntries = [...countByArea.entries()].filter(([name]) => !isGenericAreaName(name));
-        const candidates = namedEntries.length > 0 ? namedEntries : [...countByArea.entries()];
-        const busiestArea = candidates.sort((a, b) => b[1] - a[1])[0][0];
-        const areaPois = pointPois.filter((p) => p.areaName === busiestArea);
-        const cityLat = areaPois.reduce((s, p) => s + p.lat, 0) / areaPois.length;
-        const cityLng = areaPois.reduce((s, p) => s + p.lng, 0) / areaPois.length;
-        mapRef.current.setCenter({ lat: cityLat, lng: cityLng });
-        mapRef.current.setZoom(13);
+        // Capital/main city first — a real, named answer beats guessing from
+        // POI density (see lib/capitalCities.ts for why each destination
+        // ended up in one tier or the other).
+        const capitalMatch = CAPITAL_AREA_MATCH_BY_SLUG[slug];
+        const capitalAreaPois = capitalMatch ? pointPois.filter((p) => capitalMatch.test(p.areaName)) : [];
+        const capitalCoords = CAPITAL_COORDS_BY_SLUG[slug];
+
+        if (capitalAreaPois.length > 0) {
+          const cityLat = capitalAreaPois.reduce((s, p) => s + p.lat, 0) / capitalAreaPois.length;
+          const cityLng = capitalAreaPois.reduce((s, p) => s + p.lng, 0) / capitalAreaPois.length;
+          mapRef.current.setCenter({ lat: cityLat, lng: cityLng });
+          mapRef.current.setZoom(13);
+        } else if (capitalCoords) {
+          mapRef.current.setCenter(capitalCoords);
+          mapRef.current.setZoom(12);
+        } else {
+          const countByArea = new Map<string, number>();
+          for (const p of pointPois) countByArea.set(p.areaName, (countByArea.get(p.areaName) ?? 0) + 1);
+          // A country-wide "Road Trip"/"כללי"/"שאר X" catch-all folder almost
+          // always has more POIs than any single real city (it aggregates
+          // everything not assigned to one) — without excluding those, this
+          // ended up centering on the whole country's average instead of the
+          // actual busiest named city for most multi-city destinations (e.g.
+          // France's "Road Trip" folder outnumbering "פריז"/Paris outright).
+          // Falls back to the unfiltered list for a destination with no named
+          // city area at all, so a single-city destination still gets a
+          // sensible center instead of nothing. Only reached for a
+          // destination in neither capitalCities.ts table at all (e.g. a
+          // brand-new one not yet added there).
+          const namedEntries = [...countByArea.entries()].filter(([name]) => !isGenericAreaName(name));
+          const candidates = namedEntries.length > 0 ? namedEntries : [...countByArea.entries()];
+          const busiestArea = candidates.sort((a, b) => b[1] - a[1])[0][0];
+          const areaPois = pointPois.filter((p) => p.areaName === busiestArea);
+          const cityLat = areaPois.reduce((s, p) => s + p.lat, 0) / areaPois.length;
+          const cityLng = areaPois.reduce((s, p) => s + p.lng, 0) / areaPois.length;
+          mapRef.current.setCenter({ lat: cityLat, lng: cityLng });
+          mapRef.current.setZoom(13);
+        }
       }
     }
 
@@ -752,6 +796,16 @@ export function MapScreen({
         .catch(() => {});
     });
   }, [loaded, pointPois, slug, destinationId]);
+
+  // Unmount-only cleanup for the MutationObserver above — kept in its own
+  // effect (empty deps) rather than returned from the init effect, since
+  // that one's early-return guard (mapRef.current already set) means it
+  // still runs its cleanup-then-noop-reinit dance on every pointPois/slug
+  // change, which would tear the observer down long before the map itself
+  // ever unmounts.
+  useEffect(() => {
+    return () => stopSuppressingMapsErrorDialogRef.current?.();
+  }, []);
 
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
@@ -1425,7 +1479,7 @@ export function MapScreen({
      * on desktop was tried before and covered the wrong region (made the
      * sidebar look like it had disappeared), so this stays in-flow via
      * h-full off the now-unpadded, flex-stretched parent instead. */}
-    <div className="map-screen-container fixed inset-x-0 bottom-0 top-0 z-0 sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
+    <div className="map-screen-container fixed inset-x-0 top-0 z-0 h-[var(--visual-vh,100vh)] sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
       <div ref={mapDivRef} className="h-full w-full" />
 
       {preview && (
@@ -1713,7 +1767,7 @@ export function MapScreen({
       {activeCategory && RESTAURANT_CATEGORY_MATCH.test(activeCategory) && (
         <div
           dir="rtl"
-          className="no-scrollbar absolute inset-x-2 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 flex gap-1.5 overflow-x-auto rounded-full bg-white/95 p-1 shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))] sm:w-fit"
+          className="no-scrollbar absolute start-2 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 flex max-w-[calc(100%-1rem)] gap-1.5 overflow-x-auto rounded-full bg-white/95 p-1 shadow-md sm:top-[calc(3.25rem+env(safe-area-inset-top))]"
         >
           {DIETARY_FILTERS.map((f) => {
             const active = dietaryFilters.has(f.key);
@@ -1745,7 +1799,7 @@ export function MapScreen({
       {myRouteVisible && myRouteDays && myRouteDays.length > 1 && (
         <div
           dir="rtl"
-          className="no-scrollbar absolute inset-x-2 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 flex gap-1.5 overflow-x-auto rounded-full bg-white/95 p-1 shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))] sm:w-fit"
+          className="no-scrollbar absolute start-2 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 flex max-w-[calc(100%-1rem)] gap-1.5 overflow-x-auto rounded-full bg-white/95 p-1 shadow-md sm:top-[calc(3.25rem+env(safe-area-inset-top))]"
         >
           <button
             onClick={() => setMyRouteActiveDay(null)}
