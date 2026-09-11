@@ -462,6 +462,12 @@ model ItineraryItem {
   itineraryDayId  String
   poiId           String?
   customLabel     String? // freeform item (e.g. a side-trip/town not in the DB)
+  // Set only for a customLabel item that actually has a real location — a
+  // Google Places pick or a manually-dropped pin (see AddItemToDay). A
+  // plain free-text label (no location chosen) leaves both null and simply
+  // never appears on the route map, same as before these existed.
+  customLat       Float?
+  customLng       Float?
   timeOfDay       String? // "HH:MM" free text
   order           Int     @default(0)
   note            String?

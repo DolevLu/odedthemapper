@@ -78,17 +78,31 @@ export default async function ItineraryPage({
 
   const mapDays: MapDay[] = (itinerary?.days ?? []).map((day) => ({
     dayIndex: day.dayIndex,
-    points: day.items
-      .filter((i) => i.poi)
-      .map((i) => ({
-        id: i.id,
-        name: i.poi!.name,
-        lat: i.poi!.lat,
-        lng: i.poi!.lng,
-        description: extractTextDescription(i.poi!.rawDescriptionHtml),
-        photoUrl: i.poi!.photos[0]?.url ?? null,
-        timeOfDay: i.timeOfDay,
-      })),
+    // A custom item only joins the route once it actually has a location
+    // (a Google Places pick or a manually dropped pin — see AddItemToDay);
+    // a plain free-text label stays list-only, same as before those
+    // existed. Iterating every item (not filtering to i.poi first) keeps
+    // custom stops in their real day order instead of always trailing
+    // after every POI-backed one.
+    points: day.items.flatMap((i): MapDay["points"] => {
+      if (i.poi) {
+        return [
+          {
+            id: i.id,
+            name: i.poi.name,
+            lat: i.poi.lat,
+            lng: i.poi.lng,
+            description: extractTextDescription(i.poi.rawDescriptionHtml),
+            photoUrl: i.poi.photos[0]?.url ?? null,
+            timeOfDay: i.timeOfDay,
+          },
+        ];
+      }
+      if (i.customLat != null && i.customLng != null) {
+        return [{ id: i.id, name: i.customLabel ?? "נקודה", lat: i.customLat, lng: i.customLng, description: null, photoUrl: null, timeOfDay: i.timeOfDay }];
+      }
+      return [];
+    }),
   }));
 
   const dayListDays = (itinerary?.days ?? []).map((day) => ({

@@ -699,8 +699,24 @@ export async function addItineraryItem(itineraryDayId: string, poiId: string, sl
 export async function addCustomItineraryItem(itineraryDayId: string, slug: string, formData: FormData) {
   const customLabel = String(formData.get("customLabel") ?? "").trim();
   if (!customLabel) return;
+  // Optional — set when this came from a Google Places pick or a manually
+  // dropped pin (see AddItemToDay), so the stop actually shows up on the
+  // route map like a real POI-backed one does. A plain free-text label (no
+  // location chosen) leaves these unset, same behavior as before they existed.
+  const rawLat = formData.get("customLat");
+  const rawLng = formData.get("customLng");
+  const customLat = rawLat != null && rawLat !== "" ? Number(rawLat) : null;
+  const customLng = rawLng != null && rawLng !== "" ? Number(rawLng) : null;
+  const hasLocation = customLat != null && customLng != null && Number.isFinite(customLat) && Number.isFinite(customLng);
   const count = await prisma.itineraryItem.count({ where: { itineraryDayId } });
-  await prisma.itineraryItem.create({ data: { itineraryDayId, customLabel, order: count } });
+  await prisma.itineraryItem.create({
+    data: {
+      itineraryDayId,
+      customLabel,
+      order: count,
+      ...(hasLocation ? { customLat, customLng } : {}),
+    },
+  });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
