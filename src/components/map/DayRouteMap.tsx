@@ -36,6 +36,36 @@ function currentPointId(points: MapDay["points"]): string | null {
 const MOVE_BTN_STYLE =
   "cursor:pointer;border:1px solid #7C3AED;border-radius:999px;padding:3px 9px;font-size:11px;background:#fff;color:#7C3AED;font-family:'Rubik',sans-serif;white-space:nowrap";
 
+// Same threshold the Map screen's own points use (see LABEL_ZOOM_THRESHOLD
+// in MapScreen.tsx) — kept as its own local copy rather than a shared import
+// since these are two independent map components (same reasoning as
+// currentPointId above, deliberately not shared with DayItemsList's copy).
+const LABEL_ZOOM_THRESHOLD = 16;
+
+/** A numbered stop marker, matching MapScreen's own categoryMarkerIcon in
+ * spirit — the stop number is baked into the SVG itself (not the Marker's
+ * own .setLabel(), which is reserved for the POI name tag that appears
+ * above the pin once zoomed in far enough, the same "scan a cluster of
+ * points at a glance" behavior the Map screen's own pins already have).
+ * google.maps.Symbol (the plain SymbolPath.CIRCLE icon this replaces)
+ * doesn't support labelOrigin — only an Icon (image/data-url) does — which
+ * is the real reason this needs to be an SVG icon instead of a Symbol. */
+function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean): google.maps.Icon {
+  const scale = isCurrent ? 13 : 10;
+  const size = scale * 2;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${scale}" cy="${scale}" r="${scale - 1.5}" fill="${color}" stroke="${isCurrent ? "#22C55E" : "white"}" stroke-width="${isCurrent ? 3 : 2}" />
+      <text x="${scale}" y="${scale + 4}" font-size="11" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="white">${stopNumber}</text>
+    </svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(size, size),
+    anchor: new google.maps.Point(scale, scale),
+    labelOrigin: new google.maps.Point(scale, -8),
+  };
+}
+
 function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, totalDays: number, movable: boolean): string {
   const photo = p.photoUrl
     ? `<img src="${p.photoUrl}" alt="" style="width:200px;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
@@ -95,6 +125,11 @@ export function DayRouteMap({
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const onMoveToDayRef = useRef(onMoveToDay);
   onMoveToDayRef.current = onMoveToDay;
+  // Stop markers only — keyed by point id, so the zoom-based name-label
+  // effect below can update labels without touching the transport-mode
+  // midpoint markers or needing to rebuild anything.
+  const stopMarkersRef = useRef<Map<string, { marker: google.maps.Marker; name: string }>>(new Map());
+  const labeledStopIdsRef = useRef<Set<string>>(new Set());
 
   const [internalActiveDayIndex, setInternalActiveDayIndex] = useState<number | null>(null);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
@@ -145,6 +180,8 @@ export function DayRouteMap({
 
     overlaysRef.current.forEach((o) => o.setMap(null));
     overlaysRef.current = [];
+    stopMarkersRef.current.clear();
+    labeledStopIdsRef.current.clear();
 
     const bounds = new google.maps.LatLngBounds();
 
@@ -193,19 +230,15 @@ export function DayRouteMap({
         const marker = new google.maps.Marker({
           position: { lat: p.lat, lng: p.lng },
           map: mapRef.current!,
-          label: { text: String(idx + 1), color: "white", fontSize: "11px", fontWeight: "bold" },
           title: `יום ${day.dayIndex} · ${p.name}${isCurrent ? " (עכשיו)" : ""}`,
           // Same "where am I" cue as the list view's green highlight — a
           // slightly bigger circle with a green ring instead of the usual
           // white one, so the current stop reads at a glance on the map too.
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: isCurrent ? 13 : 10,
-            fillColor: color,
-            fillOpacity: 1,
-            strokeColor: isCurrent ? "#22C55E" : "#fff",
-            strokeWeight: isCurrent ? 3 : 2,
-          },
+          // The stop number is baked into this icon itself (see
+          // numberedStopIcon) rather than using .label — that slot is
+          // reserved for the POI name tag shown once zoomed in (below),
+          // matching the Map screen's own points.
+          icon: numberedStopIcon(idx + 1, color, isCurrent),
           zIndex: isCurrent ? 500 : undefined,
         });
         marker.addListener("click", () => {
@@ -213,6 +246,7 @@ export function DayRouteMap({
           infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
         });
         overlaysRef.current.push(marker);
+        stopMarkersRef.current.set(p.id, { marker, name: p.name });
         bounds.extend({ lat: p.lat, lng: p.lng });
       });
     });
@@ -224,6 +258,39 @@ export function DayRouteMap({
     if (!loaded || !mapRef.current) return;
     mapRef.current.setMapTypeId(mapType);
   }, [loaded, mapType]);
+
+  // Name-tag labels above stop markers once zoomed in — same behavior and
+  // threshold as the Map screen's own points (see LABEL_ZOOM_THRESHOLD),
+  // so a route stop reads the same way whether it's viewed from here or
+  // there. Only touches a marker's label when its labeled state actually
+  // flips, same guard MapScreen's own version uses to avoid doing real work
+  // on every pan/zoom idle event.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    function updateLabels() {
+      const zoom = map.getZoom() ?? 0;
+      const bounds = map.getBounds();
+      const showLabels = zoom >= LABEL_ZOOM_THRESHOLD && !!bounds;
+      if (!showLabels && labeledStopIdsRef.current.size === 0) return;
+
+      const nextLabeled = new Set<string>();
+      stopMarkersRef.current.forEach(({ marker, name }, id) => {
+        const position = marker.getPosition();
+        const inView = showLabels && position && bounds!.contains(position);
+        if (inView) nextLabeled.add(id);
+        const wasLabeled = labeledStopIdsRef.current.has(id);
+        if (inView !== wasLabeled) {
+          marker.setLabel(inView ? { text: name, color: "#FFFFFF", fontSize: "11px", fontWeight: "700", className: "poi-marker-label" } : "");
+        }
+      });
+      labeledStopIdsRef.current = nextLabeled;
+    }
+
+    const listener = map.addListener("idle", updateLabels);
+    return () => listener.remove();
+  }, [loaded]);
 
   if (error) {
     return (
