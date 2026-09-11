@@ -361,13 +361,32 @@ export function MapScreen({
   // keeps everything anchored to *it* flush against the real visible
   // bottom regardless of keyboard state, sidestepping that inconsistency
   // instead of trying to explain it.
+  //
+  // Height alone wasn't enough on its own, though (confirmed live: tapping
+  // the search input specifically still popped the whole root — list drawer
+  // included — down toward the middle of the screen with a big gap below
+  // it). `position: fixed` is anchored to the LAYOUT viewport, not the
+  // visual one — opening the keyboard can also scroll the page a little to
+  // bring the focused input into view (visualViewport.offsetTop moves), and
+  // a fixed element doesn't follow that scroll on its own, so it visually
+  // drifts out of sync with what's actually on screen even though its CSS
+  // position never changed. Tracking offsetTop too and shifting the root by
+  // that exact amount keeps it visually pinned to the real viewport
+  // regardless of whatever scroll the keyboard triggers.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const update = () => document.documentElement.style.setProperty("--visual-vh", `${vv.height}px`);
+    const update = () => {
+      document.documentElement.style.setProperty("--visual-vh", `${vv.height}px`);
+      document.documentElement.style.setProperty("--visual-vh-offset", `${vv.offsetTop}px`);
+    };
     update();
     vv.addEventListener("resize", update);
-    return () => vv.removeEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
   }, []);
   const [listOpen, setListOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1480,7 +1499,14 @@ export function MapScreen({
      * on desktop was tried before and covered the wrong region (made the
      * sidebar look like it had disappeared), so this stays in-flow via
      * h-full off the now-unpadded, flex-stretched parent instead. */}
-    <div className="map-screen-container fixed inset-x-0 top-0 z-0 h-[var(--visual-vh,100vh)] sm:relative sm:inset-auto sm:h-full sm:overflow-hidden">
+    <div
+      className="map-screen-container fixed inset-x-0 z-0 h-[var(--visual-vh,100vh)] sm:relative sm:inset-auto sm:h-full sm:overflow-hidden"
+      // Compensates for the keyboard-triggered scroll described above — a
+      // no-op both on desktop (sm:relative makes `top` a same-flow offset,
+      // and the var stays "0px" there) and on mobile once the keyboard
+      // closes and visualViewport.offsetTop returns to 0.
+      style={{ top: "var(--visual-vh-offset, 0px)" }}
+    >
       <div ref={mapDivRef} className="h-full w-full" />
 
       {preview && (
@@ -1533,15 +1559,15 @@ export function MapScreen({
        * Mobile only (sm:hidden) — desktop has plenty of width to share the
        * filter row instead, see the compact copy inside that row below. */}
       <div className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 px-2 sm:hidden">
-        <div className="flex items-center gap-2 rounded-full bg-white/95 py-1.5 ps-3 pe-1.5 shadow-md">
+        <div className="flex items-center gap-1.5 rounded-full bg-white/95 py-1 ps-2.5 pe-1 shadow-md">
           {/* Desktop already has a persistent profile button in the sidebar
            * itself — only mobile needs one here (AppSidebar's own floating
            * copy is suppressed on this route specifically to avoid a
            * redundant second one; see there). */}
           <div className="shrink-0 sm:hidden">
-            <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+            <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} compact />
           </div>
-          <span className="shrink-0 text-base opacity-40" aria-hidden="true">🔍</span>
+          <span className="shrink-0 text-sm opacity-40" aria-hidden="true">🔍</span>
           <input
             dir="rtl"
             value={searchQuery}
@@ -1560,7 +1586,7 @@ export function MapScreen({
                 setSearchQuery("");
                 setSearchNoResults(false);
               }}
-              className="shrink-0 px-1 text-base opacity-50 hover:opacity-100"
+              className="shrink-0 px-1 text-sm opacity-50 hover:opacity-100"
               aria-label="ניקוי חיפוש"
             >
               ✕
@@ -1569,7 +1595,7 @@ export function MapScreen({
           <button
             onClick={previewGate(runPlaceSearch)}
             disabled={searching || !searchQuery.trim()}
-            className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+            className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
             style={{ background: "var(--primary)" }}
           >
             {searching ? "…" : "חיפוש"}

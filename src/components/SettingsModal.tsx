@@ -50,7 +50,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="flex w-full max-w-sm flex-col gap-4 rounded-2xl p-5 shadow-2xl"

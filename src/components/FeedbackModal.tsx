@@ -32,7 +32,7 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
 
   if (status === "sent") {
     return createPortal(
-      <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+      <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
         <div
           onClick={(e) => e.stopPropagation()}
           className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl p-6 text-center shadow-2xl"
@@ -51,7 +51,7 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <form
         action={handleSubmit}
         onClick={(e) => e.stopPropagation()}

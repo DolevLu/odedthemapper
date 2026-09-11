@@ -9,10 +9,16 @@ export function ProfileMenu({
   isLoggedIn,
   name,
   planLabel,
+  // Smaller circle for tight spaces (MapScreen's mobile search pill, which
+  // embeds this inline rather than floating it separately) — the default
+  // size stays what every other placement (AppSidebar's own floating copy)
+  // already uses.
+  compact = false,
 }: {
   isLoggedIn: boolean;
   name: string | null;
   planLabel: string | null;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
@@ -58,7 +64,11 @@ export function ProfileMenu({
       <button
         ref={buttonRef}
         onClick={toggleOpen}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+        className={
+          compact
+            ? "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
+            : "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
+        }
         style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         aria-label="פרופיל"
       >
