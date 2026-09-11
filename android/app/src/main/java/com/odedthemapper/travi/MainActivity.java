@@ -18,7 +18,9 @@ import android.widget.ImageView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 import com.getcapacitor.BridgeWebViewClient;
@@ -58,6 +60,24 @@ public class MainActivity extends BridgeActivity {
           LOCATION_PERMISSION_REQUEST
       );
     }
+
+    // Edge-to-edge (setDecorFitsSystemWindows(false) above) means the app
+    // owns every inset itself, including the on-screen keyboard's — without
+    // this, android:windowSoftInputMode="adjustResize" on its own wasn't
+    // enough to actually shrink the WebView when the keyboard opened
+    // (confirmed live: the points-list drawer, anchored to the page's own
+    // fixed bottom edge via CSS, stayed pinned under the keyboard with a
+    // stray gap above the real bottom nav — the web-side visualViewport
+    // fix alone can't help if the WebView's own Android View never
+    // resizes to begin with). Applying the IME inset as real bottom
+    // padding on the WebView is what actually shrinks it, which is what
+    // makes visualViewport correctly reflect the keyboard's height inside
+    // the page's own JS afterward.
+    ViewCompat.setOnApplyWindowInsetsListener(getBridge().getWebView(), (view, insets) -> {
+      int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+      view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), imeHeight);
+      return insets;
+    });
 
     getBridge().getWebView().getSettings().setGeolocationEnabled(true);
     getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
