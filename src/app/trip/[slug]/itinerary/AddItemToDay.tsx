@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { addItineraryItem, addCustomItineraryItem } from "@/lib/actions/trip";
 import { loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import { PinPickerModal } from "./PinPickerModal";
@@ -9,10 +10,10 @@ export type PoiOption = { id: string; name: string; areaName: string; categoryNa
 
 type GooglePrediction = { placeId: string; description: string };
 
-/** Debounced Google Places predictions for the free-text search box below —
- * separate from the plain client-side filter over `pois` (which needs no
- * debounce, it's just an in-memory substring match). Lazily loads the
- * "places" library on first real use, same as the Map screen's own search. */
+/** Debounced Google Places predictions for the search tab below — separate
+ * from the plain client-side filter over `pois` (which needs no debounce,
+ * it's just an in-memory substring match). Lazily loads the "places"
+ * library on first real use, same as the Map screen's own search. */
 function useGooglePredictions(query: string) {
   const [predictions, setPredictions] = useState<GooglePrediction[]>([]);
   const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
@@ -80,6 +81,8 @@ function resolvePlaceLocation(placeId: string): Promise<{ name: string; lat: num
   );
 }
 
+type Mode = "pick" | "search" | "custom";
+
 export function AddItemToDay({
   dayId,
   slug,
@@ -89,30 +92,86 @@ export function AddItemToDay({
   slug: string;
   pois: PoiOption[];
 }) {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [resolving, setResolving] = useState(false);
-  const [pinPickerOpen, setPinPickerOpen] = useState(false);
+  const [mode, setMode] = useState<Mode>("pick");
   const [, startTransition] = useTransition();
 
+  // "בחירה מהרשימה" — the original cascading category → POI dropdowns.
+  const [category, setCategory] = useState("");
+  const [poiId, setPoiId] = useState("");
+  const categories = useMemo(() => Array.from(new Set(pois.map((p) => p.categoryName))).sort(), [pois]);
+  const poisInCategory = useMemo(() => pois.filter((p) => p.categoryName === category), [pois, category]);
+
+  // "חיפוש" — live search across our own POIs and Google Places. This
+  // panel lives inside a fixed-width side panel or a scrollable drawer
+  // (mobile itinerary), and an absolutely-positioned dropdown nested inside
+  // gets clipped by that ancestor's own overflow/scroll instead of floating
+  // above everything (confirmed live — it rendered "below the screen").
+  // Portaled to document.body and positioned from the input's own real
+  // screen rect instead, same fix ProfileMenu already uses for its own
+  // dropdown and for the same reason.
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const poiMatches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (q.length < 1) return [];
     return pois.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 5);
   }, [pois, query]);
-
   const placePredictions = useGooglePredictions(query);
 
-  function reset() {
-    setQuery("");
-    setOpen(false);
-  }
+  useEffect(() => setMounted(true), []);
 
-  function handlePickPoi(poiId: string) {
+  useEffect(() => {
+    function updatePos() {
+      const rect = searchInputRef.current?.getBoundingClientRect();
+      if (rect) setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+    if (searchOpen) {
+      updatePos();
+      window.addEventListener("resize", updatePos);
+      window.addEventListener("scroll", updatePos, true);
+      return () => {
+        window.removeEventListener("resize", updatePos);
+        window.removeEventListener("scroll", updatePos, true);
+      };
+    }
+  }, [searchOpen]);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (searchInputRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setSearchOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  // "הוספה חופשית" — a plain text label, optionally paired with a
+  // manually dropped pin.
+  const [customLabel, setCustomLabel] = useState("");
+  const [pinPickerOpen, setPinPickerOpen] = useState(false);
+
+  function handleAddPoi() {
+    if (!poiId) return;
     startTransition(() => {
       addItineraryItem(dayId, poiId, slug);
     });
-    reset();
+    setCategory("");
+    setPoiId("");
+  }
+
+  function handlePickSearchPoi(id: string) {
+    startTransition(() => {
+      addItineraryItem(dayId, id, slug);
+    });
+    setQuery("");
+    setSearchOpen(false);
   }
 
   function handlePickPlace(prediction: GooglePrediction) {
@@ -127,23 +186,23 @@ export function AddItemToDay({
       startTransition(() => {
         addCustomItineraryItem(dayId, slug, fd);
       });
-      reset();
+      setQuery("");
+      setSearchOpen(false);
     });
   }
 
-  function handleAddFreeText() {
-    const label = query.trim();
-    if (!label) return;
+  function handleAddCustom() {
+    if (!customLabel.trim()) return;
     const fd = new FormData();
-    fd.set("customLabel", label);
+    fd.set("customLabel", customLabel.trim());
     startTransition(() => {
       addCustomItineraryItem(dayId, slug, fd);
     });
-    reset();
+    setCustomLabel("");
   }
 
   function handlePinConfirmed(lat: number, lng: number) {
-    const label = query.trim() || "נקודה על המפה";
+    const label = customLabel.trim() || "נקודה על המפה";
     const fd = new FormData();
     fd.set("customLabel", label);
     fd.set("customLat", String(lat));
@@ -152,88 +211,160 @@ export function AddItemToDay({
       addCustomItineraryItem(dayId, slug, fd);
     });
     setPinPickerOpen(false);
-    reset();
+    setCustomLabel("");
   }
 
-  const showDropdown = open && query.trim().length >= 1 && (poiMatches.length > 0 || placePredictions.length > 0 || resolving);
+  const showSearchDropdown = searchOpen && query.trim().length >= 1 && (poiMatches.length > 0 || placePredictions.length > 0 || resolving);
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-dashed p-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)" }}>
-      <div className="relative">
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          placeholder="הקלידו שם מקום — מהיעד שלנו או מגוגל מפות"
-          className="w-full min-w-0 rounded-lg border px-3 py-1.5 text-sm"
-          style={{ borderColor: "var(--primary)" }}
-        />
-        {showDropdown && (
-          <div
-            className="absolute inset-x-0 top-full z-10 mt-1 flex max-h-64 flex-col overflow-y-auto rounded-lg border bg-[var(--surface)] shadow-lg"
-            style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}
+      <div className="flex flex-wrap gap-1 text-xs">
+        {([
+          ["pick", "בחירה מהרשימה"],
+          ["search", "חיפוש"],
+          ["custom", "הוספה חופשית"],
+        ] as [Mode, string][]).map(([m, label]) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className="rounded-full px-3 py-1 font-medium"
+            style={{ background: mode === m ? "var(--primary)" : "transparent", color: mode === m ? "white" : "var(--text)" }}
           >
-            {poiMatches.length > 0 && (
-              <div className="flex flex-col">
-                <span className="px-3 pt-2 text-[10px] font-bold opacity-50">מהיעד שלנו</span>
-                {poiMatches.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => handlePickPoi(p.id)}
-                    className="px-3 py-1.5 text-start text-sm hover:bg-black/5"
-                  >
-                    {p.name} <span className="opacity-50">· {p.areaName}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {(placePredictions.length > 0 || resolving) && (
-              <div className="flex flex-col">
-                <span className="px-3 pt-2 text-[10px] font-bold opacity-50">Google Maps</span>
-                {resolving && <span className="px-3 py-1.5 text-sm opacity-60">טוען מיקום…</span>}
-                {!resolving &&
-                  placePredictions.map((pred) => (
-                    <button
-                      key={pred.placeId}
-                      onClick={() => handlePickPlace(pred)}
-                      className="px-3 py-1.5 text-start text-sm hover:bg-black/5"
-                    >
-                      📍 {pred.description}
-                    </button>
-                  ))}
-              </div>
-            )}
-          </div>
-        )}
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={handleAddFreeText}
-          disabled={!query.trim()}
-          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
-          style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
-        >
-          הוספה חופשית (בלי מיקום)
-        </button>
-        <button
-          onClick={() => setPinPickerOpen(true)}
-          className="rounded-lg border px-3 py-1.5 text-xs font-semibold"
-          style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
-        >
-          📍 סימון מיקום על המפה
-        </button>
-      </div>
+      {mode === "pick" && (
+        // Deliberately always flex-col (no sm:flex-row) — this lives inside
+        // a fixed-width side panel, not the full viewport, and sm: reacts to
+        // VIEWPORT width, not the panel's — at desktop viewport widths it
+        // was forcing two selects + a button into a ~380px column, which
+        // overflowed the panel.
+        <div className="flex flex-col gap-2">
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPoiId("");
+            }}
+            className="w-full min-w-0 rounded-lg border px-2 py-1.5 text-sm"
+            style={{ borderColor: "var(--primary)" }}
+          >
+            <option value="">בחרו קטגוריה...</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select
+            value={poiId}
+            onChange={(e) => setPoiId(e.target.value)}
+            disabled={!category}
+            className="w-full min-w-0 rounded-lg border px-2 py-1.5 text-sm disabled:opacity-50"
+            style={{ borderColor: "var(--primary)" }}
+          >
+            <option value="">בחרו נקודה...</option>
+            {poisInCategory.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name} · {p.areaName}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleAddPoi}
+            disabled={!poiId}
+            className="w-full rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+            style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
+          >
+            הוספה
+          </button>
+        </div>
+      )}
+
+      {mode === "search" && (
+        <div className="relative">
+          <input
+            ref={searchInputRef}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
+            placeholder="הקלידו שם מקום — מהיעד שלנו או מגוגל מפות"
+            className="w-full min-w-0 rounded-lg border px-3 py-1.5 text-sm"
+            style={{ borderColor: "var(--primary)" }}
+          />
+          {mounted &&
+            showSearchDropdown &&
+            dropdownPos &&
+            createPortal(
+              <div
+                ref={dropdownRef}
+                className="fixed z-[400] flex max-h-64 flex-col overflow-y-auto rounded-lg border bg-[var(--surface)] shadow-lg"
+                style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}
+              >
+                {poiMatches.length > 0 && (
+                  <div className="flex flex-col">
+                    <span className="px-3 pt-2 text-[10px] font-bold opacity-50">מהיעד שלנו</span>
+                    {poiMatches.map((p) => (
+                      <button key={p.id} onClick={() => handlePickSearchPoi(p.id)} className="px-3 py-1.5 text-start text-sm hover:bg-black/5">
+                        {p.name} <span className="opacity-50">· {p.areaName}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {(placePredictions.length > 0 || resolving) && (
+                  <div className="flex flex-col">
+                    <span className="px-3 pt-2 text-[10px] font-bold opacity-50">Google Maps</span>
+                    {resolving && <span className="px-3 py-1.5 text-sm opacity-60">טוען מיקום…</span>}
+                    {!resolving &&
+                      placePredictions.map((pred) => (
+                        <button key={pred.placeId} onClick={() => handlePickPlace(pred)} className="px-3 py-1.5 text-start text-sm hover:bg-black/5">
+                          📍 {pred.description}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>,
+              document.body
+            )}
+        </div>
+      )}
+
+      {mode === "custom" && (
+        <div className="flex flex-col gap-2">
+          <input
+            value={customLabel}
+            onChange={(e) => setCustomLabel(e.target.value)}
+            placeholder='למשל: "נסיעה לעיירה סמוכה" או תחנה שלא ברשימה'
+            className="w-full min-w-0 rounded-lg border px-3 py-1.5 text-sm"
+            style={{ borderColor: "var(--primary)" }}
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleAddCustom}
+              disabled={!customLabel.trim()}
+              className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+              style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
+            >
+              הוספה (בלי מיקום)
+            </button>
+            <button
+              onClick={() => setPinPickerOpen(true)}
+              className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+              style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+            >
+              📍 סימון מיקום על המפה
+            </button>
+          </div>
+        </div>
+      )}
 
       {pinPickerOpen && (
-        <PinPickerModal
-          initialLabel={query.trim()}
-          onConfirm={handlePinConfirmed}
-          onClose={() => setPinPickerOpen(false)}
-        />
+        <PinPickerModal initialLabel={customLabel.trim()} onConfirm={handlePinConfirmed} onClose={() => setPinPickerOpen(false)} />
       )}
     </div>
   );
