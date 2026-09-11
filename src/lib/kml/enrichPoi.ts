@@ -10,6 +10,27 @@
 // websites come from Gemini's own trained knowledge (see
 // generateDescriptionAndWebsite for why not live Google Search grounding).
 
+// A plain fetch() failure here (timeout, transient network blip) previously
+// meant "no candidate found" forever — the POI was permanently marked
+// enriched with nothing, since these calls run inside a try/catch with no
+// retry, unlike the DB calls elsewhere in the pipeline (see withRetry in
+// enrich-wiki-batch.ts). Confirmed live: "Charles Bridge" itself fell back
+// to the generic description during the full backfill run, then matched
+// correctly seconds later on a manual re-check with the exact same
+// coordinates — nothing about the place changed, the first lookup just
+// hit a transient failure. One retry after a short delay is cheap insurance
+// against exactly that.
+async function fetchWithRetry(url: string, timeoutMs = 8000): Promise<Response | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    } catch {
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 800));
+    }
+  }
+  return null;
+}
+
 function normalize(s: string): string {
   return s
     .toLowerCase()
@@ -99,11 +120,9 @@ const NON_PLACE_DESCRIPTION_RE =
   /\balbums?\b|\bsongs?\b|\bsingles?\b|\bEPs?\b|\bfilms?\b|\bmovies?\b|\btv series\b|\btelevision series\b|\bvideo games?\b|\bnovels?\b|\bbooks?\b|\bbands?\b|\bmusicians?\b|\bsingers?\b|\brappers?\b|\bactors?\b|\bactress(es)?\b|\bfootballers?\b|\bathletes?\b|\bpoliticians?\b|\bwriters?\b|\bcomposers?\b|\bpainters?\b|\bplayers?\b|\bwrestlers?\b|\bcomedians?\b|\bborn\b/i;
 
 async function isConfirmedPlace(lang: "he" | "en", title: string): Promise<boolean> {
+  const res = await fetchWithRetry(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+  if (!res?.ok) return true; // can't tell — don't block a real match on a lookup failure
   try {
-    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return true; // can't tell — don't block a real match on a lookup failure
     const data = await res.json();
     const description = typeof data?.description === "string" ? data.description : "";
     return !NON_PLACE_DESCRIPTION_RE.test(description);
@@ -113,11 +132,9 @@ async function isConfirmedPlace(lang: "he" | "en", title: string): Promise<boole
 }
 
 async function fetchWikiSummaryPhoto(lang: "he" | "en", title: string): Promise<string | null> {
+  const res = await fetchWithRetry(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+  if (!res?.ok) return null;
   try {
-    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return null;
     const data = await res.json();
     return data?.originalimage?.source ?? data?.thumbnail?.source ?? null;
   } catch {
@@ -134,11 +151,9 @@ async function fetchWikiSummaryPhoto(lang: "he" | "en", title: string): Promise<
  * it," just done against the encyclopedia entry that's already confirmed to
  * be about this specific place. */
 async function fetchWikiSummary(lang: "he" | "en", title: string): Promise<{ photo: string | null; extract: string | null }> {
+  const res = await fetchWithRetry(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+  if (!res?.ok) return { photo: null, extract: null };
   try {
-    const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, {
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return { photo: null, extract: null };
     const data = await res.json();
     const photo = data?.originalimage?.source ?? data?.thumbnail?.source ?? null;
     const extract = typeof data?.extract === "string" && data.extract.trim() ? data.extract.trim() : null;
@@ -216,35 +231,33 @@ async function findMatchingWikiArticle(name: string, lat: number, lng: number): 
   if (!looksLikeARealName(name)) return null;
 
   for (const lang of ["he", "en"] as const) {
-    try {
-      const geoRes = await fetch(
-        `https://${lang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}%7C${lng}&gsradius=300&gslimit=5&format=json`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (geoRes.ok) {
+    const geoRes = await fetchWithRetry(
+      `https://${lang}.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}%7C${lng}&gsradius=300&gslimit=5&format=json`
+    );
+    if (geoRes?.ok) {
+      try {
         const geoData = await geoRes.json();
         const candidates: { title: string }[] = geoData?.query?.geosearch ?? [];
         for (const c of candidates) {
           if (!looksRelated(name, c.title)) continue;
           if (await isConfirmedPlace(lang, c.title)) return { lang, title: c.title };
         }
+      } catch {
+        // fall through to name search
       }
-    } catch {
-      // try the next language / fall through to name search
     }
 
-    try {
-      const searchRes = await fetch(
-        `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name)}&format=json&srlimit=1`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (searchRes.ok) {
+    const searchRes = await fetchWithRetry(
+      `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name)}&format=json&srlimit=1`
+    );
+    if (searchRes?.ok) {
+      try {
         const searchData = await searchRes.json();
         const title: string | undefined = searchData?.query?.search?.[0]?.title;
         if (title && looksRelated(name, title) && (await isConfirmedPlace(lang, title))) return { lang, title };
+      } catch {
+        // try the next language
       }
-    } catch {
-      // try the next language
     }
   }
   return null;
