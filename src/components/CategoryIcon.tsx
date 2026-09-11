@@ -1,5 +1,15 @@
 const SVG_ICONS: { match: RegExp; path: string }[] = [
   {
+    // A dancing figure — checked before the bar/nightlife entry below since
+    // "מועדוני לילה" (nightclubs) contains "לילה" (night), which would
+    // otherwise match the bar regex first and leave clubs showing the same
+    // beer-mug icon as bars (confirmed live — they share one combined KML
+    // category, "ברים ומועדוני לילה", so this distinction happens per-POI
+    // name at the map-marker level; see CLUB_NAME_MATCH in mapStyles.ts).
+    match: /מועדונ|club|disco/i,
+    path: "M12.5 1a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM11 5L14 5.5 13 14 10 13.5ZM11 6.5L12 7 6.5 2 5.5 3ZM13 6.5L14 7 19.5 10.5 18.5 11.5ZM10.5 13L12 13.5 10.5 22 9 21.5ZM13 13L14.5 13.5 21 15.5 19.5 17Z",
+  },
+  {
     // A beer mug (foam bumps on top + a handle), deliberately distinct from
     // the coffee cup glyph below it — the plain mug-with-handle shape this
     // replaced read as a coffee cup at map-pin size with no way to tell them
@@ -70,7 +80,8 @@ const EMOJI_ICONS: { match: RegExp; emoji: string }[] = [
   { match: /מעיינ|אונסן|ספא|onsen|spa|hot spring/i, emoji: "♨️" },
   { match: /מקדש|טוריי|מסגד|temple|shrine|mosque/i, emoji: "⛩️" },
   { match: /מוזיא|גלר|אמנות|museum|gallery|art/i, emoji: "🎨" },
-  { match: /בר|לילה|drink|pub|מועדונ|18\+/i, emoji: "🍹" },
+  { match: /מועדונ|club|disco/i, emoji: "🕺" },
+  { match: /בר|לילה|drink|pub|18\+/i, emoji: "🍹" },
   { match: /מסעד|אוכל|food|restaurant/i, emoji: "🍽️" },
   { match: /קפה|בראנץ|גלידה|coffee|cafe|ice cream/i, emoji: "☕" },
   { match: /מטרו|רכבת|תחבורה|תחב"צ|metro|train|station/i, emoji: "🚇" },

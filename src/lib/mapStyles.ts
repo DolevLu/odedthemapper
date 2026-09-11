@@ -76,6 +76,27 @@ const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "p
   { match: /אטרקצי|attraction/i, color: "#7C3AED", icon: { type: "path", d: STAR_PATH } },
 ];
 
+// Nightlife categories vary by destination — some KML sources already split
+// "ברים" (bars) and "מועדונים" (clubs) into two real, separate folders
+// (confirmed live: copenhagen, budapest, poland, prague, italy, denmark),
+// which the bar entry above swallowed anyway since "מועדונים" contains
+// "מועדונ" and matched its regex too — so a destination with a genuinely
+// distinct clubs category still showed every club with the bar's beer-mug
+// icon. Other destinations only ever had ONE combined folder to begin with
+// (e.g. "ברים ומועדוני לילה"), with no separate club data to draw from.
+// BAR_ONLY/CLUB_ONLY tell these apart by what the category name itself
+// contains: a name with club words but no bar words is a real standalone
+// club category (→ always CLUB_STYLE); a name with bar words (whether or
+// not it also happens to mention clubs) defaults to the bar style, with the
+// POI's own name as a last-resort signal for the genuinely-combined case —
+// real venue names essentially never spell out "club" literally, so that
+// fallback rarely fires, but a destination with real separate categories no
+// longer needs it to.
+const BAR_ONLY_MATCH = /בר|לילה|pub|drink/i;
+const CLUB_ONLY_MATCH = /מועדונ|club|disco/i;
+const CLUB_NAME_MATCH = CLUB_ONLY_MATCH;
+const CLUB_STYLE = { color: "#1E3A5F", icon: { type: "path" as const, d: pathForCategory("מועדון") } };
+
 /** The same standardized color categoryMarkerIcon draws map pins with, for
  * UI that shows a category's color WITHOUT drawing a full marker icon (e.g.
  * the map's filter pills) — kept as its own export so the two can't drift
@@ -159,13 +180,22 @@ export function categoryMarkerIcon(
   // a category match (café/restaurant/bar/etc.) always overrode any custom
   // color and the "real color picker" admin feature would have no visible
   // effect for the majority of POIs, which do match one of those.
-  overrideColor?: string | null
+  overrideColor?: string | null,
+  // The POI's own display name — only consulted as a last resort to tell a
+  // club apart from a bar sharing one combined category (see CLUB_ONLY_MATCH
+  // above); ignored for every other category, and for a destination whose
+  // clubs already have their own separate category (which is matched
+  // directly, without needing this).
+  poiName?: string | null
 ): google.maps.Icon {
-  const cacheKey = `${fallbackColor}|${categoryName}|${scale}|${favorited}|${overrideColor ?? ""}`;
+  const isBarNamed = BAR_ONLY_MATCH.test(categoryName);
+  const isClubNamed = CLUB_ONLY_MATCH.test(categoryName);
+  const isClub = (isClubNamed && !isBarNamed) || (isBarNamed && Boolean(poiName) && CLUB_NAME_MATCH.test(poiName!));
+  const cacheKey = `${fallbackColor}|${categoryName}|${scale}|${favorited}|${overrideColor ?? ""}|${isBarNamed || isClubNamed ? isClub : ""}`;
   const cached = iconCache.get(cacheKey);
   if (cached) return cached;
 
-  const standard = STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName));
+  const standard = isClub ? CLUB_STYLE : STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName));
   const color = overrideColor || standard?.color || fallbackColor;
   // Favorited points get a bright yellow glyph instead of white so they
   // stand out ("shine") at a glance while scanning the map, without needing

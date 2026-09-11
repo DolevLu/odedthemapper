@@ -649,7 +649,8 @@ export function MapScreen({
                 favoritedPoi.iconCategory ?? favoritedPoi.categoryName,
                 markerScaleForZoom(mapRef.current?.getZoom()),
                 nowFavorited,
-                favoritedPoi.colorHex
+                favoritedPoi.colorHex,
+                favoritedPoi.name
               )
             );
           }
@@ -832,7 +833,7 @@ export function MapScreen({
       const marker = new google.maps.Marker({
         position: { lat: pin.lat, lng: pin.lng },
         map: mapRef.current!,
-        icon: categoryMarkerIcon(SAVED_PIN_FALLBACK_COLOR, pin.categoryName ?? "אחר", scale, false),
+        icon: categoryMarkerIcon(SAVED_PIN_FALLBACK_COLOR, pin.categoryName ?? "אחר", scale, false, null, pin.name),
         title: pin.name,
         zIndex: 600,
       });
@@ -1259,7 +1260,7 @@ export function MapScreen({
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
         title: poi.name,
-        icon: categoryMarkerIcon(poi.categoryColor, poi.iconCategory ?? poi.categoryName, initialScale, favoritedIdsRef.current.has(poi.id), poi.colorHex),
+        icon: categoryMarkerIcon(poi.categoryColor, poi.iconCategory ?? poi.categoryName, initialScale, favoritedIdsRef.current.has(poi.id), poi.colorHex, poi.name),
       });
       marker.addListener("click", () => openPoi(poi, marker));
       markersByPoiId.current.set(poi.id, marker);
@@ -1326,7 +1327,7 @@ export function MapScreen({
           const fullPoi = pointPoisById.get(id);
           if (fullPoi) {
             marker.setIcon(
-              categoryMarkerIcon(fullPoi.categoryColor, fullPoi.iconCategory ?? fullPoi.categoryName, nextScale, favoritedIdsRef.current.has(id), fullPoi.colorHex)
+              categoryMarkerIcon(fullPoi.categoryColor, fullPoi.iconCategory ?? fullPoi.categoryName, nextScale, favoritedIdsRef.current.has(id), fullPoi.colorHex, fullPoi.name)
             );
           }
         }
