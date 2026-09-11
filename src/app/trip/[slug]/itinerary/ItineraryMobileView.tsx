@@ -202,7 +202,16 @@ export function ItineraryMobileView({
       </div>
 
       <div
-        className="absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl shadow-[0_-6px_24px_rgba(0,0,0,0.18)]"
+        // bottom-0 (not --mobile-nav-height) put this drawer's own z-20
+        // behind the real bottom nav bar's z-30 (AppSidebar) instead of
+        // clearing it — harmless while "open" (70%+ of the screen, so the
+        // covered sliver at the very bottom is empty scroll space anyway),
+        // but the collapsed "peek" state is short enough that its entire
+        // current-stop card sits in exactly that covered strip, rendering
+        // as "there but invisible" (confirmed live) rather than genuinely
+        // failing to open — same fix as the Map screen's own points-list
+        // drawer already uses for the identical reason.
+        className="absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-3xl shadow-[0_-6px_24px_rgba(0,0,0,0.18)]"
         style={{
           background: "var(--surface)",
           height: liveHeightPx != null ? `${liveHeightPx}px` : drawerState === "open" ? `${OPEN_VH}vh` : `${PEEK_PX}px`,
