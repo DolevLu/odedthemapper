@@ -112,7 +112,7 @@ export function AddItemToDay({
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; maxHeight: number; flipped: boolean } | null>(null);
   const [mounted, setMounted] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -126,9 +126,30 @@ export function AddItemToDay({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
+    // A plain fixed max-height (e.g. a flat 16rem) rendered past the bottom
+    // of the screen whenever the input itself sat low on the page — a
+    // fixed-position box doesn't auto-clip to the viewport, so the rest of
+    // the list was there but genuinely unreachable, not just visually cut
+    // off (confirmed live on mobile). Clamps the box to whatever room
+    // actually remains below the input, and flips it to open upward
+    // instead when that space is too small but there's more room above —
+    // the same "flip when it doesn't fit" behavior a native <select> uses.
+    const MARGIN = 8;
+    const MIN_USABLE_HEIGHT = 120;
     function updatePos() {
       const rect = searchInputRef.current?.getBoundingClientRect();
-      if (rect) setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      if (!rect) return;
+      const spaceBelow = window.innerHeight - rect.bottom - MARGIN;
+      const spaceAbove = rect.top - MARGIN;
+      const flipped = spaceBelow < MIN_USABLE_HEIGHT && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(120, Math.min(256, flipped ? spaceAbove : spaceBelow));
+      setDropdownPos({
+        top: flipped ? rect.top - MARGIN - maxHeight : rect.bottom + MARGIN,
+        left: rect.left,
+        width: rect.width,
+        maxHeight,
+        flipped,
+      });
     }
     if (searchOpen) {
       updatePos();
@@ -303,8 +324,14 @@ export function AddItemToDay({
             createPortal(
               <div
                 ref={dropdownRef}
-                className="fixed z-[400] flex max-h-64 flex-col overflow-y-auto rounded-lg border bg-[var(--surface)] shadow-lg"
-                style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}
+                className="fixed z-[400] flex flex-col overflow-y-auto overscroll-contain rounded-lg border bg-[var(--surface)] shadow-lg"
+                style={{
+                  top: dropdownPos.top,
+                  left: dropdownPos.left,
+                  width: dropdownPos.width,
+                  maxHeight: dropdownPos.maxHeight,
+                  borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)",
+                }}
               >
                 {poiMatches.length > 0 && (
                   <div className="flex flex-col">
