@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, voteItineraryItem } from "@/lib/actions/trip";
+import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, setItineraryItemTime, voteItineraryItem } from "@/lib/actions/trip";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
 import { emojiForCategory } from "@/components/CategoryIcon";
 import { standardCategoryColor } from "@/lib/mapStyles";
@@ -24,12 +24,27 @@ export type DayListItem = {
   id: string;
   timeOfDay: string | null;
   customLabel: string | null;
+  // Set only for a custom item with a real location (a Google Places pick
+  // or a manually dropped pin — see AddItemToDay); null for a plain
+  // no-location label, same as before these existed.
+  customLat: number | null;
+  customLng: number | null;
   note: string | null;
   poi: { name: string; lat: number; lng: number; photoUrl: string | null; categoryName?: string; description?: string | null } | null;
   likeCount: number;
   dislikeCount: number;
   myVote: -1 | 0 | 1;
 };
+
+/** Where this item actually is, whichever of the two location sources it
+ * came from — used for the between-stops directions connector, which
+ * previously only ever looked at item.poi and so silently skipped every
+ * custom stop even after customLat/customLng gave it a real location. */
+function pointOf(item: DayListItem): { name: string; lat: number; lng: number } | null {
+  if (item.poi) return item.poi;
+  if (item.customLat != null && item.customLng != null) return { name: item.customLabel ?? "נקודה", lat: item.customLat, lng: item.customLng };
+  return null;
+}
 
 // How far left an item must be dragged (px) before releasing it deletes the
 // stop — mirrors the swipe-builder's own reject threshold so the gesture
@@ -95,6 +110,11 @@ export function DayItemsList({
   const swipingId = useRef<string | null>(null);
   const swipeStartX = useRef(0);
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  // Which cards currently show their note's full text inline, instead of
+  // just the first line — a per-card toggle, independent of opening the
+  // full detail sheet (that already lets you read/edit the whole note, but
+  // required a tap-and-close round trip just to peek at one).
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 
   // Keep `order`/`notes` in sync with `items` when the server sends a fresh list
   // (React's documented pattern for adjusting state during render, in place
@@ -215,6 +235,12 @@ export function DayItemsList({
     if (Math.abs(delta) < 6) setDetailItemId(itemId);
   }
 
+  function handleTimeChange(itemId: string, value: string) {
+    startTransition(() => {
+      setItineraryItemTime(itemId, value, slug);
+    });
+  }
+
   function handleVote(itemId: string, value: 1 | -1) {
     startTransition(() => {
       voteItineraryItem(itemId, value, slug);
@@ -290,8 +316,13 @@ export function DayItemsList({
                   <p className="truncate text-sm font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
                   <p className="truncate text-xs leading-snug opacity-55">
                     {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : "פריט מותאם אישית"}
-                    {notes[item.id] ? " · ✎ יש הערה" : ""}
+                    {notes[item.id]?.trim() ? " · ✎ יש הערה" : ""}
                   </p>
+                  {notes[item.id]?.trim() && (
+                    <p className={`text-xs leading-snug opacity-70 ${expandedNotes.has(item.id) ? "whitespace-pre-wrap" : "truncate"}`}>
+                      {notes[item.id]}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end gap-1">
@@ -302,11 +333,35 @@ export function DayItemsList({
                   )}
                   {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>עכשיו</span>}
                   {status === "next" && <span className="text-[10px] font-bold" style={{ color: "#B45309" }}>הבא</span>}
+                  {notes[item.id]?.trim() && (
+                    <button
+                      data-no-swipe
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedNotes((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(item.id)) next.delete(item.id);
+                          else next.add(item.id);
+                          return next;
+                        });
+                      }}
+                      className="rounded-full px-1 text-xs opacity-50 hover:opacity-100"
+                      aria-label={expandedNotes.has(item.id) ? "כיווץ ההערה" : "הצגת ההערה המלאה"}
+                    >
+                      {expandedNotes.has(item.id) ? "︿" : "﹀"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {nextItem && item.poi && nextItem.poi && <TransportConnector from={item.poi} to={nextItem.poi} />}
+            {nextItem &&
+              (() => {
+                const from = pointOf(item);
+                const to = pointOf(nextItem);
+                return from && to && <TransportConnector from={from} to={to} />;
+              })()}
           </div>
         );
       })}
@@ -316,6 +371,7 @@ export function DayItemsList({
           item={detailItem}
           note={notes[detailItem.id] ?? ""}
           onNoteChange={(v) => handleNoteChange(detailItem.id, v)}
+          onTimeChange={(v) => handleTimeChange(detailItem.id, v)}
           onVote={(v) => handleVote(detailItem.id, v)}
           onRemove={() => {
             removeItineraryItem(detailItem.id, slug);
@@ -383,6 +439,7 @@ function ItemDetailSheet({
   item,
   note,
   onNoteChange,
+  onTimeChange,
   onVote,
   onRemove,
   onClose,
@@ -390,6 +447,7 @@ function ItemDetailSheet({
   item: DayListItem;
   note: string;
   onNoteChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
   onVote: (value: 1 | -1) => void;
   onRemove: () => void;
   onClose: () => void;
@@ -414,7 +472,14 @@ function ItemDetailSheet({
             <div className="min-w-0">
               {item.poi?.categoryName && <p className="text-[11px] font-semibold opacity-60">{shortCategoryLabel(item.poi.categoryName)}</p>}
               <h2 className="truncate text-sm font-bold">{item.poi ? item.poi.name : item.customLabel}</h2>
-              {item.timeOfDay && <p className="mt-0.5 text-xs font-bold" style={{ color: "var(--primary)" }}>{item.timeOfDay}</p>}
+              <input
+                type="time"
+                value={item.timeOfDay ?? ""}
+                onChange={(e) => onTimeChange(e.target.value)}
+                aria-label="שעה"
+                className="mt-1 rounded-lg border px-1.5 py-0.5 text-xs font-bold"
+                style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", color: "var(--primary)" }}
+              />
             </div>
             <button onClick={onClose} className="shrink-0 rounded-full px-1.5 py-0.5 text-base opacity-50 hover:opacity-100" aria-label="סגירה">
               ✕

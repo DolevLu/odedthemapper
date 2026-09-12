@@ -733,6 +733,16 @@ export async function setItineraryItemNote(itemId: string, note: string) {
   await prisma.itineraryItem.update({ where: { id: itemId }, data: { note: note.trim() || null } });
 }
 
+/** Sets/clears a stop's "HH:MM" time-of-day — lets a traveler manually
+ * order their day by clock time instead of only drag-reordering the list.
+ * Revalidates (unlike setItineraryItemNote above) since this also drives
+ * the current/next "where am I" highlight elsewhere on the page, which
+ * needs the fresh value on save, not just whatever the input already shows. */
+export async function setItineraryItemTime(itemId: string, timeOfDay: string, slug: string) {
+  await prisma.itineraryItem.update({ where: { id: itemId }, data: { timeOfDay: timeOfDay.trim() || null } });
+  revalidatePath(`/trip/${slug}/itinerary`);
+}
+
 /**
  * Persists a new item order within a day after a drag-and-drop reorder.
  * The day's existing time-of-day values (sorted) are reassigned to the new

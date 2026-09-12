@@ -112,6 +112,8 @@ export default async function ItineraryPage({
       id: i.id,
       timeOfDay: i.timeOfDay,
       customLabel: i.customLabel,
+      customLat: i.customLat,
+      customLng: i.customLng,
       note: i.note,
       poi: i.poi
         ? {
