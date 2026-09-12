@@ -59,7 +59,11 @@ export default async function ItineraryPage({
     // instead of each computing it a different way (see resolveEffectiveTodayDayIndex).
     prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id, startsAt: { not: null } } }),
   ]);
-  const todayDayIndex = resolveEffectiveTodayDayIndex(logistics, itinerary?.days.map((d) => d.dayIndex) ?? []);
+  const todayDayIndex = resolveEffectiveTodayDayIndex(
+    logistics,
+    itinerary?.days.map((d) => d.dayIndex) ?? [],
+    itinerary?.days.map((d) => ({ dayIndex: d.dayIndex, date: d.date })) ?? []
+  );
 
   const categoryNames = Array.from(new Set(poiOptions.map((p) => p.categoryName))).sort();
   const hasExistingDays = Boolean(itinerary && itinerary.days.length > 0);
@@ -108,6 +112,10 @@ export default async function ItineraryPage({
   const dayListDays = (itinerary?.days ?? []).map((day) => ({
     id: day.id,
     dayIndex: day.dayIndex,
+    // ISO "YYYY-MM-DD" (not a Date instance) — matches <input type="date">'s
+    // own value format directly and avoids passing a non-serializable Date
+    // from a server component down to client components.
+    date: day.date ? day.date.toISOString().slice(0, 10) : null,
     items: day.items.map((i) => ({
       id: i.id,
       timeOfDay: i.timeOfDay,

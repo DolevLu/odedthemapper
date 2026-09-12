@@ -690,6 +690,18 @@ export async function deleteItineraryDay(dayId: string, slug: string, path = "it
   revalidatePath(`/trip/${slug}/${path}`);
 }
 
+/** Sets (or clears, given an empty string) this day's real calendar date —
+ * see ItineraryDay.date and resolveTodayDayIndexFromDates for why this
+ * takes priority over the TripLogistic-derived guess once set. Stored as a
+ * plain UTC midnight for the given "YYYY-MM-DD" (an <input type="date">'s
+ * own value format), so the date comparison in resolveTodayDayIndexFromDates
+ * only ever compares whole days, never a time-of-day/timezone offset. */
+export async function setItineraryDayDate(dayId: string, dateStr: string, slug: string) {
+  const date = dateStr ? new Date(`${dateStr}T00:00:00Z`) : null;
+  await prisma.itineraryDay.update({ where: { id: dayId }, data: { date } });
+  revalidatePath(`/trip/${slug}/itinerary`);
+}
+
 export async function addItineraryItem(itineraryDayId: string, poiId: string, slug: string) {
   const count = await prisma.itineraryItem.count({ where: { itineraryDayId } });
   await prisma.itineraryItem.create({ data: { itineraryDayId, poiId, order: count } });

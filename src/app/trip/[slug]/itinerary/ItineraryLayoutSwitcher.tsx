@@ -12,7 +12,7 @@ import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { AddDayButton } from "./AddDayButton";
 
-type Day = { id: string; dayIndex: number; items: DayListItem[] };
+type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
 type Template = { id: string; name: string };
 

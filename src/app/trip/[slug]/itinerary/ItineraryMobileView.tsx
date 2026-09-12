@@ -11,8 +11,9 @@ import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
+import { setItineraryDayDate } from "@/lib/actions/trip";
 
-type Day = { id: string; dayIndex: number; items: DayListItem[] };
+type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
 type Template = { id: string; name: string };
 
@@ -241,9 +242,26 @@ export function ItineraryMobileView({
                 >
                   ‹
                 </button>
-                <p className="min-w-0 truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
-                  יום {focusedDayIndex}
-                </p>
+                <div className="flex min-w-0 flex-col items-center">
+                  <p className="truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
+                    יום {focusedDayIndex}
+                  </p>
+                  {(() => {
+                    const focusedDay = dayListDays.find((d) => d.dayIndex === focusedDayIndex);
+                    if (!focusedDay) return null;
+                    return (
+                      <label className="flex items-center gap-1 text-[11px] opacity-60">
+                        📅
+                        <input
+                          type="date"
+                          value={focusedDay.date ?? ""}
+                          onChange={(e) => setItineraryDayDate(focusedDay.id, e.target.value, slug)}
+                          className="bg-transparent outline-none [color-scheme:light]"
+                        />
+                      </label>
+                    );
+                  })()}
+                </div>
                 <button
                   onClick={() => setMapAllDays((v) => !v)}
                   className="shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold"

@@ -446,10 +446,18 @@ model Itinerary {
 }
 
 model ItineraryDay {
-  id          String @id @default(cuid())
+  id          String    @id @default(cuid())
   itineraryId String
   dayIndex    Int
   note        String?
+  // Explicit calendar date for this day, set directly (see
+  // setItineraryDayDate) — when set, this is what "today"/"tomorrow"
+  // resolution goes by for this day instead of the trip-start-date guess
+  // derived from TripLogistic rows (see resolveTodayDayIndex), since a
+  // traveler who sets this is stating the real date outright rather than
+  // leaving it to be inferred from a flight/hotel entry that may not
+  // exist or may not actually align with a gapless day-by-day itinerary.
+  date        DateTime?
 
   itinerary Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
   items     ItineraryItem[]

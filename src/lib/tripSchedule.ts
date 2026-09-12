@@ -30,17 +30,33 @@ export function resolveTodayDayIndex(logistics: { startsAt: Date | null; endsAt:
   return Math.round((today.getTime() - tripStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
+/** Which itinerary dayIndex is "today" when the traveler has set explicit
+ * per-day dates directly (see setItineraryDayDate) — takes priority over
+ * the TripLogistic-derived guess in resolveTodayDayIndex, since stating
+ * "this day is the 15th" outright is more reliable than inferring it from
+ * a flight/hotel entry that may not exist, may not match a gapless
+ * day-by-day itinerary, or may simply be wrong for a specific day (a rest
+ * day, a schedule change). Only days with a date actually set participate;
+ * an itinerary with none set at all defers entirely to the logistics guess. */
+export function resolveTodayDayIndexFromDates(days: { dayIndex: number; date: Date | null }[]): number | null {
+  const today = startOfDay(new Date()).getTime();
+  const match = days.find((d) => d.date && startOfDay(d.date).getTime() === today);
+  return match?.dayIndex ?? null;
+}
+
 /** Which itinerary day the "מה עכשיו"/current-stop UI should treat as
- * "today": the calendar-accurate resolveTodayDayIndex when it resolves,
- * else the itinerary's own earliest day. The whole point of "what's
- * happening now" is to always surface something from the traveler's real
- * itinerary — going blank just because no flight/hotel date was entered,
- * or because the trip's dates don't happen to straddle today, defeats
- * that, so this falls back to day 1 rather than showing nothing. Pass
- * every existing dayIndex, ascending. */
+ * "today": an explicit per-day date match first, else the calendar-accurate
+ * resolveTodayDayIndex, else the itinerary's own earliest day. The whole
+ * point of "what's happening now" is to always surface something from the
+ * traveler's real itinerary — going blank just because no flight/hotel date
+ * was entered, or because the trip's dates don't happen to straddle today,
+ * defeats that, so this falls back to day 1 rather than showing nothing.
+ * Pass every existing dayIndex, ascending. */
 export function resolveEffectiveTodayDayIndex(
   logistics: { startsAt: Date | null; endsAt: Date | null }[],
-  dayIndexesAscending: number[]
+  dayIndexesAscending: number[],
+  daysWithDates: { dayIndex: number; date: Date | null }[] = []
 ): number | null {
+  if (daysWithDates.some((d) => d.date)) return resolveTodayDayIndexFromDates(daysWithDates);
   return resolveTodayDayIndex(logistics) ?? dayIndexesAscending[0] ?? null;
 }

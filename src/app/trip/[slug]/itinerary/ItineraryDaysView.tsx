@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { colorForDay } from "@/lib/geo";
-import { deleteItineraryDay } from "@/lib/actions/trip";
+import { deleteItineraryDay, setItineraryDayDate } from "@/lib/actions/trip";
 import { AddItemToDay } from "./AddItemToDay";
 import { DayItemsList, type DayListItem } from "./DayItemsList";
 
-type Day = { id: string; dayIndex: number; items: DayListItem[] };
+type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
+
+// he-IL, short form ("15 בספט׳") — enough to tell days apart at a glance
+// next to "יום N" without repeating the year (a trip is never a year long).
+function formatDayDate(dateStr: string): string {
+  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString("he-IL", { day: "numeric", month: "short", timeZone: "UTC" });
+}
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
 
 export function ItineraryDaysView({
@@ -125,6 +131,7 @@ export function ItineraryDaysView({
             <div className="text-center">
               <p className="text-xs opacity-60">
                 יום {clampedIndex + 1} מתוך {days.length}
+                {focusedDay.date ? ` · ${formatDayDate(focusedDay.date)}` : ""}
               </p>
               <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(clampedIndex) }}>
                 יום {focusedDay.dayIndex}
@@ -189,7 +196,19 @@ function DayCard({
         >
           {day.dayIndex}
         </span>
-        <h2 className="flex-1 font-bold">יום {day.dayIndex}</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-bold">יום {day.dayIndex}</h2>
+          <label className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100">
+            📅
+            <input
+              type="date"
+              value={day.date ?? ""}
+              onChange={(e) => setItineraryDayDate(day.id, e.target.value, slug)}
+              className="bg-transparent outline-none [color-scheme:light]"
+              style={{ fontFamily: "inherit" }}
+            />
+          </label>
+        </div>
         <button
           onClick={handleDelete}
           className="shrink-0 rounded-full px-2 py-1 text-sm opacity-50 hover:opacity-100"

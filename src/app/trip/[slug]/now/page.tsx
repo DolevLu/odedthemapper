@@ -98,7 +98,11 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   // Full timestamp (not truncated to midnight) so the Now screen can show a
   // real days/hours/minutes countdown, not just a day count.
   const tripStartExact = logistics[0]?.startsAt ?? null;
-  const todayDayIndex = resolveEffectiveTodayDayIndex(logistics, itinerary?.days.map((d) => d.dayIndex) ?? []);
+  const todayDayIndex = resolveEffectiveTodayDayIndex(
+    logistics,
+    itinerary?.days.map((d) => d.dayIndex) ?? [],
+    itinerary?.days.map((d) => ({ dayIndex: d.dayIndex, date: d.date })) ?? []
+  );
 
   let todayDayItems:
     | { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[]
