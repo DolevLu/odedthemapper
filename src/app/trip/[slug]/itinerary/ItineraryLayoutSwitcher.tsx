@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { moveItineraryItemToDay } from "@/lib/actions/trip";
 import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
@@ -47,6 +48,26 @@ export function ItineraryLayoutSwitcher({
 }) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
+
+  // Desktop's side panel (ItineraryDaysView, focused mode) and its route map
+  // (DayRouteMap) used to track completely independent day selections — the
+  // panel had its own internal focused-day state, the map had its own
+  // internal "which day(s) to show" state, and neither told the other about
+  // a change. Stepping to "יום 2" in the panel left the map still showing
+  // every day (or whichever day it last had selected), unlike the mobile
+  // layout, which already keeps its own drawer and map in sync (see
+  // ItineraryMobileView). `mapOverride` is undefined while the map should
+  // just mirror focusedDayIndex; it's set the moment the map's own day-pill
+  // row is used directly (including "כל הימים", i.e. null) so that stays a
+  // real, independent override — exactly what the panel's own day-switcher
+  // arrows reset the next time they're used.
+  const [focusedDayIndex, setFocusedDayIndex] = useState<number>(dayListDays[0]?.dayIndex ?? 1);
+  const [mapOverride, setMapOverride] = useState<number | null | undefined>(undefined);
+
+  function handleFocusedDayIndexChange(dayIndex: number) {
+    setFocusedDayIndex(dayIndex);
+    setMapOverride(undefined);
+  }
 
   if (dayListDays.length === 0) return null;
 
@@ -111,19 +132,30 @@ export function ItineraryLayoutSwitcher({
             days={dayListDays}
             extraAction={<AddDayButton destinationId={destinationId} slug={slug} />}
             todayDayIndex={todayDayIndex}
+            focusedDayIndex={focusedDayIndex}
+            onFocusedDayIndexChange={handleFocusedDayIndexChange}
           />
         </div>
       </div>
 
       {mapDays.some((d) => d.points.length > 0) && (
         <div className="min-h-0 flex-1">
-          {/* DayRouteMap's day-pill filter now floats over the map itself
-           * (see DayRouteMap) rather than sitting above it as a block-level
-           * banner, so it no longer competes with this panel's own day
-           * switcher for space — independent selections (map filter vs.
-           * panel focus) is fine since they answer different questions
-           * ("which route do I want to see" vs. "which day am I editing"). */}
-          <DayRouteMap days={mapDays} fillHeight onMoveToDay={handleMoveToDay} todayDayIndex={todayDayIndex} />
+          {/* DayRouteMap's day-pill filter floats over the map itself (see
+           * DayRouteMap) rather than sitting above it as a block-level
+           * banner. It mirrors the side panel's own focused day by default
+           * (stepping "יום 2" there now shows only day 2 here too — this
+           * used to be two entirely independent day selections) — but using
+           * the map's own pill row directly, "כל הימים" included, still
+           * overrides that independently, same as picking a stop from the
+           * map already did before this synced them; see mapOverride above. */}
+          <DayRouteMap
+            days={mapDays}
+            fillHeight
+            onMoveToDay={handleMoveToDay}
+            todayDayIndex={todayDayIndex}
+            activeDayIndex={mapOverride !== undefined ? mapOverride : focusedDayIndex}
+            onActiveDayIndexChange={setMapOverride}
+          />
         </div>
       )}
     </div>
