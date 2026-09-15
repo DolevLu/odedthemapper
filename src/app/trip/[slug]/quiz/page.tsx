@@ -5,12 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedCountries";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { QuizPicker } from "./QuizPicker";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function QuizPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
   const userId = session?.user?.id;
+  const t = await getServerT();
 
   const [questions, visitedCodes, photosByCountry] = await Promise.all([
     prisma.quizQuestion.findMany({ where: { destinationId: destination.id } }),
@@ -22,13 +24,13 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          🧠 חידונים - {destination.name}
+          {t("tripQuiz.title")} {destination.name}
         </h1>
         {questions.length === 0 ? (
-          <p className="text-sm opacity-60">עדיין אין חידונים ליעד הזה - בקרוב!</p>
+          <p className="text-sm opacity-60">{t("tripQuiz.none")}</p>
         ) : (
           <>
-            <p className="mb-4 text-sm opacity-60">בחרו נושא - כמה אתם מכירים את היעד שלכם?</p>
+            <p className="mb-4 text-sm opacity-60">{t("tripQuiz.chooseTopic")}</p>
             <QuizPicker
               destinationId={destination.id}
               questions={questions.map((q) => ({

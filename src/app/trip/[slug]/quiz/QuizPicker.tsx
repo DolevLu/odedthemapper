@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import { QuizGame } from "./QuizGame";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 type Question = { id: string; category: string; question: string; options: string[]; correctIndex: number };
 
 const DECKS = [
-  { key: "sports", label: "ספורט", icon: "⚽", categories: ["sports"] },
-  { key: "history", label: "היסטוריה", icon: "🏛️", categories: ["history"] },
-  { key: "geography", label: "גאוגרפיה ופרטים כלליים", icon: "🌍", categories: ["geography", "politics", "culture", "food"] },
-] as const;
+  { key: "sports", labelKey: "tripQuiz.deck.sports", icon: "⚽", categories: ["sports"] },
+  { key: "history", labelKey: "tripQuiz.deck.history", icon: "🏛️", categories: ["history"] },
+  { key: "geography", labelKey: "tripQuiz.deck.geography", icon: "🌍", categories: ["geography", "politics", "culture", "food"] },
+] satisfies { key: string; labelKey: DictionaryKey; icon: string; categories: string[] }[];
 
 export function QuizPicker({ destinationId, questions }: { destinationId: string; questions: Question[] }) {
   const [activeDeck, setActiveDeck] = useState<(typeof DECKS)[number]["key"] | null>(null);
+  const { t } = useTranslation();
 
   const decksWithQuestions = DECKS.map((deck) => ({
     ...deck,
@@ -24,7 +27,7 @@ export function QuizPicker({ destinationId, questions }: { destinationId: string
     return (
       <div className="flex flex-col gap-3">
         <button onClick={() => setActiveDeck(null)} className="self-start text-sm font-semibold underline opacity-70">
-          ← חזרה לבחירת חידון
+          {t("tripQuiz.backToPicker")}
         </button>
         <QuizGame key={active.key} destinationId={destinationId} questions={active.questions} />
       </div>
@@ -42,9 +45,9 @@ export function QuizPicker({ destinationId, questions }: { destinationId: string
           style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
         >
           <span className="text-4xl">{deck.icon}</span>
-          <span className="font-bold">{deck.label}</span>
+          <span className="font-bold">{t(deck.labelKey)}</span>
           <span className="text-xs opacity-60">
-            {deck.questions.length > 0 ? `${deck.questions.length} שאלות` : "בקרוב"}
+            {deck.questions.length > 0 ? `${deck.questions.length} ${t("tripQuiz.questionsCount")}` : t("tripQuiz.comingSoon")}
           </span>
         </button>
       ))}

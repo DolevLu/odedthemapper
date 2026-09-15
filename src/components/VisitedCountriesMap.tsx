@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { toggleVisitedCountry, uploadCountryPhoto, deleteCountryPhoto, type CountryPhoto } from "@/lib/actions/visitedCountries";
 import { WORLD_COUNTRIES, flagEmoji } from "@/lib/worldCountries";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 // Below this zoom the pins are too small/numerous on screen for photo
 // thumbnails to read as anything but noise — flags stay flags until you've
@@ -119,6 +120,7 @@ export function VisitedCountriesMap({
   const [visited, setVisited] = useState<Set<string>>(new Set(initialVisited));
   const [query, setQuery] = useState("");
   const [managingCode, setManagingCode] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     visitedRef.current = visited;
@@ -216,12 +218,12 @@ export function VisitedCountriesMap({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">🗺️ המדינות שביקרתי בהן</h2>
+        <h2 className="text-lg font-bold">{t("visitedMap.title")}</h2>
         <span className="rounded-full px-3 py-1 text-sm font-bold text-white" style={{ background: "var(--primary)" }}>
           {visited.size}
         </span>
       </div>
-      <p className="-mt-2 text-xs opacity-50">התקרבו למדינה כדי לראות תמונות קטנות שהעליתם ממנה במקום דגל בלבד.</p>
+      <p className="-mt-2 text-xs opacity-50">{t("visitedMap.zoomHint")}</p>
 
       <div
         ref={mapDivRef}
@@ -232,7 +234,7 @@ export function VisitedCountriesMap({
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="חיפוש מדינה להוספה..."
+        placeholder={t("visitedMap.searchPlaceholder")}
         className="rounded-lg border px-3 py-2 text-sm"
         style={{ borderColor: "var(--primary)" }}
       />
@@ -258,7 +260,7 @@ export function VisitedCountriesMap({
                 onClick={() => setManagingCode(country.code)}
                 className="shrink-0 rounded-lg border px-1.5 py-1.5 text-xs"
                 style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
-                title="הוספת/ניהול תמונות"
+                title={t("visitedMap.managePhotosTitle")}
               >
                 📷
               </button>
@@ -299,6 +301,7 @@ function CountryPhotoManager({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { t } = useTranslation();
 
   function handleUpload(formData: FormData) {
     setError(null);
@@ -315,7 +318,7 @@ function CountryPhotoManager({
         // Should be unreachable now that uploadCountryPhoto itself never
         // throws, but kept as a last line of defense — a raw unhandled
         // rejection here is what could crash the whole page before.
-        setError("משהו השתבש בהעלאה - נסו שוב");
+        setError(t("visitedMap.uploadError"));
       }
     });
   }
@@ -326,7 +329,10 @@ function CountryPhotoManager({
       style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-bold">{flagEmoji(code)} תמונות מ{countryName}</h3>
+        <h3 className="font-bold">
+          {flagEmoji(code)} {t("visitedMap.photosFrom")}
+          {countryName}
+        </h3>
         <button onClick={onClose} className="rounded-full px-2 py-1 text-sm opacity-60 hover:opacity-100">
           ✕
         </button>
@@ -350,7 +356,7 @@ function CountryPhotoManager({
           ))}
         </div>
       )}
-      {photos.length === 0 && <p className="text-xs opacity-50">אין עדיין תמונות למדינה הזו.</p>}
+      {photos.length === 0 && <p className="text-xs opacity-50">{t("visitedMap.noPhotosYet")}</p>}
 
       <form ref={formRef} action={handleUpload} className="flex items-center gap-2">
         <input type="file" name="photos" accept="image/*" multiple className="flex-1 text-xs" />
@@ -360,11 +366,11 @@ function CountryPhotoManager({
           className="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
           style={{ background: "var(--primary)" }}
         >
-          {pending ? "מעלה..." : "העלאה"}
+          {pending ? t("visitedMap.uploading") : t("visitedMap.upload")}
         </button>
       </form>
       {error && <p className="text-xs text-red-600">{error}</p>}
-      <p className="text-[11px] opacity-40">אפשר לבחור כמה תמונות יחד. תמונות שהועלו לאלבום של יעד ביבשת/מדינה זו יופיעו כאן אוטומטית.</p>
+      <p className="text-[11px] opacity-40">{t("visitedMap.uploadHint")}</p>
     </div>
   );
 }

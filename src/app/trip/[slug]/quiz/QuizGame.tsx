@@ -2,16 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { submitQuizAttempt } from "@/lib/actions/quiz";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 type Question = { id: string; category: string; question: string; options: string[]; correctIndex: number };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  history: "היסטוריה",
-  geography: "גאוגרפיה",
-  politics: "פוליטיקה וחברה",
-  sports: "ספורט",
-  culture: "תרבות",
-  food: "אוכל",
+const CATEGORY_LABEL_KEYS: Record<string, DictionaryKey> = {
+  history: "tripQuiz.category.history",
+  geography: "tripQuiz.category.geography",
+  politics: "tripQuiz.category.politics",
+  sports: "tripQuiz.category.sports",
+  culture: "tripQuiz.category.culture",
+  food: "tripQuiz.category.food",
 };
 
 function shuffle<T>(arr: T[]): T[] {
@@ -31,6 +33,7 @@ export function QuizGame({ destinationId, questions }: { destinationId: string; 
   const [selected, setSelected] = useState<number | null>(null);
   const [done, setDone] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { t } = useTranslation();
 
   function retry() {
     setRound((r) => r + 1);
@@ -68,15 +71,17 @@ export function QuizGame({ destinationId, questions }: { destinationId: string; 
       <div className="flex flex-col items-center gap-3 border p-8 text-center" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
         <span className="text-4xl">{pct >= 80 ? "🏆" : pct >= 50 ? "👏" : "📚"}</span>
         <h2 className="text-xl font-bold">
-          {score} / {set.length} תשובות נכונות
+          {score} / {set.length} {t("tripQuiz.correctAnswers")}
         </h2>
-        <p className="text-sm opacity-60">{pct}% הצלחה</p>
+        <p className="text-sm opacity-60">
+          {pct}% {t("tripQuiz.successRate")}
+        </p>
         <button
           onClick={retry}
           className="mt-2 rounded-full px-5 py-2 text-sm font-semibold text-white"
           style={{ background: "var(--primary)" }}
         >
-          נסו שוב
+          {t("tripQuiz.tryAgain")}
         </button>
       </div>
     );
@@ -86,9 +91,9 @@ export function QuizGame({ destinationId, questions }: { destinationId: string; 
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between text-sm opacity-60">
         <span>
-          שאלה {index + 1} מתוך {set.length}
+          {t("tripQuiz.questionOf")} {index + 1} {t("tripQuiz.outOf")} {set.length}
         </span>
-        <span>{CATEGORY_LABELS[current.category] ?? current.category}</span>
+        <span>{CATEGORY_LABEL_KEYS[current.category] ? t(CATEGORY_LABEL_KEYS[current.category]) : current.category}</span>
       </div>
       <div className="border p-5" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
         <p className="mb-4 font-semibold">{current.question}</p>
@@ -116,7 +121,7 @@ export function QuizGame({ destinationId, questions }: { destinationId: string; 
       </div>
       {selected !== null && (
         <button onClick={next} className="self-start rounded-full px-5 py-2 text-sm font-semibold text-white" style={{ background: "var(--primary)" }}>
-          {index + 1 >= set.length ? "סיום" : "הבא ←"}
+          {index + 1 >= set.length ? t("tripQuiz.finish") : t("tripQuiz.nextArrow")}
         </button>
       )}
     </div>
