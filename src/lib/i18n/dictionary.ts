@@ -638,6 +638,14 @@ export const DICTIONARY = {
   "wizard.areasOptional": { he: "אזורים (אופציונלי - ריק = הכל)", en: "Areas (optional - empty = all)" },
   "wizard.howManyDays": { he: "כמה ימים?", en: "How many days?" },
   "wizard.building": { he: "בונה מסלול...", en: "Building itinerary..." },
+
+  "daysView.allDays": { he: "▦ כל הימים", en: "▦ All days" },
+  "daysView.dayView": { he: "📖 תצוגת יום", en: "📖 Day view" },
+  "daysView.dayLabel": { he: "יום", en: "Day" },
+  "daysView.ofDays": { he: "מתוך", en: "of" },
+  "daysView.confirmDeleteDayPrefix": { he: "למחוק את יום", en: "Delete day" },
+  "daysView.confirmDeleteDaySuffix": { he: "וכל הנקודות שבו?", en: "and all its points?" },
+  "daysView.deleteDay": { he: "מחיקת היום", en: "Delete day" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

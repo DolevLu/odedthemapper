@@ -5,13 +5,15 @@ import { colorForDay } from "@/lib/geo";
 import { deleteItineraryDay, setItineraryDayDate } from "@/lib/actions/trip";
 import { AddItemToDay } from "./AddItemToDay";
 import { DayItemsList, type DayListItem } from "./DayItemsList";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { Lang } from "@/lib/i18n/dictionary";
 
 type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
 
-// he-IL, short form ("15 בספט׳") — enough to tell days apart at a glance
-// next to "יום N" without repeating the year (a trip is never a year long).
-function formatDayDate(dateStr: string): string {
-  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString("he-IL", { day: "numeric", month: "short", timeZone: "UTC" });
+// Short form ("15 בספט׳" / "15 Sep") — enough to tell days apart at a glance
+// next to "Day N" without repeating the year (a trip is never a year long).
+function formatDayDate(dateStr: string, lang: Lang): string {
+  return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString(lang === "en" ? "en-GB" : "he-IL", { day: "numeric", month: "short", timeZone: "UTC" });
 }
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
 
@@ -56,6 +58,7 @@ export function ItineraryDaysView({
   // toggle to "all days" is still one tap away.
   const [mode, setMode] = useState<"grid" | "focused">("focused");
   const [internalFocusedIndex, setInternalFocusedIndex] = useState(0);
+  const { t, lang } = useTranslation();
 
   if (days.length === 0) return null;
 
@@ -95,7 +98,7 @@ export function ItineraryDaysView({
             color: mode === "grid" ? "white" : "var(--text)",
           }}
         >
-          ▦ כל הימים
+          {t("daysView.allDays")}
         </button>
         <button
           onClick={() => setMode("focused")}
@@ -106,7 +109,7 @@ export function ItineraryDaysView({
             color: mode === "focused" ? "white" : "var(--text)",
           }}
         >
-          📖 תצוגת יום
+          {t("daysView.dayView")}
         </button>
         </div>
       </div>
@@ -130,11 +133,11 @@ export function ItineraryDaysView({
             </button>
             <div className="text-center">
               <p className="text-xs opacity-60">
-                יום {clampedIndex + 1} מתוך {days.length}
-                {focusedDay.date ? ` · ${formatDayDate(focusedDay.date)}` : ""}
+                {t("daysView.dayLabel")} {clampedIndex + 1} {t("daysView.ofDays")} {days.length}
+                {focusedDay.date ? ` · ${formatDayDate(focusedDay.date, lang)}` : ""}
               </p>
               <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(clampedIndex) }}>
-                יום {focusedDay.dayIndex}
+                {t("daysView.dayLabel")} {focusedDay.dayIndex}
               </p>
             </div>
             <button
@@ -178,9 +181,10 @@ function DayCard({
   // which reset the date picker out from under whoever was still using it
   // (same bug, same fix as DayItemsList's time input — see its own comment).
   const [localDate, setLocalDate] = useState(day.date ?? "");
+  const { t } = useTranslation();
 
   function handleDelete() {
-    if (!window.confirm(`למחוק את יום ${day.dayIndex} וכל הנקודות שבו?`)) return;
+    if (!window.confirm(`${t("daysView.confirmDeleteDayPrefix")} ${day.dayIndex} ${t("daysView.confirmDeleteDaySuffix")}`)) return;
     deleteItineraryDay(day.id, slug, path);
   }
 
@@ -207,7 +211,7 @@ function DayCard({
           {day.dayIndex}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-bold">יום {day.dayIndex}</h2>
+          <h2 className="font-bold">{t("daysView.dayLabel")} {day.dayIndex}</h2>
           <label className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100">
             📅
             <input
@@ -222,8 +226,8 @@ function DayCard({
         <button
           onClick={handleDelete}
           className="shrink-0 rounded-full px-2 py-1 text-sm opacity-50 hover:opacity-100"
-          title="מחיקת היום"
-          aria-label="מחיקת היום"
+          title={t("daysView.deleteDay")}
+          aria-label={t("daysView.deleteDay")}
         >
           🗑️
         </button>
