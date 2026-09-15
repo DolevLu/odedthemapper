@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -32,6 +33,7 @@ import com.getcapacitor.BridgeWebViewClient;
 // the normal Android runtime permission dialog, requested below on launch.
 public class MainActivity extends BridgeActivity {
   private static final int LOCATION_PERMISSION_REQUEST = 1001;
+  private static final int NOTIFICATION_PERMISSION_REQUEST = 1002;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -58,6 +60,25 @@ public class MainActivity extends BridgeActivity {
           this,
           new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
           LOCATION_PERMISSION_REQUEST
+      );
+    }
+
+    // Android 13+ (API 33) treats notifications as a "dangerous" permission
+    // requiring an explicit runtime grant, same as location above — without
+    // it, the account page's own web-standard Notification.requestPermission()
+    // call (see NotificationOptIn.tsx) resolves to denied with no OS prompt
+    // ever shown, since the WebView has no notification channel to grant in
+    // the first place. Requested up front here rather than lazily from the
+    // web page specifically because Android WebView has no equivalent of the
+    // onGeolocationPermissionsShowPrompt bridge callback for notifications —
+    // there's no reliable way to trigger the native dialog from JS at all.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(
+          this,
+          new String[] {Manifest.permission.POST_NOTIFICATIONS},
+          NOTIFICATION_PERMISSION_REQUEST
       );
     }
 

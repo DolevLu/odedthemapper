@@ -42,4 +42,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Android 13+ (API 33) requires this as a runtime-requested "dangerous"
+         permission before ANY notification can be shown at all — without
+         it declared here, the WebView's own Notification.requestPermission()
+         (used by the account page's push-notification opt-in) silently
+         resolves to denied on those devices instead of ever prompting,
+         which read as "the enable-notifications button doesn't work." See
+         MainActivity's own runtime request, mirroring the existing location
+         permission flow. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
