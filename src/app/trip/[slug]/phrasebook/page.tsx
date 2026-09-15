@@ -4,12 +4,14 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { DESTINATION_LOCALE } from "@/lib/localeCodes";
 import { PhraseCard } from "./PhraseCard";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function PhrasebookPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
   const userId = session?.user?.id;
+  const t = await getServerT();
 
   const [entries, progress] = await Promise.all([
     prisma.phrasebookEntry.findMany({ where: { destinationId: destination.id } }),
@@ -24,18 +26,16 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          💬 שיחון - {destination.name}
+          {t("phrasebook.title")} {destination.name}
         </h1>
         {entries.length > 0 && userId && (
           <span className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>
-            ✓ {knownIds.size} / {entries.length} נלמדו
+            ✓ {knownIds.size} / {entries.length} {t("phrasebook.learned")}
           </span>
         )}
       </div>
       {entries.length === 0 ? (
-        <p className="text-sm opacity-60">
-          עדיין אין ביטויים ליעד הזה. האדמין יכול להוסיף מילים וביטויים חשובים בשפה המקומית דרך פאנל הניהול.
-        </p>
+        <p className="text-sm opacity-60">{t("phrasebook.empty")}</p>
       ) : (
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-3">
           {entries.map((entry) => (

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { togglePackingCheck } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function BookingChecklist({
   destinationId,
@@ -16,6 +17,7 @@ export function BookingChecklist({
 }) {
   const [checked, setChecked] = useState(checkedKeys);
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   if (items.length === 0) return null;
 
@@ -33,7 +35,7 @@ export function BookingChecklist({
 
   return (
     <section>
-      <h2 className="mb-3 text-lg font-bold">🎟️ להזמין לפני הטיול</h2>
+      <h2 className="mb-3 text-lg font-bold">{t("packing.bookBeforeTrip")}</h2>
       <div className="flex flex-col gap-2">
         {items.map((item) => {
           const key = `booking:${item.id}`;

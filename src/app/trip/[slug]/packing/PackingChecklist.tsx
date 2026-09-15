@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { togglePackingCheck } from "@/lib/actions/trip";
 import { PACKING_LIST, PACKING_CATEGORY_LABELS, type PackingCategory } from "@/lib/packingList";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function PackingChecklist({
   destinationId,
@@ -18,6 +19,7 @@ export function PackingChecklist({
 }) {
   const [checked, setChecked] = useState(checkedKeys);
   const [, startTransition] = useTransition();
+  const { t, lang } = useTranslation();
 
   function toggle(key: string) {
     setChecked((prev) => {
@@ -37,11 +39,11 @@ export function PackingChecklist({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm opacity-70">
-        {doneCount}/{PACKING_LIST.length} סומנו
+        {doneCount}/{PACKING_LIST.length} {t("packing.markedCount")}
       </p>
       {categories.map((cat) => (
         <section key={cat}>
-          <h2 className="mb-3 text-lg font-bold">{PACKING_CATEGORY_LABELS[cat]}</h2>
+          <h2 className="mb-3 text-lg font-bold">{PACKING_CATEGORY_LABELS[cat][lang]}</h2>
           <div className="flex flex-col gap-2">
             {PACKING_LIST.filter((i) => i.category === cat).map((item) => {
               const coupon = item.couponPartner ? couponsByPartner[item.couponPartner] : undefined;
@@ -58,11 +60,11 @@ export function PackingChecklist({
                       onChange={() => toggle(item.key)}
                       className="h-4 w-4"
                     />
-                    <span className={checked.has(item.key) ? "line-through opacity-50" : ""}>{item.label}</span>
+                    <span className={checked.has(item.key) ? "line-through opacity-50" : ""}>{item.label[lang]}</span>
                   </span>
                   {coupon && (
                     <Link href={`/trip/${slug}/favorites`} className="shrink-0 text-xs font-semibold underline" style={{ color: "var(--primary)" }}>
-                      יש לנו הנחה 🎁
+                      {t("packing.weHaveDiscount")}
                     </Link>
                   )}
                 </label>

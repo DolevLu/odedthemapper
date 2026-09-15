@@ -4,12 +4,14 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { PackingChecklist } from "./PackingChecklist";
 import { BookingChecklist } from "./BookingChecklist";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function PackingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
   const userId = session?.user?.id;
+  const t = await getServerT();
 
   const [checks, coupons, bookablePois] = await Promise.all([
     userId ? prisma.packingCheck.findMany({ where: { userId, destinationId: destination.id } }) : Promise.resolve([]),
@@ -28,8 +30,8 @@ export default async function PackingPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="mb-2 text-xl font-bold">🧳 רשימת ציוד וצ׳ק ליסט לפני טיסה</h1>
-        <p className="text-sm opacity-60">מסך חינמי - זמין לכל משתמש, בכל יעד.</p>
+        <h1 className="mb-2 text-xl font-bold">{t("packing.title")}</h1>
+        <p className="text-sm opacity-60">{t("packing.subtitle")}</p>
       </div>
       <BookingChecklist destinationId={destination.id} slug={slug} items={bookablePois} checkedKeys={checkedKeys} />
       <PackingChecklist

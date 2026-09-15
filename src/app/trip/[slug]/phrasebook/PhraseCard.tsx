@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { TextToSpeech } from "@capacitor-community/text-to-speech";
 import { togglePhrasebookKnown } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function PhraseCard({
   entryId,
@@ -27,6 +28,7 @@ export function PhraseCard({
   const router = useRouter();
   const [optimisticKnown, setOptimisticKnown] = useState(known);
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   // The browser's own window.speechSynthesis silently produced no sound at
   // all inside the native Android app — Android's system WebView component
@@ -89,8 +91,8 @@ export function PhraseCard({
             background: optimisticKnown ? "#22C55E" : "transparent",
             color: "white",
           }}
-          aria-label="סימון כידוע"
-          title="אני יודע/ת את זה"
+          aria-label={t("phrasebook.markKnown")}
+          title={t("phrasebook.iKnowThis")}
         >
           {optimisticKnown ? "✓" : ""}
         </button>
@@ -99,8 +101,8 @@ export function PhraseCard({
           onClick={speak}
           className="shrink-0 rounded-full p-1 text-sm"
           style={{ color: "var(--primary)" }}
-          aria-label="השמעה"
-          title="השמעה"
+          aria-label={t("phrasebook.playAudio")}
+          title={t("phrasebook.playAudio")}
         >
           🔊
         </button>

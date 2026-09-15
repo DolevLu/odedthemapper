@@ -281,6 +281,22 @@ export const DICTIONARY = {
   "weather.title": { he: "🌤️ מזג אוויר -", en: "🌤️ Weather -" },
   "weather.loadFailed": { he: "לא הצלחנו לטעון תחזית מזג אוויר כרגע - נסו שוב מאוחר יותר.", en: "We couldn't load the weather forecast right now - try again later." },
   "weather.today": { he: "היום", en: "Today" },
+
+  "phrasebook.title": { he: "💬 שיחון -", en: "💬 Phrasebook -" },
+  "phrasebook.learned": { he: "נלמדו", en: "learned" },
+  "phrasebook.empty": {
+    he: "עדיין אין ביטויים ליעד הזה. האדמין יכול להוסיף מילים וביטויים חשובים בשפה המקומית דרך פאנל הניהול.",
+    en: "There are no phrases for this destination yet. The admin can add important local words and phrases through the admin panel.",
+  },
+  "phrasebook.markKnown": { he: "סימון כידוע", en: "Mark as known" },
+  "phrasebook.iKnowThis": { he: "אני יודע/ת את זה", en: "I know this" },
+  "phrasebook.playAudio": { he: "השמעה", en: "Play audio" },
+
+  "packing.title": { he: "🧳 רשימת ציוד וצ׳ק ליסט לפני טיסה", en: "🧳 Packing & Pre-Flight Checklist" },
+  "packing.subtitle": { he: "מסך חינמי - זמין לכל משתמש, בכל יעד.", en: "Free screen - available to every user, for every destination." },
+  "packing.markedCount": { he: "סומנו", en: "checked" },
+  "packing.weHaveDiscount": { he: "יש לנו הנחה 🎁", en: "We have a discount 🎁" },
+  "packing.bookBeforeTrip": { he: "🎟️ להזמין לפני הטיול", en: "🎟️ Book before the trip" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
