@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { scoreDestinations, type QuizAnswers, type VibeTag } from "@/lib/destinationVibes";
+import { scoreDestinations, recommendedBaseFor, type QuizAnswers, type VibeTag } from "@/lib/destinationVibes";
 import { generatePersonalizedSetup } from "@/lib/actions/quiz";
 
 type Candidate = { id: string; slug: string; name: string; tagline: string | null; heroImage: string | null };
@@ -33,6 +33,7 @@ export function QuizForm({
   const [season, setSeason] = useState<QuizAnswers["season"]>("summer");
   const [dailyBudget, setDailyBudget] = useState(100);
   const [result, setResult] = useState<Candidate | null>(null);
+  const [recommendedBase, setRecommendedBase] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState<{ itemCount: number; favoriteCount: number } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function QuizForm({
     const top = scored[0];
     const match = candidates.find((c) => c.slug === top?.slug) ?? null;
     setResult(match);
+    setRecommendedBase(match ? recommendedBaseFor(match.slug, answers) : null);
     setGenerated(null);
     setGenError(null);
   }
@@ -83,6 +85,11 @@ export function QuizForm({
         )}
         <h2 className="text-3xl font-extrabold">{result.name}</h2>
         {result.tagline && <p className="opacity-70">{result.tagline}</p>}
+        {recommendedBase && (
+          <p className="rounded-full px-4 py-1.5 text-sm font-semibold" style={{ background: "#F3EEFF", color: "#7C3AED" }}>
+            📍 מומלץ להתבסס על {recommendedBase}
+          </p>
+        )}
 
         <div className="mt-2 flex flex-wrap justify-center gap-3">
           <Link
