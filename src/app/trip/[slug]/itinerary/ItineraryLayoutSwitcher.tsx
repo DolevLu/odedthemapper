@@ -12,6 +12,7 @@ import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { AddDayButton } from "./AddDayButton";
+import { SaveItineraryButton } from "./SaveItineraryButton";
 
 type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
@@ -130,7 +131,12 @@ export function ItineraryLayoutSwitcher({
             slug={slug}
             poiOptions={poiOptions}
             days={dayListDays}
-            extraAction={<AddDayButton destinationId={destinationId} slug={slug} />}
+            extraAction={
+              <div className="flex items-center gap-1.5">
+                <AddDayButton destinationId={destinationId} slug={slug} />
+                <SaveItineraryButton destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} />
+              </div>
+            }
             todayDayIndex={todayDayIndex}
             focusedDayIndex={focusedDayIndex}
             onFocusedDayIndexChange={handleFocusedDayIndexChange}
