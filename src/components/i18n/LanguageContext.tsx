@@ -7,6 +7,10 @@ function applyLang(lang: Lang) {
   document.documentElement.lang = lang === "he" ? "he" : "en";
   document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
   localStorage.setItem("lang", lang);
+  // Server Components can't read localStorage — this cookie is what
+  // src/lib/i18n/server.ts reads during SSR so server-rendered pages match
+  // what the client-only chrome already shows.
+  document.cookie = `lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 type LanguageContextValue = {

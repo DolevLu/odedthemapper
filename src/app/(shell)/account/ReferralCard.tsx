@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function ReferralCard({ code, referredCount, rewardIls }: { code: string; referredCount: number; rewardIls: number }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslation();
 
   function copyLink() {
     const link = `${window.location.origin}/register?ref=${code}`;
@@ -19,14 +21,15 @@ export function ReferralCard({ code, referredCount, rewardIls }: { code: string;
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-extrabold">🎁 הפניית חברים</h3>
+          <h3 className="text-lg font-extrabold">{t("account.referral.title")}</h3>
           <p className="text-sm opacity-60">
-            כל חבר שנרשם דרך הקישור שלכם ומשדרג לחבילה בתשלום - שניכם מקבלים {rewardIls}₪ קרדיט לחידוש המנוי.
+            {t("account.referral.explainerPrefix")} {rewardIls}
+            {t("account.referral.explainerSuffix")}
           </p>
         </div>
         {referredCount > 0 && (
           <span className="shrink-0 rounded-full px-3 py-1 text-xs font-bold text-white" style={{ background: "#22C55E" }}>
-            {referredCount} הצטרפו
+            {referredCount} {t("account.referral.joined")}
           </span>
         )}
       </div>
@@ -40,7 +43,7 @@ export function ReferralCard({ code, referredCount, rewardIls }: { code: string;
           className="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold text-white"
           style={{ background: "var(--primary)" }}
         >
-          {copied ? "✓ הועתק!" : "העתקת קישור"}
+          {copied ? t("account.referral.copied") : t("account.referral.copyLink")}
         </button>
       </div>
     </div>

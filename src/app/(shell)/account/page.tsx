@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { getLang, translate } from "@/lib/i18n/server";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 import { prisma } from "@/lib/prisma";
 import { getResolvedSubscriptionForAccount } from "@/lib/access";
 import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
@@ -24,6 +26,10 @@ import { NotificationOptIn } from "./NotificationOptIn";
 export default async function AccountPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/account");
+
+  const lang = await getLang();
+  const t = (key: DictionaryKey) => translate(lang, key);
+  const dateLocale = lang === "en" ? "en-GB" : "he-IL";
 
   const resolved = await getResolvedSubscriptionForAccount(session.user.id);
   const active = resolved?.subscription;
@@ -56,17 +62,17 @@ export default async function AccountPage() {
   );
   const level = levelForPoints(stats.totalPoints);
   const STAT_CARDS = [
-    { label: "מדינות", value: stats.countriesVisited, icon: "🌍" },
-    { label: "מסמכים שמורים", value: stats.documentsCount, icon: "📄" },
-    { label: "מסלולים שיצרתי", value: stats.itinerariesCount, icon: "📅" },
-    { label: "חידונים", value: stats.quizzesTaken, icon: "🧠" },
-    { label: "ימים איתנו", value: stats.daysSinceJoined, icon: "⏱️" },
-    { label: "נקודות", value: stats.totalPoints, icon: "⭐" },
+    { label: t("account.stats.countries"), value: stats.countriesVisited, icon: "🌍" },
+    { label: t("account.stats.documents"), value: stats.documentsCount, icon: "📄" },
+    { label: t("account.stats.itineraries"), value: stats.itinerariesCount, icon: "📅" },
+    { label: t("account.stats.quizzes"), value: stats.quizzesTaken, icon: "🧠" },
+    { label: t("account.stats.daysWithUs"), value: stats.daysSinceJoined, icon: "⏱️" },
+    { label: t("account.stats.points"), value: stats.totalPoints, icon: "⭐" },
   ];
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 px-6 py-16">
-      <h1 className="mb-4 text-2xl font-extrabold">הפרופיל שלי</h1>
+      <h1 className="mb-4 text-2xl font-extrabold">{t("account.myProfile")}</h1>
 
       <LevelCard level={level} totalPoints={stats.totalPoints} discountPct={credits.discountPct} />
 
@@ -86,42 +92,42 @@ export default async function AccountPage() {
         ))}
       </div>
       {stats.bestQuizAveragePct !== null && (
-        <p className="mb-8 -mt-4 text-sm opacity-60">ממוצע הצלחה בחידונים: {stats.bestQuizAveragePct}%</p>
+        <p className="mb-8 -mt-4 text-sm opacity-60">
+          {t("account.quizAverageLabel")} {stats.bestQuizAveragePct}%
+        </p>
       )}
 
       <div className="mb-8">
         <VisitedCountriesMap initialVisited={visitedCodes} photosByCountry={photosByCountry} />
       </div>
 
-      <h2 className="mb-6 text-2xl font-extrabold">המנוי שלי</h2>
+      <h2 className="mb-6 text-2xl font-extrabold">{t("account.mySubscription")}</h2>
 
       {active ? (
         <div className="rounded-3xl border border-black/5 bg-white p-6">
           <p className="text-sm font-semibold opacity-60">{PLANS[active.planKey as PlanKey].audience}</p>
           <h2 className="mt-1 text-xl font-extrabold">{PLANS[active.planKey as PlanKey].name}</h2>
           <p className="mt-2 text-sm opacity-70">
-            {formatIls(active.amountCents)} · {active.billingCycle === "monthly" ? "חודשי" : "שנתי"} ·{" "}
-            {active.cancelAtPeriodEnd ? "מסתיים ב-" : "מתחדש ב-"}
-            {active.currentPeriodEnd.toLocaleDateString("he-IL")}
+            {formatIls(active.amountCents)} · {active.billingCycle === "monthly" ? t("account.monthly") : t("account.yearly")} ·{" "}
+            {active.cancelAtPeriodEnd ? t("account.endsOn") : t("account.renewsOn")}
+            {active.currentPeriodEnd.toLocaleDateString(dateLocale)}
           </p>
           {active.cancelAtPeriodEnd && (
-            <p className="mt-1 text-sm font-semibold text-amber-600">
-              המנוי בוטל ולא יחודש - הגישה תישאר פעילה עד תום התקופה הנוכחית.
-            </p>
+            <p className="mt-1 text-sm font-semibold text-amber-600">{t("account.canceledNotice")}</p>
           )}
-          {!resolved!.isOwner && <p className="mt-1 text-xs opacity-60">אתם מוזמנים למנוי הזה כמשתמש נוסף.</p>}
+          {!resolved!.isOwner && <p className="mt-1 text-xs opacity-60">{t("account.invitedMember")}</p>}
 
           {plan?.isOrgTier ? (
             <div className="mt-4">
-              <p className="text-sm font-semibold">🌍 גישה מלאה לכל היעדים במערכת - ללא הגבלה</p>
+              <p className="text-sm font-semibold">{t("account.unlimitedAccess")}</p>
               <Link href="/destinations" className="mt-1 inline-block text-sm font-medium underline" style={{ color: "var(--primary)" }}>
-                עיון בכל היעדים ←
+                {t("account.browseAllDestinations")}
               </Link>
             </div>
           ) : (
             active.destinations.length > 0 && (
               <div className="mt-4 flex flex-col gap-2">
-                <p className="text-sm font-semibold">היעדים שלכם:</p>
+                <p className="text-sm font-semibold">{t("account.yourDestinations")}</p>
                 <div className="flex flex-col gap-2">
                   {active.destinations.map((d) => (
                     <div key={d.id} className="flex flex-wrap items-center gap-2">
@@ -150,7 +156,7 @@ export default async function AccountPage() {
           )}
           {PLANS[active.planKey as PlanKey].isOrgTier && resolved!.isOwner && (
             <Link href="/admin" className="mt-4 inline-block text-sm font-semibold underline">
-              מעבר לפאנל ניהול תוכן
+              {t("account.goToAdminPanel")}
             </Link>
           )}
 
@@ -164,31 +170,31 @@ export default async function AccountPage() {
           )}
 
           <a href={`/api/receipts/${active.id}`} className="mt-4 inline-block text-sm font-medium underline opacity-70 hover:opacity-100">
-            🧾 הורדת קבלה (PDF)
+            {t("account.downloadReceipt")}
           </a>
 
           {resolved!.isOwner && !active.cancelAtPeriodEnd && (
             <CancelSubscriptionButton
               subscriptionId={active.id}
-              periodEndLabel={active.currentPeriodEnd.toLocaleDateString("he-IL")}
+              periodEndLabel={active.currentPeriodEnd.toLocaleDateString(dateLocale)}
             />
           )}
         </div>
       ) : (
         <div className="rounded-3xl border border-black/5 bg-white p-8 text-center">
-          <p className="opacity-70">אין לכם מנוי פעיל כרגע.</p>
+          <p className="opacity-70">{t("account.noActiveSubscription")}</p>
           <Link
             href="/pricing"
             className="mt-4 inline-block rounded-full px-6 py-3 font-semibold text-white"
             style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
           >
-            בחרו תוכנית
+            {t("account.choosePlan")}
           </Link>
         </div>
       )}
 
       <Link href="/delete-account" className="mt-8 block text-center text-xs opacity-40 hover:opacity-70">
-        מחיקת החשבון שלי
+        {t("account.deleteAccount")}
       </Link>
     </div>
   );

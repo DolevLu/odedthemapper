@@ -1,6 +1,7 @@
 import type { LevelInfo } from "@/lib/gamification";
+import { getServerT } from "@/lib/i18n/server";
 
-export function LevelCard({
+export async function LevelCard({
   level,
   totalPoints,
   discountPct,
@@ -10,6 +11,7 @@ export function LevelCard({
   /** Fixed subscription-renewal discount for the current level — see discountPctForLevel. */
   discountPct: number;
 }) {
+  const t = await getServerT();
   return (
     <div
       className="game-pop-in mb-8 flex flex-col gap-3 rounded-3xl border border-black/5 bg-white p-6"
@@ -24,7 +26,9 @@ export function LevelCard({
             {level.level}
           </span>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-50">רמה {level.level}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-50">
+              {t("account.level.levelLabel")} {level.level}
+            </p>
             <p className="text-lg font-extrabold">{level.title}</p>
           </div>
         </div>
@@ -32,7 +36,7 @@ export function LevelCard({
           <p className="text-lg font-extrabold" style={{ color: "var(--primary)" }}>
             {totalPoints}
           </p>
-          <p className="text-xs opacity-50">נקודות</p>
+          <p className="text-xs opacity-50">{t("account.level.points")}</p>
         </div>
       </div>
 
@@ -44,7 +48,7 @@ export function LevelCard({
           />
         </div>
         <p className="mt-1.5 text-xs opacity-60">
-          {level.pointsIntoLevel} / {level.pointsForNextLevel} נקודות לרמה {level.level + 1}
+          {level.pointsIntoLevel} / {level.pointsForNextLevel} {t("account.level.pointsToNext")} {level.level + 1}
         </p>
       </div>
 
@@ -56,9 +60,11 @@ export function LevelCard({
           <span className="text-xl">🎟️</span>
           <div>
             <p className="text-sm font-bold" style={{ color: "#16A34A" }}>
-              {discountPct}% הנחה על החיוב החודשי שלכם
+              {discountPct}% {t("account.level.discountOnBilling")}
             </p>
-            <p className="text-xs opacity-60">לפי רמה {level.level} - מתעדכן אוטומטית בכל חודש לפי הרמה הנוכחית שלכם</p>
+            <p className="text-xs opacity-60">
+              {t("account.level.basedOnLevel")} {level.level} - {t("account.level.autoUpdates")}
+            </p>
           </div>
         </div>
       </div>

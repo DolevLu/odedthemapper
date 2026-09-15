@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { inviteSubscriptionMember, removeSubscriptionMember } from "@/lib/actions/subscription";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function MemberManager({
   subscriptionId,
@@ -17,9 +18,10 @@ export function MemberManager({
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   const seatsUsed = 1 + members.length;
-  const seatsLabel = seats === null ? "ללא הגבלה" : `${seatsUsed} מתוך ${seats}`;
+  const seatsLabel = seats === null ? t("account.members.unlimited") : `${seatsUsed} ${t("account.members.of")} ${seats}`;
   const canInvite = seats === null || seatsUsed < seats;
 
   function handleInvite(e: React.FormEvent) {
@@ -37,14 +39,14 @@ export function MemberManager({
   return (
     <div className="mt-6 border-t border-black/5 pt-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">משתמשים במנוי</p>
+        <p className="text-sm font-semibold">{t("account.members.title")}</p>
         <span className="text-xs opacity-60">{seatsLabel}</span>
       </div>
 
       <div className="mt-3 flex flex-col gap-2">
         <div className="flex items-center justify-between rounded-xl bg-black/[0.03] px-3 py-2 text-sm">
           <span>{ownerEmail}</span>
-          <span className="text-xs opacity-50">בעל/ת המנוי</span>
+          <span className="text-xs opacity-50">{t("account.members.owner")}</span>
         </div>
         {members.map((m) => (
           <div key={m.id} className="flex items-center justify-between rounded-xl bg-black/[0.03] px-3 py-2 text-sm">
@@ -53,7 +55,7 @@ export function MemberManager({
               onClick={() => startTransition(() => removeSubscriptionMember(m.id))}
               className="text-xs opacity-50 underline hover:opacity-100"
             >
-              הסרה
+              {t("account.members.remove")}
             </button>
           </div>
         ))}
@@ -66,7 +68,7 @@ export function MemberManager({
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="אימייל להזמנה"
+            placeholder={t("account.members.emailPlaceholder")}
             className="flex-1 rounded-full border border-black/10 px-4 py-2 text-sm"
           />
           <button
@@ -75,11 +77,11 @@ export function MemberManager({
             className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
           >
-            {pending ? "מזמין..." : "הזמנה"}
+            {pending ? t("account.members.inviting") : t("account.members.invite")}
           </button>
         </form>
       ) : (
-        <p className="mt-4 text-xs opacity-60">הגעתם למספר המשתמשים המקסימלי בתוכנית זו.</p>
+        <p className="mt-4 text-xs opacity-60">{t("account.members.maxReached")}</p>
       )}
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
     </div>

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { TripWrappedStats } from "@/lib/tripWrapped";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 const SLIDE_GRADIENTS = [
   "linear-gradient(160deg, #7C3AED, #4C1D95)",
@@ -13,22 +15,23 @@ const SLIDE_GRADIENTS = [
   "linear-gradient(160deg, #0EA5E9, #075985)",
 ];
 
-function buildSlides(stats: TripWrappedStats): { title: string; big: string; sub?: string }[] {
+function buildSlides(stats: TripWrappedStats, t: (key: DictionaryKey) => string): { title: string; big: string; sub?: string }[] {
   const slides = [
-    { title: `${stats.flag ?? "✈️"} הטיול שלכם ל${stats.destinationName}`, big: `${stats.daysTraveled} ימים`, sub: "בלתי נשכחים" },
+    { title: `${stats.flag ?? "✈️"} ${t("wrapped.yourTripTo")}${stats.destinationName}`, big: `${stats.daysTraveled} ${t("wrapped.days")}`, sub: t("wrapped.unforgettable") },
   ];
-  if (stats.photosCount > 0) slides.push({ title: "📸 תפסתם את הרגע", big: String(stats.photosCount), sub: "תמונות באלבום" });
-  if (stats.kmWalked > 0) slides.push({ title: "🚶 הלכתם ברגל", big: `${stats.kmWalked} ק״מ`, sub: "מסלול שלם של חוויות" });
-  if (stats.spentCents > 0) slides.push({ title: "💸 סך ההוצאות", big: `₪${Math.round(stats.spentCents / 100)}`, sub: "השקעתם בזיכרונות" });
-  if (stats.poisFavorited > 0) slides.push({ title: "❤️ מקומות אהובים", big: String(stats.poisFavorited), sub: "שמרתם למועדפים" });
-  if (stats.quizBestPct !== null) slides.push({ title: "🧠 החידון הכי טוב שלכם", big: `${stats.quizBestPct}%`, sub: "תשובות נכונות" });
-  slides.push({ title: "⭐ סה״כ נקודות מהטיול", big: String(stats.pointsEarned), sub: "תודה שטיילתם איתנו 🧭" });
+  if (stats.photosCount > 0) slides.push({ title: t("wrapped.caughtTheMoment"), big: String(stats.photosCount), sub: t("wrapped.photosInAlbum") });
+  if (stats.kmWalked > 0) slides.push({ title: t("wrapped.walked"), big: `${stats.kmWalked} ${t("wrapped.km")}`, sub: t("wrapped.wholeJourney") });
+  if (stats.spentCents > 0) slides.push({ title: t("wrapped.totalSpent"), big: `₪${Math.round(stats.spentCents / 100)}`, sub: t("wrapped.investedInMemories") });
+  if (stats.poisFavorited > 0) slides.push({ title: t("wrapped.favoritePlaces"), big: String(stats.poisFavorited), sub: t("wrapped.savedToFavorites") });
+  if (stats.quizBestPct !== null) slides.push({ title: t("wrapped.bestQuiz"), big: `${stats.quizBestPct}%`, sub: t("wrapped.correctAnswers") });
+  slides.push({ title: t("wrapped.totalPointsFromTrip"), big: String(stats.pointsEarned), sub: t("wrapped.thanksForTraveling") });
   return slides;
 }
 
 export function TripWrappedModal({ stats, onClose }: { stats: TripWrappedStats; onClose: () => void }) {
   const [index, setIndex] = useState(0);
-  const slides = buildSlides(stats);
+  const { t } = useTranslation();
+  const slides = buildSlides(stats, t);
   const slide = slides[index];
 
   function next() {
@@ -48,11 +51,11 @@ export function TripWrappedModal({ stats, onClose }: { stats: TripWrappedStats; 
         {/* Background tap zones (previous/next) painted first so the real
          * controls below stack visually on top and stay clickable. */}
         <div className="absolute inset-0 z-0 flex">
-          <button onClick={prev} className="flex-1" aria-label="הקודם" />
-          <button onClick={next} className="flex-1" aria-label="הבא" />
+          <button onClick={prev} className="flex-1" aria-label={t("wrapped.previous")} />
+          <button onClick={next} className="flex-1" aria-label={t("wrapped.next")} />
         </div>
 
-        <button onClick={onClose} className="absolute end-4 top-4 z-10 text-xl opacity-80 hover:opacity-100" aria-label="סגירה">
+        <button onClick={onClose} className="absolute end-4 top-4 z-10 text-xl opacity-80 hover:opacity-100" aria-label={t("nav.close")}>
           ✕
         </button>
 
