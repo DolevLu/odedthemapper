@@ -12,18 +12,20 @@ import { DestinationBadge } from "@/components/header/DestinationBadge";
 import { TrialCountdown } from "@/components/TrialCountdown";
 import { GuideMenuButton } from "@/components/GuideMenuButton";
 import { NavIcon, NavIconSprite, type NavIconName } from "@/components/nav/NavIcons";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 type Tier = "free" | "silver" | "gold";
 
-const TOP_ITEMS: { href: string; label: string; icon: NavIconName }[] = [
+const TOP_ITEMS: { href: string; labelKey: DictionaryKey; icon: NavIconName }[] = [
   // Deliberately /home, not "/" — "/" redirects paying users straight to
   // their destination's map (see (shell)/page.tsx), so a Home nav item
   // pointing there would just bounce them right back to the map they're
   // already on with no way to ever reach the real homepage again. /home
   // renders the exact same content with no redirect check.
-  { href: "/home", label: "דף הבית", icon: "home" },
-  { href: "/destinations", label: "יעדים", icon: "globe" },
-  { href: "/trips", label: "הטיולים שלי", icon: "suitcase" },
+  { href: "/home", labelKey: "nav.home", icon: "home" },
+  { href: "/destinations", labelKey: "nav.destinations", icon: "globe" },
+  { href: "/trips", labelKey: "nav.myTrips", icon: "suitcase" },
 ];
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedthemapper.travi";
@@ -35,6 +37,7 @@ const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedth
 function DownloadAppLink({ onClick }: { onClick?: () => void }) {
   const [isNativeApp, setIsNativeApp] = useState(true); // default hidden until confirmed web, avoids a flash inside the app
   useEffect(() => setIsNativeApp(Capacitor.isNativePlatform()), []);
+  const { t } = useTranslation();
   if (isNativeApp) return null;
   return (
     <a
@@ -46,7 +49,7 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
       style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
     >
       <NavIcon name="download" size={16} />
-      הורידו את האפליקציה
+      {t("nav.downloadApp")}
     </a>
   );
 }
@@ -55,6 +58,7 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
  * the caller), straight to /admin instead of making the site's real admin(s)
  * dig for it via the URL bar. */
 function AdminPanelLink({ onClick }: { onClick?: () => void }) {
+  const { t } = useTranslation();
   return (
     <Link
       href="/admin"
@@ -63,12 +67,12 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
       style={{ background: "linear-gradient(135deg, #2563EB, #0EA5E9)" }}
     >
       <NavIcon name="tool" size={16} />
-      פאנל אדמין
+      {t("nav.adminPanel")}
     </Link>
   );
 }
 
-type DestItem = { href: string; label: string; icon: NavIconName; tier: Tier };
+type DestItem = { href: string; labelKey: DictionaryKey; icon: NavIconName; tier: Tier };
 
 // The destination-scoped items pinned in the mobile bottom bar — everything
 // else lives behind the hamburger menu. Without a destination context,
@@ -79,39 +83,39 @@ type DestItem = { href: string; label: string; icon: NavIconName; tier: Tier };
 const MOBILE_PINNED_KEYS_NO_DEST = new Set(["", "/now"]);
 const MOBILE_PINNED_KEYS_WITH_DEST = new Set(["", "/now", "/itinerary"]);
 
-const DEST_GROUPS: { title: string; items: DestItem[] }[] = [
+const DEST_GROUPS: { titleKey: DictionaryKey; items: DestItem[] }[] = [
   {
-    title: "תכנון הטיול",
+    titleKey: "group.tripPlanning",
     items: [
-      { href: "/now", label: "מה עכשיו", icon: "compass", tier: "silver" },
-      { href: "", label: "מפה", icon: "map", tier: "silver" },
-      { href: "/itinerary", label: "מסלול", icon: "calendar", tier: "silver" },
+      { href: "/now", labelKey: "item.now", icon: "compass", tier: "silver" },
+      { href: "", labelKey: "item.map", icon: "map", tier: "silver" },
+      { href: "/itinerary", labelKey: "item.itinerary", icon: "calendar", tier: "silver" },
     ],
   },
   {
-    title: "במהלך הטיול",
+    titleKey: "group.duringTrip",
     items: [
-      { href: "/favorites", label: "מועדפים והטבות", icon: "heart", tier: "silver" },
-      { href: "/bookable", label: "להזמנה", icon: "ticket", tier: "silver" },
-      { href: "/logistics", label: "לוגיסטיקה", icon: "plane", tier: "free" },
-      { href: "/expenses", label: "הוצאות", icon: "wallet", tier: "free" },
+      { href: "/favorites", labelKey: "item.favorites", icon: "heart", tier: "silver" },
+      { href: "/bookable", labelKey: "item.bookable", icon: "ticket", tier: "silver" },
+      { href: "/logistics", labelKey: "item.logistics", icon: "plane", tier: "free" },
+      { href: "/expenses", labelKey: "item.expenses", icon: "wallet", tier: "free" },
     ],
   },
   {
-    title: "כלים ללקוחות",
+    titleKey: "group.clientTools",
     items: [
-      { href: "/client-planner", label: "תכנון מסלול ללקוח", icon: "briefcase", tier: "gold" },
-      { href: "/quotes", label: "CRM", icon: "file", tier: "gold" },
+      { href: "/client-planner", labelKey: "item.clientPlanner", icon: "briefcase", tier: "gold" },
+      { href: "/quotes", labelKey: "item.crm", icon: "file", tier: "gold" },
     ],
   },
   {
-    title: "עזרים וזיכרונות",
+    titleKey: "group.helpersMemories",
     items: [
-      { href: "/weather", label: "מזג אוויר", icon: "weather", tier: "free" },
-      { href: "/quiz", label: "חידונים", icon: "quiz", tier: "free" },
-      { href: "/phrasebook", label: "שיחון", icon: "chat", tier: "free" },
-      { href: "/packing", label: "ציוד וצ׳ק ליסט", icon: "checklist", tier: "free" },
-      { href: "/album", label: "אלבום", icon: "camera", tier: "free" },
+      { href: "/weather", labelKey: "item.weather", icon: "weather", tier: "free" },
+      { href: "/quiz", labelKey: "item.quiz", icon: "quiz", tier: "free" },
+      { href: "/phrasebook", labelKey: "item.phrasebook", icon: "chat", tier: "free" },
+      { href: "/packing", labelKey: "item.packing", icon: "checklist", tier: "free" },
+      { href: "/album", labelKey: "item.album", icon: "camera", tier: "free" },
     ],
   },
 ];
@@ -149,6 +153,7 @@ export function AppSidebar({
   isAdmin?: boolean;
 }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const mobileNavRef = useRef<HTMLElement>(null);
@@ -294,7 +299,7 @@ export function AppSidebar({
                 >
                   <NavIcon name={item.icon} size={17} />
                 </span>
-                <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{item.label}</span>
+                <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}</span>
               </Link>
             );
           })}
@@ -304,8 +309,8 @@ export function AppSidebar({
 
         <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           {DEST_GROUPS.map((group) => (
-            <div key={group.title} className="contents">
-              <p className="mb-1 mt-3 px-2.5 text-[10.5px] font-bold uppercase tracking-wide opacity-40 first:mt-0">{group.title}</p>
+            <div key={group.titleKey} className="contents">
+              <p className="mb-1 mt-3 px-2.5 text-[10.5px] font-bold uppercase tracking-wide opacity-40 first:mt-0">{t(group.titleKey)}</p>
               {group.items.map((item) => {
                 const active = isDestActive(item);
                 const unlocked = isUnlocked(item);
@@ -338,7 +343,7 @@ export function AppSidebar({
                     >
                       <NavIcon name={item.icon} size={15} />
                     </span>
-                    <span className="flex-1">{item.label}</span>
+                    <span className="flex-1">{t(item.labelKey)}</span>
                     {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                   </Link>
                 );
@@ -346,7 +351,7 @@ export function AppSidebar({
             </div>
           ))}
           <Link href="/privacy" className="mt-2 block px-2.5 py-1 text-xs opacity-40 hover:opacity-70">
-            מדיניות פרטיות
+            {t("nav.privacyPolicy")}
           </Link>
         </div>
 
@@ -356,7 +361,7 @@ export function AppSidebar({
           style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
         >
           <NavIcon name="sparkle" size={16} />
-          שדרג עכשיו
+          {t("nav.upgradeNow")}
         </Link>
         <DownloadAppLink />
         {isAdmin && <AdminPanelLink />}
@@ -399,13 +404,13 @@ export function AppSidebar({
         className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
         style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
       >
-        <MobileTab href="/home" icon="home" label="דף הבית" active={pathname === "/home"} />
-        {!hasDestContext && <MobileTab href="/destinations" icon="globe" label="יעדים" active={pathname === "/destinations"} />}
+        <MobileTab href="/home" icon="home" label={t("nav.home")} active={pathname === "/home"} />
+        {!hasDestContext && <MobileTab href="/destinations" icon="globe" label={t("nav.destinations")} active={pathname === "/destinations"} />}
         {hasDestContext && nowItem && (
           <MobileTab
             href={destHref(nowItem)}
             icon={nowItem.icon}
-            label={nowItem.label}
+            label={t(nowItem.labelKey)}
             active={isDestActive(nowItem)}
             onClick={(e) => handleDestItemClick(nowItem, e)}
           />
@@ -414,7 +419,7 @@ export function AppSidebar({
           <MobileTab
             href={destHref(mapItem)}
             icon={mapItem.icon}
-            label={mapItem.label}
+            label={t(mapItem.labelKey)}
             active={isDestActive(mapItem)}
             onClick={(e) => handleDestItemClick(mapItem, e)}
           />
@@ -423,7 +428,7 @@ export function AppSidebar({
           <MobileTab
             href={destHref(itineraryItem)}
             icon={itineraryItem.icon}
-            label={itineraryItem.label}
+            label={t(itineraryItem.labelKey)}
             active={isDestActive(itineraryItem)}
             onClick={(e) => handleDestItemClick(itineraryItem, e)}
           />
@@ -432,7 +437,7 @@ export function AppSidebar({
           <MobileTab
             href={destHref(nowItem)}
             icon={nowItem.icon}
-            label={nowItem.label}
+            label={t(nowItem.labelKey)}
             active={isDestActive(nowItem)}
             onClick={(e) => handleDestItemClick(nowItem, e)}
           />
@@ -443,7 +448,7 @@ export function AppSidebar({
           style={{ color: "color-mix(in srgb, var(--text, #1a1a1a) 65%, transparent)" }}
         >
           <NavIcon name="menu" size={20} />
-          <span>עוד</span>
+          <span>{t("nav.more")}</span>
         </button>
       </nav>
 
@@ -499,7 +504,7 @@ export function AppSidebar({
                   >
                     <NavIcon name={item.icon} size={17} />
                   </span>
-                  <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{item.label}</span>
+                  <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}</span>
                 </Link>
               );
             })}
@@ -510,8 +515,8 @@ export function AppSidebar({
               const items = group.items.filter((i) => !pinnedKeys.has(i.href));
               if (items.length === 0) return null;
               return (
-                <div key={group.title} className="contents">
-                  <p className="mb-1 mt-3 px-2.5 text-[10.5px] font-bold uppercase tracking-wide opacity-40 first:mt-0">{group.title}</p>
+                <div key={group.titleKey} className="contents">
+                  <p className="mb-1 mt-3 px-2.5 text-[10.5px] font-bold uppercase tracking-wide opacity-40 first:mt-0">{t(group.titleKey)}</p>
                   {items.map((item) => {
                     const active = isDestActive(item);
                     const unlocked = isUnlocked(item);
@@ -538,7 +543,7 @@ export function AppSidebar({
                         >
                           <NavIcon name={item.icon} size={16} />
                         </span>
-                        <span className="flex-1">{item.label}</span>
+                        <span className="flex-1">{t(item.labelKey)}</span>
                         {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                       </Link>
                     );
@@ -547,7 +552,7 @@ export function AppSidebar({
               );
             })}
             <Link href="/privacy" onClick={() => setDrawerOpen(false)} className="mt-2 block px-2.5 py-1 text-xs opacity-40">
-              מדיניות פרטיות
+              {t("nav.privacyPolicy")}
             </Link>
           </div>
 
@@ -559,7 +564,7 @@ export function AppSidebar({
               style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
             >
               <NavIcon name="sparkle" size={16} />
-              שדרג עכשיו
+              {t("nav.upgradeNow")}
             </Link>
             <DownloadAppLink onClick={() => setDrawerOpen(false)} />
             {isAdmin && <AdminPanelLink onClick={() => setDrawerOpen(false)} />}
@@ -574,7 +579,7 @@ export function AppSidebar({
             <button
               onClick={() => setLockedTier(null)}
               className="absolute -top-3 end-[-0.75rem] flex h-8 w-8 items-center justify-center rounded-full bg-white text-lg shadow-md"
-              aria-label="סגירה"
+              aria-label={t("nav.close")}
             >
               ✕
             </button>
@@ -584,8 +589,8 @@ export function AppSidebar({
                 style={{ borderRadius: "1rem", borderColor: "var(--primary, #7C3AED)", background: "white" }}
               >
                 <span className="text-4xl">🌍</span>
-                <h2 className="text-lg font-bold">בחרו יעד קודם</h2>
-                <p className="text-sm opacity-70">כדי לגשת למסך הזה, בחרו קודם יעד מתוך &quot;יעדים&quot;.</p>
+                <h2 className="text-lg font-bold">{t("popup.chooseDestinationFirst")}</h2>
+                <p className="text-sm opacity-70">{t("popup.chooseDestinationBody")}</p>
                 {/* Also closes the popup on click — AppSidebar lives in the persistent
                  * shell layout, not unmounted on route change, so without this the
                  * popup stayed rendered on top of the destinations page after navigating. */}
@@ -595,7 +600,7 @@ export function AppSidebar({
                   className="rounded-full px-6 py-3 font-bold text-white"
                   style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
                 >
-                  לבחירת יעד
+                  {t("popup.selectDestination")}
                 </Link>
               </div>
             ) : (

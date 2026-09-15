@@ -50,7 +50,7 @@ export default function RootLayout({
          * matters here). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("theme")||"system";document.documentElement.dataset.theme=t==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;var f=localStorage.getItem("fontScale");if(f)document.documentElement.style.fontSize=f;}catch(e){}`,
+            __html: `try{var t=localStorage.getItem("theme")||"system";document.documentElement.dataset.theme=t==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;var f=localStorage.getItem("fontScale");if(f)document.documentElement.style.fontSize=f;var l=localStorage.getItem("lang");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";}}catch(e){}`,
           }}
         />
       </head>
