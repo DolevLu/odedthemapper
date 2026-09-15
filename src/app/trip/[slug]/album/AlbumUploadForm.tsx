@@ -1,48 +1,98 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { uploadAlbumMedia } from "@/lib/actions/album";
+import { upload } from "@vercel/blob/client";
+import { recordAlbumMedia } from "@/lib/actions/album";
+
+/** A clean "upload" glyph (arrow into a tray) — own original path, not a
+ * traced/vendor icon — filled in the app's own brand gradient so it reads
+ * clearly as "add media" at a glance instead of relying on the OS's own
+ * generic file-picker button styling. */
+function UploadIcon({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <linearGradient id="upload-icon-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#7C3AED" />
+          <stop offset="100%" stopColor="#EC4899" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2L6 9h3v6h6V9h3z M4 18h16v2.5H4z" fill="url(#upload-icon-gradient)" />
+    </svg>
+  );
+}
+
+function safeName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+}
 
 export function AlbumUploadForm({ destinationId, slug }: { destinationId: string; slug: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [pending, startTransition] = useTransition();
-  const [fileCount, setFileCount] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(formData: FormData) {
-    startTransition(async () => {
-      await uploadAlbumMedia(destinationId, slug, formData);
-      if (inputRef.current) inputRef.current.value = "";
-      setFileCount(0);
-      router.refresh();
-    });
+  async function handleFiles(fileList: FileList | null) {
+    const files = Array.from(fileList ?? []).filter((f) => f.size > 0);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setError(null);
+    setProgress({ done: 0, total: files.length });
+
+    let failures = 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const type = file.type.startsWith("video/") ? "video" : "photo";
+      try {
+        const blob = await upload(`album/${destinationId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safeName(file.name)}`, file, {
+          access: "public",
+          handleUploadUrl: "/api/album/upload",
+        });
+        await recordAlbumMedia(destinationId, slug, type, blob.url);
+      } catch (err) {
+        failures++;
+        console.error("Album upload failed for", file.name, err);
+      }
+      setProgress({ done: i + 1, total: files.length });
+    }
+
+    setUploading(false);
+    setProgress(null);
+    if (inputRef.current) inputRef.current.value = "";
+    if (failures > 0) {
+      setError(failures === files.length ? "ההעלאה נכשלה. נסו שוב." : `${failures} מתוך ${files.length} קבצים לא עלו. נסו שוב.`);
+    }
+    router.refresh();
   }
 
   return (
-    <form
-      action={handleSubmit}
-      className="flex flex-wrap items-center gap-3 border p-4"
-      style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-    >
+    <div className="flex flex-wrap items-center gap-3 border p-4" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
       <input
         ref={inputRef}
         type="file"
-        name="files"
         accept="image/*,video/*"
         multiple
-        onChange={(e) => setFileCount(e.target.files?.length ?? 0)}
-        className="text-sm"
+        disabled={uploading}
+        onChange={(e) => handleFiles(e.target.files)}
+        className="hidden"
+        id="album-upload-input"
       />
-      <button
-        type="submit"
-        disabled={pending || fileCount === 0}
-        className="rounded-full px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-        style={{ background: "var(--primary)" }}
+      <label
+        htmlFor="album-upload-input"
+        className="flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        aria-disabled={uploading}
+        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
       >
-        {pending ? "מעלה..." : fileCount > 0 ? `העלאת ${fileCount} קבצים` : "העלאה"}
-      </button>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
+          <UploadIcon size={16} />
+        </span>
+        {uploading ? `מעלה… ${progress?.done ?? 0}/${progress?.total ?? 0}` : "העלאת תמונות וסרטונים"}
+      </label>
       <span className="text-xs opacity-50">תמונות וסרטונים מהטלפון או המחשב</span>
-    </form>
+      {error && <p className="w-full text-xs text-red-600">{error}</p>}
+    </div>
   );
 }

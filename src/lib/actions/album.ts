@@ -26,6 +26,18 @@ export async function uploadAlbumMedia(destinationId: string, slug: string, form
   revalidatePath(`/trip/${slug}/album`);
 }
 
+/** Records an AlbumMedia row for a file already uploaded straight from the
+ * browser to Blob storage (see AlbumUploadForm + /api/album/upload) — the
+ * file bytes never pass through this action's own request body, only the
+ * resulting URL does, which is what actually lets a real phone photo/video
+ * upload succeed instead of hitting Vercel's platform-level serverless
+ * function payload limit (see uploads.ts's own comment on the old path). */
+export async function recordAlbumMedia(destinationId: string, slug: string, type: "photo" | "video", url: string) {
+  const userId = await requireUserId();
+  await prisma.albumMedia.create({ data: { userId, destinationId, type, url } });
+  revalidatePath(`/trip/${slug}/album`);
+}
+
 export async function deleteAlbumMedia(mediaId: string, slug: string) {
   const userId = await requireUserId();
   const media = await prisma.albumMedia.findUnique({ where: { id: mediaId } });
