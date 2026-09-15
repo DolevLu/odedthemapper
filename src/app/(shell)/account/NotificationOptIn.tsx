@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -13,21 +14,20 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 type Status = "unknown" | "unsupported" | "subscribed" | "unsubscribed" | "denied";
 
+function readStatus(): Promise<Status> | Status {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return "unsupported";
+  if (Notification.permission === "denied") return "denied";
+  return navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription().then((sub) => (sub ? "subscribed" : "unsubscribed")));
+}
+
 export function NotificationOptIn() {
   const [status, setStatus] = useState<Status>("unknown");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setStatus("unsupported");
-      return;
-    }
-    if (Notification.permission === "denied") {
-      setStatus("denied");
-      return;
-    }
-    navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription().then((sub) => setStatus(sub ? "subscribed" : "unsubscribed")));
+    Promise.resolve(readStatus()).then(setStatus);
   }, []);
 
   async function subscribe() {
@@ -36,7 +36,7 @@ export function NotificationOptIn() {
     // A missing key used to fail this whole function silently (no state
     // change, no message) — the button just looked like it did nothing.
     if (!publicKey) {
-      setError("התראות לא מוגדרות כרגע באתר. נסו שוב מאוחר יותר.");
+      setError(t("notif.missingConfigError"));
       return;
     }
     setLoading(true);
@@ -64,7 +64,7 @@ export function NotificationOptIn() {
       // silently back at "הפעלת התראות" with zero explanation — this is
       // what actually reads as "the button doesn't work."
       console.error("Push subscribe failed:", err);
-      setError("הפעלת ההתראות נכשלה. ודאו שהתראות מאושרות למכשיר/דפדפן ונסו שוב.");
+      setError(t("notif.subscribeFailedError"));
     } finally {
       setLoading(false);
     }
@@ -90,6 +90,14 @@ export function NotificationOptIn() {
     }
   }
 
+  // "Blocked" is a real browser-security state (Notification.permission ===
+  // "denied") — no website can override it from code, only the user via
+  // their own browser's site settings. This just re-reads it on demand so
+  // fixing it there doesn't also require a full page reload here.
+  async function recheck() {
+    setStatus(await readStatus());
+  }
+
   if (status === "unsupported") return null;
 
   return (
@@ -97,18 +105,14 @@ export function NotificationOptIn() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-2 font-bold">
-            🔔 התראות
+            🔔 {t("notif.title")}
             {status === "subscribed" && (
               <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: "#16A34A" }}>
-                ✓ מופעל
+                {t("notif.enabled")}
               </span>
             )}
           </h3>
-          <p className="text-sm opacity-60">
-            {status === "denied"
-              ? "חסמתם התראות בדפדפן - ניתן לאפשר מחדש בהגדרות האתר בדפדפן."
-              : "תזכורות צ׳ק-אין לטיסות והתראות תקציב, ישירות למכשיר שלכם."}
-          </p>
+          <p className="text-sm opacity-60">{status === "denied" ? t("notif.deniedDesc") : t("notif.defaultDesc")}</p>
         </div>
         {status !== "denied" && (
           <button
@@ -117,10 +121,15 @@ export function NotificationOptIn() {
             className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             style={{ background: status === "subscribed" ? "#DC2626" : "var(--primary)" }}
           >
-            {loading ? "..." : status === "subscribed" ? "כיבוי התראות" : "הפעלת התראות"}
+            {loading ? "..." : status === "subscribed" ? t("notif.disableBtn") : t("notif.enableBtn")}
           </button>
         )}
       </div>
+      {status === "denied" && (
+        <button onClick={recheck} className="self-start rounded-full px-4 py-1.5 text-xs font-semibold text-white" style={{ background: "var(--primary)" }}>
+          {t("notif.checkAgain")}
+        </button>
+      )}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );

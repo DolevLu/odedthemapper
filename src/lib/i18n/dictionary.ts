@@ -55,6 +55,22 @@ export const DICTIONARY = {
   "settings.language": { he: "שפה", en: "Language" },
   "settings.hebrew": { he: "עברית", en: "Hebrew" },
   "settings.english": { he: "אנגלית", en: "English" },
+
+  "notif.title": { he: "התראות", en: "Notifications" },
+  "notif.enabled": { he: "✓ מופעל", en: "✓ Enabled" },
+  "notif.defaultDesc": { he: "תזכורות צ׳ק-אין לטיסות והתראות תקציב, ישירות למכשיר שלכם.", en: "Flight check-in reminders and budget alerts, straight to your device." },
+  "notif.deniedDesc": {
+    he: 'חסמתם התראות בדפדפן לאתר הזה. לחצו על סמל המנעול 🔒 שליד כתובת האתר, פתחו "הרשאות אתר" (Notifications), שנו לאפשר, ואז לחצו "בדקו שוב" למטה.',
+    en: 'You’ve blocked notifications for this site in your browser. Click the 🔒 lock icon next to the address bar, open Site settings → Notifications, set it to Allow, then click "Check again" below.',
+  },
+  "notif.checkAgain": { he: "בדקו שוב", en: "Check again" },
+  "notif.enableBtn": { he: "הפעלת התראות", en: "Enable notifications" },
+  "notif.disableBtn": { he: "כיבוי התראות", en: "Turn off notifications" },
+  "notif.missingConfigError": { he: "התראות לא מוגדרות כרגע באתר. נסו שוב מאוחר יותר.", en: "Notifications aren't configured on the site right now. Try again later." },
+  "notif.subscribeFailedError": {
+    he: "הפעלת ההתראות נכשלה. ודאו שהתראות מאושרות למכשיר/דפדפן ונסו שוב.",
+    en: "Enabling notifications failed. Make sure notifications are allowed for this device/browser and try again.",
+  },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
