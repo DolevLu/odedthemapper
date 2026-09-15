@@ -657,6 +657,20 @@ export const DICTIONARY = {
   "mobileItinerary.previousDay": { he: "היום הקודם", en: "Previous day" },
   "mobileItinerary.nextDay": { he: "היום הבא", en: "Next day" },
   "mobileItinerary.noPointsToday": { he: "אין עדיין נקודות ביום הזה.", en: "No points for this day yet." },
+
+  "addItem.pickFromList": { he: "בחירה מהרשימה", en: "Pick from list" },
+  "addItem.search": { he: "חיפוש", en: "Search" },
+  "addItem.addFree": { he: "הוספה חופשית", en: "Add freely" },
+  "addItem.chooseCategory": { he: "בחרו קטגוריה...", en: "Choose category..." },
+  "addItem.choosePoint": { he: "בחרו נקודה...", en: "Choose point..." },
+  "addItem.add": { he: "הוספה", en: "Add" },
+  "addItem.searchPlaceholder": { he: "הקלידו שם מקום — מהיעד שלנו או מגוגל מפות", en: "Type a place name — from our destination or Google Maps" },
+  "addItem.fromOurDestination": { he: "מהיעד שלנו", en: "From our destination" },
+  "addItem.loadingLocation": { he: "טוען מיקום…", en: "Loading location…" },
+  "addItem.customPlaceholder": { he: 'למשל: "נסיעה לעיירה סמוכה" או תחנה שלא ברשימה', en: 'e.g. "A trip to a nearby town" or a stop not on the list' },
+  "addItem.addNoLocation": { he: "הוספה (בלי מיקום)", en: "Add (no location)" },
+  "addItem.markOnMap": { he: "📍 סימון מיקום על המפה", en: "📍 Mark a location on the map" },
+  "addItem.pointOnMap": { he: "נקודה על המפה", en: "Point on the map" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

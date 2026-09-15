@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { addItineraryItem, addCustomItineraryItem } from "@/lib/actions/trip";
 import { loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import { PinPickerModal } from "./PinPickerModal";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 export type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
 
@@ -94,6 +96,7 @@ export function AddItemToDay({
 }) {
   const [mode, setMode] = useState<Mode>("pick");
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   // "בחירה מהרשימה" — the original cascading category → POI dropdowns.
   const [category, setCategory] = useState("");
@@ -223,7 +226,7 @@ export function AddItemToDay({
   }
 
   function handlePinConfirmed(lat: number, lng: number) {
-    const label = customLabel.trim() || "נקודה על המפה";
+    const label = customLabel.trim() || t("addItem.pointOnMap");
     const fd = new FormData();
     fd.set("customLabel", label);
     fd.set("customLat", String(lat));
@@ -241,17 +244,17 @@ export function AddItemToDay({
     <div className="flex flex-col gap-2 rounded-xl border border-dashed p-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)" }}>
       <div className="flex flex-wrap gap-1 text-xs">
         {([
-          ["pick", "בחירה מהרשימה"],
-          ["search", "חיפוש"],
-          ["custom", "הוספה חופשית"],
-        ] as [Mode, string][]).map(([m, label]) => (
+          ["pick", "addItem.pickFromList"],
+          ["search", "addItem.search"],
+          ["custom", "addItem.addFree"],
+        ] satisfies [Mode, DictionaryKey][]).map(([m, labelKey]) => (
           <button
             key={m}
             onClick={() => setMode(m)}
             className="rounded-full px-3 py-1 font-medium"
             style={{ background: mode === m ? "var(--primary)" : "transparent", color: mode === m ? "white" : "var(--text)" }}
           >
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
@@ -272,7 +275,7 @@ export function AddItemToDay({
             className="w-full min-w-0 rounded-lg border px-2 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           >
-            <option value="">בחרו קטגוריה...</option>
+            <option value="">{t("addItem.chooseCategory")}</option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -286,7 +289,7 @@ export function AddItemToDay({
             className="w-full min-w-0 rounded-lg border px-2 py-1.5 text-sm disabled:opacity-50"
             style={{ borderColor: "var(--primary)" }}
           >
-            <option value="">בחרו נקודה...</option>
+            <option value="">{t("addItem.choosePoint")}</option>
             {poisInCategory.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} · {p.areaName}
@@ -299,7 +302,7 @@ export function AddItemToDay({
             className="w-full rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
             style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
           >
-            הוספה
+            {t("addItem.add")}
           </button>
         </div>
       )}
@@ -314,7 +317,7 @@ export function AddItemToDay({
               setSearchOpen(true);
             }}
             onFocus={() => setSearchOpen(true)}
-            placeholder="הקלידו שם מקום — מהיעד שלנו או מגוגל מפות"
+            placeholder={t("addItem.searchPlaceholder")}
             className="w-full min-w-0 rounded-lg border px-3 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
@@ -335,7 +338,7 @@ export function AddItemToDay({
               >
                 {poiMatches.length > 0 && (
                   <div className="flex flex-col">
-                    <span className="px-3 pt-2 text-[10px] font-bold opacity-50">מהיעד שלנו</span>
+                    <span className="px-3 pt-2 text-[10px] font-bold opacity-50">{t("addItem.fromOurDestination")}</span>
                     {poiMatches.map((p) => (
                       <button key={p.id} onClick={() => handlePickSearchPoi(p.id)} className="px-3 py-1.5 text-start text-sm hover:bg-black/5">
                         {p.name} <span className="opacity-50">· {p.areaName}</span>
@@ -346,7 +349,7 @@ export function AddItemToDay({
                 {(placePredictions.length > 0 || resolving) && (
                   <div className="flex flex-col">
                     <span className="px-3 pt-2 text-[10px] font-bold opacity-50">Google Maps</span>
-                    {resolving && <span className="px-3 py-1.5 text-sm opacity-60">טוען מיקום…</span>}
+                    {resolving && <span className="px-3 py-1.5 text-sm opacity-60">{t("addItem.loadingLocation")}</span>}
                     {!resolving &&
                       placePredictions.map((pred) => (
                         <button key={pred.placeId} onClick={() => handlePickPlace(pred)} className="px-3 py-1.5 text-start text-sm hover:bg-black/5">
@@ -366,7 +369,7 @@ export function AddItemToDay({
           <input
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
-            placeholder='למשל: "נסיעה לעיירה סמוכה" או תחנה שלא ברשימה'
+            placeholder={t("addItem.customPlaceholder")}
             className="w-full min-w-0 rounded-lg border px-3 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
@@ -377,14 +380,14 @@ export function AddItemToDay({
               className="rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
               style={{ background: "var(--primary)", borderRadius: "var(--radius)" }}
             >
-              הוספה (בלי מיקום)
+              {t("addItem.addNoLocation")}
             </button>
             <button
               onClick={() => setPinPickerOpen(true)}
               className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
               style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
             >
-              📍 סימון מיקום על המפה
+              {t("addItem.markOnMap")}
             </button>
           </div>
         </div>
