@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { startAmbientMusic } from "@/lib/ambientMusic";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 type Photo = { id: string; url: string };
 type TransitionMode = "zoom" | "fade" | "slide";
@@ -16,10 +18,10 @@ const DEFAULT_SECONDS_PER_PHOTO = 2.5;
 // next one — only used for "fade"/"slide" (zoom keeps the original hard cut).
 const TRANSITION_OVERLAP_FRACTION = 0.25;
 
-const TRANSITION_OPTIONS: { key: TransitionMode; label: string; hint: string }[] = [
-  { key: "zoom", label: "🔍 זום (Ken Burns)", hint: "זום עדין בתוך כל תמונה, חיתוך ישיר בין תמונות" },
-  { key: "fade", label: "🌫️ מעבר חלק (Fade)", hint: "תמונות עומדות, דהייה הדרגתית ביניהן" },
-  { key: "slide", label: "➡️ החלקה (Slide)", hint: "תמונה חדשה מחליקה פנימה" },
+const TRANSITION_OPTIONS: { key: TransitionMode; labelKey: DictionaryKey; hintKey: DictionaryKey }[] = [
+  { key: "zoom", labelKey: "collage.transition.zoom.label", hintKey: "collage.transition.zoom.hint" },
+  { key: "fade", labelKey: "collage.transition.fade.label", hintKey: "collage.transition.fade.hint" },
+  { key: "slide", labelKey: "collage.transition.slide.label", hintKey: "collage.transition.slide.hint" },
 ];
 
 function drawImageCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
@@ -148,6 +150,7 @@ export function CollageBuilder({
   const [videoExt, setVideoExt] = useState<"mp4" | "webm">("webm");
   const [error, setError] = useState<string | null>(null);
   const [transitionMode, setTransitionMode] = useState<TransitionMode>("zoom");
+  const { t } = useTranslation();
   const [secondsPerPhoto, setSecondsPerPhoto] = useState(DEFAULT_SECONDS_PER_PHOTO);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -163,11 +166,11 @@ export function CollageBuilder({
   async function generate() {
     const chosen = photos.filter((p) => selected.has(p.id));
     if (chosen.length < 2) {
-      setError("בחרו לפחות 2 תמונות ליצירת הסרטון");
+      setError(t("collage.needTwoPhotos"));
       return;
     }
     if (typeof MediaRecorder === "undefined") {
-      setError("הדפדפן הזה לא תומך ביצירת וידאו (נסו Chrome או Edge)");
+      setError(t("collage.noVideoSupport"));
       return;
     }
 
@@ -239,7 +242,7 @@ export function CollageBuilder({
       const blob = new Blob(chunks, { type: mimeType });
       setVideoUrl(URL.createObjectURL(blob));
     } catch {
-      setError("לא הצלחנו ליצור את הסרטון בדפדפן הזה - נסו תמונות אחרות או דפדפן אחר");
+      setError(t("collage.createFailed"));
     } finally {
       music?.stop();
       setRendering(false);
@@ -248,19 +251,17 @@ export function CollageBuilder({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs opacity-60">
-        הסרטון נוצר אוטומטית בדפדפן שלכם (כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו - ללא צורך בהעלאה לשרת חיצוני.
-      </p>
+      <p className="text-xs opacity-60">{t("collage.autoCreateNote")}</p>
 
       <div className="flex flex-col gap-3 border p-3" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
         <div>
-          <p className="mb-1.5 text-xs font-semibold opacity-70">אפקט מעבר בין תמונות</p>
+          <p className="mb-1.5 text-xs font-semibold opacity-70">{t("collage.transitionEffectLabel")}</p>
           <div className="flex flex-wrap gap-2">
             {TRANSITION_OPTIONS.map((opt) => (
               <button
                 key={opt.key}
                 type="button"
-                title={opt.hint}
+                title={t(opt.hintKey)}
                 onClick={() => setTransitionMode(opt.key)}
                 className="rounded-full border px-3 py-1.5 text-sm font-semibold"
                 style={{
@@ -269,13 +270,13 @@ export function CollageBuilder({
                   color: transitionMode === opt.key ? "white" : "var(--text)",
                 }}
               >
-                {opt.label}
+                {t(opt.labelKey)}
               </button>
             ))}
           </div>
         </div>
         <label className="flex items-center gap-3 text-xs font-semibold opacity-70">
-          משך כל תמונה - {secondsPerPhoto.toFixed(1)} שנ&apos;
+          {t("collage.durationLabelPrefix")} {secondsPerPhoto.toFixed(1)} {t("collage.seconds")}
           <input
             type="range"
             min={MIN_SECONDS_PER_PHOTO}
@@ -289,7 +290,7 @@ export function CollageBuilder({
       </div>
 
       {photos.length === 0 ? (
-        <p className="text-sm opacity-50">אין עדיין תמונות ליצירת קולאז׳ - העלו קודם כמה תמונות בטאב &quot;העלאה&quot;.</p>
+        <p className="text-sm opacity-50">{t("collage.noPhotosYet")}</p>
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {photos.map((p) => {
@@ -325,7 +326,7 @@ export function CollageBuilder({
           className="rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           style={{ background: "var(--primary)" }}
         >
-          {rendering ? `יוצר סרטון... ${progress}%` : `יצירת סרטון (${selected.size} נבחרו)`}
+          {rendering ? `${t("collage.creatingVideo")} ${progress}%` : `${t("collage.createVideo")} (${selected.size} ${t("collage.selected")})`}
         </button>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
@@ -341,13 +342,9 @@ export function CollageBuilder({
             className="rounded-full px-4 py-2 text-sm font-semibold text-white"
             style={{ background: "var(--primary)" }}
           >
-            הורדת הסרטון ({videoExt.toUpperCase()})
+            {t("collage.downloadVideo")} ({videoExt.toUpperCase()})
           </a>
-          {videoExt === "webm" && (
-            <p className="text-[11px] opacity-50">
-              הדפדפן הזה יודע להקליט WebM בלבד (נגן בכל מקום, גם ברשתות חברתיות) - ב-Safari הקובץ יורד כ-MP4 אמיתי.
-            </p>
-          )}
+          {videoExt === "webm" && <p className="text-[11px] opacity-50">{t("collage.webmNote")}</p>}
         </div>
       )}
     </div>

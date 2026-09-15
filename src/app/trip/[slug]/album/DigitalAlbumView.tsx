@@ -1,6 +1,7 @@
 import type { ThemeConfig } from "@/lib/theme/types";
 import type { AlbumMediaItem, CuratedPhoto } from "./AlbumScreen";
 import type { AlbumDaysConfig } from "@/lib/actions/album";
+import { translate, type Lang } from "@/lib/i18n/dictionary";
 
 const ROTATIONS = [-4, 3, -2, 5, -3, 2, 4, -5, 1, -1];
 
@@ -102,13 +103,16 @@ export function DigitalAlbumView({
   media,
   curatedPhotos,
   settings,
+  lang = "he",
 }: {
   destinationName: string;
   theme: ThemeConfig;
   media: AlbumMediaItem[];
   curatedPhotos: CuratedPhoto[];
   settings: { templateKey: string; backgroundColor: string | null; days: AlbumDaysConfig };
+  lang?: Lang;
 }) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const userItems: Item[] = media.map((m) => ({ id: m.id, url: m.url, type: m.type, caption: undefined }));
   const inspirationItems: Item[] = curatedPhotos.map((p) => ({ id: p.id, url: p.url, type: "photo", caption: p.caption }));
   const frameRadius = radiusForShape(theme.shape);
@@ -140,7 +144,7 @@ export function DigitalAlbumView({
     <div className="overflow-hidden border p-8" style={{ borderRadius: "var(--radius)", borderColor: theme.palette.primary, background }}>
       <div className="mb-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: theme.palette.secondary }}>
-          טראבי · אלבום דיגיטלי
+          טראבי · {t("digitalAlbum.subtitle")}
         </p>
         <h2 className="mt-2 text-3xl font-extrabold" style={{ fontFamily: "var(--font-heading)", color: theme.palette.primary }}>
           {destinationName}
@@ -149,9 +153,7 @@ export function DigitalAlbumView({
       </div>
 
       {userItems.length === 0 ? (
-        <p className="text-center text-sm opacity-50">
-          האלבום הדיגיטלי שלכם עדיין ריק - העלו תמונות מהטיול כדי לראות אותו קם לחיים.
-        </p>
+        <p className="text-center text-sm opacity-50">{t("digitalAlbum.empty")}</p>
       ) : hasDayGrouping ? (
         <div className="flex flex-col gap-10">
           {sortedDays.map((day) => {
@@ -167,7 +169,7 @@ export function DigitalAlbumView({
                     {day}
                   </span>
                   <h3 className="text-lg font-bold" style={{ fontFamily: "var(--font-heading)", color: theme.palette.primary }}>
-                    {dayConfig?.title || `יום ${day}`}
+                    {dayConfig?.title || `${t("digitalAlbum.day")} ${day}`}
                   </h3>
                   {dayConfig?.subtitle && <span className="text-sm opacity-60">— {dayConfig.subtitle}</span>}
                 </div>
@@ -178,7 +180,7 @@ export function DigitalAlbumView({
           {unassigned.length > 0 && (
             <section>
               <h3 className="mb-4 border-b pb-2 text-lg font-bold" style={{ borderColor: theme.palette.secondary, fontFamily: "var(--font-heading)", color: theme.palette.primary }}>
-                עוד רגעים מהטיול
+                {t("digitalAlbum.moreMoments")}
               </h3>
               {renderGroup(unassigned.map((m) => ({ id: m.id, url: m.url, type: m.type, caption: undefined })))}
             </section>
@@ -190,7 +192,7 @@ export function DigitalAlbumView({
 
       {inspirationItems.length > 0 && (
         <div className="mt-10 border-t pt-6" style={{ borderColor: theme.palette.secondary }}>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest opacity-60">קצת השראה מהיעד</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest opacity-60">{t("digitalAlbum.inspiration")}</p>
           {renderGroup(inspirationItems)}
         </div>
       )}

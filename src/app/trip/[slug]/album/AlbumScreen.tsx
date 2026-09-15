@@ -8,15 +8,17 @@ import { AlbumGrid } from "./AlbumGrid";
 import { CollageBuilder } from "./CollageBuilder";
 import { DigitalAlbumView } from "./DigitalAlbumView";
 import { AlbumSettingsPanel } from "./AlbumSettingsPanel";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 export type AlbumMediaItem = { id: string; type: "photo" | "video"; url: string; createdAt: string; dayIndex: number | null };
 export type CuratedPhoto = { id: string; url: string; caption: string };
 
 const TABS = [
-  { key: "upload", label: "📤 העלאה" },
-  { key: "collage", label: "🎬 קולאז׳ וידאו" },
-  { key: "book", label: "📖 אלבום דיגיטלי" },
-] as const;
+  { key: "upload", labelKey: "album.tab.upload" },
+  { key: "collage", labelKey: "album.tab.collage" },
+  { key: "book", labelKey: "album.tab.book" },
+] satisfies { key: string; labelKey: DictionaryKey }[];
 
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -44,6 +46,7 @@ export function AlbumScreen({
   initialSettings: { templateKey: string; backgroundColor: string | null; days: AlbumDaysConfig };
 }) {
   const [tab, setTab] = useState<TabKey>("upload");
+  const { t, lang } = useTranslation();
   const allPhotos = [
     ...media.filter((m) => m.type === "photo").map((m) => ({ id: m.id, url: m.url })),
     ...curatedPhotos.map((p) => ({ id: p.id, url: p.url })),
@@ -56,23 +59,23 @@ export function AlbumScreen({
   return (
     <div>
       <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-        📸 האלבום שלי - {destinationName}
+        {t("album.titlePrefix")} {destinationName}
       </h1>
-      <p className="mb-4 text-sm opacity-60">העלו תמונות וסרטונים מהטיול, צרו סרטון קולאז׳ אוטומטי, או צפו באלבום דיגיטלי מעוצב.</p>
+      <p className="mb-4 text-sm opacity-60">{t("album.subtitle")}</p>
 
       <div className="mb-5 flex flex-wrap gap-2">
-        {TABS.map((t) => (
+        {TABS.map((tabItem) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tabItem.key}
+            onClick={() => setTab(tabItem.key)}
             className="rounded-full border px-4 py-1.5 text-sm font-semibold"
             style={{
               borderColor: "var(--primary)",
-              background: tab === t.key ? "var(--primary)" : "transparent",
-              color: tab === t.key ? "white" : "var(--text)",
+              background: tab === tabItem.key ? "var(--primary)" : "transparent",
+              color: tab === tabItem.key ? "white" : "var(--text)",
             }}
           >
-            {t.label}
+            {t(tabItem.labelKey)}
           </button>
         ))}
       </div>
@@ -89,7 +92,7 @@ export function AlbumScreen({
       {tab === "book" && (
         <div className="flex flex-col gap-5">
           <AlbumSettingsPanel destinationId={destinationId} slug={slug} initialSettings={initialSettings} dayNumbers={titleableDayNumbers} />
-          <DigitalAlbumView destinationName={destinationName} theme={theme} media={media} curatedPhotos={curatedPhotos} settings={initialSettings} />
+          <DigitalAlbumView destinationName={destinationName} theme={theme} media={media} curatedPhotos={curatedPhotos} settings={initialSettings} lang={lang} />
         </div>
       )}
     </div>

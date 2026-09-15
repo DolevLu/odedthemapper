@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { recordAlbumMedia } from "@/lib/actions/album";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** A clean "upload" glyph (arrow into a tray) — own original path, not a
  * traced/vendor icon — filled in the app's own brand gradient so it reads
@@ -33,6 +34,7 @@ export function AlbumUploadForm({ destinationId, slug }: { destinationId: string
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   async function handleFiles(fileList: FileList | null) {
     const files = Array.from(fileList ?? []).filter((f) => f.size > 0);
@@ -63,7 +65,11 @@ export function AlbumUploadForm({ destinationId, slug }: { destinationId: string
     setProgress(null);
     if (inputRef.current) inputRef.current.value = "";
     if (failures > 0) {
-      setError(failures === files.length ? "ההעלאה נכשלה. נסו שוב." : `${failures} מתוך ${files.length} קבצים לא עלו. נסו שוב.`);
+      setError(
+        failures === files.length
+          ? t("album.uploadAllFailed")
+          : `${failures} ${t("album.uploadPartialFailed")} ${files.length} ${t("album.uploadPartialFailedSuffix")}`
+      );
     }
     router.refresh();
   }
@@ -89,9 +95,9 @@ export function AlbumUploadForm({ destinationId, slug }: { destinationId: string
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
           <UploadIcon size={16} />
         </span>
-        {uploading ? `מעלה… ${progress?.done ?? 0}/${progress?.total ?? 0}` : "העלאת תמונות וסרטונים"}
+        {uploading ? `${t("album.uploading")} ${progress?.done ?? 0}/${progress?.total ?? 0}` : t("album.uploadButton")}
       </label>
-      <span className="text-xs opacity-50">תמונות וסרטונים מהטלפון או המחשב</span>
+      <span className="text-xs opacity-50">{t("album.uploadHint")}</span>
       {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </div>
   );

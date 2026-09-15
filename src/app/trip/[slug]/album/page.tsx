@@ -4,6 +4,7 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { LoginPromptBanner } from "@/components/LoginPromptBanner";
 import { AlbumScreen } from "./AlbumScreen";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -33,9 +34,10 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       : Promise.resolve(0),
   ]);
 
+  const t = await getServerT();
   return (
     <>
-      {!userId && <LoginPromptBanner slug={slug} path="/album" message="התחברו כדי להעלות ולשמור תמונות משלכם לאלבום" />}
+      {!userId && <LoginPromptBanner slug={slug} path="/album" message={t("album.loginPrompt")} />}
       <AlbumScreen
         slug={slug}
         destinationId={destination.id}

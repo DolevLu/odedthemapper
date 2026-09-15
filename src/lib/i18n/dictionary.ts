@@ -431,6 +431,84 @@ export const DICTIONARY = {
     he: "אפשר לבחור כמה תמונות יחד. תמונות שהועלו לאלבום של יעד ביבשת/מדינה זו יופיעו כאן אוטומטית.",
     en: "You can select several photos at once. Photos uploaded to a destination album on this continent/country will appear here automatically.",
   },
+
+  "album.loginPrompt": { he: "התחברו כדי להעלות ולשמור תמונות משלכם לאלבום", en: "Log in to upload and save your own photos to the album" },
+  "album.tab.upload": { he: "📤 העלאה", en: "📤 Upload" },
+  "album.tab.collage": { he: "🎬 קולאז׳ וידאו", en: "🎬 Video Collage" },
+  "album.tab.book": { he: "📖 אלבום דיגיטלי", en: "📖 Digital Album" },
+  "album.titlePrefix": { he: "📸 האלבום שלי -", en: "📸 My Album -" },
+  "album.subtitle": {
+    he: "העלו תמונות וסרטונים מהטיול, צרו סרטון קולאז׳ אוטומטי, או צפו באלבום דיגיטלי מעוצב.",
+    en: "Upload photos and videos from the trip, create an automatic collage video, or view a designed digital album.",
+  },
+  "album.empty": { he: "עדיין לא העליתם תמונות או סרטונים. הראשונים שלכם יופיעו כאן.", en: "You haven't uploaded any photos or videos yet. Your first ones will appear here." },
+  "album.delete": { he: "מחיקה", en: "Delete" },
+  "album.video": { he: "▶ וידאו", en: "▶ Video" },
+  "album.dayAssignTitle": { he: "שיוך לפי יום בטיול - לחלוקת האלבום הדיגיטלי", en: "Assign by trip day - for splitting the digital album" },
+  "album.noDay": { he: "ללא יום", en: "No day" },
+  "album.day": { he: "יום", en: "Day" },
+  "album.uploading": { he: "מעלה…", en: "Uploading…" },
+  "album.uploadButton": { he: "העלאת תמונות וסרטונים", en: "Upload photos & videos" },
+  "album.uploadHint": { he: "תמונות וסרטונים מהטלפון או המחשב", en: "Photos and videos from your phone or computer" },
+  "album.uploadAllFailed": { he: "ההעלאה נכשלה. נסו שוב.", en: "The upload failed. Try again." },
+  "album.uploadPartialFailed": { he: "מתוך", en: "of" },
+  "album.uploadPartialFailedSuffix": { he: "קבצים לא עלו. נסו שוב.", en: "files failed to upload. Try again." },
+
+  "album.template.polaroid.label": { he: "🖼️ פולארויד", en: "🖼️ Polaroid" },
+  "album.template.polaroid.hint": { he: "תמונות מוטות עם מסגרת לבנה, כמו אלבום מודבק", en: "Tilted photos with a white frame, like a pasted-in album" },
+  "album.template.timeline.label": { he: "🧵 ציר זמן", en: "🧵 Timeline" },
+  "album.template.timeline.hint": { he: "יום אחרי יום, בשורה כרונולוגית ברורה", en: "Day after day, in a clear chronological line" },
+  "album.template.postcard.label": { he: "💌 גלויות", en: "💌 Postcards" },
+  "album.template.postcard.hint": { he: "כל תמונה כגלויה עם פינה מקופלת", en: "Every photo as a postcard with a folded corner" },
+  "album.settings.templateLabel": { he: "סוג אלבום / תבנית", en: "Album type / template" },
+  "album.settings.bgColorLabel": { he: "צבע רקע האלבום", en: "Album background color" },
+  "album.settings.customColor": { he: "צבע מותאם אישית", en: "Custom color" },
+  "album.settings.dayTitlesLabel": { he: "כותרות לימים / אזורים", en: "Titles for days / areas" },
+  "album.settings.dayTitlePlaceholderPrefix": { he: "כותרת ליום", en: "Title for day" },
+  "album.settings.dayTitlePlaceholderExample": { he: ', למשל "רומא העתיקה"', en: ', e.g. "Ancient Rome"' },
+  "album.settings.subtitlePlaceholder": { he: 'תת-כותרת / אזור, למשל "הרובע העתיק"', en: 'Subtitle / area, e.g. "The Old Quarter"' },
+  "album.settings.preparing": { he: "מכין...", en: "Preparing..." },
+  "album.settings.exportPdf": { he: "🖨️ ייצוא כ-PDF", en: "🖨️ Export as PDF" },
+  "album.settings.saved": { he: "✓ נשמר", en: "✓ Saved" },
+
+  "collage.transition.zoom.label": { he: "🔍 זום (Ken Burns)", en: "🔍 Zoom (Ken Burns)" },
+  "collage.transition.zoom.hint": { he: "זום עדין בתוך כל תמונה, חיתוך ישיר בין תמונות", en: "A gentle zoom within each photo, a hard cut between photos" },
+  "collage.transition.fade.label": { he: "🌫️ מעבר חלק (Fade)", en: "🌫️ Fade" },
+  "collage.transition.fade.hint": { he: "תמונות עומדות, דהייה הדרגתית ביניהן", en: "Static photos, with a gradual fade between them" },
+  "collage.transition.slide.label": { he: "➡️ החלקה (Slide)", en: "➡️ Slide" },
+  "collage.transition.slide.hint": { he: "תמונה חדשה מחליקה פנימה", en: "A new photo slides in" },
+  "collage.needTwoPhotos": { he: "בחרו לפחות 2 תמונות ליצירת הסרטון", en: "Choose at least 2 photos to create the video" },
+  "collage.noVideoSupport": { he: "הדפדפן הזה לא תומך ביצירת וידאו (נסו Chrome או Edge)", en: "This browser doesn't support creating videos (try Chrome or Edge)" },
+  "collage.createFailed": { he: "לא הצלחנו ליצור את הסרטון בדפדפן הזה - נסו תמונות אחרות או דפדפן אחר", en: "We couldn't create the video in this browser - try other photos or a different browser" },
+  "collage.autoCreateNote": {
+    he: "הסרטון נוצר אוטומטית בדפדפן שלכם (כתוביות ומוזיקת רקע רגועה) מהתמונות שתבחרו - ללא צורך בהעלאה לשרת חיצוני.",
+    en: "The video is created automatically in your browser (captions and calm background music) from the photos you choose - no upload to an external server needed.",
+  },
+  "collage.transitionEffectLabel": { he: "אפקט מעבר בין תמונות", en: "Transition effect between photos" },
+  "collage.durationLabelPrefix": { he: "משך כל תמונה -", en: "Duration per photo -" },
+  "collage.seconds": { he: "שנ'", en: "sec" },
+  "collage.noPhotosYet": { he: "אין עדיין תמונות ליצירת קולאז׳ - העלו קודם כמה תמונות בטאב \"העלאה\".", en: "No photos yet to create a collage - upload some photos in the \"Upload\" tab first." },
+  "collage.creatingVideo": { he: "יוצר סרטון...", en: "Creating video..." },
+  "collage.createVideo": { he: "יצירת סרטון", en: "Create video" },
+  "collage.selected": { he: "נבחרו", en: "selected" },
+  "collage.downloadVideo": { he: "הורדת הסרטון", en: "Download video" },
+  "collage.webmNote": {
+    he: "הדפדפן הזה יודע להקליט WebM בלבד (נגן בכל מקום, גם ברשתות חברתיות) - ב-Safari הקובץ יורד כ-MP4 אמיתי.",
+    en: "This browser can only record WebM (plays everywhere, including on social networks) - on Safari the file downloads as a real MP4.",
+  },
+
+  "digitalAlbum.subtitle": { he: "אלבום דיגיטלי", en: "Digital Album" },
+  "digitalAlbum.empty": { he: "האלבום הדיגיטלי שלכם עדיין ריק - העלו תמונות מהטיול כדי לראות אותו קם לחיים.", en: "Your digital album is still empty - upload photos from the trip to see it come to life." },
+  "digitalAlbum.day": { he: "יום", en: "Day" },
+  "digitalAlbum.moreMoments": { he: "עוד רגעים מהטיול", en: "More moments from the trip" },
+  "digitalAlbum.inspiration": { he: "קצת השראה מהיעד", en: "Some inspiration from the destination" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
+
+/** Pure lookup with no server-only dependency (unlike lib/i18n/server.ts,
+ * which needs next/headers) — safe to import from a component that renders
+ * in either a client or server tree, like DigitalAlbumView. */
+export function translate(lang: Lang, key: DictionaryKey): string {
+  return DICTIONARY[key]?.[lang] ?? DICTIONARY[key]?.he ?? key;
+}

@@ -4,10 +4,12 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAlbumMedia, setAlbumMediaDay } from "@/lib/actions/album";
 import type { AlbumMediaItem } from "./AlbumScreen";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]; slug: string; dayOptions: number[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   function handleDelete(id: string) {
     startTransition(async () => {
@@ -24,7 +26,7 @@ export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]
   }
 
   if (media.length === 0) {
-    return <p className="text-sm opacity-50">עדיין לא העליתם תמונות או סרטונים. הראשונים שלכם יופיעו כאן.</p>;
+    return <p className="text-sm opacity-50">{t("album.empty")}</p>;
   }
 
   return (
@@ -45,13 +47,13 @@ export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]
             onClick={() => handleDelete(item.id)}
             disabled={pending}
             className="absolute end-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-50"
-            title="מחיקה"
+            title={t("album.delete")}
           >
             ✕
           </button>
           {item.type === "video" && (
             <span className="pointer-events-none absolute bottom-1.5 start-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
-              ▶ וידאו
+              {t("album.video")}
             </span>
           )}
           <select
@@ -59,12 +61,12 @@ export function AlbumGrid({ media, slug, dayOptions }: { media: AlbumMediaItem[]
             onChange={(e) => handleDayChange(item.id, e.target.value)}
             disabled={pending}
             className="absolute bottom-1.5 end-1.5 rounded-md border-0 bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white"
-            title="שיוך לפי יום בטיול - לחלוקת האלבום הדיגיטלי"
+            title={t("album.dayAssignTitle")}
           >
-            <option value="">ללא יום</option>
+            <option value="">{t("album.noDay")}</option>
             {dayOptions.map((d) => (
               <option key={d} value={d}>
-                יום {d}
+                {t("album.day")} {d}
               </option>
             ))}
           </select>

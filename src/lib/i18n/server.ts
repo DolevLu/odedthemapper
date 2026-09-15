@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
-import { DICTIONARY, type DictionaryKey, type Lang } from "@/lib/i18n/dictionary";
+import { translate, type DictionaryKey, type Lang } from "@/lib/i18n/dictionary";
+
+export { translate };
 
 /** Server-side counterpart to useTranslation() (LanguageContext.tsx) — most
  * of the app is Server Components (async page.tsx doing DB queries
@@ -9,10 +11,6 @@ import { DICTIONARY, type DictionaryKey, type Lang } from "@/lib/i18n/dictionary
 export async function getLang(): Promise<Lang> {
   const store = await cookies();
   return store.get("lang")?.value === "en" ? "en" : "he";
-}
-
-export function translate(lang: Lang, key: DictionaryKey): string {
-  return DICTIONARY[key]?.[lang] ?? DICTIONARY[key]?.he ?? key;
 }
 
 /** Convenience for a Server Component: `const t = await getServerT();` then
