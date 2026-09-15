@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toggleWantsBooking } from "@/lib/actions/trip";
 import { PoiCard } from "@/components/PoiCard";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export type BookablePoi = {
   id: string;
@@ -27,6 +28,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
   const [items, setItems] = useState(pois);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   function toggle(id: string) {
     setItems((prev) => prev.map((p) => (p.id === id ? { ...p, wantsBooking: !p.wantsBooking } : p)));
@@ -46,7 +48,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
       {wanted.length > 0 && (
         <section>
           <h2 className="mb-3 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            רוצים להזמין ({wanted.length})
+            {t("bookable.wantToBook")} ({wanted.length})
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {wanted.map((poi) => (
@@ -58,7 +60,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
 
       <section>
         <h2 className="mb-3 text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          כל האטרקציות ({filteredRest.length})
+          {t("bookable.allAttractions")} ({filteredRest.length})
         </h2>
         {categoryNames.length > 1 && (
           <div className="mb-3 flex flex-wrap gap-1.5">
@@ -71,7 +73,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
                 color: activeCategory === null ? "white" : "var(--text)",
               }}
             >
-              הכל
+              {t("bookable.all")}
             </button>
             {categoryNames.map((name) => (
               <button
@@ -91,7 +93,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
         )}
         {!activeCategory && filteredRest.length > UNFILTERED_CAP && (
           <p className="mb-2 text-xs opacity-50">
-            מציג {UNFILTERED_CAP} מתוך {filteredRest.length} - בחרו קטגוריה כדי לראות את כולן.
+            {t("bookable.showingPrefix")} {UNFILTERED_CAP} / {filteredRest.length} {t("bookable.showingSuffix")}
           </p>
         )}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -105,6 +107,7 @@ export function BookableList({ pois, slug }: { pois: BookablePoi[]; slug: string
 }
 
 function Row({ poi, slug, onToggle }: { poi: BookablePoi; slug: string; onToggle: (id: string) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       <PoiCard
@@ -125,7 +128,7 @@ function Row({ poi, slug, onToggle }: { poi: BookablePoi; slug: string; onToggle
       <div className="flex items-center justify-between gap-2 ps-1">
         {poi.bookingUrl ? (
           <a href={poi.bookingUrl} target="_blank" rel="noreferrer" className="text-xs underline">
-            קישור להזמנה
+            {t("bookable.bookingLink")}
           </a>
         ) : (
           <span />
@@ -140,7 +143,7 @@ function Row({ poi, slug, onToggle }: { poi: BookablePoi; slug: string; onToggle
             color: poi.wantsBooking ? "white" : "var(--text)",
           }}
         >
-          {poi.wantsBooking ? "רוצה להזמין ✓" : "סמנו לרצון הזמנה"}
+          {poi.wantsBooking ? t("bookable.wantsToBook") : t("bookable.markWantToBook")}
         </button>
       </div>
     </div>

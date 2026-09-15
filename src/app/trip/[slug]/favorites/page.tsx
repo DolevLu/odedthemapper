@@ -6,13 +6,15 @@ import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { PoiCard } from "@/components/PoiCard";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { getServerT } from "@/lib/i18n/server";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
-const TIP_CATEGORY_LABELS: Record<string, string> = {
-  money: "💰 כסף",
-  customs: "🤝 נהגים ותרבות",
-  transport: "🚌 תחבורה",
-  visa: "🛂 ויזה וכניסה",
-  general: "ℹ️ כללי",
+const TIP_CATEGORY_KEYS: Record<string, DictionaryKey> = {
+  money: "favorites.tip.money",
+  customs: "favorites.tip.customs",
+  transport: "favorites.tip.transport",
+  visa: "favorites.tip.visa",
+  general: "favorites.tip.general",
 };
 
 export default async function FavoritesPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -26,6 +28,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
   }
 
   const userId = session!.user!.id;
+  const t = await getServerT();
 
   const [favorites, coupons, mustSee, tips] = await Promise.all([
     prisma.favorite.findMany({
@@ -49,9 +52,12 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
       {mustSee.length > 0 && (
         <section>
           <h2 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            ⭐ המומלצים שלנו - אסור לפספס
+            {t("favorites.mustSeeTitle")}
           </h2>
-          <p className="mb-2 text-sm opacity-60">האתרים והאטרקציות הידועים והאהובים ביותר ב{destination.name}.</p>
+          <p className="mb-2 text-sm opacity-60">
+            {t("favorites.mustSeeBodyPrefix")}
+            {destination.name}.
+          </p>
           <div className="grid grid-cols-2 gap-1.5">
             {mustSee.map((poi) => (
               <div
@@ -76,10 +82,10 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
 
       <section>
         <h1 className="mb-4 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          ❤️ מועדפים ({favorites.length})
+          {t("favorites.title")} ({favorites.length})
         </h1>
         {favorites.length === 0 ? (
-          <p className="text-sm opacity-60">עדיין לא שמרתם נקודות מועדפות. סמנו נקודות במפה כדי לראות אותן כאן.</p>
+          <p className="text-sm opacity-60">{t("favorites.empty")}</p>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6">
             {favorites.map((fav) => (
@@ -106,7 +112,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
       {tips.length > 0 && (
         <section>
           <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            💡 טיפים חשובים לפני הנסיעה
+            {t("favorites.importantTips")}
           </h2>
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {tips.map((tip) => (
@@ -115,7 +121,9 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
                 className="game-pop-in border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
                 style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
               >
-                <p className="mb-0.5 text-[11px] font-semibold opacity-60">{TIP_CATEGORY_LABELS[tip.category] ?? tip.category}</p>
+                <p className="mb-0.5 text-[11px] font-semibold opacity-60">
+                  {TIP_CATEGORY_KEYS[tip.category] ? t(TIP_CATEGORY_KEYS[tip.category]) : tip.category}
+                </p>
                 <p>{tip.text}</p>
               </div>
             ))}
@@ -125,10 +133,10 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
 
       <section>
         <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          🎁 הנחות וקופונים
+          {t("favorites.discountsAndCoupons")}
         </h2>
         {coupons.length === 0 ? (
-          <p className="text-sm opacity-60">אין עדיין הנחות ליעד הזה.</p>
+          <p className="text-sm opacity-60">{t("favorites.noDiscounts")}</p>
         ) : (
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {coupons.map((c) => (
@@ -139,7 +147,11 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
               >
                 <h3 className="font-semibold">🎁 {c.partnerName}</h3>
                 <p className="opacity-70">{c.discountDesc}</p>
-                {c.code && <p className="font-mono">קוד: {c.code}</p>}
+                {c.code && (
+                  <p className="font-mono">
+                    {t("favorites.code")} {c.code}
+                  </p>
+                )}
                 {c.url && (
                   <a
                     href={c.url}
@@ -148,7 +160,7 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
                     className="font-semibold underline transition-transform duration-200 group-hover:translate-x-[-2px]"
                     style={{ color: "var(--primary)" }}
                   >
-                    לפרטים והטבה ←
+                    {t("favorites.detailsAndBenefit")}
                   </a>
                 )}
               </div>

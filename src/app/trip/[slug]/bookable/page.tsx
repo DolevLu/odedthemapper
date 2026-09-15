@@ -7,6 +7,7 @@ import { getBookingRecommendations } from "@/lib/bookingRecommendations";
 import { getUpcomingHolidays } from "@/lib/holidays";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { BookableList } from "./BookableList";
+import { getLang, getServerT } from "@/lib/i18n/server";
 
 export default async function BookablePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,6 +20,8 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   }
 
   const userId = session!.user!.id;
+  const [t, lang] = await Promise.all([getServerT(), getLang()]);
+  const dateLocale = lang === "en" ? "en-GB" : "he-IL";
 
   const [pois, favorites] = await Promise.all([
     prisma.pointOfInterest.findMany({
@@ -55,10 +58,8 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
     <div className="flex flex-col gap-4">
       {holidays.length > 0 && (
         <section className="border p-3" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-          <h2 className="mb-0.5 text-sm font-bold">📅 חגים וימי חג קרובים</h2>
-          <p className="mb-2 text-xs opacity-70">
-            שימו לב שבחגים רבים עסקים ואתרים עשויים לפעול בשעות שונות או להיות סגורים.
-          </p>
+          <h2 className="mb-0.5 text-sm font-bold">{t("bookable.upcomingHolidays")}</h2>
+          <p className="mb-2 text-xs opacity-70">{t("bookable.holidaysNote")}</p>
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {holidays.map((h) => (
               <div
@@ -67,7 +68,7 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
                 style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
               >
                 <span className="truncate font-semibold">🎉 {h.name}</span>
-                <span className="shrink-0 text-[11px] opacity-60">{new Date(h.date).toLocaleDateString("he-IL")}</span>
+                <span className="shrink-0 text-[11px] opacity-60">{new Date(h.date).toLocaleDateString(dateLocale)}</span>
               </div>
             ))}
           </div>
@@ -78,8 +79,8 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
         className="border p-3"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
-        <h1 className="mb-0.5 text-base font-bold">🎟️ המלצות להזמנה</h1>
-        <p className="mb-2 text-xs opacity-70">דברים שכדאי לדעתנו לשקול להזמין מראש ביעד הזה.</p>
+        <h1 className="mb-0.5 text-base font-bold">{t("bookable.recommendationsTitle")}</h1>
+        <p className="mb-2 text-xs opacity-70">{t("bookable.recommendationsBody")}</p>
         <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {recommendations.map((rec) => (
             <div
@@ -95,8 +96,8 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
       </section>
 
       <section>
-        <h2 className="mb-2 text-lg font-bold">רשימת אטרקציות</h2>
-        <p className="mb-6 text-sm opacity-70">סמנו אטרקציות שתרצו להזמין מראש כדי לעקוב אחריהן בקלות.</p>
+        <h2 className="mb-2 text-lg font-bold">{t("bookable.listTitle")}</h2>
+        <p className="mb-6 text-sm opacity-70">{t("bookable.listBody")}</p>
         <BookableList pois={items} slug={slug} />
       </section>
     </div>
