@@ -24,6 +24,8 @@ import { fetchStreetsInBounds, type StreetWay } from "@/lib/streetNetwork";
 import { saveDestinationOffline, isDestinationSavedOffline, isOfflineStorageSupported } from "@/lib/offlineStore";
 import { CAPITAL_AREA_MATCH_BY_SLUG, CAPITAL_COORDS_BY_SLUG } from "@/lib/capitalCities";
 import { suppressMapsErrorDialog } from "@/lib/suppressMapsErrorDialog";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
@@ -89,7 +91,7 @@ function starRatingHtml(poiId: string, myRating: number): string {
   return `<div style="display:flex;align-items:center;gap:1px;margin-top:6px" data-rate-row data-poi-id="${poiId}">${stars}</div>`;
 }
 
-function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, myRating: number, isAdmin: boolean): string {
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, myRating: number, isAdmin: boolean, t: (key: DictionaryKey) => string): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
@@ -104,9 +106,9 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   // this is ever called, so there's no "informational-only" reduced variant
   // to build here anymore.
   const actions = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-    <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? "❤️ מועדפים" : "🤍 מועדפים"}</button>
-    <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? "🎟️ ✓ נוסף להזמנה" : "🎟️ להזמנה"}</button>
-    ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">🎨 עריכה</button>` : ""}
+    <button data-fav-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${favorited ? t("map.favorited") : t("map.notFavorited")}</button>
+    <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? t("map.addedToBooking") : t("map.toBooking")}</button>
+    ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.editStyle")}</button>` : ""}
   </div>`;
   return `<div style="font-family:'Rubik',sans-serif;padding:8px">
     ${photo}
@@ -124,21 +126,21 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
  * PlacesService data Google's card is built from and lays it out ourselves,
  * plus a direct link to open the real thing on Google Maps for anything
  * (reviews, full photo set) that genuinely can't be reproduced here. */
-function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId: string, lat: number, lng: number): string {
-  const name = place.name ?? "מקום ללא שם";
+function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId: string, lat: number, lng: number, lang: "he" | "en", t: (key: DictionaryKey) => string): string {
+  const name = place.name ?? t("map.unnamedPlace");
   const photo = place.photos?.[0]
     ? `<img src="${place.photos[0].getUrl({ maxWidth: 320, maxHeight: 160 })}" alt="" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
   const rating =
     place.rating != null
-      ? `<div style="font-size:13px;margin-top:2px">⭐ ${place.rating}${place.user_ratings_total ? ` · ${place.user_ratings_total.toLocaleString("he-IL")} ביקורות` : ""}</div>`
+      ? `<div style="font-size:13px;margin-top:2px">⭐ ${place.rating}${place.user_ratings_total ? ` · ${place.user_ratings_total.toLocaleString(lang === "en" ? "en-US" : "he-IL")} ${t("map.reviews")}` : ""}</div>`
       : "";
   const openNow = place.opening_hours?.isOpen?.();
   const openStatus =
     openNow === true
-      ? `<span style="color:#16A34A;font-weight:600">פתוח עכשיו</span>`
+      ? `<span style="color:#16A34A;font-weight:600">${t("map.openNow")}</span>`
       : openNow === false
-        ? `<span style="color:#DC2626;font-weight:600">סגור עכשיו</span>`
+        ? `<span style="color:#DC2626;font-weight:600">${t("map.closedNow")}</span>`
         : "";
   const address = place.formatted_address
     ? `<div style="font-size:12px;opacity:.7;margin-top:4px">📍 ${place.formatted_address}</div>`
@@ -147,7 +149,7 @@ function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId:
     ? `<div style="font-size:12px;margin-top:2px"><a href="tel:${place.formatted_phone_number}" style="color:#7C3AED">📞 ${place.formatted_phone_number}</a></div>`
     : "";
   const website = place.website
-    ? `<div style="font-size:12px;margin-top:2px"><a href="${place.website}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 אתר</a></div>`
+    ? `<div style="font-size:12px;margin-top:2px"><a href="${place.website}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.website")}</a></div>`
     : "";
   const mapsUrl = place.url ?? `https://www.google.com/maps/place/?q=place_id:${placeId}`;
 
@@ -160,8 +162,8 @@ function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId:
     ${phone}
     ${website}
     <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-      <button data-save-pin-btn data-place-id="${placeId}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">💾 שמירה למפה</button>
-      <a href="${mapsUrl}" target="_blank" rel="noopener" style="${INFO_ACTION_BTN_STYLE};text-decoration:none;color:#333;display:inline-block">🗺️ פתיחה ב-Google Maps</a>
+      <button data-save-pin-btn data-place-id="${placeId}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">${t("map.savePin")}</button>
+      <a href="${mapsUrl}" target="_blank" rel="noopener" style="${INFO_ACTION_BTN_STYLE};text-decoration:none;color:#333;display:inline-block">${t("map.openInGoogleMaps")}</a>
     </div>
   </div>`;
 }
@@ -173,8 +175,8 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function formatDistance(km: number): string {
-  return km < 1 ? `${Math.round(km * 1000)} מ׳` : `${km.toFixed(1)} ק״מ`;
+function formatDistance(km: number, t: (key: DictionaryKey) => string): string {
+  return km < 1 ? `${Math.round(km * 1000)} ${t("map.meters")}` : `${km.toFixed(1)} ${t("map.km")}`;
 }
 
 type LogisticPin = { id: string; type: string; title: string; lat: number; lng: number; dateRange: string | null };
@@ -255,6 +257,7 @@ export function MapScreen({
 }) {
   const router = useRouter();
   const { loaded, error } = useGoogleMaps();
+  const { t, lang } = useTranslation();
   const searchParams = useSearchParams();
   const focusPoiId = searchParams.get("focus");
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -531,7 +534,7 @@ export function MapScreen({
     e.target.value = ""; // allow re-selecting the same file name later
     if (!file) return;
 
-    setPersonalUploadStatus({ kind: "working", message: "מעלים ומעבדים את הקובץ..." });
+    setPersonalUploadStatus({ kind: "working", message: t("map.uploadingProcessing") });
     try {
       const formData = new FormData();
       formData.set("file", file);
@@ -539,12 +542,12 @@ export function MapScreen({
       setPersonalUploadStatus({
         kind: "success",
         message: result.truncated
-          ? `נוספו ${result.count} נקודות (הקובץ הכיל יותר, חלקן לא נוספו)`
-          : `נוספו ${result.count} נקודות אישיות למפה 🎉`,
+          ? `${t("map.addedSomePointsPrefix")} ${result.count} ${t("map.addedSomePointsSuffix")}`
+          : `${t("map.addedSomePointsPrefix")} ${result.count} ${t("map.addedAllPointsSuffix")}`,
       });
       router.refresh();
     } catch (err) {
-      setPersonalUploadStatus({ kind: "error", message: err instanceof Error ? err.message : "העלאת הקובץ נכשלה" });
+      setPersonalUploadStatus({ kind: "error", message: err instanceof Error ? err.message : t("map.uploadFailed") });
     }
   }
 
@@ -656,7 +659,7 @@ export function MapScreen({
           const nowFavorited = !favoritedIdsRef.current.has(poiId);
           if (nowFavorited) favoritedIdsRef.current.add(poiId);
           else favoritedIdsRef.current.delete(poiId);
-          favBtn.textContent = nowFavorited ? "❤️ מועדפים" : "🤍 מועדפים";
+          favBtn.textContent = nowFavorited ? t("map.favorited") : t("map.notFavorited");
           // Updates the marker's own icon immediately (yellow glyph fill for
           // favorites) instead of waiting for a full marker rebuild.
           const favoritedPoi = pointPoisById.get(poiId);
@@ -684,7 +687,7 @@ export function MapScreen({
           const nowWants = !wantsBookingIdsRef.current.has(poiId);
           if (nowWants) wantsBookingIdsRef.current.add(poiId);
           else wantsBookingIdsRef.current.delete(poiId);
-          bookBtn.textContent = nowWants ? "🎟️ ✓ נוסף להזמנה" : "🎟️ להזמנה";
+          bookBtn.textContent = nowWants ? t("map.addedToBooking") : t("map.toBooking");
           toggleWantsBooking(poiId, slug);
         };
       }
@@ -807,7 +810,7 @@ export function MapScreen({
               if (status !== google.maps.places.PlacesServiceStatus.OK || !place?.geometry?.location) return;
               const lat = place.geometry.location.lat();
               const lng = place.geometry.location.lng();
-              infoWindowRef.current?.setContent(richPlaceInfoWindowHtml(place, e.placeId!, lat, lng));
+              infoWindowRef.current?.setContent(richPlaceInfoWindowHtml(place, e.placeId!, lat, lng, lang, t));
               infoWindowRef.current?.setPosition({ lat, lng });
               infoWindowRef.current?.open({ map: mapRef.current! });
             }
@@ -869,8 +872,8 @@ export function MapScreen({
             <strong>📌 ${escapeHtml(pin.name)}</strong>
             ${description}
             <div style="margin-top:8px;display:flex;gap:6px">
-              <button data-edit-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">✏️ עריכה</button>
-              <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">🗑️ הסרה מהמפה שלי</button>
+              <button data-edit-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.editPin")}</button>
+              <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.removeFromMyMap")}</button>
             </div>
           </div>`
         );
@@ -1010,7 +1013,7 @@ export function MapScreen({
           position: { lat: p.lat, lng: p.lng },
           map: mapRef.current!,
           label: { text: String(idx + 1), color: "white", fontSize: "11px", fontWeight: "bold" },
-          title: `יום ${day.dayIndex} · ${p.name}`,
+          title: `${t("map.dayLabel")} ${day.dayIndex} · ${p.name}`,
           zIndex: 550,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
@@ -1055,7 +1058,7 @@ export function MapScreen({
       const bounds = map.getBounds();
       if (zoom < SHADOW_MIN_ZOOM || !bounds) {
         setShadowStreets([]);
-        setShadowError(zoom < SHADOW_MIN_ZOOM ? "התקרבו יותר כדי לראות צל רחובות" : null);
+        setShadowError(zoom < SHADOW_MIN_ZOOM ? t("map.zoomInForShadows") : null);
         return;
       }
       setShadowLoading(true);
@@ -1066,7 +1069,7 @@ export function MapScreen({
         const streets = await fetchStreetsInBounds({ south: sw.lat(), west: sw.lng(), north: ne.lat(), east: ne.lng() });
         setShadowStreets(streets);
       } catch {
-        setShadowError("לא הצלחנו לטעון רחובות - נסו שוב");
+        setShadowError(t("map.shadowLoadFailed"));
       } finally {
         setShadowLoading(false);
       }
@@ -1185,7 +1188,7 @@ export function MapScreen({
                 <strong>${name}</strong>
                 ${top.formatted_address ? `<div style="font-size:12px;opacity:.6;margin-top:2px">${top.formatted_address}</div>` : ""}
                 <div style="margin-top:8px">
-                  <button data-save-pin-btn data-place-id="${top.place_id}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">💾 שמירה למפה</button>
+                  <button data-save-pin-btn data-place-id="${top.place_id}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">${t("map.savePin")}</button>
                 </div>
               </div>`
             );
@@ -1204,7 +1207,7 @@ export function MapScreen({
     try {
       await loadRoutesLibrary();
     } catch {
-      setRouteError("מסלול ניווט אינו זמין כרגע");
+      setRouteError(t("map.routeUnavailable"));
       return;
     }
     if (!directionsServiceRef.current) {
@@ -1228,7 +1231,7 @@ export function MapScreen({
         if (status === "OK" && result) {
           directionsRendererRef.current?.setDirections(result);
         } else {
-          setRouteError("לא הצלחנו לחשב מסלול לנקודה הזו");
+          setRouteError(t("map.routeCalcFailed"));
         }
       }
     );
@@ -1250,12 +1253,12 @@ export function MapScreen({
     }
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(
-      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), ratingsByPoiIdRef.current[poi.id] ?? 0, isAdmin)
+      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), ratingsByPoiIdRef.current[poi.id] ?? 0, isAdmin, t)
     );
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
       if (userPositionRef.current) drawRouteTo(poi);
-      else setRouteError("אין עדיין מיקום זמין ליצירת מסלול");
+      else setRouteError(t("map.noLocationForRoute"));
     }
   }
 
@@ -1393,7 +1396,7 @@ export function MapScreen({
     }
 
     if (!navigator.geolocation) {
-      setGpsError("הדפדפן לא תומך במיקום");
+      setGpsError(t("map.geoNotSupported"));
       return;
     }
     setGpsError(null);
@@ -1407,7 +1410,7 @@ export function MapScreen({
             map: mapRef.current,
             icon: currentLocationIcon(),
             zIndex: 999,
-            title: "המיקום שלי",
+            title: t("map.myLocation"),
           });
           // Only recenters the camera once the trip has actually started
           // (autoLocate) — tracking itself starts immediately regardless
@@ -1423,7 +1426,7 @@ export function MapScreen({
         }
         maybeRecordTrailPoint(point);
       },
-      () => setGpsError("לא הצלחנו לקבל מיקום - בדקו הרשאות מיקום בדפדפן"),
+      () => setGpsError(t("map.geoFailed")),
       { enableHighAccuracy: true }
     );
     setGpsActive(true);
@@ -1484,7 +1487,7 @@ export function MapScreen({
   if (error) {
     return (
       <div className="rounded-lg border p-6 text-center text-sm" style={{ borderColor: "var(--primary)" }}>
-        {error}. ודאו ש-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY מוגדר.
+        {error}. {t("map.apiKeyMissingSuffix")}
       </div>
     );
   }
@@ -1518,7 +1521,7 @@ export function MapScreen({
             className="pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
             style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
           >
-            🔓 תצוגה מקדימה - שדרגו את החבילה כדי לפתוח את כל התכונות
+            {t("map.previewUpgrade")}
           </Link>
         </div>
       )}
@@ -1539,14 +1542,14 @@ export function MapScreen({
           className="rounded-full px-2 py-0.5"
           style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
         >
-          מפה
+          {t("map.mapType")}
         </button>
         <button
           onClick={() => setMapType("satellite")}
           className="rounded-full px-2 py-0.5"
           style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
         >
-          לוויין
+          {t("map.satellite")}
         </button>
       </div>
 
@@ -1576,7 +1579,7 @@ export function MapScreen({
               setSearchNoResults(false);
             }}
             onKeyDown={(e) => e.key === "Enter" && previewGate(runPlaceSearch)()}
-            placeholder="זה המקום לחפש"
+            placeholder={t("map.searchPlaceholder")}
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             style={{ color: "var(--text)", ...previewDim }}
           />
@@ -1587,7 +1590,7 @@ export function MapScreen({
                 setSearchNoResults(false);
               }}
               className="shrink-0 px-1 text-sm opacity-50 hover:opacity-100"
-              aria-label="ניקוי חיפוש"
+              aria-label={t("map.clearSearch")}
             >
               ✕
             </button>
@@ -1598,7 +1601,7 @@ export function MapScreen({
             className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50"
             style={{ background: "var(--primary)" }}
           >
-            {searching ? "…" : "חיפוש"}
+            {searching ? t("map.searching") : t("map.search")}
           </button>
         </div>
       </div>
@@ -1633,14 +1636,14 @@ export function MapScreen({
             className="rounded-full px-2.5 py-1"
             style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
           >
-            מפה
+            {t("map.mapType")}
           </button>
           <button
             onClick={() => setMapType("satellite")}
             className="rounded-full px-2.5 py-1"
             style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
           >
-            לוויין
+            {t("map.satellite")}
           </button>
         </div>
         <input
@@ -1655,8 +1658,8 @@ export function MapScreen({
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-md sm:h-7 sm:w-7"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--primary)", ...previewDim }}
           disabled={personalUploadStatus?.kind === "working"}
-          aria-label="העלאת מפה אישית (KML / KMZ)"
-          title="העלאת מפה אישית (KML / KMZ)"
+          aria-label={t("map.uploadPersonalMapAria")}
+          title={t("map.uploadPersonalMapAria")}
         >
           {personalUploadStatus?.kind === "working" ? "⏳" : "+"}
         </button>
@@ -1664,7 +1667,7 @@ export function MapScreen({
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-          aria-label="גלילה שמאלה"
+          aria-label={t("map.scrollLeft")}
         >
           ‹
         </button>
@@ -1678,7 +1681,7 @@ export function MapScreen({
             ...previewDim,
           }}
         >
-          הכל
+          {t("map.all")}
         </button>
         {categoryNames.map((catName) => {
           const catColor = categoryColorByName.get(catName) ?? "#888888";
@@ -1706,48 +1709,48 @@ export function MapScreen({
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: myRouteVisible ? "#0EA5E9" : "rgba(255,255,255,0.94)", color: myRouteVisible ? "white" : "#0369A1", ...previewDim }}
         >
-          {myRouteLoading ? "⏳" : "🧭"} המסלול שלי
+          {myRouteLoading ? t("map.loadingEmoji") : "🧭"} {t("map.myRoute")}
         </button>
         <button
           onClick={previewGate(() => setHeatmapVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C", ...previewDim }}
         >
-          🔥 מפת חום
+          {t("map.heatmap")}
         </button>
         <button
           onClick={previewGate(() => setTrailVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A", ...previewDim }}
         >
-          🟢 איפה כבר הייתי
+          {t("map.whereIveBeen")}
         </button>
         <button
           onClick={previewGate(() => setHideVisited((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: hideVisited ? "#7C3AED" : "rgba(255,255,255,0.94)", color: hideVisited ? "white" : "#6D28D9", ...previewDim }}
-          title="הסתרת נקודות שכבר דירגתם, כדי לראות רק מה שנשאר לגלות"
+          title={t("map.hideRatedTitle")}
         >
-          ⭐ רק מה שלא הייתי
+          {t("map.onlyUnrated")}
         </button>
         <button
           onClick={previewGate(() => setShadowVisible((v) => !v))}
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
-          title="הערכה גסה - לפי כיוון הרחוב ומיקום השמש, לא נתוני גובה מבנים אמיתיים"
+          title={t("map.shadowTitle")}
         >
           {shadowVisible && shadowLoading
-            ? "🌑 טוען..."
+            ? t("map.shadowLoading")
             : shadowVisible && shadowIsNight
-              ? "🌙 לילה - הכל מוצל"
-              : "🌑 צל"}
+              ? t("map.shadowNight")
+              : t("map.shadow")}
         </button>
         </div>
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-          aria-label="גלילה ימינה"
+          aria-label={t("map.scrollRight")}
         >
           ›
         </button>
@@ -1768,7 +1771,7 @@ export function MapScreen({
               setSearchNoResults(false);
             }}
             onKeyDown={(e) => e.key === "Enter" && previewGate(runPlaceSearch)()}
-            placeholder="זה המקום לחפש"
+            placeholder={t("map.searchPlaceholder")}
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             style={{ color: "var(--text)", ...previewDim }}
           />
@@ -1779,7 +1782,7 @@ export function MapScreen({
                 setSearchNoResults(false);
               }}
               className="shrink-0 text-sm opacity-50 hover:opacity-100"
-              aria-label="ניקוי חיפוש"
+              aria-label={t("map.clearSearch")}
             >
               ✕
             </button>
@@ -1833,7 +1836,7 @@ export function MapScreen({
             className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
             style={{ background: myRouteActiveDay == null ? "#0EA5E9" : "transparent", color: myRouteActiveDay == null ? "white" : "#0369A1" }}
           >
-            כל הימים
+            {t("map.allDays")}
           </button>
           {myRouteDays.map((day) => {
             const color = colorForDay(day.dayIndex - 1);
@@ -1845,7 +1848,7 @@ export function MapScreen({
                 className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
                 style={{ background: active ? color : "transparent", color: active ? "white" : color }}
               >
-                יום {day.dayIndex}
+                {t("map.dayLabel")} {day.dayIndex}
               </button>
             );
           })}
@@ -1853,13 +1856,13 @@ export function MapScreen({
       )}
       {myRouteVisible && myRouteDays && myRouteDays.length === 0 && (
         <div className="absolute inset-x-3 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 rounded-lg bg-white/95 p-2 text-center text-xs font-semibold shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))]">
-          עדיין לא בנית מסלול ליעד הזה — אפשר לבנות אחד במסך &quot;מסלול&quot;
+          {t("map.noRouteYetPrefix")} {t("map.itineraryScreenName")}
         </div>
       )}
 
       {searchNoResults && (
         <div className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">
-          לא נמצאו תוצאות לחיפוש הזה
+          {t("map.noResultsForSearch")}
         </div>
       )}
 
@@ -1874,7 +1877,7 @@ export function MapScreen({
 
       {!isOnline && (
         <div className="absolute inset-x-3 top-24 z-10 rounded-lg bg-white/95 p-2.5 text-center text-xs font-semibold shadow-md" style={{ color: "#92400E" }}>
-          📡 אין חיבור לאינטרנט - המפה החיה דורשת רשת, מוצגת הרשימה השמורה בלבד
+          {t("map.offlineNotice")}
         </div>
       )}
 
@@ -1888,7 +1891,7 @@ export function MapScreen({
                 setRouteError(null);
               }}
               className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-50 text-[10px] font-bold text-red-600"
-              aria-label="סגירה"
+              aria-label={t("map.close")}
             >
               ✕
             </button>
@@ -1912,7 +1915,7 @@ export function MapScreen({
           onClick={previewGate(() => setRouteModeActive((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
           style={{ background: routeModeActive ? "#4285F4" : "white", color: routeModeActive ? "white" : "#4285F4", ...previewDim }}
-          aria-label="מצב מסלול הליכה"
+          aria-label={t("map.walkingRouteModeAria")}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <circle cx="4" cy="20" r="2" fill="currentColor" stroke="none" />
@@ -1924,7 +1927,7 @@ export function MapScreen({
           className="pointer-events-none absolute bottom-full end-0 mb-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
           style={{ background: "#111827" }}
         >
-          {routeModeActive ? "מצב מסלול פעיל - לחצו על נקודה" : "הפעלת מצב מסלול הליכה"}
+          {routeModeActive ? t("map.routeModeActive") : t("map.enableWalkingRoute")}
         </span>
       </div>
 
@@ -1941,7 +1944,7 @@ export function MapScreen({
           onClick={previewGate(() => setShowGooglePois((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
           style={{ background: showGooglePois ? "#4285F4" : "white", color: showGooglePois ? "white" : "#4285F4", ...previewDim }}
-          aria-label="הצגת תגיות גוגל מפות"
+          aria-label={t("map.showGooglePoisAria")}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.59 13.41 12 22l-8.59-8.59a2 2 0 0 1 0-2.82l7.17-7.17a2 2 0 0 1 2.82 0l7.19 7.17a2 2 0 0 1 0 2.82Z" />
@@ -1952,7 +1955,7 @@ export function MapScreen({
           className="pointer-events-none absolute bottom-full start-0 mb-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
           style={{ background: "#111827" }}
         >
-          {showGooglePois ? "לחצו על מקום כדי לשמור למפה שלכם" : "הצגת תגיות גוגל מפות"}
+          {showGooglePois ? t("map.clickPlaceToSave") : t("map.showGooglePoisAria")}
         </span>
       </div>
 
@@ -1972,7 +1975,10 @@ export function MapScreen({
       >
         <div className="flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-semibold">
           <button onClick={previewGate(() => setListOpen((v) => !v))} className="flex flex-1 items-center gap-2 text-start">
-            <span>📋 {sortedList.length} נקודות ברשימה{gpsActive && userPosition ? " · ממוין לפי קרבה" : ""}</span>
+            <span>
+              {t("map.pointsInListPrefix")} {sortedList.length} {t("map.pointsInListSuffix")}
+              {gpsActive && userPosition ? t("map.sortedByProximity") : ""}
+            </span>
           </button>
           {isOfflineStorageSupported() && (
             <button
@@ -1980,13 +1986,13 @@ export function MapScreen({
               disabled={offlineSaving}
               className="shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold opacity-70 hover:opacity-100 disabled:opacity-50"
               style={{ background: offlineSaved ? "color-mix(in srgb, #16A34A 12%, transparent)" : "transparent", color: offlineSaved ? "#16A34A" : "var(--text)" }}
-              title="שמירת הנקודות והתמונות לשימוש אופליין"
+              title={t("map.saveOfflineTitle")}
             >
               {offlineSaving
                 ? `📥 ${offlineProgress?.done ?? 0}/${offlineProgress?.total ?? 0}`
                 : offlineSaved
-                  ? "✓ נשמר אופליין"
-                  : "📥 שמירה אופליין"}
+                  ? t("map.savedOffline")
+                  : t("map.saveOffline")}
             </button>
           )}
           <button onClick={previewGate(() => setListOpen((v) => !v))} className="shrink-0 text-xs opacity-60">
@@ -2022,9 +2028,9 @@ export function MapScreen({
             <span className="truncate">{poi.name}</span>
           </span>
           <span className="ps-4 text-xs opacity-60">
-            {"distanceKm" in poi ? `${formatDistance((poi as unknown as { distanceKm: number }).distanceKm)} · ` : ""}
+            {"distanceKm" in poi ? `${formatDistance((poi as unknown as { distanceKm: number }).distanceKm, t)} · ` : ""}
             {poi.areaName}
-            {routeToPoiId === poi.id && " · 🧭 מסלול פעיל"}
+            {routeToPoiId === poi.id && t("map.activeRouteSuffix")}
           </span>
         </span>
         <span onClick={(e) => e.stopPropagation()}>
