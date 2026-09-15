@@ -167,6 +167,78 @@ export const DICTIONARY = {
   "wrapped.thanksForTraveling": { he: "תודה שטיילתם איתנו 🧭", en: "Thanks for traveling with us 🧭" },
   "wrapped.previous": { he: "הקודם", en: "Previous" },
   "wrapped.next": { he: "הבא", en: "Next" },
+
+  "home.stats.destinations": { he: "יעדים", en: "destinations" },
+  "home.stats.pois": { he: "נקודות עניין", en: "points of interest" },
+  "home.stats.happyTravelers": { he: "מטיילים מרוצים", en: "happy travelers" },
+  "home.heroTitle": { he: "טראבי - פלטפורמת הטיולים", en: "Travi - the travel platform" },
+  "home.heroSubtitle": { he: "שהופכת כל טיסה להרפתקה", en: "that turns every flight into an adventure" },
+  "home.heroBody": {
+    he: "לכל יעד - עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד. היכנסו ישר למערכת של כל יעד - בחינם, עוד לפני שמשלמים.",
+    en: "Every destination gets its own designed world: an interactive map, a daily itinerary planner, a phrasebook, an expense report and more. Get straight into any destination's system - free, before you even pay.",
+  },
+  "home.ctaAllDestinations": { he: "לכל היעדים", en: "All destinations" },
+  "home.ctaNotSure": { he: "✈️ לא בטוחים לאן?", en: "✈️ Not sure where?" },
+  "home.ctaPricingPrefix": { he: "תמחור - החל מ-", en: "Pricing - starting from " },
+  "home.ctaPricingSuffix": { he: "/חודש", en: "/month" },
+  "home.ourDestinations": { he: "היעדים שלנו", en: "Our Destinations" },
+  "home.allDestinationsArrow": { he: "לכל היעדים ←", en: "All destinations ←" },
+  "home.planForEveryTraveler": { he: "תוכנית לכל סוג מטייל", en: "A plan for every kind of traveler" },
+  "home.planForEveryTravelerBody": {
+    he: "ממטייל בודד ועד ארגוני נסיעות - יש לנו תוכנית שמתאימה לכם.",
+    en: "From a solo traveler to travel agencies - we have a plan that fits you.",
+  },
+  "home.free": { he: "חינם", en: "Free" },
+  "home.perMonth": { he: "/חודש", en: "/month" },
+  "home.comparePlans": { he: "השוואת תוכניות", en: "Compare plans" },
+  "home.faqTitle": { he: "שאלות ותשובות", en: "FAQ" },
+  "home.faq.q1": { he: "איך מקבלים גישה למפה אחרי הרשמה?", en: "How do I get access to the map after signing up?" },
+  "home.faq.a1": {
+    he: "מיד לאחר ההרשמה אתם יכולים להיכנס לכל יעד ולראות אותו מבפנים. שדרוג לחבילה בתשלום פותח את שאר המסכים.",
+    en: "Right after signing up you can open any destination and see it from the inside. Upgrading to a paid plan unlocks the rest of the screens.",
+  },
+  "home.faq.q2": { he: "אפשר לנסות לפני שמשלמים?", en: "Can I try it before paying?" },
+  "home.faq.a2": {
+    he: "כן - נכנסים ישר למערכת של כל יעד ורואים חלק מהמסכים בחינם, לפני שבוחרים חבילה.",
+    en: "Yes - you get straight into every destination's system and see some of the screens for free, before choosing a plan.",
+  },
+  "home.faq.q3": { he: "המפה עובדת גם בלי אינטרנט?", en: "Does the map work without internet?" },
+  "home.faq.a3": {
+    he: "כן, לאחר טעינה ראשונה כל התוכן של היעד שברשותכם זמין גם במצב אופליין.",
+    en: "Yes, after the first load, all the content for your destination is also available offline.",
+  },
+  "home.faq.q4": { he: "אפשר לבטל את המנוי מתי שרוצים?", en: "Can I cancel my subscription anytime?" },
+  "home.faq.a4": {
+    he: "בהחלט - אין התחייבות ארוכת טווח, אפשר לבטל בכל רגע.",
+    en: "Absolutely - there's no long-term commitment, you can cancel anytime.",
+  },
+
+  "destinations.title": { he: "כל היעדים", en: "All Destinations" },
+  "destinations.subtitle": { he: "בחרו יעד כדי להיכנס למערכת שלו - מפה, מסלול, שיחון ועוד.", en: "Choose a destination to enter its system - map, itinerary, phrasebook and more." },
+  "destinations.quizBannerTitle": { he: "✈️ לא בטוחים לאן לטוס?", en: "✈️ Not sure where to fly?" },
+  "destinations.quizBannerBody": { he: "ענו על שאלון קצר ואנחנו נתאים לכם את היעד הבא - בחינם.", en: "Answer a short quiz and we'll match you with your next destination - for free." },
+  "destinations.findMyDestination": { he: "למצוא לי יעד ←", en: "Find my destination ←" },
+
+  "trips.title": { he: "🧳 הטיולים שלי", en: "🧳 My Trips" },
+  "trips.subtitle": {
+    he: "המסלולים, התמונות, הדירוגים והמלונות שלכם מכל יעד שהייתם בו - נשמרים כאן לצמיתות, גם אם כבר אין לכם גישה חיה ליעד.",
+    en: "Your itineraries, photos, ratings and hotels from every destination you've visited - saved here permanently, even after you no longer have live access to the destination.",
+  },
+  "trips.emptyTitle": { he: "עדיין אין כאן טיולים", en: "No trips here yet" },
+  "trips.emptyBody": { he: "ברגע שתתחילו לתכנן יעד, הוא יופיע כאן אוטומטית.", en: "As soon as you start planning a destination, it'll appear here automatically." },
+  "trips.chooseDestination": { he: "בחירת יעד ←", en: "Choose a destination ←" },
+  "trips.liveAccess": { he: "גישה פעילה", en: "Live access" },
+  "trips.dayCount": { he: "ימי מסלול", en: "days" },
+  "trips.photos": { he: "תמונות", en: "photos" },
+  "trips.ratings": { he: "דירוגים", en: "ratings" },
+  "trips.hotels": { he: "מלונות", en: "hotels" },
+  "trips.since": { he: "מאז", en: "Since" },
+
+  "destCard.pois": { he: "נקודות עניין", en: "points of interest" },
+  "destCard.comingSoon": { he: "בקרוב", en: "Coming soon" },
+  "destCard.areas": { he: "אזורים", en: "areas" },
+  "destCard.fromPricePrefix": { he: "מ-", en: "From " },
+  "destCard.fromPriceSuffix": { he: "/חודש", en: "/month" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

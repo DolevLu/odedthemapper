@@ -2,31 +2,29 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getTripArchiveSummaries } from "@/lib/data/memories";
-
-const DATE_FMT = new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric" });
+import { getLang, getServerT } from "@/lib/i18n/server";
 
 export default async function TripsArchivePage() {
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=${encodeURIComponent("/trips")}`);
 
-  const trips = await getTripArchiveSummaries(session.user.id);
+  const [trips, t, lang] = await Promise.all([getTripArchiveSummaries(session.user.id), getServerT(), getLang()]);
+  const dateFmt = new Intl.DateTimeFormat(lang === "en" ? "en-GB" : "he-IL", { month: "long", year: "numeric" });
 
   return (
     <div className="mx-auto max-w-5xl p-6">
       <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-        🧳 הטיולים שלי
+        {t("trips.title")}
       </h1>
-      <p className="mt-1 text-sm opacity-60">
-        המסלולים, התמונות, הדירוגים והמלונות שלכם מכל יעד שהייתם בו - נשמרים כאן לצמיתות, גם אם כבר אין לכם גישה חיה ליעד.
-      </p>
+      <p className="mt-1 text-sm opacity-60">{t("trips.subtitle")}</p>
 
       {trips.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-black/5 bg-white p-10 text-center">
           <p className="text-4xl">🗺️</p>
-          <p className="mt-3 font-semibold">עדיין אין כאן טיולים</p>
-          <p className="mt-1 text-sm opacity-60">ברגע שתתחילו לתכנן יעד, הוא יופיע כאן אוטומטית.</p>
+          <p className="mt-3 font-semibold">{t("trips.emptyTitle")}</p>
+          <p className="mt-1 text-sm opacity-60">{t("trips.emptyBody")}</p>
           <Link href="/destinations" className="mt-4 inline-block text-sm font-semibold underline" style={{ color: "var(--primary)" }}>
-            בחירת יעד ←
+            {t("trips.chooseDestination")}
           </Link>
         </div>
       ) : (
@@ -47,18 +45,28 @@ export default async function TripsArchivePage() {
                   <span className="font-bold text-white drop-shadow">{trip.name}</span>
                   {trip.hasLiveAccess && (
                     <span className="shrink-0 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold" style={{ color: "var(--primary)" }}>
-                      גישה פעילה
+                      {t("trips.liveAccess")}
                     </span>
                   )}
                 </div>
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 p-3 text-xs opacity-70">
-                <span>📅 {trip.dayCount} ימי מסלול</span>
-                <span>📸 {trip.photoCount} תמונות</span>
-                <span>⭐ {trip.ratedCount} דירוגים</span>
-                <span>🏨 {trip.hotelCount} מלונות</span>
+                <span>
+                  📅 {trip.dayCount} {t("trips.dayCount")}
+                </span>
+                <span>
+                  📸 {trip.photoCount} {t("trips.photos")}
+                </span>
+                <span>
+                  ⭐ {trip.ratedCount} {t("trips.ratings")}
+                </span>
+                <span>
+                  🏨 {trip.hotelCount} {t("trips.hotels")}
+                </span>
               </div>
-              <p className="px-3 pb-3 text-[11px] opacity-40">מאז {DATE_FMT.format(trip.firstAccessAt)}</p>
+              <p className="px-3 pb-3 text-[11px] opacity-40">
+                {t("trips.since")} {dateFmt.format(trip.firstAccessAt)}
+              </p>
             </Link>
           ))}
         </div>

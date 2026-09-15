@@ -4,10 +4,12 @@ import { DestinationThemeProvider } from "@/components/theme/DestinationThemePro
 import type { DestinationSummary } from "@/lib/data/destinations";
 import { PLANS, formatIls } from "@/lib/plans";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import { getServerT } from "@/lib/i18n/server";
 
-export function DestinationCard({ destination }: { destination: DestinationSummary }) {
+export async function DestinationCard({ destination }: { destination: DestinationSummary }) {
   const isComingSoon = destination.status === "draft";
   const thumb = destination.heroImage ?? destination.heroPhotos[0];
+  const t = await getServerT();
 
   return (
     <DestinationThemeProvider theme={destination.theme} className="h-full">
@@ -67,14 +69,18 @@ export function DestinationCard({ destination }: { destination: DestinationSumma
 
           <div className="mt-auto flex items-center justify-between pt-3 text-sm">
             <div className="flex flex-col gap-0.5 opacity-80" style={{ color: "var(--text)" }}>
-              <span>{destination.poiCount > 0 ? `+${destination.poiCount} נקודות עניין` : "בקרוב"}</span>
-              {destination.areaCount > 0 && <span>{destination.areaCount} אזורים</span>}
+              <span>{destination.poiCount > 0 ? `+${destination.poiCount} ${t("destCard.pois")}` : t("destCard.comingSoon")}</span>
+              {destination.areaCount > 0 && (
+                <span>
+                  {destination.areaCount} {t("destCard.areas")}
+                </span>
+              )}
             </div>
             <span
               className="rounded-full px-4 py-2 font-semibold text-white transition-transform group-hover:scale-105"
               style={{ background: isComingSoon ? "#9CA3AF" : "var(--primary)" }}
             >
-              {isComingSoon ? "בקרוב" : `מ-${formatIls(PLANS.solo.monthlyCents)}/חודש`}
+              {isComingSoon ? t("destCard.comingSoon") : `${t("destCard.fromPricePrefix")}${formatIls(PLANS.solo.monthlyCents)}${t("destCard.fromPriceSuffix")}`}
             </span>
           </div>
         </div>

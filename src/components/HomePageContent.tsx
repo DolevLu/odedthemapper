@@ -7,25 +7,17 @@ import { FloatingTravelIcons } from "@/components/FloatingTravelIcons";
 import { HeroAppPreview } from "@/components/HeroAppPreview";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { prisma } from "@/lib/prisma";
+import { getServerT } from "@/lib/i18n/server";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
-const FAQ = [
-  {
-    q: "איך מקבלים גישה למפה אחרי הרשמה?",
-    a: "מיד לאחר ההרשמה אתם יכולים להיכנס לכל יעד ולראות אותו מבפנים. שדרוג לחבילה בתשלום פותח את שאר המסכים.",
-  },
-  {
-    q: "אפשר לנסות לפני שמשלמים?",
-    a: "כן - נכנסים ישר למערכת של כל יעד ורואים חלק מהמסכים בחינם, לפני שבוחרים חבילה.",
-  },
-  {
-    q: "המפה עובדת גם בלי אינטרנט?",
-    a: "כן, לאחר טעינה ראשונה כל התוכן של היעד שברשותכם זמין גם במצב אופליין.",
-  },
-  {
-    q: "אפשר לבטל את המנוי מתי שרוצים?",
-    a: "בהחלט - אין התחייבות ארוכת טווח, אפשר לבטל בכל רגע.",
-  },
-];
+function buildFaq(t: (key: DictionaryKey) => string) {
+  return [
+    { q: t("home.faq.q1"), a: t("home.faq.a1") },
+    { q: t("home.faq.q2"), a: t("home.faq.a2") },
+    { q: t("home.faq.q3"), a: t("home.faq.a3") },
+    { q: t("home.faq.q4"), a: t("home.faq.a4") },
+  ];
+}
 
 /** The actual marketing homepage content — pulled out of (shell)/page.tsx
  * (which redirects paying users straight to their map) so /home can render
@@ -34,14 +26,16 @@ const FAQ = [
  * the users who most reliably click it: "/" always bouncing a paying user
  * straight back to the map they're already looking at. */
 export async function HomePageContent() {
+  const t = await getServerT();
+  const FAQ = buildFaq(t);
   const [destinationCount, poiCount] = await Promise.all([
     prisma.destination.count({ where: { status: { in: ["preview", "live"] } } }),
     prisma.pointOfInterest.count(),
   ]);
   const stats = [
-    { label: "יעדים", value: String(destinationCount) },
-    { label: "נקודות עניין", value: `${(Math.floor(poiCount / 1000) * 1000).toLocaleString("en-US")}+` },
-    { label: "מטיילים מרוצים", value: "250+" },
+    { label: t("home.stats.destinations"), value: String(destinationCount) },
+    { label: t("home.stats.pois"), value: `${(Math.floor(poiCount / 1000) * 1000).toLocaleString("en-US")}+` },
+    { label: t("home.stats.happyTravelers"), value: "250+" },
   ];
 
   return (
@@ -56,17 +50,14 @@ export async function HomePageContent() {
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 text-center lg:grid-cols-[1.1fr_0.9fr] lg:text-start">
           <div>
             <span className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-semibold shadow-sm">
-              🧭 {stats[0].value} יעדים · {stats[1].value} נקודות עניין
+              🧭 {stats[0].value} {t("home.stats.destinations")} · {stats[1].value} {t("home.stats.pois")}
             </span>
             <h1 className="text-3xl font-extrabold leading-tight sm:text-5xl">
-              טראבי - פלטפורמת הטיולים
+              {t("home.heroTitle")}
               <br />
-              שהופכת כל טיסה להרפתקה
+              {t("home.heroSubtitle")}
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-lg opacity-70 lg:mx-0">
-              לכל יעד - עולם עיצובי משלו: מפה אינטראקטיבית, מתכנן מסלול יומי, שיחון, דוח הוצאות ועוד.
-              היכנסו ישר למערכת של כל יעד - בחינם, עוד לפני שמשלמים.
-            </p>
+            <p className="mx-auto mt-5 max-w-2xl text-lg opacity-70 lg:mx-0">{t("home.heroBody")}</p>
 
             <div className="mt-8 flex flex-wrap justify-center gap-2.5 text-sm lg:justify-start">
               <Link
@@ -74,16 +65,18 @@ export async function HomePageContent() {
                 className="rounded-full px-5 py-2.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
                 style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
               >
-                לכל היעדים
+                {t("home.ctaAllDestinations")}
               </Link>
               <Link
                 href="/destinations/quiz"
                 className="rounded-full bg-white px-5 py-2.5 font-bold shadow-sm transition-transform hover:-translate-y-0.5"
               >
-                ✈️ לא בטוחים לאן?
+                {t("home.ctaNotSure")}
               </Link>
               <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-5 py-2.5 font-bold transition-transform hover:-translate-y-0.5">
-                תמחור - החל מ-{formatIls(PLANS.solo.monthlyCents)}/חודש
+                {t("home.ctaPricingPrefix")}
+                {formatIls(PLANS.solo.monthlyCents)}
+                {t("home.ctaPricingSuffix")}
               </Link>
             </div>
 
@@ -105,9 +98,9 @@ export async function HomePageContent() {
         <FloatingTravelIcons variant="destinations" />
         <ScrollReveal className="relative mx-auto w-full max-w-6xl px-6 pb-20">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-2xl font-extrabold">היעדים שלנו</h2>
+            <h2 className="text-2xl font-extrabold">{t("home.ourDestinations")}</h2>
             <Link href="/destinations" className="text-sm font-semibold underline">
-              לכל היעדים ←
+              {t("home.allDestinationsArrow")}
             </Link>
           </div>
           <Suspense fallback={<DestinationsGridSkeleton />}>
@@ -120,7 +113,7 @@ export async function HomePageContent() {
               className="rounded-full px-6 py-3 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
               style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
             >
-              לכל היעדים ←
+              {t("home.allDestinationsArrow")}
             </Link>
           </div>
         </ScrollReveal>
@@ -129,8 +122,8 @@ export async function HomePageContent() {
       <section className="relative overflow-hidden px-6 pb-20">
         <FloatingTravelIcons variant="plans" />
         <ScrollReveal className="relative mx-auto w-full max-w-5xl rounded-3xl border border-black/5 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-extrabold">תוכנית לכל סוג מטייל</h2>
-          <p className="mt-2 opacity-70">ממטייל בודד ועד ארגוני נסיעות - יש לנו תוכנית שמתאימה לכם.</p>
+          <h2 className="text-2xl font-extrabold">{t("home.planForEveryTraveler")}</h2>
+          <p className="mt-2 opacity-70">{t("home.planForEveryTravelerBody")}</p>
           {/* First in DOM order — the trial, right-most in this always-RTL
            * layout and top-most once the grid wraps to one column on
            * mobile, same as the /pricing page's own card order. A touch
@@ -141,7 +134,7 @@ export async function HomePageContent() {
               <p className="text-xs font-semibold opacity-60">{TRIAL_PLAN.audience}</p>
               <p className="mt-1 text-lg font-extrabold">🎁 {TRIAL_PLAN.name}</p>
               <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
-                חינם
+                {t("home.free")}
               </p>
               <p className="mt-2 text-xs opacity-70">{TRIAL_PLAN.tagline}</p>
             </div>
@@ -150,7 +143,7 @@ export async function HomePageContent() {
                 <p className="text-xs font-semibold opacity-60">{plan.audience}</p>
                 <p className="mt-1 text-lg font-extrabold">{plan.name}</p>
                 <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
-                  {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">/חודש</span>
+                  {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">{t("home.perMonth")}</span>
                 </p>
                 <p className="mt-2 text-xs opacity-70">{plan.tagline}</p>
               </div>
@@ -161,7 +154,7 @@ export async function HomePageContent() {
             className="mt-8 inline-block rounded-full px-7 py-3.5 font-bold text-white transition-transform hover:-translate-y-0.5"
             style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
           >
-            השוואת תוכניות
+            {t("home.comparePlans")}
           </Link>
         </ScrollReveal>
       </section>
@@ -169,7 +162,7 @@ export async function HomePageContent() {
       <section className="relative overflow-hidden">
         <FloatingTravelIcons variant="faq" />
         <ScrollReveal className="relative mx-auto w-full max-w-3xl px-6 pb-20">
-          <h2 className="mb-6 text-2xl font-extrabold">שאלות ותשובות</h2>
+          <h2 className="mb-6 text-2xl font-extrabold">{t("home.faqTitle")}</h2>
           <div className="flex flex-col gap-4">
             {FAQ.map((item) => (
               <details key={item.q} className="rounded-2xl border border-black/10 bg-white p-4">

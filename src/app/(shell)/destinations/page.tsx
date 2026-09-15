@@ -6,6 +6,7 @@ import { shouldShowAds } from "@/lib/access";
 import { DestinationsBrowser } from "@/components/DestinationsBrowser";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { AdUnit } from "@/components/AdUnit";
+import { getServerT } from "@/lib/i18n/server";
 
 async function DestinationsBrowserSection() {
   const destinations = await getAllDestinations();
@@ -15,11 +16,12 @@ async function DestinationsBrowserSection() {
 export default async function DestinationsPage() {
   const session = await auth();
   const showAds = await shouldShowAds(session?.user?.id);
+  const t = await getServerT();
   return (
     <div className="px-6 py-10" style={{ background: "#FBF6EE", minHeight: "100%" }}>
       <div className="mx-auto w-full max-w-6xl">
-        <h1 className="mb-2 text-2xl font-extrabold">כל היעדים</h1>
-        <p className="mb-6 opacity-70">בחרו יעד כדי להיכנס למערכת שלו - מפה, מסלול, שיחון ועוד.</p>
+        <h1 className="mb-2 text-2xl font-extrabold">{t("destinations.title")}</h1>
+        <p className="mb-6 opacity-70">{t("destinations.subtitle")}</p>
 
         <Link
           href="/destinations/quiz"
@@ -27,11 +29,11 @@ export default async function DestinationsPage() {
           style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         >
           <div>
-            <p className="text-lg font-extrabold">✈️ לא בטוחים לאן לטוס?</p>
-            <p className="text-sm opacity-90">ענו על שאלון קצר ואנחנו נתאים לכם את היעד הבא - בחינם.</p>
+            <p className="text-lg font-extrabold">{t("destinations.quizBannerTitle")}</p>
+            <p className="text-sm opacity-90">{t("destinations.quizBannerBody")}</p>
           </div>
           <span className="rounded-full bg-white px-5 py-2.5 font-bold" style={{ color: "#7C3AED" }}>
-            למצוא לי יעד ←
+            {t("destinations.findMyDestination")}
           </span>
         </Link>
 
