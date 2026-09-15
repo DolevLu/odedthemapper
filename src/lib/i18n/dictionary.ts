@@ -260,6 +260,27 @@ export const DICTIONARY = {
   "pricing.perMonth": { he: "/ חודש", en: "/ month" },
   "pricing.annualDiscountSuffix": { he: "הנחה, מחויב שנתית", en: "off, billed annually" },
   "pricing.choosePlan": { he: "בחירת תוכנית", en: "Choose plan" },
+
+  "now.title": { he: "מה עכשיו?", en: "What's Now?" },
+  "now.sortedByProximity": { he: "הרשימות ממוינות לפי קרבה אליכם", en: "Lists sorted by proximity to you" },
+  "now.chooseOrShare": { he: "בחרו קטגוריה, או שתפו מיקום למיון לפי קרבה", en: "Choose a category, or share your location to sort by proximity" },
+  "now.locating": { he: "מאתר...", en: "Locating..." },
+  "now.locationButton": { he: "📍 מיקום", en: "📍 Location" },
+  "now.rainButton": { he: "🌧️ יורד גשם?", en: "🌧️ Raining?" },
+  "now.rainModalTitle": { he: "🌧️ מה לעשות כשיורד גשם", en: "🌧️ What to do when it rains" },
+  "now.rainModalBody": {
+    he: "הצעות למקומות מקורים ביעד - לחיצה שולחת אתכם למיקום שלהם על המפה.",
+    en: "Suggestions for indoor places at the destination - tapping sends you to their location on the map.",
+  },
+  "now.noIndoorPlaces": { he: "לא מצאנו מספיק אטרקציות מקורות ביעד הזה, לצערנו.", en: "Unfortunately we couldn't find enough indoor attractions for this destination." },
+  "now.points": { he: "נקודות", en: "points" },
+  "now.backToCategories": { he: "→ חזרה לקטגוריות", en: "→ Back to categories" },
+  "now.geoNotSupported": { he: "הדפדפן לא תומך במיקום", en: "Your browser doesn't support location" },
+  "now.geoFailed": { he: "לא הצלחנו לקבל מיקום - עדיין אפשר לעיין בקטגוריות", en: "We couldn't get your location - you can still browse categories" },
+
+  "weather.title": { he: "🌤️ מזג אוויר -", en: "🌤️ Weather -" },
+  "weather.loadFailed": { he: "לא הצלחנו לטעון תחזית מזג אוויר כרגע - נסו שוב מאוחר יותר.", en: "We couldn't load the weather forecast right now - try again later." },
+  "weather.today": { he: "היום", en: "Today" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

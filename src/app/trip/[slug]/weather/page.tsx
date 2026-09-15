@@ -3,14 +3,17 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { fetchWeatherForecast, weatherIcon, weatherLabel } from "@/lib/weather";
 import { isGenericAreaName } from "@/lib/geo";
-
-const WEEKDAY_FMT = new Intl.DateTimeFormat("he-IL", { weekday: "short" });
-const DATE_FMT = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "numeric" });
+import { getLang, getServerT } from "@/lib/i18n/server";
 
 export default async function WeatherPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const destination = await getDestinationBySlug(slug);
   if (!destination) notFound();
+
+  const [t, lang] = await Promise.all([getServerT(), getLang()]);
+  const dateLocale = lang === "en" ? "en-GB" : "he-IL";
+  const weekdayFmt = new Intl.DateTimeFormat(dateLocale, { weekday: "short" });
+  const dateFmt = new Intl.DateTimeFormat(dateLocale, { day: "numeric", month: "numeric" });
 
   // Averaging every POI's coordinates across the WHOLE destination used to
   // land the forecast point wherever the country's points happen to be
@@ -45,11 +48,11 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-        🌤️ מזג אוויר - {destination.name}
+        {t("weather.title")} {destination.name}
       </h1>
 
       {!forecast ? (
-        <p className="text-sm opacity-60">לא הצלחנו לטעון תחזית מזג אוויר כרגע - נסו שוב מאוחר יותר.</p>
+        <p className="text-sm opacity-60">{t("weather.loadFailed")}</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
           {forecast.map((day, i) => {
@@ -65,10 +68,10 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
                   animationDelay: `${i * 40}ms`,
                 }}
               >
-                <p className="text-xs font-bold opacity-70">{i === 0 ? "היום" : WEEKDAY_FMT.format(date)}</p>
-                <p className="text-[11px] opacity-50">{DATE_FMT.format(date)}</p>
+                <p className="text-xs font-bold opacity-70">{i === 0 ? t("weather.today") : weekdayFmt.format(date)}</p>
+                <p className="text-[11px] opacity-50">{dateFmt.format(date)}</p>
                 <span className="my-1 text-3xl">{weatherIcon(day.code)}</span>
-                <p className="text-xs opacity-60">{weatherLabel(day.code)}</p>
+                <p className="text-xs opacity-60">{weatherLabel(day.code, lang)}</p>
                 <p className="text-sm font-bold">
                   {day.maxC}° <span className="font-normal opacity-50">/ {day.minC}°</span>
                 </p>

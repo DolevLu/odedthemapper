@@ -12,6 +12,7 @@ import { BookableReminders } from "@/components/BookableReminders";
 import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
 import { OnboardingNudge } from "@/components/OnboardingNudge";
 import { AdUnit } from "@/components/AdUnit";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 type TodayData = {
   destinationId: string;
@@ -84,12 +85,13 @@ export function NowScreen({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [detailPoi, setDetailPoi] = useState<FlatPoi | null>(null);
   const [rainMode, setRainMode] = useState(false);
+  const { t } = useTranslation();
 
   function requestLocation() {
     setRequesting(true);
     setLocationError(null);
     if (!navigator.geolocation) {
-      setLocationError("הדפדפן לא תומך במיקום");
+      setLocationError(t("now.geoNotSupported"));
       setRequesting(false);
       return;
     }
@@ -99,7 +101,7 @@ export function NowScreen({
         setRequesting(false);
       },
       () => {
-        setLocationError("לא הצלחנו לקבל מיקום - עדיין אפשר לעיין בקטגוריות");
+        setLocationError(t("now.geoFailed"));
         setRequesting(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -160,10 +162,8 @@ export function NowScreen({
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
         <div>
-          <h1 className="text-base font-bold sm:text-xl">מה עכשיו?</h1>
-          <p className="text-xs opacity-70 sm:text-sm">
-            {location ? "הרשימות ממוינות לפי קרבה אליכם" : "בחרו קטגוריה, או שתפו מיקום למיון לפי קרבה"}
-          </p>
+          <h1 className="text-base font-bold sm:text-xl">{t("now.title")}</h1>
+          <p className="text-xs opacity-70 sm:text-sm">{location ? t("now.sortedByProximity") : t("now.chooseOrShare")}</p>
           {locationError && <p className="text-xs text-red-600 sm:text-sm">{locationError}</p>}
         </div>
         <div className="flex shrink-0 gap-1.5 sm:gap-2">
@@ -174,7 +174,7 @@ export function NowScreen({
               className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm"
               style={{ background: "var(--primary)" }}
             >
-              {requesting ? "מאתר..." : "📍 מיקום"}
+              {requesting ? t("now.locating") : t("now.locationButton")}
             </button>
           )}
           <button
@@ -182,7 +182,7 @@ export function NowScreen({
             className="rounded-full px-2.5 py-1.5 text-xs font-semibold text-white sm:px-4 sm:py-2 sm:text-sm"
             style={{ background: "#0284C7" }}
           >
-            🌧️ יורד גשם?
+            {t("now.rainButton")}
           </button>
           <EmergencyInfoButton slug={slug} destinationName={today.destinationName} />
         </div>
@@ -196,15 +196,15 @@ export function NowScreen({
             style={{ background: "var(--surface)" }}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">🌧️ מה לעשות כשיורד גשם</h2>
-              <button onClick={() => setRainMode(false)} className="text-xl opacity-50 hover:opacity-100" aria-label="סגירה">
+              <h2 className="text-lg font-bold">{t("now.rainModalTitle")}</h2>
+              <button onClick={() => setRainMode(false)} className="text-xl opacity-50 hover:opacity-100" aria-label={t("nav.close")}>
                 ✕
               </button>
             </div>
-            <p className="text-xs opacity-60">הצעות למקומות מקורים ביעד - לחיצה שולחת אתכם למיקום שלהם על המפה.</p>
+            <p className="text-xs opacity-60">{t("now.rainModalBody")}</p>
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
               {indoorPois.length === 0 ? (
-                <p className="py-4 text-center text-sm opacity-60">לא מצאנו מספיק אטרקציות מקורות ביעד הזה, לצערנו.</p>
+                <p className="py-4 text-center text-sm opacity-60">{t("now.noIndoorPlaces")}</p>
               ) : (
                 indoorPois.map((poi) => (
                   <button
@@ -222,7 +222,7 @@ export function NowScreen({
                         <span className="truncate font-medium">{poi.name}</span>
                         <span className="truncate text-xs opacity-60">
                           {poi.categoryName} · {poi.areaName}
-                          {"distanceKm" in poi && ` · ${(poi as unknown as { distanceKm: number }).distanceKm.toFixed(1)} ק״מ`}
+                          {"distanceKm" in poi && ` · ${(poi as unknown as { distanceKm: number }).distanceKm.toFixed(1)} ${t("wrapped.km")}`}
                         </span>
                       </span>
                     </span>
@@ -256,7 +256,9 @@ export function NowScreen({
                 <CategoryGlyphWhite name={cat.name} size={20} />
               </span>
               <span className="text-xs font-bold sm:text-base">{cat.name}</span>
-              <span className="text-[10px] opacity-60 sm:text-xs">{cat.count} נקודות</span>
+              <span className="text-[10px] opacity-60 sm:text-xs">
+                {cat.count} {t("now.points")}
+              </span>
             </button>
           ))}
         </div>
@@ -266,7 +268,7 @@ export function NowScreen({
             onClick={() => setActiveCategory(null)}
             className="self-start text-sm font-semibold opacity-70 hover:opacity-100"
           >
-            → חזרה לקטגוריות
+            {t("now.backToCategories")}
           </button>
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: activeColor }}>
