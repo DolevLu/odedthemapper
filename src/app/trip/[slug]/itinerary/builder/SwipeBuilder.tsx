@@ -10,6 +10,7 @@ import {
   type SwipeDeckCard,
 } from "@/lib/actions/trip";
 import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 type DeckCard = Omit<SwipeDeckCard, "poiId" | "areaName"> & {
   key: string;
@@ -53,6 +54,7 @@ export function SwipeBuilder({
   const [aiLoading, startAiTransition] = useTransition();
   const [, startTransition] = useTransition();
   const [starting, startStartTransition] = useTransition();
+  const { t } = useTranslation();
 
   function toggleCategory(name: string) {
     setSelectedCategories((prev) => (prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]));
@@ -115,7 +117,7 @@ export function SwipeBuilder({
         key: `ai-${s.name}-${Math.random().toString(36).slice(2)}`,
         poiId: null,
         name: s.name,
-        categoryName: selectedCategories[0] ?? "מומלץ",
+        categoryName: selectedCategories[0] ?? t("swipe.recommended"),
         areaName: null,
         photoUrl: null,
         description: s.description,
@@ -135,17 +137,15 @@ export function SwipeBuilder({
     return (
       <div className="mx-auto flex max-w-lg flex-col gap-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">🔥 בניית מסלול במצב טינדר</h1>
-          <button onClick={() => router.push(`/trip/${slug}/itinerary`)} className="text-2xl opacity-50 hover:opacity-100" aria-label="סגירה">
+          <h1 className="text-xl font-bold">{t("swipe.title")}</h1>
+          <button onClick={() => router.push(`/trip/${slug}/itinerary`)} className="text-2xl opacity-50 hover:opacity-100" aria-label={t("swipe.close")}>
             ✕
           </button>
         </div>
-        <p className="text-sm opacity-70">
-          בחרו את תחומי העניין שלכם ומספר ימי הטיול - לאחר מכן נעביר לכם כרטיסיות של אטרקציות אחת-אחת: גררו ימינה כדי להוסיף למסלול, שמאלה כדי לדלג.
-        </p>
+        <p className="text-sm opacity-70">{t("swipe.intro")}</p>
 
         <div>
-          <p className="mb-2 text-sm font-semibold">תחומי עניין (השאירו הכל ריק כדי לכלול הכל)</p>
+          <p className="mb-2 text-sm font-semibold">{t("swipe.interestsLabel")}</p>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => {
               const active = selectedCategories.includes(c);
@@ -170,7 +170,7 @@ export function SwipeBuilder({
 
         <div>
           <label className="mb-2 block text-sm font-semibold" htmlFor="dayCount">
-            כמה ימי טיול?
+            {t("swipe.howManyDays")}
           </label>
           <input
             id="dayCount"
@@ -190,7 +190,7 @@ export function SwipeBuilder({
           className="rounded-full px-6 py-3 text-base font-bold text-white shadow-md disabled:opacity-60"
           style={{ background: "linear-gradient(135deg, #F472B6, #F59E0B)" }}
         >
-          {starting ? "טוען…" : "🚀 בואו נתחיל!"}
+          {starting ? t("swipe.loading") : t("swipe.letsStart")}
         </button>
 
         {confirmModal}
@@ -209,8 +209,10 @@ export function SwipeBuilder({
       style={{ background: "var(--background)" }}
     >
       <div className="flex w-full max-w-md items-center justify-between">
-        <span className="text-xs opacity-60">{exhausted ? "סוף הכרטיסיות" : `כרטיס ${index + 1} מתוך ${deck.length}`}</span>
-        <button onClick={() => router.push(`/trip/${slug}/itinerary`)} className="text-2xl opacity-50 hover:opacity-100" aria-label="סגירה">
+        <span className="text-xs opacity-60">
+          {exhausted ? t("swipe.endOfCards") : `${t("swipe.cardOf")} ${index + 1} ${t("swipe.outOf")} ${deck.length}`}
+        </span>
+        <button onClick={() => router.push(`/trip/${slug}/itinerary`)} className="text-2xl opacity-50 hover:opacity-100" aria-label={t("swipe.close")}>
           ✕
         </button>
       </div>
@@ -218,21 +220,21 @@ export function SwipeBuilder({
       {exhausted ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <p className="text-2xl">🎉</p>
-          <p className="font-semibold">עברתם על כל הנקודות בקטגוריות שבחרתם</p>
+          <p className="font-semibold">{t("swipe.wentThroughAll")}</p>
           <button
             onClick={requestMoreFromAi}
             disabled={aiLoading}
             className="rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-sm disabled:opacity-60"
             style={{ background: "var(--accent)" }}
           >
-            {aiLoading ? "מחפש הצעות…" : "✨ בקשו עוד הצעות מ-AI"}
+            {aiLoading ? t("swipe.searchingSuggestions") : t("swipe.askAiMore")}
           </button>
           <button
             onClick={() => router.push(`/trip/${slug}/itinerary`)}
             className="rounded-full border px-5 py-2.5 text-sm font-semibold"
             style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
           >
-            סיימתי, חזרה למסלול
+            {t("swipe.doneBackToRoute")}
           </button>
         </div>
       ) : (
@@ -244,7 +246,9 @@ export function SwipeBuilder({
       {pendingCard && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setPendingCard(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl p-5" style={{ background: "var(--surface)" }}>
-            <p className="mb-3 text-center font-bold">לאיזה יום להוסיף את &quot;{pendingCard.name}&quot;?</p>
+            <p className="mb-3 text-center font-bold">
+              {t("swipe.whichDayPrefix")} &quot;{pendingCard.name}&quot;{t("swipe.whichDaySuffix")}
+            </p>
             <div className="flex flex-wrap justify-center gap-2">
               {Array.from({ length: dayTotal }, (_, i) => i + 1).map((d) => {
                 const count = dayCounts[d - 1] ?? 0;
@@ -257,7 +261,7 @@ export function SwipeBuilder({
                     className="rounded-full px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
                     style={{ background: full ? "#9CA3AF" : "var(--primary)" }}
                   >
-                    יום {d} {full ? "(מלא)" : `(${count}/${DAY_ITEM_CAP})`}
+                    {t("swipe.day")} {d} {full ? t("swipe.full") : `(${count}/${DAY_ITEM_CAP})`}
                   </button>
                 );
               })}
@@ -285,6 +289,7 @@ function SwipeCardStack({
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const startX = useRef(0);
+  const { t } = useTranslation();
 
   function handlePointerDown(e: React.PointerEvent) {
     setDragging(true);
@@ -344,7 +349,7 @@ function SwipeCardStack({
           onClick={() => commit("left")}
           className="flex h-14 w-14 items-center justify-center rounded-full text-2xl shadow-lg"
           style={{ background: "var(--surface)", border: "2px solid #DC2626", color: "#DC2626" }}
-          aria-label="דילוג"
+          aria-label={t("swipe.skip")}
         >
           ✕
         </button>
@@ -352,7 +357,7 @@ function SwipeCardStack({
           onClick={() => commit("right")}
           className="flex h-14 w-14 items-center justify-center rounded-full text-2xl shadow-lg"
           style={{ background: "var(--surface)", border: "2px solid #16A34A", color: "#16A34A" }}
-          aria-label="הוספה למסלול"
+          aria-label={t("swipe.addToRoute")}
         >
           ❤️
         </button>
@@ -362,12 +367,13 @@ function SwipeCardStack({
 }
 
 function CardFace({ card, hint }: { card: DeckCard; hint?: "left" | "right" | null }) {
+  const { t } = useTranslation();
   const popularity = card.isAiSuggested
-    ? "✨ הצעת AI"
+    ? t("swipe.aiSuggestion")
     : card.isMustSee
-      ? "⭐ חובה לראות"
+      ? t("swipe.mustSee")
       : card.tags.length >= 3
-        ? "🔥 פופולרי בקרב מטיילים"
+        ? t("swipe.popular")
         : null;
 
   return (
@@ -400,7 +406,7 @@ function CardFace({ card, hint }: { card: DeckCard; hint?: "left" | "right" | nu
               background: "rgba(255,255,255,0.85)",
             }}
           >
-            {hint === "right" ? "מוסיפים" : "מדלגים"}
+            {hint === "right" ? t("swipe.adding") : t("swipe.skipping")}
           </span>
         )}
       </div>
