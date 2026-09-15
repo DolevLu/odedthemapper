@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { convertCurrencyForWidget } from "@/lib/actions/trip";
 import { CURRENCIES } from "@/lib/exchangeRates";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 // Debounced so typing a number doesn't fire a lookup per keystroke.
 const DEBOUNCE_MS = 400;
@@ -14,6 +15,8 @@ export function CurrencyConverterWidget() {
   const [result, setResult] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const { t, lang } = useTranslation();
+  const numberLocale = lang === "en" ? "en-US" : "he-IL";
 
   useEffect(() => {
     const parsed = Number(amount);
@@ -44,7 +47,7 @@ export function CurrencyConverterWidget() {
       className="flex flex-col gap-2 border p-2.5 sm:gap-3 sm:p-4"
       style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
     >
-      <h2 className="text-xs font-bold sm:text-sm">💱 ממיר מטבעות</h2>
+      <h2 className="text-xs font-bold sm:text-sm">{t("currency.title")}</h2>
       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <input
           type="number"
@@ -67,8 +70,8 @@ export function CurrencyConverterWidget() {
           type="button"
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs sm:h-8 sm:w-8 sm:text-sm"
           style={{ borderColor: "var(--primary)" }}
-          aria-label="החלפת כיוון"
-          title="החלפת כיוון"
+          aria-label={t("currency.swapDirection")}
+          title={t("currency.swapDirection")}
         >
           ⇄
         </button>
@@ -81,11 +84,11 @@ export function CurrencyConverterWidget() {
         </select>
       </div>
       <div className="text-sm font-bold sm:text-lg" style={{ color: "var(--primary)" }}>
-        {loading ? "מחשב..." : result !== null ? `= ${result.toLocaleString("he-IL", { maximumFractionDigits: 2 })} ${to}` : "-"}
+        {loading ? t("currency.calculating") : result !== null ? `= ${result.toLocaleString(numberLocale, { maximumFractionDigits: 2 })} ${to}` : "-"}
       </div>
       {rate !== null && !loading && (
         <p className="text-[11px] opacity-50 sm:text-xs">
-          שער: 1 {from} = {rate.toLocaleString("he-IL", { maximumFractionDigits: 4 })} {to}
+          {t("currency.rate")} 1 {from} = {rate.toLocaleString(numberLocale, { maximumFractionDigits: 4 })} {to}
         </p>
       )}
     </div>

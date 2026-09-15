@@ -9,8 +9,21 @@ import { getGroupMembers } from "@/lib/access";
 import { getSettleUpSummary } from "@/lib/costSplitting";
 import { DailyRemaining } from "./DailyRemaining";
 import { CurrencyConverterWidget } from "./CurrencyConverterWidget";
+import { getLang, getServerT } from "@/lib/i18n/server";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
-const CATEGORIES = ["אוכל", "תחבורה", "לינה", "אטרקציות", "קניות", "אחר"];
+// The <option> value (and Expense.category stored in the DB) stays this
+// fixed Hebrew string regardless of display language — only the label
+// shown to the user is translated (see CATEGORY_KEY_BY_VALUE below).
+const CATEGORIES: { value: string; labelKey: DictionaryKey }[] = [
+  { value: "אוכל", labelKey: "expenses.category.food" },
+  { value: "תחבורה", labelKey: "expenses.category.transport" },
+  { value: "לינה", labelKey: "expenses.category.lodging" },
+  { value: "אטרקציות", labelKey: "expenses.category.attractions" },
+  { value: "קניות", labelKey: "expenses.category.shopping" },
+  { value: "אחר", labelKey: "expenses.category.other" },
+];
+const CATEGORY_KEY_BY_VALUE = Object.fromEntries(CATEGORIES.map((c) => [c.value, c.labelKey]));
 
 function dayKey(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -21,6 +34,8 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
   const userId = session?.user?.id;
+  const [t, lang] = await Promise.all([getServerT(), getLang()]);
+  const dateLocale = lang === "en" ? "en-GB" : "he-IL";
 
   const [expenses, budget, groupMembers, settleUp] = userId
     ? await Promise.all([
@@ -46,7 +61,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
   const spentByDay = sortedDays.map((key) => ({
     date: key,
     total: (groups.get(key) ?? []).reduce((s, e) => s + e.amountCents, 0) / 100,
-    label: new Date(key).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" }),
+    label: new Date(key).toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" }),
   }));
 
   const addAction = addExpense.bind(null, destination.id, slug);
@@ -54,7 +69,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <h1 className="text-base font-bold sm:text-xl">💸 הוצאות ותקציב</h1>
+      <h1 className="text-base font-bold sm:text-xl">{t("expenses.title")}</h1>
 
       <CurrencyConverterWidget />
 
@@ -65,7 +80,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
         {userId ? (
           <form action={budgetAction} className="flex flex-wrap items-end gap-2 sm:gap-3">
             <label className="text-[11px] opacity-60 sm:text-xs">
-              תקציב כולל (₪)
+              {t("expenses.totalBudget")}
               <input
                 name="totalBudget"
                 type="number"
@@ -77,7 +92,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
               />
             </label>
             <label className="text-[11px] opacity-60 sm:text-xs">
-              מספר ימי טיול
+              {t("expenses.tripDays")}
               <input
                 name="tripDays"
                 type="number"
@@ -88,18 +103,18 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
               />
             </label>
             <button type="submit" className="rounded-full px-3 py-1.5 text-xs font-semibold text-white sm:px-4 sm:py-2 sm:text-sm" style={{ background: "var(--primary)" }}>
-              שמירת תקציב
+              {t("expenses.saveBudget")}
             </button>
           </form>
         ) : (
-          <LoginPromptBanner slug={slug} path="/expenses" message="התחברו כדי להגדיר תקציב ולעקוב אחרי ההוצאות שלכם" />
+          <LoginPromptBanner slug={slug} path="/expenses" message={t("expenses.loginPrompt")} />
         )}
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-center sm:mt-5 sm:grid-cols-4 sm:gap-3">
-          <Stat label="סה״כ הוצאות" value={`₪${total.toFixed(0)}`} />
-          <Stat label="תקציב כולל" value={totalBudget !== null ? `₪${totalBudget.toFixed(0)}` : "-"} />
+          <Stat label={t("expenses.totalExpenses")} value={`₪${total.toFixed(0)}`} />
+          <Stat label={t("expenses.totalBudgetStat")} value={totalBudget !== null ? `₪${totalBudget.toFixed(0)}` : "-"} />
           <Stat
-            label="נשאר בתקציב"
+            label={t("expenses.remainingBudget")}
             value={remaining !== null ? `₪${remaining.toFixed(0)}` : "—"}
             warn={remaining !== null && remaining < 0}
           />
@@ -115,8 +130,8 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
         >
           <select name="category" className="rounded-lg border px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }}>
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
+              <option key={c.value} value={c.value}>
+                {t(c.labelKey)}
               </option>
             ))}
           </select>
@@ -126,12 +141,12 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
               type="number"
               step="0.01"
               min="0"
-              placeholder="סכום"
+              placeholder={t("expenses.amountPlaceholder")}
               required
               className="min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm"
               style={{ borderColor: "var(--primary)" }}
             />
-            <select name="currency" defaultValue="ILS" className="shrink-0 rounded-lg border px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }} title="ההוצאה תומר אוטומטית לשקלים">
+            <select name="currency" defaultValue="ILS" className="shrink-0 rounded-lg border px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }} title={t("expenses.autoConvertTitle")}>
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.code}
@@ -140,14 +155,14 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
             </select>
           </div>
           <input name="spentAt" type="date" defaultValue={todayKey} className="rounded-lg border px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }} />
-          <input name="note" placeholder="הערה" className="rounded-lg border px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }} />
+          <input name="note" placeholder={t("expenses.notePlaceholder")} className="rounded-lg border px-2 py-1.5 text-xs sm:px-3 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }} />
           <button type="submit" className="rounded-full px-3 py-1.5 text-xs font-semibold text-white sm:px-4 sm:py-2 sm:text-base" style={{ background: "var(--primary)" }}>
-            הוספה
+            {t("expenses.add")}
           </button>
 
           {groupMembers.length > 0 && (
             <div className="col-span-full flex flex-wrap items-center gap-1.5 border-t pt-2 sm:gap-2 sm:pt-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
-              <span className="text-[11px] font-semibold opacity-60 sm:text-xs">💰 פיצול ההוצאה עם:</span>
+              <span className="text-[11px] font-semibold opacity-60 sm:text-xs">{t("expenses.splitWith")}</span>
               {groupMembers.map((m) => (
                 <label key={m.id} className="flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs" style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}>
                   <input type="checkbox" name="splitWith" value={m.id} />
@@ -164,12 +179,14 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
           className="flex flex-col gap-1.5 border p-2.5 sm:gap-2 sm:p-4"
           style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
         >
-          <h2 className="text-xs font-bold sm:text-sm">🤝 התחשבנות עם חברי הקבוצה</h2>
+          <h2 className="text-xs font-bold sm:text-sm">{t("expenses.settleUpTitle")}</h2>
           {settleUp.map((e) => (
             <div key={e.userId} className="flex items-center justify-between text-xs sm:text-sm">
               <span>{e.name}</span>
               <span className="font-semibold" style={{ color: e.netCents > 0 ? "#16A34A" : "#DC2626" }}>
-                {e.netCents > 0 ? `חייב/ת לכם ₪${(e.netCents / 100).toFixed(0)}` : `אתם חייבים ₪${(Math.abs(e.netCents) / 100).toFixed(0)}`}
+                {e.netCents > 0
+                  ? `${t("expenses.owesYouPrefix")} ₪${(e.netCents / 100).toFixed(0)}`
+                  : `${t("expenses.youOwePrefix")} ₪${(Math.abs(e.netCents) / 100).toFixed(0)}`}
               </span>
             </div>
           ))}
@@ -183,7 +200,7 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
           return (
             <div key={key}>
               <div className="mb-1.5 flex items-center justify-between sm:mb-2">
-                <h3 className="text-xs font-bold opacity-70 sm:text-sm">{new Date(key).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}</h3>
+                <h3 className="text-xs font-bold opacity-70 sm:text-sm">{new Date(key).toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" })}</h3>
                 <span className="text-xs font-semibold sm:text-sm">₪{dayTotal.toFixed(0)}</span>
               </div>
               <div className="flex flex-col gap-1.5 sm:gap-2">
@@ -197,16 +214,17 @@ export default async function ExpensesPage({ params }: { params: Promise<{ slug:
                       <span className="font-semibold">₪{(e.amountCents / 100).toFixed(0)}</span>
                       {e.originalCurrency && e.originalAmountCents != null && (
                         <span className="ms-1 text-[11px] opacity-50 sm:text-xs">
-                          (הומר מ-{(e.originalAmountCents / 100).toFixed(2)} {e.originalCurrency})
+                          ({t("expenses.convertedFrom")}
+                          {(e.originalAmountCents / 100).toFixed(2)} {e.originalCurrency})
                         </span>
                       )}
                       <span className="ms-2 opacity-60">
-                        {e.category}
+                        {CATEGORY_KEY_BY_VALUE[e.category] ? t(CATEGORY_KEY_BY_VALUE[e.category]) : e.category}
                         {e.note ? ` · ${e.note}` : ""}
                       </span>
                     </div>
                     <form action={deleteExpense.bind(null, e.id, slug)}>
-                      <button className="shrink-0 text-xs opacity-60 underline sm:text-sm">מחיקה</button>
+                      <button className="shrink-0 text-xs opacity-60 underline sm:text-sm">{t("expenses.delete")}</button>
                     </form>
                   </div>
                 ))}

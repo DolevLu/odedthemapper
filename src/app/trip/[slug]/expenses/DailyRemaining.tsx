@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function DailyRemaining({
   dailyBudget,
@@ -9,13 +10,16 @@ export function DailyRemaining({
   dailyBudget: number | null;
   spentByDay: { date: string; total: number; label: string }[];
 }) {
+  const { t, lang } = useTranslation();
+  const dateLocale = lang === "en" ? "en-GB" : "he-IL";
   const todayKey = new Date().toISOString().slice(0, 10);
   const options = useMemo(() => {
     const hasToday = spentByDay.some((d) => d.date === todayKey);
     const list = hasToday
       ? spentByDay
-      : [{ date: todayKey, total: 0, label: new Date(todayKey).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" }) }, ...spentByDay];
+      : [{ date: todayKey, total: 0, label: new Date(todayKey).toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long" }) }, ...spentByDay];
     return list.sort((a, b) => b.date.localeCompare(a.date));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spentByDay, todayKey]);
 
   const [selected, setSelected] = useState(todayKey);
@@ -25,7 +29,7 @@ export function DailyRemaining({
   return (
     <div>
       <label className="text-[10px] opacity-60 sm:text-xs">
-        נשאר ליום:
+        {t("expenses.remainingToday")}
         <select
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
