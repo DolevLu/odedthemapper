@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { deleteLogistic } from "@/lib/actions/trip";
 import { LogisticTicketCard, TYPE_META, type LogisticItem } from "./LogisticTicketCard";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function LogisticsList({ items, slug }: { items: LogisticItem[]; slug: string }) {
   const [filter, setFilter] = useState<string | null>(null);
+  const { t, lang } = useTranslation();
   const typesPresent = Array.from(new Set(items.map((i) => i.type)));
   const filtered = filter ? items.filter((i) => i.type === filter) : items;
 
   if (items.length === 0) {
-    return <p className="text-sm opacity-60">עדיין לא הוספתם טיסות, מלונות או מסמכים אחרים.</p>;
+    return <p className="text-sm opacity-60">{t("logistics.empty")}</p>;
   }
 
   return (
@@ -25,7 +27,7 @@ export function LogisticsList({ items, slug }: { items: LogisticItem[]; slug: st
             color: filter === null ? "white" : "var(--text)",
           }}
         >
-          הכל ({items.length})
+          {t("logistics.all")} ({items.length})
         </button>
         {typesPresent.map((type) => {
           const meta = TYPE_META[type] ?? TYPE_META.other;
@@ -41,7 +43,7 @@ export function LogisticsList({ items, slug }: { items: LogisticItem[]; slug: st
                 color: filter === type ? "white" : meta.color,
               }}
             >
-              {meta.icon} {meta.label} ({count})
+              {meta.icon} {meta.label[lang]} ({count})
             </button>
           );
         })}

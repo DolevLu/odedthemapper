@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 const CELL_SIZE_DEG = 0.008; // ~800m grid cells — roughly "neighborhood" scale
 const METERS_PER_DEGREE_LAT = 111320;
@@ -13,6 +14,7 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
   const { loaded } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!open || !loaded || !mapDivRef.current || mapRef.current) return;
@@ -20,7 +22,7 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
     try {
       const grid = buildDensityGrid(points, CELL_SIZE_DEG);
       if (grid.length === 0) {
-        setError("אין מספיק נתונים כדי להציג מפת צפיפות ליעד הזה");
+        setError(t("heatmap.notEnoughData"));
         return;
       }
 
@@ -47,8 +49,9 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
         });
       });
     } catch {
-      setError("לא הצלחנו להציג את מפת הצפיפות כרגע");
+      setError(t("heatmap.loadFailed"));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, loaded, points]);
 
   return (
@@ -58,7 +61,7 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
         className="rounded-full border px-4 py-2 text-sm font-semibold"
         style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
       >
-        🏙️ איפה כדאי ללון?
+        {t("heatmap.button")}
       </button>
 
       {open && (
@@ -70,10 +73,11 @@ export function WhereToStayHeatmap({ points, destinationName }: { points: [numbe
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h2 className="text-lg font-bold">איפה כדאי ללון ב{destinationName}?</h2>
-                <p className="mt-1 text-xs opacity-60">
-                  מפת צפיפות לפי ריכוז האטרקציות, המסעדות והברים במערכת שלנו - אזורים אדומים הם הכי תוססים ונוחים כבסיס לינה.
-                </p>
+                <h2 className="text-lg font-bold">
+                  {t("heatmap.titlePrefix")}
+                  {destinationName}?
+                </h2>
+                <p className="mt-1 text-xs opacity-60">{t("heatmap.body")}</p>
               </div>
               <button onClick={() => setOpen(false)} className="shrink-0 text-lg opacity-60">
                 ✕

@@ -1,14 +1,16 @@
 "use client";
 
-const TYPE_META: Record<string, { label: string; icon: string; color: string }> = {
-  flight: { label: "טיסה", icon: "✈️", color: "#3E5C76" },
-  hotel: { label: "מלון", icon: "🏨", color: "#B5502A" },
-  ticket: { label: "כרטיס", icon: "🎫", color: "#8A5CF6" },
-  passport: { label: "דרכון", icon: "🛂", color: "#1E5B5A" },
-  visa: { label: "ויזה", icon: "📋", color: "#9C6B30" },
-  insurance: { label: "ביטוח נסיעות", icon: "🛡️", color: "#0E7C7B" },
-  vaccination: { label: "חיסון", icon: "💉", color: "#B23A48" },
-  other: { label: "אחר", icon: "📄", color: "#6B7280" },
+import { useTranslation } from "@/components/i18n/LanguageContext";
+
+const TYPE_META: Record<string, { label: { he: string; en: string }; icon: string; color: string }> = {
+  flight: { label: { he: "טיסה", en: "Flight" }, icon: "✈️", color: "#3E5C76" },
+  hotel: { label: { he: "מלון", en: "Hotel" }, icon: "🏨", color: "#B5502A" },
+  ticket: { label: { he: "כרטיס", en: "Ticket" }, icon: "🎫", color: "#8A5CF6" },
+  passport: { label: { he: "דרכון", en: "Passport" }, icon: "🛂", color: "#1E5B5A" },
+  visa: { label: { he: "ויזה", en: "Visa" }, icon: "📋", color: "#9C6B30" },
+  insurance: { label: { he: "ביטוח נסיעות", en: "Travel insurance" }, icon: "🛡️", color: "#0E7C7B" },
+  vaccination: { label: { he: "חיסון", en: "Vaccination" }, icon: "💉", color: "#B23A48" },
+  other: { label: { he: "אחר", en: "Other" }, icon: "📄", color: "#6B7280" },
 };
 
 export type LogisticItem = {
@@ -24,6 +26,7 @@ export type LogisticItem = {
 };
 
 export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onDelete: () => void }) {
+  const { t, lang } = useTranslation();
   const meta = TYPE_META[item.type] ?? TYPE_META.other;
   const isPdf = item.imageUrl?.toLowerCase().endsWith(".pdf") ?? false;
 
@@ -38,7 +41,7 @@ export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onD
         style={{ background: meta.color }}
       >
         <span className="inline-block text-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">{meta.icon}</span>
-        <span className="text-[10px] font-semibold leading-tight">{meta.label}</span>
+        <span className="text-[10px] font-semibold leading-tight">{meta.label[lang]}</span>
       </div>
 
       {/* Perforated divider */}
@@ -70,20 +73,20 @@ export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onD
             <p className="truncate font-bold">{item.title}</p>
             {item.confirmationNumber && (
               <p className="text-xs opacity-70">
-                קוד הזמנה: <span className="font-mono">{item.confirmationNumber}</span>
+                {t("logistics.confirmationCode")} <span className="font-mono">{item.confirmationNumber}</span>
               </p>
             )}
             {item.dateRange && <p className="text-xs opacity-70">{item.dateRange}</p>}
             {item.notes && <p className="text-xs opacity-70">{item.notes}</p>}
             {item.address && (
               <p className="text-xs opacity-60">
-                📍 {item.address} {item.hasMapPin ? "· מסומן על המפה" : ""}
+                📍 {item.address} {item.hasMapPin ? t("logistics.markedOnMap") : ""}
               </p>
             )}
           </div>
         </div>
         <button onClick={onDelete} className="shrink-0 text-xs opacity-50 underline hover:opacity-100">
-          מחיקה
+          {t("logistics.delete")}
         </button>
       </div>
     </div>

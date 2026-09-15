@@ -8,18 +8,22 @@ import { LoginPromptBanner } from "@/components/LoginPromptBanner";
 import { WhereToStayHeatmap } from "./WhereToStayHeatmap";
 import { LogisticsList } from "./LogisticsList";
 import type { LogisticItem } from "./LogisticTicketCard";
+import { getLang, getServerT } from "@/lib/i18n/server";
 
 export default async function LogisticsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
   const userId = session?.user?.id;
-  const [items, heatmapPoints] = await Promise.all([
+  const [items, heatmapPoints, t, lang] = await Promise.all([
     userId
       ? prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id }, orderBy: { startsAt: "asc" } })
       : Promise.resolve([]),
     getPoiLocationsForDestination(destination.id),
+    getServerT(),
+    getLang(),
   ]);
+  const dateLocale = lang === "en" ? "en-GB" : "he-IL";
 
   const addAction = addLogistic.bind(null, destination.id, slug);
 
@@ -27,8 +31,8 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
     const details = JSON.parse(item.detailsJson) as { title: string; notes: string };
     const dateRange = item.startsAt
       ? item.endsAt && item.endsAt.getTime() !== item.startsAt.getTime()
-        ? `${item.startsAt.toLocaleDateString("he-IL")} — ${item.endsAt.toLocaleDateString("he-IL")}`
-        : item.startsAt.toLocaleDateString("he-IL")
+        ? `${item.startsAt.toLocaleDateString(dateLocale)} — ${item.endsAt.toLocaleDateString(dateLocale)}`
+        : item.startsAt.toLocaleDateString(dateLocale)
       : null;
     return {
       id: item.id,
@@ -46,7 +50,7 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">✈️ לוגיסטיקת טיול</h1>
+        <h1 className="text-xl font-bold">{t("logistics.title")}</h1>
         {heatmapPoints.length > 0 && <WhereToStayHeatmap points={heatmapPoints} destinationName={destination.name} />}
       </div>
 
@@ -57,39 +61,39 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
           style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
         >
           <select name="type" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }}>
-            <option value="flight">✈️ טיסה</option>
-            <option value="hotel">🏨 מלון</option>
-            <option value="ticket">🎫 כרטיס כללי (רכבת/אוטובוס/אטרקציה)</option>
-            <option value="passport">🛂 דרכון</option>
-            <option value="visa">📋 ויזה</option>
-            <option value="insurance">🛡️ ביטוח נסיעות</option>
-            <option value="vaccination">💉 חיסון</option>
-            <option value="other">📄 אחר</option>
+            <option value="flight">{t("logistics.type.flight")}</option>
+            <option value="hotel">{t("logistics.type.hotel")}</option>
+            <option value="ticket">{t("logistics.type.ticket")}</option>
+            <option value="passport">{t("logistics.type.passport")}</option>
+            <option value="visa">{t("logistics.type.visa")}</option>
+            <option value="insurance">{t("logistics.type.insurance")}</option>
+            <option value="vaccination">{t("logistics.type.vaccination")}</option>
+            <option value="other">{t("logistics.type.other")}</option>
           </select>
-          <input name="title" placeholder="למשל: אל-על LY386 / מלון רומא סנטרל" required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-          <input name="confirmationNumber" placeholder="מספר אישור" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-          <input name="address" placeholder="כתובת (למלון - יסומן אוטומטית על המפה)" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="title" placeholder={t("logistics.titlePlaceholder")} required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="confirmationNumber" placeholder={t("logistics.confirmationPlaceholder")} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="address" placeholder={t("logistics.addressPlaceholder")} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
           <div className="flex gap-2">
             <label className="flex-1 text-xs opacity-60">
-              מתאריך
+              {t("logistics.fromDate")}
               <input name="startsAt" type="date" className="mt-1 w-full rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
             </label>
             <label className="flex-1 text-xs opacity-60">
-              עד תאריך
+              {t("logistics.toDate")}
               <input name="endsAt" type="date" className="mt-1 w-full rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
             </label>
           </div>
-          <input name="notes" placeholder="הערות" className="rounded-lg border px-3 py-2 sm:col-span-2" style={{ borderColor: "var(--primary)" }} />
+          <input name="notes" placeholder={t("logistics.notesPlaceholder")} className="rounded-lg border px-3 py-2 sm:col-span-2" style={{ borderColor: "var(--primary)" }} />
           <label className="text-sm sm:col-span-2">
-            <span className="mb-1 block text-xs opacity-60">תמונה או PDF (כרטיס טיסה / אישור הזמנה)</span>
+            <span className="mb-1 block text-xs opacity-60">{t("logistics.imageOrPdf")}</span>
             <input name="image" type="file" accept="image/*,application/pdf" className="w-full text-sm" />
           </label>
           <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white sm:col-span-2" style={{ background: "var(--primary)" }}>
-            הוספה
+            {t("logistics.add")}
           </button>
         </form>
       ) : (
-        <LoginPromptBanner slug={slug} path="/logistics" message="התחברו כדי להוסיף ולשמור טיסות, מלונות ומסמכי טיול" />
+        <LoginPromptBanner slug={slug} path="/logistics" message={t("logistics.loginPrompt")} />
       )}
 
       <LogisticsList items={logisticItems} slug={slug} />
