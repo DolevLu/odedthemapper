@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { generateItineraryFromPreferences } from "@/lib/actions/trip";
 import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function ItineraryWizard({
   destinationId,
@@ -12,7 +13,7 @@ export function ItineraryWizard({
   categories,
   areas,
   hasExistingDays,
-  triggerLabel = "✨ צרו מסלול AI",
+  triggerLabel,
 }: {
   destinationId: string;
   slug: string;
@@ -26,6 +27,8 @@ export function ItineraryWizard({
 }) {
   const router = useRouter();
   const { requestConfirm, modal: confirmModal } = useSaveOrDiscardFlow(destinationId, slug);
+  const { t } = useTranslation();
+  const label = triggerLabel ?? t("wizard.defaultTrigger");
   const [open, setOpen] = useState(!hasExistingDays);
   const [mode, setMode] = useState<"filters" | "freeText">("filters");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -72,7 +75,7 @@ export function ItineraryWizard({
       className="game-pop-in shrink-0 self-start rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
       style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
     >
-      {triggerLabel}
+      {label}
     </button>
   );
 
@@ -98,7 +101,7 @@ export function ItineraryWizard({
         className="flex max-h-[85vh] w-full max-w-md flex-col gap-4 overflow-y-auto border p-5"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
-      <h2 className="font-bold">כמה שאלות ונבנה לכם מסלול</h2>
+      <h2 className="font-bold">{t("wizard.title")}</h2>
 
       <div className="flex gap-1 self-start rounded-full bg-black/5 p-1">
         <button
@@ -106,24 +109,24 @@ export function ItineraryWizard({
           className="rounded-full px-3 py-1 text-xs font-semibold"
           style={{ background: mode === "filters" ? "var(--primary)" : "transparent", color: mode === "filters" ? "white" : "var(--text)" }}
         >
-          🏷️ סינונים
+          {t("wizard.filters")}
         </button>
         <button
           onClick={() => setMode("freeText")}
           className="rounded-full px-3 py-1 text-xs font-semibold"
           style={{ background: mode === "freeText" ? "var(--primary)" : "transparent", color: mode === "freeText" ? "white" : "var(--text)" }}
         >
-          ✍️ תיאור חופשי
+          {t("wizard.freeDescription")}
         </button>
       </div>
 
       {mode === "freeText" ? (
         <div>
-          <p className="mb-2 text-sm font-semibold">ספרו לנו מה אתם אוהבים</p>
+          <p className="mb-2 text-sm font-semibold">{t("wizard.tellUsWhatYouLike")}</p>
           <textarea
             value={freeText}
             onChange={(e) => setFreeText(e.target.value)}
-            placeholder="למשל: אני אוהב אוכל טוב ומוזיאונים, פחות מעניין אותי קניות..."
+            placeholder={t("wizard.freeTextPlaceholder")}
             rows={3}
             className="w-full rounded-lg border p-3 text-sm"
             style={{ borderColor: "var(--primary)" }}
@@ -132,7 +135,7 @@ export function ItineraryWizard({
       ) : (
         <>
           <div>
-            <p className="mb-2 text-sm font-semibold">מה אתם אוהבים?</p>
+            <p className="mb-2 text-sm font-semibold">{t("wizard.whatDoYouLike")}</p>
             <div className="flex flex-wrap gap-2">
               {categories.map((c) => (
                 <button
@@ -153,7 +156,7 @@ export function ItineraryWizard({
 
           {areas.length > 1 && (
             <div>
-              <p className="mb-2 text-sm font-semibold">אזורים (אופציונלי - ריק = הכל)</p>
+              <p className="mb-2 text-sm font-semibold">{t("wizard.areasOptional")}</p>
               <div className="flex flex-wrap gap-2">
                 {areas.map((a) => (
                   <button
@@ -176,7 +179,7 @@ export function ItineraryWizard({
       )}
 
       <label className="flex items-center gap-2 text-sm font-semibold">
-        כמה ימים?
+        {t("wizard.howManyDays")}
         <input
           type="number"
           min={1}
@@ -197,11 +200,11 @@ export function ItineraryWizard({
           className="rounded-full px-5 py-2.5 font-semibold text-white disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
         >
-          {loading ? "בונה מסלול..." : "✨ צרו מסלול AI"}
+          {loading ? t("wizard.building") : t("wizard.defaultTrigger")}
         </button>
         {hasExistingDays && (
           <button onClick={() => setOpen(false)} className="rounded-full px-5 py-2.5 text-sm font-semibold opacity-70">
-            ביטול
+            {t("itinerary.cancel")}
           </button>
         )}
       </div>

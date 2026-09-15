@@ -627,6 +627,17 @@ export const DICTIONARY = {
   "itinerary.plannerTitle": { he: "📅 מתכנן מסלול יומי", en: "📅 Daily Itinerary Planner" },
   "itinerary.emptyState": { he: 'עדיין אין ימים במסלול. לחצו על "הוספת יום" או השתמשו בבנאי האוטומטי כדי להתחיל.', en: 'There are no days in the itinerary yet. Click "Add day" or use the automatic builder to start.' },
   "itinerary.unnamedPoint": { he: "נקודה", en: "Point" },
+
+  "wizard.defaultTrigger": { he: "✨ צרו מסלול AI", en: "✨ Create AI itinerary" },
+  "wizard.title": { he: "כמה שאלות ונבנה לכם מסלול", en: "A few questions and we'll build your itinerary" },
+  "wizard.filters": { he: "🏷️ סינונים", en: "🏷️ Filters" },
+  "wizard.freeDescription": { he: "✍️ תיאור חופשי", en: "✍️ Free description" },
+  "wizard.tellUsWhatYouLike": { he: "ספרו לנו מה אתם אוהבים", en: "Tell us what you like" },
+  "wizard.freeTextPlaceholder": { he: "למשל: אני אוהב אוכל טוב ומוזיאונים, פחות מעניין אותי קניות...", en: "e.g. I love good food and museums, less interested in shopping..." },
+  "wizard.whatDoYouLike": { he: "מה אתם אוהבים?", en: "What do you like?" },
+  "wizard.areasOptional": { he: "אזורים (אופציונלי - ריק = הכל)", en: "Areas (optional - empty = all)" },
+  "wizard.howManyDays": { he: "כמה ימים?", en: "How many days?" },
+  "wizard.building": { he: "בונה מסלול...", en: "Building itinerary..." },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
