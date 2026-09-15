@@ -12,6 +12,7 @@ import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
 import { setItineraryDayDate } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
@@ -80,6 +81,7 @@ export function ItineraryMobileView({
   todayDayIndex: number | null;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const pillRowRef = useRef<HTMLDivElement>(null);
   const [focusedDayIndex, setFocusedDayIndex] = useState(dayListDays[0]?.dayIndex ?? 1);
   // Independent of focusedDayIndex (which the drawer's list keeps using for
@@ -194,7 +196,7 @@ export function ItineraryMobileView({
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-          aria-label="גלילה שמאלה"
+          aria-label={t("mobileItinerary.scrollLeft")}
         >
           ‹
         </button>
@@ -207,7 +209,7 @@ export function ItineraryMobileView({
           onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--text)" }}
-          aria-label="גלילה ימינה"
+          aria-label={t("mobileItinerary.scrollRight")}
         >
           ›
         </button>
@@ -238,7 +240,7 @@ export function ItineraryMobileView({
           className="flex shrink-0 touch-none flex-col items-center gap-1 pb-1 pt-2"
         >
           <span className="h-1 w-10 rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 30%, transparent)" }} />
-          <span className="text-xs opacity-50">{drawerState === "open" ? "⌄ גררו למטה לצמצום" : "⌃ גררו למעלה להרחבה"}</span>
+          <span className="text-xs opacity-50">{drawerState === "open" ? t("mobileItinerary.dragToCollapse") : t("mobileItinerary.dragToExpand")}</span>
         </div>
 
         {drawerState === "open" ? (
@@ -255,7 +257,7 @@ export function ItineraryMobileView({
                 </button>
                 <div className="flex min-w-0 flex-col items-center">
                   <p className="truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
-                    יום {focusedDayIndex}
+                    {t("mobileItinerary.day")} {focusedDayIndex}
                   </p>
                   {(() => {
                     const focusedDay = dayListDays.find((d) => d.dayIndex === focusedDayIndex);
@@ -281,9 +283,9 @@ export function ItineraryMobileView({
                     background: mapAllDays ? "var(--primary)" : "transparent",
                     color: mapAllDays ? "white" : "var(--text)",
                   }}
-                  title="הצגת כל הימים על גבי המפה"
+                  title={t("mobileItinerary.showAllDaysTitle")}
                 >
-                  🗺️ כל הימים
+                  {t("mobileItinerary.allDaysButton")}
                 </button>
                 <button
                   onClick={goToNextDay}
@@ -318,7 +320,7 @@ export function ItineraryMobileView({
               disabled={dayListDays.length <= 1 || focusedIdx === 0}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}
-              aria-label="היום הקודם"
+              aria-label={t("mobileItinerary.previousDay")}
             >
               ‹
             </button>
@@ -332,7 +334,7 @@ export function ItineraryMobileView({
               disabled={dayListDays.length <= 1 || focusedIdx === dayListDays.length - 1}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
               style={{ borderColor: "var(--primary)" }}
-              aria-label="היום הבא"
+              aria-label={t("mobileItinerary.nextDay")}
             >
               ›
             </button>
@@ -363,10 +365,11 @@ function CollapsedCurrentStop({
   isToday: boolean;
   onExpand: () => void;
 }) {
+  const { t } = useTranslation();
   if (!item) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-2xl border p-3 text-center text-xs opacity-50" style={{ borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)" }}>
-        אין עדיין נקודות ביום הזה.
+        {t("mobileItinerary.noPointsToday")}
       </div>
     );
   }

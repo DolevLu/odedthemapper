@@ -646,6 +646,17 @@ export const DICTIONARY = {
   "daysView.confirmDeleteDayPrefix": { he: "למחוק את יום", en: "Delete day" },
   "daysView.confirmDeleteDaySuffix": { he: "וכל הנקודות שבו?", en: "and all its points?" },
   "daysView.deleteDay": { he: "מחיקת היום", en: "Delete day" },
+
+  "mobileItinerary.scrollLeft": { he: "גלילה שמאלה", en: "Scroll left" },
+  "mobileItinerary.scrollRight": { he: "גלילה ימינה", en: "Scroll right" },
+  "mobileItinerary.dragToCollapse": { he: "⌄ גררו למטה לצמצום", en: "⌄ Drag down to collapse" },
+  "mobileItinerary.dragToExpand": { he: "⌃ גררו למעלה להרחבה", en: "⌃ Drag up to expand" },
+  "mobileItinerary.day": { he: "יום", en: "Day" },
+  "mobileItinerary.showAllDaysTitle": { he: "הצגת כל הימים על גבי המפה", en: "Show all days on the map" },
+  "mobileItinerary.allDaysButton": { he: "🗺️ כל הימים", en: "🗺️ All days" },
+  "mobileItinerary.previousDay": { he: "היום הקודם", en: "Previous day" },
+  "mobileItinerary.nextDay": { he: "היום הבא", en: "Next day" },
+  "mobileItinerary.noPointsToday": { he: "אין עדיין נקודות ביום הזה.", en: "No points for this day yet." },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
