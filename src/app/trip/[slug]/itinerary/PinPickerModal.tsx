@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** Small centered dialog for "I want to add a stop that isn't a real
  * matched place" — a plain free-text label has no coordinates and never
@@ -24,6 +25,7 @@ export function PinPickerModal({
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!loaded || !mapDivRef.current || mapRef.current) return;
@@ -63,13 +65,15 @@ export function PinPickerModal({
         style={{ background: "var(--surface)" }}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">📍 סימון מיקום על המפה</h2>
-          <button onClick={onClose} className="rounded-full px-2 py-1 text-lg opacity-60" aria-label="סגירה">
+          <h2 className="text-lg font-bold">{t("pinPicker.title")}</h2>
+          <button onClick={onClose} className="rounded-full px-2 py-1 text-lg opacity-60" aria-label={t("nav.close")}>
             ✕
           </button>
         </div>
         <p className="text-xs opacity-60">
-          {initialLabel ? `הנקודה תתווסף בשם "${initialLabel}" — לחצו על המפה כדי לבחור מיקום.` : "לחצו על המפה כדי לבחור מיקום."}
+          {initialLabel
+            ? `${t("pinPicker.withLabelPrefix")}${initialLabel}${t("pinPicker.withLabelSuffix")}`
+            : t("pinPicker.clickToChoose")}
         </p>
         {error ? (
           <p className="text-sm text-red-600">{error}</p>
@@ -78,7 +82,7 @@ export function PinPickerModal({
         )}
         <div className="flex gap-2">
           <button onClick={onClose} className="flex-1 rounded-lg border px-3 py-2 text-sm font-semibold" style={{ borderColor: "var(--primary)", color: "var(--primary)" }}>
-            ביטול
+            {t("itinerary.cancel")}
           </button>
           <button
             onClick={() => picked && onConfirm(picked.lat, picked.lng)}
@@ -86,7 +90,7 @@ export function PinPickerModal({
             className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
             style={{ background: "var(--primary)" }}
           >
-            אישור מיקום
+            {t("pinPicker.confirmLocation")}
           </button>
         </div>
       </div>

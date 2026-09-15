@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveItineraryAsTemplate } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** A standalone "save the current active itinerary as a named snapshot"
  * button — distinct from useSaveOrDiscardFlow's own save prompt, which only
@@ -18,11 +19,12 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
   const [, startTransition] = useTransition();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const { t } = useTranslation();
 
   function handleSave() {
     setSaving(true);
     startTransition(async () => {
-      const result = await saveItineraryAsTemplate(destinationId, slug, name.trim() || "המסלול שלי", "personal");
+      const result = await saveItineraryAsTemplate(destinationId, slug, name.trim() || t("itinerary.myRouteDefaultName"), "personal");
       setSaving(false);
       if (result && "error" in result) {
         window.alert(result.error);
@@ -41,24 +43,24 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
       <button
         onClick={() => setOpen((v) => !v)}
         disabled={!hasExistingDays}
-        title={hasExistingDays ? "שמירת המסלול הנוכחי בשם" : "אין עדיין מסלול לשמור"}
+        title={hasExistingDays ? t("itinerary.saveCurrentTitled") : t("itinerary.noRouteYet")}
         className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm disabled:opacity-40"
         style={{ borderColor: "var(--primary)", color: "var(--primary)", background: "var(--surface)" }}
       >
-        {saved ? "✓ נשמר" : "💾 שמירה"}
+        {saved ? t("itinerary.saved") : t("itinerary.saveButton")}
       </button>
       {open && (
         <div
           className="absolute z-30 mt-1 w-64 rounded-xl border p-2.5 shadow-lg"
           style={{ background: "var(--surface)", borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
         >
-          <p className="mb-2 text-xs font-bold opacity-70">איך לקרוא למסלול השמור?</p>
+          <p className="mb-2 text-xs font-bold opacity-70">{t("itinerary.whatToCallIt")}</p>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            placeholder='למשל: "מסלול טיול משפחה"'
+            placeholder={t("itinerary.namePlaceholder")}
             className="mb-2 w-full rounded-lg border px-2 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
@@ -69,10 +71,10 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
               className="flex-1 rounded-full px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
               style={{ background: "var(--primary)" }}
             >
-              {saving ? "שומר…" : "שמירה"}
+              {saving ? t("itinerary.saving") : t("itinerary.savePlain")}
             </button>
             <button onClick={() => setOpen(false)} className="rounded-full px-3 py-1.5 text-xs opacity-60">
-              ביטול
+              {t("itinerary.cancel")}
             </button>
           </div>
         </div>

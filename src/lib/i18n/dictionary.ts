@@ -578,6 +578,32 @@ export const DICTIONARY = {
   "quotes.addPriceBeforeSending": { he: "הוסיפו מחיר תכנון לפני שליחת הצעה", en: "Add a planning price before sending the quote" },
   "quotes.creating": { he: "יוצר...", en: "Creating..." },
   "quotes.send": { he: "📤 שליחה", en: "📤 Send" },
+
+  "itinerary.exportPdf.preparing": { he: "מכין...", en: "Preparing..." },
+  "itinerary.exportPdf.button": { he: "🖨️ PDF", en: "🖨️ PDF" },
+  "itinerary.addDay": { he: "+ הוספת יום", en: "+ Add day" },
+  "itinerary.share.creatingLink": { he: "יוצר קישור...", en: "Creating link..." },
+  "itinerary.share.createLink": { he: "🔗 יצירת קישור צפייה ללקוח / הדפסת PDF", en: "🔗 Create a client view link / print PDF" },
+  "itinerary.share.copied": { he: "הועתק!", en: "Copied!" },
+  "itinerary.share.copy": { he: "העתקה", en: "Copy" },
+  "itinerary.share.disableLink": { he: "ביטול הקישור", en: "Disable link" },
+
+  "itinerary.myRouteDefaultName": { he: "המסלול שלי", en: "My itinerary" },
+  "itinerary.saveCurrentTitled": { he: "שמירת המסלול הנוכחי בשם", en: "Save the current itinerary under a name" },
+  "itinerary.noRouteYet": { he: "אין עדיין מסלול לשמור", en: "There's no itinerary to save yet" },
+  "itinerary.saved": { he: "✓ נשמר", en: "✓ Saved" },
+  "itinerary.saveButton": { he: "💾 שמירה", en: "💾 Save" },
+  "itinerary.savePlain": { he: "שמירה", en: "Save" },
+  "itinerary.whatToCallIt": { he: "איך לקרוא למסלול השמור?", en: "What should the saved itinerary be called?" },
+  "itinerary.namePlaceholder": { he: 'למשל: "מסלול טיול משפחה"', en: 'e.g. "Family trip itinerary"' },
+  "itinerary.saving": { he: "שומר…", en: "Saving…" },
+  "itinerary.cancel": { he: "ביטול", en: "Cancel" },
+
+  "pinPicker.title": { he: "📍 סימון מיקום על המפה", en: "📍 Mark a location on the map" },
+  "pinPicker.withLabelPrefix": { he: 'הנקודה תתווסף בשם "', en: 'The point will be added as "' },
+  "pinPicker.withLabelSuffix": { he: '" — לחצו על המפה כדי לבחור מיקום.', en: '" — click the map to choose a location.' },
+  "pinPicker.clickToChoose": { he: "לחצו על המפה כדי לבחור מיקום.", en: "Click the map to choose a location." },
+  "pinPicker.confirmLocation": { he: "אישור מיקום", en: "Confirm location" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
