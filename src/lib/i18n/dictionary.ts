@@ -701,6 +701,24 @@ export const DICTIONARY = {
   "swipe.popular": { he: "🔥 פופולרי בקרב מטיילים", en: "🔥 Popular among travelers" },
   "swipe.adding": { he: "מוסיפים", en: "Adding" },
   "swipe.skipping": { he: "מדלגים", en: "Skipping" },
+
+  "dayItems.empty": { he: "אין עדיין נקודות ביום הזה.", en: "No points for this day yet." },
+  "dayItems.dragToReorder": { he: "גרירה לשינוי סדר", en: "Drag to reorder" },
+  "dayItems.customItem": { he: "פריט מותאם אישית", en: "Custom item" },
+  "dayItems.hasNote": { he: " · ✎ יש הערה", en: " · ✎ has a note" },
+  "dayItems.now": { he: "עכשיו", en: "Now" },
+  "dayItems.next": { he: "הבא", en: "Next" },
+  "dayItems.collapseNote": { he: "כיווץ ההערה", en: "Collapse note" },
+  "dayItems.showFullNote": { he: "הצגת ההערה המלאה", en: "Show full note" },
+  "dayItems.meters": { he: "מ׳", en: "m" },
+  "dayItems.km": { he: 'ק"מ', en: "km" },
+  "dayItems.directionsFromPrefix": { he: "מסלול הגעה מ-", en: "Directions from " },
+  "dayItems.directionsToMid": { he: " ל-", en: " to " },
+  "dayItems.directionsGoogleMapsSuffix": { he: " ב-Google Maps", en: " on Google Maps" },
+  "dayItems.directionsLink": { he: "מסלול הגעה ב-Google Maps ↗", en: "Get directions on Google Maps ↗" },
+  "dayItems.timeAriaLabel": { he: "שעה", en: "Time" },
+  "dayItems.notePlaceholder": { he: "✎ הוספת הערה אישית...", en: "✎ Add a personal note..." },
+  "dayItems.remove": { he: "🗑️ הסרה", en: "🗑️ Remove" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

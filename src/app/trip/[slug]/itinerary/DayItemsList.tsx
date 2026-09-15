@@ -7,6 +7,8 @@ import { shortCategoryLabel } from "@/lib/categoryLabels";
 import { emojiForCategory } from "@/components/CategoryIcon";
 import { standardCategoryColor } from "@/lib/mapStyles";
 import { haversineKm, transportIconFor, transportColorFor, googleMapsDirectionsUrl } from "@/lib/geo";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 // A neutral, always-legible time chip — deliberately NOT var(--primary) or
 // colorForDay (either of which can land on a dark/saturated tone depending
@@ -40,9 +42,9 @@ export type DayListItem = {
  * came from — used for the between-stops directions connector, which
  * previously only ever looked at item.poi and so silently skipped every
  * custom stop even after customLat/customLng gave it a real location. */
-function pointOf(item: DayListItem): { name: string; lat: number; lng: number } | null {
+function pointOf(item: DayListItem, t: (key: DictionaryKey) => string): { name: string; lat: number; lng: number } | null {
   if (item.poi) return item.poi;
-  if (item.customLat != null && item.customLng != null) return { name: item.customLabel ?? "נקודה", lat: item.customLat, lng: item.customLng };
+  if (item.customLat != null && item.customLng != null) return { name: item.customLabel ?? t("itinerary.unnamedPoint"), lat: item.customLat, lng: item.customLng };
   return null;
 }
 
@@ -125,6 +127,7 @@ export function DayItemsList({
   // full detail sheet (that already lets you read/edit the whole note, but
   // required a tap-and-close round trip just to peek at one).
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   // Keep `order`/`notes` in sync with `items` when the server sends a fresh list
   // (React's documented pattern for adjusting state during render, in place
@@ -269,7 +272,7 @@ export function DayItemsList({
     });
   }
 
-  if (items.length === 0) return <p className="text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>;
+  if (items.length === 0) return <p className="text-xs opacity-50">{t("dayItems.empty")}</p>;
 
   const timeStatus = isToday ? timeStatusMap(ordered) : new Map<string, "current" | "next">();
   const detailItem = detailItemId ? byId.get(detailItemId) ?? null : null;
@@ -321,7 +324,7 @@ export function DayItemsList({
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
                   className="shrink-0 cursor-grab touch-none select-none self-stretch px-0.5 text-base opacity-25 active:cursor-grabbing"
-                  aria-label="גרירה לשינוי סדר"
+                  aria-label={t("dayItems.dragToReorder")}
                 >
                   ⠿
                 </span>
@@ -337,8 +340,8 @@ export function DayItemsList({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
                   <p className="truncate text-xs leading-snug opacity-55">
-                    {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : "פריט מותאם אישית"}
-                    {notes[item.id]?.trim() ? " · ✎ יש הערה" : ""}
+                    {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : t("dayItems.customItem")}
+                    {notes[item.id]?.trim() ? t("dayItems.hasNote") : ""}
                   </p>
                   {notes[item.id]?.trim() && (
                     <p className={`text-xs leading-snug opacity-70 ${expandedNotes.has(item.id) ? "whitespace-pre-wrap" : "truncate"}`}>
@@ -353,8 +356,8 @@ export function DayItemsList({
                       {times[item.id]}
                     </span>
                   )}
-                  {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>עכשיו</span>}
-                  {status === "next" && <span className="text-[10px] font-bold" style={{ color: "#B45309" }}>הבא</span>}
+                  {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
+                  {status === "next" && <span className="text-[10px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
                   {notes[item.id]?.trim() && (
                     <button
                       data-no-swipe
@@ -369,7 +372,7 @@ export function DayItemsList({
                         });
                       }}
                       className="rounded-full px-1 text-xs opacity-50 hover:opacity-100"
-                      aria-label={expandedNotes.has(item.id) ? "כיווץ ההערה" : "הצגת ההערה המלאה"}
+                      aria-label={expandedNotes.has(item.id) ? t("dayItems.collapseNote") : t("dayItems.showFullNote")}
                     >
                       {expandedNotes.has(item.id) ? "︿" : "﹀"}
                     </button>
@@ -380,8 +383,8 @@ export function DayItemsList({
 
             {nextItem &&
               (() => {
-                const from = pointOf(item);
-                const to = pointOf(nextItem);
+                const from = pointOf(item, t);
+                const to = pointOf(nextItem, t);
                 return from && to && <TransportConnector from={from} to={to} />;
               })()}
           </div>
@@ -416,11 +419,13 @@ export function DayItemsList({
  * own "no paid APIs" reasoning) — this gets the same practical result
  * (tap it, see how to get there) for free, no API key, no quota. */
 function TransportConnector({ from, to }: { from: { name: string; lat: number; lng: number }; to: { name: string; lat: number; lng: number } }) {
+  const { t } = useTranslation();
   const distanceKm = haversineKm([from.lat, from.lng], [to.lat, to.lng]);
   const icon = transportIconFor(distanceKm);
   const color = transportColorFor(distanceKm);
   const url = googleMapsDirectionsUrl(from, to, distanceKm);
-  const distanceLabel = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} מ׳` : `${distanceKm.toFixed(1)} ק"מ`;
+  const distanceLabel = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} ${t("dayItems.meters")}` : `${distanceKm.toFixed(1)} ${t("dayItems.km")}`;
+  const directionsFrom = `${t("dayItems.directionsFromPrefix")}${from.name}${t("dayItems.directionsToMid")}${to.name}`;
 
   return (
     <a
@@ -428,8 +433,8 @@ function TransportConnector({ from, to }: { from: { name: string; lat: number; l
       target="_blank"
       rel="noopener noreferrer"
       className="group flex items-stretch gap-3 no-underline"
-      title={`מסלול הגעה מ-${from.name} ל-${to.name} ב-Google Maps`}
-      aria-label={`מסלול הגעה מ-${from.name} ל-${to.name}`}
+      title={`${directionsFrom}${t("dayItems.directionsGoogleMapsSuffix")}`}
+      aria-label={directionsFrom}
     >
       <div className="flex w-10 shrink-0 flex-col items-center">
         <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
@@ -443,7 +448,7 @@ function TransportConnector({ from, to }: { from: { name: string; lat: number; l
         <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
       </div>
       <div className="flex flex-1 items-center text-xs font-medium opacity-45 transition-opacity group-hover:opacity-90">
-        {distanceLabel} · מסלול הגעה ב-Google Maps ↗
+        {distanceLabel} · {t("dayItems.directionsLink")}
       </div>
     </a>
   );
@@ -477,6 +482,7 @@ function ItemDetailSheet({
   onRemove: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   if (typeof document === "undefined") return null;
   return createPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
@@ -501,12 +507,12 @@ function ItemDetailSheet({
                 type="time"
                 value={time}
                 onChange={(e) => onTimeChange(e.target.value)}
-                aria-label="שעה"
+                aria-label={t("dayItems.timeAriaLabel")}
                 className="mt-1 rounded-lg border px-1.5 py-0.5 text-xs font-bold"
                 style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)", color: "var(--primary)" }}
               />
             </div>
-            <button onClick={onClose} className="shrink-0 rounded-full px-1.5 py-0.5 text-base opacity-50 hover:opacity-100" aria-label="סגירה">
+            <button onClick={onClose} className="shrink-0 rounded-full px-1.5 py-0.5 text-base opacity-50 hover:opacity-100" aria-label={t("nav.close")}>
               ✕
             </button>
           </div>
@@ -516,7 +522,7 @@ function ItemDetailSheet({
           <textarea
             value={note}
             onChange={(e) => onNoteChange(e.target.value)}
-            placeholder="✎ הוספת הערה אישית..."
+            placeholder={t("dayItems.notePlaceholder")}
             rows={2}
             className="w-full resize-none rounded-lg border p-1.5 text-xs outline-none"
             style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
@@ -546,7 +552,7 @@ function ItemDetailSheet({
               </button>
             </div>
             <button onClick={onRemove} className="rounded-full px-2.5 py-1 text-xs font-semibold text-white" style={{ background: "#DC2626" }}>
-              🗑️ הסרה
+              {t("dayItems.remove")}
             </button>
           </div>
         </div>
