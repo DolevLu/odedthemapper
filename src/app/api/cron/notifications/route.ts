@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendPushToUser } from "@/lib/push";
+import { sendPushToUser, tipForThisWeek } from "@/lib/push";
+import { resolveTodayDayIndex, resolveTodayDayIndexFromDates } from "@/lib/tripSchedule";
+
+const TIP_INTERVAL_DAYS = 7;
 
 // Most airlines open online check-in 24-48h before departure — 24h is a
 // conservative window that still lands well inside that range for almost
@@ -82,5 +85,75 @@ export async function GET(request: Request) {
     budgetsAlerted++;
   }
 
-  return NextResponse.json({ ok: true, flightsNotified: flights.length, budgetsAlerted });
+  // "Your day starts" reminder — only for a day that genuinely resolves to
+  // today via a real date (an explicit ItineraryDay.date or a TripLogistic
+  // date range), never the "מה עכשיו" screen's own fallback-to-day-1
+  // behavior (resolveEffectiveTodayDayIndex) — that fallback exists so the
+  // Now screen always shows *something* even with zero real dates set, but
+  // reusing it here would make day 1 "today" forever for every itinerary
+  // that never set any dates, which would fire this once for literally
+  // every such itinerary in the system and then never again (since day 1
+  // never stops being "today").
+  const personalItineraries = await prisma.itinerary.findMany({
+    where: { kind: "personal" },
+    include: {
+      destination: { select: { name: true, slug: true } },
+      days: { orderBy: { dayIndex: "asc" }, include: { items: { select: { id: true } } } },
+    },
+  });
+  const logisticsByUserDest = new Map<string, { startsAt: Date | null; endsAt: Date | null }[]>();
+  const allLogistics = await prisma.tripLogistic.findMany({ select: { userId: true, destinationId: true, startsAt: true, endsAt: true } });
+  for (const l of allLogistics) {
+    const key = `${l.userId}:${l.destinationId}`;
+    const list = logisticsByUserDest.get(key) ?? [];
+    list.push({ startsAt: l.startsAt, endsAt: l.endsAt });
+    logisticsByUserDest.set(key, list);
+  }
+
+  let dayStartsNotified = 0;
+  for (const itinerary of personalItineraries) {
+    if (itinerary.days.length === 0) continue;
+    const daysWithDates = itinerary.days.map((d) => ({ dayIndex: d.dayIndex, date: d.date }));
+    const logistics = logisticsByUserDest.get(`${itinerary.userId}:${itinerary.destinationId}`) ?? [];
+    const todayDayIndex = daysWithDates.some((d) => d.date) ? resolveTodayDayIndexFromDates(daysWithDates) : resolveTodayDayIndex(logistics);
+    if (todayDayIndex == null) continue;
+
+    const today = itinerary.days.find((d) => d.dayIndex === todayDayIndex);
+    if (!today || today.items.length === 0 || today.dayStartNotifiedAt) continue;
+
+    await sendPushToUser(itinerary.userId, {
+      title: `📍 יום ${today.dayIndex} מתחיל`,
+      body: `${today.items.length} נקודות מתוכננות היום ב${itinerary.destination.name}. בואו נראה את המסלול.`,
+      url: `/trip/${itinerary.destination.slug}/now`,
+    });
+    await prisma.itineraryDay.update({ where: { id: today.id }, data: { dayStartNotifiedAt: now } });
+    dayStartsNotified++;
+  }
+
+  // Occasional tip — once every TIP_INTERVAL_DAYS per user, regardless of
+  // whether they have an active itinerary at all (a browsing user still
+  // benefits from a general tip). Only users who ever subscribed to push
+  // have any PushSubscription row, so this stays scoped to people who
+  // actually opted in rather than the whole user table.
+  const tipCutoff = new Date(now.getTime() - TIP_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
+  const tipCandidates = await prisma.user.findMany({
+    where: {
+      pushSubscriptions: { some: {} },
+      OR: [{ lastTipNotifiedAt: null }, { lastTipNotifiedAt: { lt: tipCutoff } }],
+    },
+    select: { id: true },
+  });
+  const tip = tipForThisWeek();
+  for (const user of tipCandidates) {
+    await sendPushToUser(user.id, { title: "💡 טיפ לדרך", body: tip });
+    await prisma.user.update({ where: { id: user.id }, data: { lastTipNotifiedAt: now } });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    flightsNotified: flights.length,
+    budgetsAlerted,
+    dayStartsNotified,
+    tipsSent: tipCandidates.length,
+  });
 }

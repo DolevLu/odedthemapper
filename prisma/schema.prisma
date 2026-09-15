@@ -225,6 +225,12 @@ model User {
   // so "the destination they chose" sticks instead of drifting.
   defaultDestinationSlug String?
 
+  // Last time this user got a "occasional travel tip" push (see
+  // TRAVEL_TIPS in lib/push.ts) — the daily notification cron only sends
+  // one once at least 7 days have passed since the last one, so this is
+  // the once-a-week guard, not a per-tip index.
+  lastTipNotifiedAt DateTime?
+
   // Referral program (see lib/referral.ts): a short shareable code (lazily
   // generated on first profile visit), who referred this user (if anyone),
   // and when the referral reward was granted (guards against double-paying
@@ -458,6 +464,10 @@ model ItineraryDay {
   // leaving it to be inferred from a flight/hotel entry that may not
   // exist or may not actually align with a gapless day-by-day itinerary.
   date        DateTime?
+  // Set once a "your day starts" push has actually been sent for this day,
+  // so the daily notification cron never sends the same day's reminder
+  // twice — same pattern as TripLogistic.checkinNotifiedAt.
+  dayStartNotifiedAt DateTime?
 
   itinerary Itinerary       @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
   items     ItineraryItem[]

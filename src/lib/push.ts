@@ -1,6 +1,31 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 
+/** A short, generic pool for the once-a-week "occasional tip" push (see
+ * the notifications cron) — not destination-specific, since there's no
+ * per-destination tip content curated anywhere in the app yet; picked
+ * deterministically by ISO week number so the same tip doesn't repeat
+ * back-to-back for a user checking in around the same time each week. */
+export const TRAVEL_TIPS: string[] = [
+  "צלמו את הדרכון והכרטיסים לפני הטיסה - עותק בענן חוסך המון אם משהו הולך לאיבוד.",
+  "הורידו את המפה של היעד לשימוש אופליין - חוסך גם דאטה נדידה וגם עצבים בלי קליטה.",
+  "בדקו את מזג האוויר שבוע לפני הטיסה, לא רק יום לפני - זה משנה מה כדאי לארוז.",
+  "השאירו עותק של פרטי הביטוח והכרטיסים אצל מישהו בבית, ליתר ביטחון.",
+  "שריינו שולחן במסעדה הפופולרית ביותר ברשימה שלכם כמה ימים מראש.",
+  "כדאי לבדוק אם צריך אשרת כניסה או ESTA מראש - זה לוקח דקות אבל עדיף לא ברגע האחרון.",
+  "ארגון לפי ימים ולא רק לפי מקומות עושה את הבוקר של הטיול הרבה יותר רגוע.",
+  "בדקו את שער החליפין הנוכחי לפני שיוצאים - עוזר לתקצב נכון בלי הפתעות.",
+  "תיק גב קטן נוסף לטיולים בתוך היעד - לא צריך לגרור את כל המזוודה כל יום.",
+  "אם יש לכם רכב שכור - בדקו חוקי חניה מקומיים מראש, זה נושא נפוץ להפתעות לא נעימות.",
+];
+
+export function tipForThisWeek(): string {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const weekNumber = Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  return TRAVEL_TIPS[weekNumber % TRAVEL_TIPS.length];
+}
+
 let configured = false;
 function ensureConfigured(publicKey: string, privateKey: string) {
   if (configured) return;
