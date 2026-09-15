@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { applyItineraryTemplate, deleteItineraryTemplate } from "@/lib/actions/trip";
 import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
 import { AddDayButton } from "./AddDayButton";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 type Template = { id: string; name: string };
 
@@ -34,6 +35,7 @@ export function ItineraryTopBar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
   const [applying, setApplying] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   function goToBuilder() {
     requestConfirm(hasExistingDays, () => router.push(`/trip/${slug}/itinerary/builder`), { allowContinue: true });
@@ -65,7 +67,7 @@ export function ItineraryTopBar({
 
   function handleDelete(templateId: string, e: React.MouseEvent) {
     e.stopPropagation();
-    if (!window.confirm("למחוק את המסלול השמור הזה?")) return;
+    if (!window.confirm(t("topBar.confirmDeleteSaved"))) return;
     startTransition(() => {
       deleteItineraryTemplate(templateId, slug, "personal");
       router.refresh();
@@ -80,7 +82,7 @@ export function ItineraryTopBar({
           className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm"
           style={{ borderColor: "var(--primary)", color: "var(--primary)", background: "var(--surface)" }}
         >
-          📂 שמורים{templates.length > 0 ? ` (${templates.length})` : ""} ▾
+          {t("topBar.savedRoutes")}{templates.length > 0 ? ` (${templates.length})` : ""} ▾
         </button>
         {menuOpen && (
           <div
@@ -88,21 +90,21 @@ export function ItineraryTopBar({
             style={{ background: "var(--surface)", borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
             onMouseLeave={() => setMenuOpen(false)}
           >
-            <div className="px-2 py-1.5 text-xs font-bold opacity-60">🟢 המסלול הפעיל (נוכחי)</div>
-            {templates.length === 0 && <p className="px-2 py-2 text-xs opacity-50">אין עדיין מסלולים שמורים.</p>}
-            {templates.map((t) => (
+            <div className="px-2 py-1.5 text-xs font-bold opacity-60">{t("topBar.activeRoute")}</div>
+            {templates.length === 0 && <p className="px-2 py-2 text-xs opacity-50">{t("topBar.noSavedRoutes")}</p>}
+            {templates.map((template) => (
               <button
-                key={t.id}
-                onClick={() => handleView(t.id)}
-                disabled={applying === t.id}
+                key={template.id}
+                onClick={() => handleView(template.id)}
+                disabled={applying === template.id}
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-start text-sm hover:bg-black/5 disabled:opacity-50"
               >
-                <span className="truncate">{applying === t.id ? "טוען…" : t.name}</span>
+                <span className="truncate">{applying === template.id ? t("topBar.loading") : template.name}</span>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  <span onClick={(e) => handleApply(t.id, e)} className="opacity-50 hover:opacity-100" role="button" aria-label="החלה על המסלול הפעיל" title="החלה על המסלול הפעיל">
+                  <span onClick={(e) => handleApply(template.id, e)} className="opacity-50 hover:opacity-100" role="button" aria-label={t("topBar.applyToActive")} title={t("topBar.applyToActive")}>
                     ✅
                   </span>
-                  <span onClick={(e) => handleDelete(t.id, e)} className="opacity-40 hover:opacity-100" role="button" aria-label="מחיקה">
+                  <span onClick={(e) => handleDelete(template.id, e)} className="opacity-40 hover:opacity-100" role="button" aria-label={t("topBar.delete")}>
                     🗑️
                   </span>
                 </span>
@@ -117,7 +119,7 @@ export function ItineraryTopBar({
         className="game-pop-in shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
         style={{ background: "linear-gradient(135deg, #F472B6, #F59E0B)" }}
       >
-        🔥 מסלול טינדר
+        {t("topBar.tinderRoute")}
       </button>
 
       {!hideAddDay && <AddDayButton destinationId={destinationId} slug={slug} />}

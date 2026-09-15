@@ -604,6 +604,25 @@ export const DICTIONARY = {
   "pinPicker.withLabelSuffix": { he: '" — לחצו על המפה כדי לבחור מיקום.', en: '" — click the map to choose a location.' },
   "pinPicker.clickToChoose": { he: "לחצו על המפה כדי לבחור מיקום.", en: "Click the map to choose a location." },
   "pinPicker.confirmLocation": { he: "אישור מיקום", en: "Confirm location" },
+
+  "templatePreview.viewingSaved": { he: "📂 צופים במסלול השמור:", en: "📂 Viewing saved itinerary:" },
+  "templatePreview.willReplace": { he: "זה יחליף את המסלול הפעיל שלכם - להמשיך?", en: "This will replace your active itinerary - continue?" },
+  "templatePreview.useThisOne": { he: "להשתמש במסלול הזה?", en: "Use this itinerary?" },
+  "templatePreview.applying": { he: "מיישם…", en: "Applying…" },
+  "templatePreview.confirm": { he: "אישור", en: "Confirm" },
+  "templatePreview.useThisRoute": { he: "✅ השתמשו במסלול הזה", en: "✅ Use this itinerary" },
+  "templatePreview.backToActive": { he: "✕ חזרה למסלול הפעיל", en: "✕ Back to active itinerary" },
+  "templatePreview.day": { he: "יום", en: "Day" },
+  "templatePreview.emptyDay": { he: "יום ריק", en: "Empty day" },
+
+  "topBar.savedRoutes": { he: "📂 שמורים", en: "📂 Saved" },
+  "topBar.activeRoute": { he: "🟢 המסלול הפעיל (נוכחי)", en: "🟢 Active itinerary (current)" },
+  "topBar.noSavedRoutes": { he: "אין עדיין מסלולים שמורים.", en: "No saved itineraries yet." },
+  "topBar.loading": { he: "טוען…", en: "Loading…" },
+  "topBar.applyToActive": { he: "החלה על המסלול הפעיל", en: "Apply to active itinerary" },
+  "topBar.delete": { he: "מחיקה", en: "Delete" },
+  "topBar.confirmDeleteSaved": { he: "למחוק את המסלול השמור הזה?", en: "Delete this saved itinerary?" },
+  "topBar.tinderRoute": { he: "🔥 מסלול טינדר", en: "🔥 Swipe itinerary" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
