@@ -88,6 +88,17 @@ export function ItineraryMobileView({
   // but this mobile layout hides (showDaySwitcher={false}) in favor of its
   // own drawer-driven day nav.
   const [mapAllDays, setMapAllDays] = useState(false);
+  // Tracked locally rather than bound straight to each day's own `date`
+  // prop — that prop only updates once setItineraryDayDate's own
+  // revalidatePath lands, which reset the date picker out from under
+  // whoever was still using it (same bug, same fix as DayItemsList's time
+  // input — see its own comment there). Seeded lazily per day id the first
+  // time it's actually touched, not up front for every day.
+  const [localDates, setLocalDates] = useState<Record<string, string>>({});
+  function handleDateChange(dayId: string, value: string) {
+    setLocalDates((prev) => ({ ...prev, [dayId]: value }));
+    setItineraryDayDate(dayId, value, slug);
+  }
   const [drawerState, setDrawerState] = useState<"open" | "peek">("open");
   const [dragOffset, setDragOffset] = useState(0);
   const dragging = useRef(false);
@@ -254,8 +265,8 @@ export function ItineraryMobileView({
                         📅
                         <input
                           type="date"
-                          value={focusedDay.date ?? ""}
-                          onChange={(e) => setItineraryDayDate(focusedDay.id, e.target.value, slug)}
+                          value={focusedDay.id in localDates ? localDates[focusedDay.id] : focusedDay.date ?? ""}
+                          onChange={(e) => handleDateChange(focusedDay.id, e.target.value)}
                           className="bg-transparent outline-none [color-scheme:light]"
                         />
                       </label>

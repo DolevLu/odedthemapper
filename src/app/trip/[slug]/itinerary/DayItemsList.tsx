@@ -105,6 +105,16 @@ export function DayItemsList({
     Object.fromEntries(items.map((i) => [i.id, i.note ?? ""]))
   );
   const noteSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // Same reasoning as `notes` above: the time input was bound straight to
+  // item.timeOfDay (the server-supplied prop), so setItineraryItemTime's own
+  // revalidatePath — which lands mid-typing, before the user has necessarily
+  // finished entering both the hour and minute segments — reset the input
+  // out from under them, reading as "it doesn't show what I typed" even
+  // though the save itself worked. Tracked locally instead, exactly like a
+  // note already is, so a revalidation while editing never clobbers it.
+  const [times, setTimes] = useState<Record<string, string>>(() =>
+    Object.fromEntries(items.map((i) => [i.id, i.timeOfDay ?? ""]))
+  );
   const [, startTransition] = useTransition();
   const [swipeX, setSwipeX] = useState<Record<string, number>>({});
   const swipingId = useRef<string | null>(null);
@@ -132,6 +142,17 @@ export function DayItemsList({
       for (const i of items) {
         if (!(i.id in next)) {
           next[i.id] = i.note ?? "";
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    setTimes((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const i of items) {
+        if (!(i.id in next)) {
+          next[i.id] = i.timeOfDay ?? "";
           changed = true;
         }
       }
@@ -236,6 +257,7 @@ export function DayItemsList({
   }
 
   function handleTimeChange(itemId: string, value: string) {
+    setTimes((prev) => ({ ...prev, [itemId]: value }));
     startTransition(() => {
       setItineraryItemTime(itemId, value, slug);
     });
@@ -326,9 +348,9 @@ export function DayItemsList({
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end gap-1">
-                  {item.timeOfDay && (
+                  {times[item.id] && (
                     <span className="rounded-full px-2.5 py-1 font-mono text-xs font-bold" style={chip}>
-                      {item.timeOfDay}
+                      {times[item.id]}
                     </span>
                   )}
                   {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>עכשיו</span>}
@@ -370,6 +392,7 @@ export function DayItemsList({
         <ItemDetailSheet
           item={detailItem}
           note={notes[detailItem.id] ?? ""}
+          time={times[detailItem.id] ?? ""}
           onNoteChange={(v) => handleNoteChange(detailItem.id, v)}
           onTimeChange={(v) => handleTimeChange(detailItem.id, v)}
           onVote={(v) => handleVote(detailItem.id, v)}
@@ -438,6 +461,7 @@ function TransportConnector({ from, to }: { from: { name: string; lat: number; l
 function ItemDetailSheet({
   item,
   note,
+  time,
   onNoteChange,
   onTimeChange,
   onVote,
@@ -446,6 +470,7 @@ function ItemDetailSheet({
 }: {
   item: DayListItem;
   note: string;
+  time: string;
   onNoteChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   onVote: (value: 1 | -1) => void;
@@ -474,7 +499,7 @@ function ItemDetailSheet({
               <h2 className="truncate text-sm font-bold">{item.poi ? item.poi.name : item.customLabel}</h2>
               <input
                 type="time"
-                value={item.timeOfDay ?? ""}
+                value={time}
                 onChange={(e) => onTimeChange(e.target.value)}
                 aria-label="שעה"
                 className="mt-1 rounded-lg border px-1.5 py-0.5 text-xs font-bold"

@@ -173,10 +173,20 @@ function DayCard({
   large?: boolean;
 }) {
   const color = colorForDay(day.dayIndex - 1);
+  // Tracked locally rather than bound straight to the day.date prop — that
+  // prop only updates once setItineraryDayDate's own revalidatePath lands,
+  // which reset the date picker out from under whoever was still using it
+  // (same bug, same fix as DayItemsList's time input — see its own comment).
+  const [localDate, setLocalDate] = useState(day.date ?? "");
 
   function handleDelete() {
     if (!window.confirm(`למחוק את יום ${day.dayIndex} וכל הנקודות שבו?`)) return;
     deleteItineraryDay(day.id, slug, path);
+  }
+
+  function handleDateChange(value: string) {
+    setLocalDate(value);
+    setItineraryDayDate(day.id, value, slug);
   }
 
   return (
@@ -202,8 +212,8 @@ function DayCard({
             📅
             <input
               type="date"
-              value={day.date ?? ""}
-              onChange={(e) => setItineraryDayDate(day.id, e.target.value, slug)}
+              value={localDate}
+              onChange={(e) => handleDateChange(e.target.value)}
               className="bg-transparent outline-none [color-scheme:light]"
               style={{ fontFamily: "inherit" }}
             />
