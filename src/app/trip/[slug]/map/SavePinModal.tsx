@@ -4,6 +4,7 @@ import { useState } from "react";
 import { saveMapPin } from "@/lib/actions/trip";
 import { SAVED_PIN_CATEGORY_OPTIONS, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { DIETARY_FILTERS } from "@/components/KosherStar";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export type PendingSavePin = {
   placeId: string;
@@ -47,6 +48,7 @@ export function SavePinModal({
     pin.categoryName ?? SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]
   );
   const isRestaurant = isAdmin && RESTAURANT_CATEGORY_MATCH.test(categoryName);
+  const { t } = useTranslation();
 
   async function handleSubmit(formData: FormData) {
     setSaving(true);
@@ -63,14 +65,14 @@ export function SavePinModal({
         className="flex w-full max-w-sm flex-col gap-3 rounded-2xl p-5 shadow-2xl"
         style={{ background: "var(--surface)" }}
       >
-        <h2 className="text-lg font-bold">{isEditing ? "✏️ עריכת נקודה" : "💾 שמירת נקודה למפה שלי"}</h2>
+        <h2 className="text-lg font-bold">{isEditing ? t("savePin.editTitle") : t("savePin.saveTitle")}</h2>
 
         <input type="hidden" name="placeId" value={pin.placeId} />
         <input type="hidden" name="lat" value={pin.lat} />
         <input type="hidden" name="lng" value={pin.lng} />
 
         <label className="text-xs opacity-60">
-          שם
+          {t("savePin.nameLabel")}
           <input
             name="name"
             defaultValue={pin.name}
@@ -81,7 +83,7 @@ export function SavePinModal({
         </label>
 
         <label className="text-xs opacity-60">
-          קטגוריה (קובעת את האייקון והצבע - כמו בשאר הנקודות במפה)
+          {t("savePin.categoryLabel")}
           <select
             name="categoryName"
             value={categoryName}
@@ -99,7 +101,7 @@ export function SavePinModal({
 
         {isRestaurant && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs opacity-60">מאפייני תזונה (רשות)</span>
+            <span className="text-xs opacity-60">{t("savePin.dietaryLabel")}</span>
             <div className="flex flex-wrap gap-2">
               {DIETARY_FILTERS.map((f) => (
                 <label
@@ -116,19 +118,20 @@ export function SavePinModal({
         )}
 
         <label className="text-xs opacity-60">
-          תיאור (רשות)
+          {t("savePin.descriptionLabel")}
           <textarea
             name="description"
             rows={3}
             defaultValue={pin.description ?? ""}
-            placeholder="למה שמרתם את הנקודה הזו?"
+            placeholder={t("savePin.descriptionPlaceholder")}
             className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
         </label>
 
         <label className="text-xs opacity-60">
-          תמונה (רשות{isEditing && pin.photoUrl ? " - העלאה תחליף את התמונה הקיימת" : ""})
+          {t("savePin.photoLabel")}
+          {isEditing && pin.photoUrl ? t("savePin.photoReplaceSuffix") : ""})
           {isEditing && pin.photoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={pin.photoUrl} alt="" className="mt-1 mb-1 h-20 w-full rounded-lg object-cover" />
@@ -148,10 +151,10 @@ export function SavePinModal({
             className="flex-1 rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
             style={{ background: "var(--primary)" }}
           >
-            {saving ? "שומר…" : "שמירה"}
+            {saving ? t("savePin.saving") : t("savePin.save")}
           </button>
           <button type="button" onClick={onClose} className="rounded-full px-4 py-2.5 text-sm opacity-60">
-            ביטול
+            {t("savePin.cancel")}
           </button>
         </div>
       </form>

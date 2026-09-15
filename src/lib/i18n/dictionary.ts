@@ -719,6 +719,29 @@ export const DICTIONARY = {
   "dayItems.timeAriaLabel": { he: "שעה", en: "Time" },
   "dayItems.notePlaceholder": { he: "✎ הוספת הערה אישית...", en: "✎ Add a personal note..." },
   "dayItems.remove": { he: "🗑️ הסרה", en: "🗑️ Remove" },
+
+  "savePin.editTitle": { he: "✏️ עריכת נקודה", en: "✏️ Edit point" },
+  "savePin.saveTitle": { he: "💾 שמירת נקודה למפה שלי", en: "💾 Save point to my map" },
+  "savePin.nameLabel": { he: "שם", en: "Name" },
+  "savePin.categoryLabel": { he: "קטגוריה (קובעת את האייקון והצבע - כמו בשאר הנקודות במפה)", en: "Category (determines the icon and color - like other points on the map)" },
+  "savePin.dietaryLabel": { he: "מאפייני תזונה (רשות)", en: "Dietary attributes (optional)" },
+  "savePin.descriptionLabel": { he: "תיאור (רשות)", en: "Description (optional)" },
+  "savePin.descriptionPlaceholder": { he: "למה שמרתם את הנקודה הזו?", en: "Why did you save this point?" },
+  "savePin.photoLabel": { he: "תמונה (רשות", en: "Photo (optional" },
+  "savePin.photoReplaceSuffix": { he: " - העלאה תחליף את התמונה הקיימת", en: " - uploading will replace the existing photo" },
+  "savePin.saving": { he: "שומר…", en: "Saving…" },
+  "savePin.save": { he: "שמירה", en: "Save" },
+  "savePin.cancel": { he: "ביטול", en: "Cancel" },
+
+  "adminPin.confirmDeletePrefix": { he: 'למחוק את "', en: 'Delete "' },
+  "adminPin.confirmDeleteSuffix": { he: '" לצמיתות מהמפה?', en: '" permanently from the map?' },
+  "adminPin.editColorPrefix": { he: "🎨 עריכת צבע", en: "🎨 Edit color" },
+  "adminPin.editIconSuffix": { he: "/אייקון", en: "/icon" },
+  "adminPin.removeFromMap": { he: "הסרת הנקודה מהמפה", en: "Remove point from map" },
+  "adminPin.customColor": { he: "צבע מותאם אישית (במקום ברירת המחדל לפי קטגוריה)", en: "Custom color (instead of the category default)" },
+  "adminPin.chooseColor": { he: "בחירת צבע", en: "Choose color" },
+  "adminPin.iconLabel": { he: "אייקון (קובע גם צבע ברירת מחדל אם אין צבע מותאם אישית)", en: "Icon (also sets the default color if there's no custom color)" },
+  "adminPin.defaultByCategory": { he: "ברירת מחדל (לפי הקטגוריה האמיתית של הנקודה)", en: "Default (based on the point's real category)" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

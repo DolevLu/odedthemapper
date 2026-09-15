@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updatePoiStyle, deletePoi } from "@/lib/actions/trip";
 import { SAVED_PIN_CATEGORY_OPTIONS, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { DIETARY_FILTERS, type DietaryFilterKey } from "@/components/KosherStar";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export type EditablePin = {
   id: string;
@@ -46,6 +47,7 @@ export function AdminEditPinModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const isRestaurant = RESTAURANT_CATEGORY_MATCH.test(pin.categoryName ?? "");
+  const { t } = useTranslation();
 
   async function handleSave() {
     setSaving(true);
@@ -59,7 +61,7 @@ export function AdminEditPinModal({
   }
 
   async function handleDelete() {
-    if (!window.confirm(`למחוק את "${pin.name}" לצמיתות מהמפה?`)) return;
+    if (!window.confirm(`${t("adminPin.confirmDeletePrefix")}${pin.name}${t("adminPin.confirmDeleteSuffix")}`)) return;
     setDeleting(true);
     await deletePoi(pin.id, destinationId, slug);
     setDeleting(false);
@@ -75,7 +77,7 @@ export function AdminEditPinModal({
       >
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-bold">
-            🎨 עריכת צבע{!pin.isShape && "/אייקון"} - {pin.name}
+            {t("adminPin.editColorPrefix")}{!pin.isShape && t("adminPin.editIconSuffix")} - {pin.name}
           </h2>
           <button
             type="button"
@@ -83,8 +85,8 @@ export function AdminEditPinModal({
             disabled={deleting}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm disabled:opacity-50"
             style={{ background: "#FEE2E2", color: "#DC2626" }}
-            title="הסרת הנקודה מהמפה"
-            aria-label="הסרת הנקודה מהמפה"
+            title={t("adminPin.removeFromMap")}
+            aria-label={t("adminPin.removeFromMap")}
           >
             🗑️
           </button>
@@ -92,7 +94,7 @@ export function AdminEditPinModal({
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={useCustomColor} onChange={(e) => setUseCustomColor(e.target.checked)} />
-          צבע מותאם אישית (במקום ברירת המחדל לפי קטגוריה)
+          {t("adminPin.customColor")}
         </label>
         {useCustomColor && (
           <div className="flex items-center gap-3">
@@ -102,7 +104,7 @@ export function AdminEditPinModal({
               onChange={(e) => setColor(e.target.value)}
               className="h-11 w-16 cursor-pointer rounded-lg border"
               style={{ borderColor: "var(--primary)" }}
-              aria-label="בחירת צבע"
+              aria-label={t("adminPin.chooseColor")}
             />
             <span className="font-mono text-sm opacity-70">{color}</span>
           </div>
@@ -110,14 +112,14 @@ export function AdminEditPinModal({
 
         {!pin.isShape && (
           <label className="text-xs opacity-60">
-            אייקון (קובע גם צבע ברירת מחדל אם אין צבע מותאם אישית)
+            {t("adminPin.iconLabel")}
             <select
               value={iconCategory}
               onChange={(e) => setIconCategory(e.target.value)}
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
               style={{ borderColor: "var(--primary)" }}
             >
-              <option value="">ברירת מחדל (לפי הקטגוריה האמיתית של הנקודה)</option>
+              <option value="">{t("adminPin.defaultByCategory")}</option>
               {SAVED_PIN_CATEGORY_OPTIONS.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -129,7 +131,7 @@ export function AdminEditPinModal({
 
         {isRestaurant && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs opacity-60">מאפייני תזונה (רשות)</span>
+            <span className="text-xs opacity-60">{t("savePin.dietaryLabel")}</span>
             <div className="flex flex-wrap gap-2">
               {DIETARY_FILTERS.map((f) => (
                 <label
@@ -163,10 +165,10 @@ export function AdminEditPinModal({
             className="flex-1 rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
             style={{ background: "var(--primary)" }}
           >
-            {saving ? "שומר…" : "שמירה"}
+            {saving ? t("savePin.saving") : t("savePin.save")}
           </button>
           <button type="button" onClick={onClose} className="rounded-full px-4 py-2.5 text-sm opacity-60">
-            ביטול
+            {t("savePin.cancel")}
           </button>
         </div>
       </div>
