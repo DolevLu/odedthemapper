@@ -13,6 +13,7 @@ import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
 import { AddDayButton } from "./AddDayButton";
 import { SaveItineraryButton } from "./SaveItineraryButton";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 type Day = { id: string; dayIndex: number; date: string | null; items: DayListItem[] };
 type PoiOption = { id: string; name: string; areaName: string; categoryName: string };
@@ -49,6 +50,7 @@ export function ItineraryLayoutSwitcher({
 }) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
+  const { t } = useTranslation();
 
   // Desktop's side panel (ItineraryDaysView, focused mode) and its route map
   // (DayRouteMap) used to track completely independent day selections — the
@@ -121,7 +123,7 @@ export function ItineraryLayoutSwitcher({
             categories={categoryNames}
             areas={areas}
             hasExistingDays={hasExistingDays}
-            triggerLabel="✨ מסלול AI"
+            triggerLabel={t("itinerary.aiRoute")}
           />
           <ExportPdfButton destinationId={destinationId} slug={slug} />
         </div>

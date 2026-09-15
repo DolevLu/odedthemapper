@@ -12,6 +12,7 @@ import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ItineraryLayoutSwitcher } from "./ItineraryLayoutSwitcher";
 import { ItineraryTemplatePreview } from "./ItineraryTemplatePreview";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function ItineraryPage({
   params,
@@ -32,6 +33,7 @@ export default async function ItineraryPage({
 
   const userId = session!.user!.id;
   const ownerId = await resolveItineraryOwnerId(userId);
+  const t = await getServerT();
 
   const [itinerary, poiOptions, areas, templates, logistics] = await Promise.all([
     prisma.itinerary.findUnique({
@@ -103,7 +105,7 @@ export default async function ItineraryPage({
         ];
       }
       if (i.customLat != null && i.customLng != null) {
-        return [{ id: i.id, name: i.customLabel ?? "נקודה", lat: i.customLat, lng: i.customLng, description: null, photoUrl: null, timeOfDay: i.timeOfDay }];
+        return [{ id: i.id, name: i.customLabel ?? t("itinerary.unnamedPoint"), lat: i.customLat, lng: i.customLng, description: null, photoUrl: null, timeOfDay: i.timeOfDay }];
       }
       return [];
     }),
@@ -159,7 +161,7 @@ export default async function ItineraryPage({
       {!hasExistingDays && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-xl font-bold">📅 מתכנן מסלול יומי</h1>
+            <h1 className="text-xl font-bold">{t("itinerary.plannerTitle")}</h1>
             <div className="flex flex-wrap items-center gap-1.5">
               <ItineraryTopBar destinationId={destination.id} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
             </div>
@@ -173,7 +175,7 @@ export default async function ItineraryPage({
             hasExistingDays={hasExistingDays}
           />
 
-          <p className="text-sm opacity-60">עדיין אין ימים במסלול. לחצו על &quot;הוספת יום&quot; או השתמשו בבנאי האוטומטי כדי להתחיל.</p>
+          <p className="text-sm opacity-60">{t("itinerary.emptyState")}</p>
         </>
       )}
 

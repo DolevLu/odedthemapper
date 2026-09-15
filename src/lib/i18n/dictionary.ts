@@ -623,6 +623,10 @@ export const DICTIONARY = {
   "topBar.delete": { he: "מחיקה", en: "Delete" },
   "topBar.confirmDeleteSaved": { he: "למחוק את המסלול השמור הזה?", en: "Delete this saved itinerary?" },
   "topBar.tinderRoute": { he: "🔥 מסלול טינדר", en: "🔥 Swipe itinerary" },
+  "itinerary.aiRoute": { he: "✨ מסלול AI", en: "✨ AI itinerary" },
+  "itinerary.plannerTitle": { he: "📅 מתכנן מסלול יומי", en: "📅 Daily Itinerary Planner" },
+  "itinerary.emptyState": { he: 'עדיין אין ימים במסלול. לחצו על "הוספת יום" או השתמשו בבנאי האוטומטי כדי להתחיל.', en: 'There are no days in the itinerary yet. Click "Add day" or use the automatic builder to start.' },
+  "itinerary.unnamedPoint": { he: "נקודה", en: "Point" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
