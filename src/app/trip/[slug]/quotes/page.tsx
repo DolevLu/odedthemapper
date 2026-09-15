@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NewQuoteForm } from "./NewQuoteForm";
 import { LeadsTable } from "./LeadsTable";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function QuotesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,6 +20,7 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
   }
 
   const userId = session!.user!.id;
+  const t = await getServerT();
 
   const quotes = await prisma.priceQuote.findMany({
     where: { userId, destinationId: destination.id },
@@ -33,11 +35,8 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold">📊 CRM - לידים והצעות מחיר</h1>
-        <p className="text-sm opacity-70">
-          נהלו את הלידים שלכם, בנו הצעת מחיר מקצועית ושלחו ללקוח לאישור וחתימה. המסמך נוצר אוטומטית מתבנית מקצועית
-          ואינו מהווה חתימה אלקטרונית מאושרת כחוק.
-        </p>
+        <h1 className="text-xl font-bold">{t("quotes.title")}</h1>
+        <p className="text-sm opacity-70">{t("quotes.subtitle")}</p>
       </div>
 
       {quotes.length > 0 && (
@@ -46,19 +45,19 @@ export default async function QuotesPage({ params }: { params: Promise<{ slug: s
             <p className="text-2xl font-extrabold" style={{ color: "var(--primary)" }}>
               ${(profitCents / 100).toFixed(0)}
             </p>
-            <p className="text-xs opacity-70">💰 רווח כולל</p>
+            <p className="text-xs opacity-70">{t("quotes.totalProfit")}</p>
           </div>
           <div className="rounded-2xl border border-black/5 p-4 text-center" style={{ background: "var(--surface)" }}>
             <p className="text-xl font-extrabold">${(revenueCents / 100).toFixed(0)}</p>
-            <p className="text-xs opacity-60">הכנסה כוללת</p>
+            <p className="text-xs opacity-60">{t("quotes.totalRevenue")}</p>
           </div>
           <div className="rounded-2xl border border-black/5 p-4 text-center" style={{ background: "var(--surface)" }}>
             <p className="text-xl font-extrabold">{quotes.length}</p>
-            <p className="text-xs opacity-60">לידים</p>
+            <p className="text-xs opacity-60">{t("quotes.leads")}</p>
           </div>
           <div className="rounded-2xl border border-black/5 p-4 text-center" style={{ background: "var(--surface)" }}>
             <p className="text-xl font-extrabold">{closedWon}</p>
-            <p className="text-xs opacity-60">נסגרו בהצלחה</p>
+            <p className="text-xs opacity-60">{t("quotes.closedWon")}</p>
           </div>
         </div>
       )}

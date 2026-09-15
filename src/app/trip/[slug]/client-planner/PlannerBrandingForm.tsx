@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { savePlannerProfile } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function PlannerBrandingForm({
   slug,
@@ -14,12 +15,13 @@ export function PlannerBrandingForm({
 }) {
   const [open, setOpen] = useState(false);
   const action = savePlannerProfile.bind(null, slug);
+  const { t } = useTranslation();
 
   return (
     <div className="border p-4" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
       <button onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between text-sm font-semibold">
         <span className="flex items-center gap-2">
-          🏷️ מיתוג המשרד שלכם על מסלולים ללקוח
+          {t("clientPlanner.brandingTitle")}
           {companyName && <span className="text-xs font-normal opacity-60">({companyName})</span>}
         </span>
         <span className="opacity-60">{open ? "▲" : "▼"}</span>
@@ -32,23 +34,23 @@ export function PlannerBrandingForm({
             <img src={logoUrl} alt="" className="h-12 w-12 rounded-lg border object-contain" style={{ borderColor: "var(--primary)" }} />
           )}
           <label className="text-xs opacity-60">
-            שם המשרד / העסק
+            {t("clientPlanner.companyNameLabel")}
             <input
               name="companyName"
               defaultValue={companyName ?? ""}
-              placeholder="למשל: טיולי הכוכב"
+              placeholder={t("clientPlanner.companyNamePlaceholder")}
               className="mt-1 block w-56 rounded-lg border px-3 py-2"
               style={{ borderColor: "var(--primary)" }}
             />
           </label>
           <label className="text-xs opacity-60">
-            לוגו
+            {t("clientPlanner.logoLabel")}
             <input name="logo" type="file" accept="image/*" className="mt-1 block text-sm" />
           </label>
           <button type="submit" className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: "var(--primary)" }}>
-            שמירה
+            {t("clientPlanner.save")}
           </button>
-          <p className="w-full text-xs opacity-50">המיתוג יוצג לצד המיתוג של טראבי במסלול המשותף ללקוח.</p>
+          <p className="w-full text-xs opacity-50">{t("clientPlanner.brandingNote")}</p>
         </form>
       )}
     </div>

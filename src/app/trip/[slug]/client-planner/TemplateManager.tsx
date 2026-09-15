@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveItineraryAsTemplate, applyItineraryTemplate, deleteItineraryTemplate } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 export function TemplateManager({
   destinationId,
@@ -20,10 +21,11 @@ export function TemplateManager({
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const { t } = useTranslation();
 
   function saveAsTemplate() {
     if (!name.trim()) {
-      setError("תנו שם לתבנית");
+      setError(t("clientPlanner.giveTemplateName"));
       return;
     }
     setError(null);
@@ -56,14 +58,14 @@ export function TemplateManager({
 
   return (
     <div className="flex flex-col gap-3 border p-4" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-      <p className="text-sm font-bold">📁 תבניות מסלול</p>
+      <p className="text-sm font-bold">{t("clientPlanner.templatesTitle")}</p>
 
       {hasItinerary && (
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="שם התבנית (למשל: 5 ימים רומנטי)"
+            placeholder={t("clientPlanner.templateNamePlaceholder")}
             className="min-w-0 flex-1 rounded-lg border px-3 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
@@ -73,23 +75,23 @@ export function TemplateManager({
             className="rounded-full border px-4 py-1.5 text-xs font-semibold disabled:opacity-50"
             style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
           >
-            💾 שמירת המסלול הנוכחי כתבנית
+            {t("clientPlanner.saveAsTemplate")}
           </button>
         </div>
       )}
       {error && <p className="text-xs text-red-600">{error}</p>}
 
       {templates.length === 0 ? (
-        <p className="text-xs opacity-50">אין עדיין תבניות שמורות ליעד הזה.</p>
+        <p className="text-xs opacity-50">{t("clientPlanner.noTemplatesYet")}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
-          {templates.map((t) => (
-            <div key={t.id} className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: "var(--primary)" }}>
-              <span>{t.name}</span>
-              <button onClick={() => apply(t.id)} disabled={pending} className="font-semibold underline">
-                שימוש
+          {templates.map((template) => (
+            <div key={template.id} className="flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs" style={{ borderColor: "var(--primary)" }}>
+              <span>{template.name}</span>
+              <button onClick={() => apply(template.id)} disabled={pending} className="font-semibold underline">
+                {t("clientPlanner.use")}
               </button>
-              <button onClick={() => remove(t.id)} disabled={pending} className="opacity-50 hover:opacity-100">
+              <button onClick={() => remove(template.id)} disabled={pending} className="opacity-50 hover:opacity-100">
                 ✕
               </button>
             </div>

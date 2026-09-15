@@ -13,6 +13,7 @@ import { OptimizeButton } from "./OptimizeButton";
 import { ShareLink } from "../itinerary/ShareLink";
 import { PlannerBrandingForm } from "./PlannerBrandingForm";
 import { TemplateManager } from "./TemplateManager";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function ClientPlannerPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -25,6 +26,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
   }
 
   const userId = session!.user!.id;
+  const t = await getServerT();
 
   const [itinerary, poiOptions, plannerProfile, templates] = await Promise.all([
     prisma.itinerary.findUnique({
@@ -68,13 +70,13 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">🧑‍💼 תכנון מסלול ללקוח</h1>
-          <p className="text-sm opacity-70">כלי מקצועי למתכנני טיולים - ימים, שעות, אופטימיזציה ותצוגת מפה.</p>
+          <h1 className="text-xl font-bold">{t("clientPlanner.title")}</h1>
+          <p className="text-sm opacity-70">{t("clientPlanner.subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <form action={createDayAction}>
             <button type="submit" className="rounded-full px-4 py-2 text-sm font-semibold text-white" style={{ background: "var(--primary)" }}>
-              + הוספת יום
+              {t("clientPlanner.addDay")}
             </button>
           </form>
           {itinerary && itinerary.days.length > 1 && <OptimizeButton itineraryId={itinerary.id} slug={slug} />}
@@ -88,7 +90,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
       {itinerary && <ShareLink destinationId={destination.id} slug={slug} shareToken={itinerary.shareToken} kind="client" path="client-planner" />}
 
       {(!itinerary || itinerary.days.length === 0) && (
-        <p className="text-sm opacity-60">עדיין אין ימים במסלול. לחצו על &quot;הוספת יום&quot; כדי להתחיל.</p>
+        <p className="text-sm opacity-60">{t("clientPlanner.noDaysYet")}</p>
       )}
 
       {mapDays.some((d) => d.points.length > 0) && <DayRouteMap days={mapDays} />}
@@ -102,7 +104,7 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
           >
             <h2 className="flex items-center gap-2 font-bold">
               <span className="h-3 w-3 rounded-full" style={{ background: colorForDay(day.dayIndex - 1) }} />
-              יום {day.dayIndex}
+              {t("clientPlanner.day")} {day.dayIndex}
             </h2>
 
             <div className="flex flex-col gap-2">
@@ -119,14 +121,14 @@ export default async function ClientPlannerPage({ params }: { params: Promise<{ 
                   <div className="flex-1 text-sm">
                     {item.timeOfDay && <span className="me-2 font-mono text-xs opacity-70">{item.timeOfDay}</span>}
                     <span>{item.poi ? item.poi.name : item.customLabel}</span>
-                    {!item.poi && <span className="ms-2 text-xs opacity-50">(פריט חופשי)</span>}
+                    {!item.poi && <span className="ms-2 text-xs opacity-50">{t("clientPlanner.freeItem")}</span>}
                   </div>
                   <form action={removeItineraryItem.bind(null, item.id, slug)}>
                     <button className="opacity-50 hover:opacity-100">✕</button>
                   </form>
                 </div>
               ))}
-              {day.items.length === 0 && <p className="text-xs opacity-50">אין עדיין נקודות ביום הזה.</p>}
+              {day.items.length === 0 && <p className="text-xs opacity-50">{t("clientPlanner.noPointsYet")}</p>}
             </div>
 
             <AddClientItem dayId={day.id} slug={slug} pois={poiOptions} />
