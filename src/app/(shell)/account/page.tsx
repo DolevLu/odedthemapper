@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getLang, translate } from "@/lib/i18n/server";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
+import { translatePlan } from "@/lib/i18n/plans";
 import { prisma } from "@/lib/prisma";
 import { getResolvedSubscriptionForAccount } from "@/lib/access";
 import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
@@ -105,8 +106,8 @@ export default async function AccountPage() {
 
       {active ? (
         <div className="rounded-3xl border border-black/5 bg-white p-6">
-          <p className="text-sm font-semibold opacity-60">{PLANS[active.planKey as PlanKey].audience}</p>
-          <h2 className="mt-1 text-xl font-extrabold">{PLANS[active.planKey as PlanKey].name}</h2>
+          <p className="text-sm font-semibold opacity-60">{translatePlan(lang, active.planKey as PlanKey).audience}</p>
+          <h2 className="mt-1 text-xl font-extrabold">{translatePlan(lang, active.planKey as PlanKey).name}</h2>
           <p className="mt-2 text-sm opacity-70">
             {formatIls(active.amountCents)} · {active.billingCycle === "monthly" ? t("account.monthly") : t("account.yearly")} ·{" "}
             {active.cancelAtPeriodEnd ? t("account.endsOn") : t("account.renewsOn")}

@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { PLANS, TRIAL_PLAN, formatIls } from "@/lib/plans";
+import { PLANS, formatIls } from "@/lib/plans";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { FloatingTravelIcons } from "@/components/FloatingTravelIcons";
 import { HeroAppPreview } from "@/components/HeroAppPreview";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { prisma } from "@/lib/prisma";
-import { getServerT } from "@/lib/i18n/server";
+import { getLang, getServerT } from "@/lib/i18n/server";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
+import { translatePlan } from "@/lib/i18n/plans";
 
 function buildFaq(t: (key: DictionaryKey) => string) {
   return [
@@ -26,8 +27,9 @@ function buildFaq(t: (key: DictionaryKey) => string) {
  * the users who most reliably click it: "/" always bouncing a paying user
  * straight back to the map they're already looking at. */
 export async function HomePageContent() {
-  const t = await getServerT();
+  const [t, lang] = await Promise.all([getServerT(), getLang()]);
   const FAQ = buildFaq(t);
+  const trialText = translatePlan(lang, "trial");
   const [destinationCount, poiCount] = await Promise.all([
     prisma.destination.count({ where: { status: { in: ["preview", "live"] } } }),
     prisma.pointOfInterest.count(),
@@ -131,23 +133,26 @@ export async function HomePageContent() {
            * price) but still far short of the full pricing page. */}
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
-              <p className="text-xs font-semibold opacity-60">{TRIAL_PLAN.audience}</p>
-              <p className="mt-1 text-lg font-extrabold">🎁 {TRIAL_PLAN.name}</p>
+              <p className="text-xs font-semibold opacity-60">{trialText.audience}</p>
+              <p className="mt-1 text-lg font-extrabold">🎁 {trialText.name}</p>
               <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
                 {t("home.free")}
               </p>
-              <p className="mt-2 text-xs opacity-70">{TRIAL_PLAN.tagline}</p>
+              <p className="mt-2 text-xs opacity-70">{trialText.tagline}</p>
             </div>
-            {Object.values(PLANS).map((plan) => (
-              <div key={plan.key} className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
-                <p className="text-xs font-semibold opacity-60">{plan.audience}</p>
-                <p className="mt-1 text-lg font-extrabold">{plan.name}</p>
-                <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
-                  {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">{t("home.perMonth")}</span>
-                </p>
-                <p className="mt-2 text-xs opacity-70">{plan.tagline}</p>
-              </div>
-            ))}
+            {Object.values(PLANS).map((plan) => {
+              const planText = translatePlan(lang, plan.key);
+              return (
+                <div key={plan.key} className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
+                  <p className="text-xs font-semibold opacity-60">{planText.audience}</p>
+                  <p className="mt-1 text-lg font-extrabold">{planText.name}</p>
+                  <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
+                    {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">{t("home.perMonth")}</span>
+                  </p>
+                  <p className="mt-2 text-xs opacity-70">{planText.tagline}</p>
+                </div>
+              );
+            })}
           </div>
           <Link
             href="/pricing"

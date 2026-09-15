@@ -239,6 +239,27 @@ export const DICTIONARY = {
   "destCard.areas": { he: "אזורים", en: "areas" },
   "destCard.fromPricePrefix": { he: "מ-", en: "From " },
   "destCard.fromPriceSuffix": { he: "/חודש", en: "/month" },
+
+  "pricing.title": { he: "תוכנית שמתאימה לאיך שאתם מטיילים", en: "A plan that fits how you travel" },
+  "pricing.subtitle": { he: "מנוי חודשי, בלי התחייבות ארוכה. בטלו מתי שתרצו.", en: "Monthly subscription, no long commitment. Cancel anytime." },
+  "pricing.monthly": { he: "חודשי", en: "Monthly" },
+  "pricing.annualSave": { he: "שנתי · חסכו עד 25%", en: "Annual · save up to 25%" },
+  "pricing.oneDestination": { he: "🌍 יעד אחד", en: "🌍 One destination" },
+  "pricing.hours24": { he: "⏱️ 24 שעות", en: "⏱️ 24 hours" },
+  "pricing.free": { he: "חינם", en: "Free" },
+  "pricing.startFreeTrial": { he: "התחלת ניסיון חינם", en: "Start free trial" },
+  "pricing.mostPopular": { he: "⭐ הכי פופולרי", en: "⭐ Most popular" },
+  "pricing.allDestinations": { he: "כל היעדים", en: "All destinations" },
+  "pricing.oneDestinationPlain": { he: "יעד אחד", en: "One destination" },
+  "pricing.upToDestinationsPrefix": { he: "עד", en: "Up to" },
+  "pricing.destinationsSuffix": { he: "יעדים", en: "destinations" },
+  "pricing.unlimitedUsers": { he: "משתמשים ללא הגבלה", en: "Unlimited users" },
+  "pricing.oneUser": { he: "משתמש אחד", en: "One user" },
+  "pricing.upToUsersPrefix": { he: "עד", en: "Up to" },
+  "pricing.usersSuffix": { he: "משתמשים", en: "users" },
+  "pricing.perMonth": { he: "/ חודש", en: "/ month" },
+  "pricing.annualDiscountSuffix": { he: "הנחה, מחויב שנתית", en: "off, billed annually" },
+  "pricing.choosePlan": { he: "בחירת תוכנית", en: "Choose plan" },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;
