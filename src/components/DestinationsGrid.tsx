@@ -1,5 +1,6 @@
 import { getAllDestinations, type DestinationSummary } from "@/lib/data/destinations";
 import { DestinationCard } from "@/components/DestinationCard";
+import { getLang } from "@/lib/i18n/server";
 
 // The home page is a teaser, not the full catalog (that's /destinations,
 // linked right below this grid) — capped so it doesn't try to render every
@@ -17,7 +18,7 @@ function shuffled<T>(items: T[]): T[] {
 }
 
 export async function DestinationsGrid() {
-  const destinations = await getAllDestinations();
+  const [destinations, lang] = await Promise.all([getAllDestinations(), getLang()]);
   const live = destinations.filter((d) => d.status !== "draft");
 
   // Best sellers lead (shuffled among themselves too, so it's not always the
@@ -31,7 +32,7 @@ export async function DestinationsGrid() {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {selected.map((destination) => (
-        <DestinationCard key={destination.id} destination={destination} />
+        <DestinationCard key={destination.id} destination={destination} lang={lang} />
       ))}
     </div>
   );

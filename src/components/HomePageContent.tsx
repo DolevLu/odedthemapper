@@ -31,7 +31,7 @@ export async function HomePageContent() {
   const FAQ = buildFaq(t);
   const trialText = translatePlan(lang, "trial");
   const [destinationCount, poiCount] = await Promise.all([
-    prisma.destination.count({ where: { status: { in: ["preview", "live"] } } }),
+    prisma.destination.count({ where: { status: { in: ["preview", "live"] }, isPublic: true } }),
     prisma.pointOfInterest.count(),
   ]);
   const stats = [

@@ -853,6 +853,13 @@ export const DICTIONARY = {
   "destQuiz.pageTitle": { he: "✈️ לאן כדאי לי לטוס?", en: "✈️ Where should I fly?" },
   "destQuiz.pageSubtitlePrefix": { he: "ענו על כמה שאלות קצרות, ואנחנו נתאים לכם את היעד הבא שלכם מתוך", en: "Answer a few short questions, and we'll match you with your next destination out of" },
   "destQuiz.pageSubtitleSuffix": { he: "היעדים במערכת.", en: "destinations in the system." },
+
+  "continent.europe": { he: "אירופה", en: "Europe" },
+  "continent.asia": { he: "אסיה", en: "Asia" },
+  "continent.middleEast": { he: "המזרח התיכון", en: "Middle East" },
+  "continent.africa": { he: "אפריקה", en: "Africa" },
+  "continent.americas": { he: "אמריקה", en: "Americas" },
+  "destBrowser.noneInContinent": { he: "אין עדיין יעדים ביבשת הזו.", en: "No destinations in this continent yet." },
 } satisfies Record<string, Record<Lang, string>>;
 
 export type DictionaryKey = keyof typeof DICTIONARY;

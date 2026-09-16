@@ -258,6 +258,18 @@ export async function updateDestinationMeta(destinationId: string, slug: string,
   revalidatePath("/");
 }
 
+/** Toggled from the admin destinations list (a single form per row) — kept
+ * separate from updateDestinationMeta (status/tagline) so a quick
+ * show/hide doesn't need opening the destination's own detail page. */
+export async function setDestinationPublic(destinationId: string, isPublic: boolean) {
+  await requireContentManager();
+  await prisma.destination.update({ where: { id: destinationId }, data: { isPublic } });
+  revalidateTag("destinations-list", "max");
+  revalidatePath("/admin/destinations");
+  revalidatePath("/");
+  revalidatePath("/destinations");
+}
+
 export async function addCoupon(destinationId: string, slug: string, formData: FormData) {
   await requireContentManager();
   const partnerName = String(formData.get("partnerName") ?? "");

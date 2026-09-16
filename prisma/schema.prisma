@@ -22,6 +22,11 @@ model Destination {
   name        String
   tagline     String?
   status      String   @default("draft") // draft | preview | live
+  // Separate from `status` — status governs purchase-readiness (draft still
+  // shows as a "coming soon" teaser card everywhere), this governs whether
+  // the destination appears in any public listing at all. Defaults to true
+  // so every existing destination stays visible after this field is added.
+  isPublic    Boolean  @default(true)
   priceCents  Int      @default(15000) // 150.00 in agora/cents, currency below
   currency    String   @default("ILS")
   heroImage   String?

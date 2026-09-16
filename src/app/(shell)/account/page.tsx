@@ -39,7 +39,7 @@ export default async function AccountPage() {
   const allDestinations =
     active && !plan?.isOrgTier
       ? await prisma.destination.findMany({
-          where: { status: { in: ["preview", "live"] } },
+          where: { status: { in: ["preview", "live"] }, isPublic: true },
           select: { slug: true, name: true },
           orderBy: { name: "asc" },
         })

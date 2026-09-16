@@ -10,7 +10,7 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
   if (!session?.user?.id) redirect(`/register?callbackUrl=${encodeURIComponent(`/trial${dest ? `?dest=${dest}` : ""}`)}`);
 
   const destinations = await prisma.destination.findMany({
-    where: { status: { in: ["preview", "live"] } },
+    where: { status: { in: ["preview", "live"] }, isPublic: true },
     orderBy: { name: "asc" },
     select: { id: true, slug: true, name: true, tagline: true },
   });

@@ -24,7 +24,7 @@ export default async function SubscribePage({
   const price = billingCycle === "monthly" ? plan.monthlyCents : annualMonthlyEquivalent(plan);
 
   const destinations = await prisma.destination.findMany({
-    where: { status: { in: ["preview", "live"] } },
+    where: { status: { in: ["preview", "live"] }, isPublic: true },
     orderBy: { name: "asc" },
     select: { id: true, slug: true, name: true, tagline: true },
   });

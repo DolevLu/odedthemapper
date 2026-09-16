@@ -4,12 +4,20 @@ import { DestinationThemeProvider } from "@/components/theme/DestinationThemePro
 import type { DestinationSummary } from "@/lib/data/destinations";
 import { PLANS, formatIls } from "@/lib/plans";
 import { proxiedImageUrl } from "@/lib/imageProxy";
-import { getServerT } from "@/lib/i18n/server";
+import { translate, type Lang } from "@/lib/i18n/dictionary";
 
-export async function DestinationCard({ destination }: { destination: DestinationSummary }) {
+// Deliberately a plain function taking a `lang` prop (not an async Server
+// Component calling getServerT()) — this card is rendered from BOTH a
+// Server Component tree (DestinationsGrid, on /home) and a Client
+// Component tree (DestinationsBrowser, on /destinations, which needs its
+// own continent-filter state). getServerT()/next-headers only works in a
+// real Server Component; using it here broke /destinations outright (a
+// build/render error) the moment it was rendered from the client-side
+// DestinationsBrowser. Same fix as DigitalAlbumView.
+export function DestinationCard({ destination, lang = "he" }: { destination: DestinationSummary; lang?: Lang }) {
   const isComingSoon = destination.status === "draft";
   const thumb = destination.heroImage ?? destination.heroPhotos[0];
-  const t = await getServerT();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <DestinationThemeProvider theme={destination.theme} className="h-full">

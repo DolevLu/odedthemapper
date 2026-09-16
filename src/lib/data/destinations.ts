@@ -57,6 +57,7 @@ export async function getAllDestinations(): Promise<DestinationSummary[]> {
 
 async function fetchAllDestinations(): Promise<DestinationSummary[]> {
   const destinations = await prisma.destination.findMany({
+    where: { isPublic: true },
     orderBy: { name: "asc" },
     include: {
       areas: {

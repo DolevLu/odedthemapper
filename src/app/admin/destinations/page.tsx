@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { setDestinationPublic } from "@/lib/actions/admin";
 
 export default async function AdminDestinationsPage() {
   const destinations = await prisma.destination.findMany({
@@ -21,6 +22,7 @@ export default async function AdminDestinationsPage() {
             <tr className="border-b border-black/10 bg-black/5 text-start">
               <th className="p-3 text-start">יעד</th>
               <th className="p-3 text-start">סטטוס</th>
+              <th className="p-3 text-start">נראות</th>
               <th className="p-3 text-start">נקודות</th>
               <th className="p-3" />
             </tr>
@@ -43,6 +45,21 @@ export default async function AdminDestinationsPage() {
                     >
                       {d.status}
                     </span>
+                  </td>
+                  <td className="p-3">
+                    <form action={setDestinationPublic.bind(null, d.id, !d.isPublic)}>
+                      <button
+                        type="submit"
+                        className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                        style={{
+                          background: d.isPublic ? "#dcfce7" : "#fee2e2",
+                          color: d.isPublic ? "#166534" : "#991b1b",
+                        }}
+                        title={d.isPublic ? "היעד גלוי בכל רשימה ציבורית - לחצו כדי להסתיר" : "היעד מוסתר לגמרי מכל רשימה ציבורית - לחצו כדי להציג"}
+                      >
+                        {d.isPublic ? "🌐 ציבורי" : "🔒 פרטי"}
+                      </button>
+                    </form>
                   </td>
                   <td className="p-3">{poiCount}</td>
                   <td className="p-3">
