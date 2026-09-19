@@ -8,7 +8,7 @@ type DestOption = { id: string; name: string };
 
 export function GrantAccessForm({ destinations }: { destinations: DestOption[] }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [planKey, setPlanKey] = useState<PlanKey>("solo");
+  const [planKey, setPlanKey] = useState<PlanKey>("family");
   const [selectedDest, setSelectedDest] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -49,7 +49,7 @@ export function GrantAccessForm({ destinations }: { destinations: DestOption[] }
         <label className="text-sm font-medium">
           תוכנית
           <select name="planKey" value={planKey} onChange={(e) => { setPlanKey(e.target.value as PlanKey); setSelectedDest([]); }} className="mt-1 block w-full rounded-lg border border-black/10 px-3 py-2 font-normal">
-            {(Object.keys(PLANS) as PlanKey[]).map((k) => (
+            {(Object.keys(PLANS) as PlanKey[]).filter((k) => !PLANS[k].legacy).map((k) => (
               <option key={k} value={k}>{PLANS[k].name}</option>
             ))}
           </select>

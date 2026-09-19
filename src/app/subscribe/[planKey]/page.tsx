@@ -14,7 +14,7 @@ export default async function SubscribePage({
 }) {
   const { planKey } = await params;
   const { cycle, dest } = await searchParams;
-  if (!(planKey in PLANS)) notFound();
+  if (!(planKey in PLANS) || PLANS[planKey as PlanKey].legacy) notFound();
 
   const session = await auth();
   if (!session?.user?.id) redirect(`/register?callbackUrl=${encodeURIComponent(`/subscribe/${planKey}${cycle ? `?cycle=${cycle}` : ""}`)}`);

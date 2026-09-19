@@ -88,7 +88,7 @@ export function DestinationCard({ destination, lang = "he" }: { destination: Des
               className="rounded-full px-4 py-2 font-semibold text-white transition-transform group-hover:scale-105"
               style={{ background: isComingSoon ? "#9CA3AF" : "var(--primary)" }}
             >
-              {isComingSoon ? t("destCard.comingSoon") : `${t("destCard.fromPricePrefix")}${formatIls(PLANS.solo.monthlyCents)}${t("destCard.fromPriceSuffix")}`}
+              {isComingSoon ? t("destCard.comingSoon") : `${t("destCard.fromPricePrefix")}${formatIls(PLANS.family.monthlyCents)}${t("destCard.fromPriceSuffix")}`}
             </span>
           </div>
         </div>

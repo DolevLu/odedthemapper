@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { PLANS, formatIls } from "@/lib/plans";
+import { PLANS, PURCHASABLE_PLANS, formatIls } from "@/lib/plans";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { FloatingTravelIcons } from "@/components/FloatingTravelIcons";
@@ -77,7 +77,7 @@ export async function HomePageContent() {
               </Link>
               <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-5 py-2.5 font-bold transition-transform hover:-translate-y-0.5">
                 {t("home.ctaPricingPrefix")}
-                {formatIls(PLANS.solo.monthlyCents)}
+                {formatIls(PLANS.family.monthlyCents)}
                 {t("home.ctaPricingSuffix")}
               </Link>
             </div>
@@ -131,7 +131,7 @@ export async function HomePageContent() {
            * mobile, same as the /pricing page's own card order. A touch
            * more detail than before (each card's tagline, not just name +
            * price) but still far short of the full pricing page. */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
               <p className="text-xs font-semibold opacity-60">{trialText.audience}</p>
               <p className="mt-1 text-lg font-extrabold">🎁 {trialText.name}</p>
@@ -140,7 +140,7 @@ export async function HomePageContent() {
               </p>
               <p className="mt-2 text-xs opacity-70">{trialText.tagline}</p>
             </div>
-            {Object.values(PLANS).map((plan) => {
+            {PURCHASABLE_PLANS.map((plan) => {
               const planText = translatePlan(lang, plan.key);
               return (
                 <div key={plan.key} className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">

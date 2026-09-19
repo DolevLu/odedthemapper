@@ -185,8 +185,8 @@ export const DICTIONARY = {
   "home.allDestinationsArrow": { he: "לכל היעדים ←", en: "All destinations ←" },
   "home.planForEveryTraveler": { he: "תוכנית לכל סוג מטייל", en: "A plan for every kind of traveler" },
   "home.planForEveryTravelerBody": {
-    he: "ממטייל בודד ועד ארגוני נסיעות - יש לנו תוכנית שמתאימה לכם.",
-    en: "From a solo traveler to travel agencies - we have a plan that fits you.",
+    he: "ממטיילים ומשפחות ועד סוכנים וארגוני נסיעות - יש לנו תוכנית שמתאימה לכם.",
+    en: "From travelers and families to agencies and travel organizations - we have a plan that fits you.",
   },
   "home.free": { he: "חינם", en: "Free" },
   "home.perMonth": { he: "/חודש", en: "/month" },

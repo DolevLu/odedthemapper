@@ -19,6 +19,9 @@ export type Plan = {
   tagline: string;
   features: string[];
   highlighted?: boolean;
+  // Kept only so old Subscription rows with this key still resolve (limits,
+  // quotas, receipts). Never offered for purchase - see PURCHASABLE_PLANS.
+  legacy?: boolean;
 };
 
 // A 24h/1-destination self-serve free trial — deliberately NOT part of
@@ -53,6 +56,7 @@ export const TRIAL_PLAN = {
 
 export const PLANS: Record<PlanKey, Plan> = {
   solo: {
+    legacy: true,
     key: "solo",
     name: "מטייל בודד",
     audience: "למטיילים בודדים",
@@ -79,21 +83,25 @@ export const PLANS: Record<PlanKey, Plan> = {
   },
   family: {
     key: "family",
-    name: "משפחות ונוודים דיגיטלים",
-    audience: "למשפחות או נוודים דיגיטלים",
-    monthlyCents: 22500,
-    annualCents: 202500, // 25% הנחה במחויב שנתי
+    name: "מטיילים, משפחות ונוודים",
+    audience: "למטיילים, למשפחות ולנוודים דיגיטליים",
+    monthlyCents: 12500,
+    annualCents: 112500, // 25% הנחה במחויב שנתי
     destinationLimit: 5,
     seats: 5,
     isOrgTier: false,
     aiChatDailyQuota: 30,
-    tagline: "מתכננים כמה יעדים בו-זמנית ורוצים לשתף עם כל המשפחה? קיבלתם.",
+    tagline: "עד 5 יעדים, מפות מוכנות ועשירות, תכנון משותף וטראבי לייב בזמן הטיול.",
     features: [
       AD_FREE_FEATURE,
       "גישה עד 5 יעדים לבחירה, עם אפשרות להחליף כל יעד בנפרד פעם ב-14 יום",
-      "כל התכונות של תוכנית המטייל הבודד",
-      "עד 5 משתמשים תחת אותו מנוי - מזמינים לפי אימייל",
-      "כל משתמש רואה ועורך את אותם מסלולים, מועדפים ותקציב",
+      "טראבי לייב - מה קורה עכשיו: שעה, מזג אוויר, הנקודה הבאה ותכנון מחדש בלחיצה",
+      "מפות מוכנות גדולות ועשירות, או בניית מפה מאפס - גם עם AI וייבוא רשימת גוגל",
+      "תכנון משותף עד 5 משתמשים: עריכה, הצבעה והתראות בזמן אמת",
+      "אלבום דיגיטלי אינטראקטיבי וקולאז'ים",
+      "מצב אופליין",
+      "רשימת אטרקציות להזמנה וקודי הנחה",
+      "מסלול יומי + PDF, מעקב הוצאות, שיחון וצ׳ק ליסט ציוד",
       "תמיכה מועדפת",
       "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
@@ -123,6 +131,9 @@ export const PLANS: Record<PlanKey, Plan> = {
     ],
   },
 };
+
+/** The plans actually offered for purchase (everything except legacy keys). */
+export const PURCHASABLE_PLANS: Plan[] = Object.values(PLANS).filter((p) => !p.legacy);
 
 export function annualMonthlyEquivalent(plan: Plan): number {
   return Math.round(plan.annualCents / 12);

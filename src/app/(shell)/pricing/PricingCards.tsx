@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PLANS, AD_FREE_FEATURE, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
+import { PURCHASABLE_PLANS, AD_FREE_FEATURE, formatIls, annualMonthlyEquivalent, annualSavingsPercent } from "@/lib/plans";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import { translatePlan } from "@/lib/i18n/plans";
 
@@ -29,11 +29,11 @@ export function PricingCards() {
         ))}
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-4">
+      <div className="grid w-full grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
         {/* Trial card — first in DOM order, which in this always-RTL app
          * lands it at the physical right (the "first" spot), matching the
          * other three plans' own reading order. Deliberately not part of
-         * the Object.values(PLANS) map below: it has no monthly/annual
+         * the PURCHASABLE_PLANS map below: it has no monthly/annual
          * price, its CTA starts the trial directly instead of linking to
          * the paid checkout flow, and TRIAL_PLAN itself isn't a PLANS
          * entry (see plans.ts for why). */}
@@ -74,7 +74,7 @@ export function PricingCards() {
           </Link>
         </div>
 
-        {Object.values(PLANS).map((plan) => {
+        {PURCHASABLE_PLANS.map((plan) => {
           const price = cycle === "monthly" ? plan.monthlyCents : annualMonthlyEquivalent(plan);
           const planText = translatePlan(lang, plan.key);
           return (
