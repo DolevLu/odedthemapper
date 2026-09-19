@@ -73,6 +73,15 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
   );
 }
 
+function LiveDot() {
+  return (
+    <span className="relative ms-1.5 inline-flex h-2 w-2 shrink-0 align-middle" aria-hidden>
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+    </span>
+  );
+}
+
 type DestItem = { href: string; labelKey: DictionaryKey; icon: NavIconName; tier: Tier };
 
 // The destination-scoped items pinned in the mobile bottom bar — everything
@@ -301,7 +310,7 @@ export function AppSidebar({
                 >
                   <NavIcon name={item.icon} size={17} />
                 </span>
-                <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}</span>
+                <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
               </Link>
             );
           })}
@@ -345,7 +354,7 @@ export function AppSidebar({
                     >
                       <NavIcon name={item.icon} size={15} />
                     </span>
-                    <span className="flex-1">{t(item.labelKey)}</span>
+                    <span className="flex-1">{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
                     {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                   </Link>
                 );
@@ -416,6 +425,7 @@ export function AppSidebar({
             href={destHref(nowItem)}
             icon={nowItem.icon}
             label={t(nowItem.labelKey)}
+            live
             active={isDestActive(nowItem)}
             onClick={(e) => handleDestItemClick(nowItem, e)}
           />
@@ -443,6 +453,7 @@ export function AppSidebar({
             href={destHref(nowItem)}
             icon={nowItem.icon}
             label={t(nowItem.labelKey)}
+            live
             active={isDestActive(nowItem)}
             onClick={(e) => handleDestItemClick(nowItem, e)}
           />
@@ -509,7 +520,7 @@ export function AppSidebar({
                   >
                     <NavIcon name={item.icon} size={17} />
                   </span>
-                  <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}</span>
+                  <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
                 </Link>
               );
             })}
@@ -548,7 +559,7 @@ export function AppSidebar({
                         >
                           <NavIcon name={item.icon} size={16} />
                         </span>
-                        <span className="flex-1">{t(item.labelKey)}</span>
+                        <span className="flex-1">{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
                         {item.tier !== "free" && !unlocked && <DiamondIcon variant={item.tier === "gold" ? "gold" : "blue"} size={13} />}
                       </Link>
                     );
@@ -622,12 +633,14 @@ function MobileTab({
   href,
   icon,
   label,
+  live,
   active,
   onClick,
 }: {
   href: string;
   icon: NavIconName;
   label: string;
+  live?: boolean;
   active: boolean;
   onClick?: (e: React.MouseEvent) => void;
 }) {
@@ -660,7 +673,7 @@ function MobileTab({
       >
         <NavIcon name={icon} size={active ? 20 : 22} />
       </span>
-      <span className={`max-w-full truncate px-0.5 ${active ? "font-bold" : ""}`}>{label}</span>
+      <span className={`max-w-full truncate px-0.5 ${active ? "font-bold" : ""}`}>{label}{live && <LiveDot />}</span>
     </Link>
   );
 }
