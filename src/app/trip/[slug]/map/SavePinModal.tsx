@@ -18,6 +18,19 @@ export type PendingSavePin = {
   description?: string | null;
   photoUrl?: string | null;
   categoryName?: string | null;
+  /** Everything Google showed for this place - posted with the form so a
+   * single click on Save keeps all of it. Absent when editing an existing pin. */
+  google?: {
+    address: string | null;
+    phone: string | null;
+    website: string | null;
+    url: string | null;
+    photoUrl: string | null;
+    rating: number | null;
+    ratingCount: number | null;
+    hours: string[] | null;
+    suggestedCategory: string | null;
+  };
 };
 
 /** Opened from the "💾 שמירה למפה" button (on a native Google POI or the
@@ -45,8 +58,9 @@ export function SavePinModal({
   const isEditing = pin.description !== undefined || pin.photoUrl !== undefined || pin.categoryName !== undefined;
   const [saving, setSaving] = useState(false);
   const [categoryName, setCategoryName] = useState(
-    pin.categoryName ?? SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]
+    pin.categoryName ?? pin.google?.suggestedCategory ?? SAVED_PIN_CATEGORY_OPTIONS[SAVED_PIN_CATEGORY_OPTIONS.length - 1]
   );
+  const g = pin.google;
   const isRestaurant = isAdmin && RESTAURANT_CATEGORY_MATCH.test(categoryName);
   const { t } = useTranslation();
 
@@ -70,6 +84,30 @@ export function SavePinModal({
         <input type="hidden" name="placeId" value={pin.placeId} />
         <input type="hidden" name="lat" value={pin.lat} />
         <input type="hidden" name="lng" value={pin.lng} />
+        {g && (
+          <>
+            <input type="hidden" name="g_address" value={g.address ?? ""} />
+            <input type="hidden" name="g_phone" value={g.phone ?? ""} />
+            <input type="hidden" name="g_website" value={g.website ?? ""} />
+            <input type="hidden" name="g_url" value={g.url ?? ""} />
+            <input type="hidden" name="g_photo" value={g.photoUrl ?? ""} />
+            <input type="hidden" name="g_rating" value={g.rating ?? ""} />
+            <input type="hidden" name="g_ratingCount" value={g.ratingCount ?? ""} />
+            <input type="hidden" name="g_hours" value={JSON.stringify(g.hours ?? [])} />
+            <div className="flex gap-3 rounded-xl border p-2.5 text-xs" style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}>
+              {g.photoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={g.photoUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+              )}
+              <div className="min-w-0">
+                <p className="font-semibold">{t("savePin.keepsAll")}</p>
+                <p className="opacity-60">
+                  {[g.rating != null ? "\u2B50 " + g.rating : null, g.address, g.phone, g.website ? "\uD83C\uDF10" : null].filter(Boolean).join(" \u00B7 ")}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
 
         <label className="text-xs opacity-60">
           {t("savePin.nameLabel")}

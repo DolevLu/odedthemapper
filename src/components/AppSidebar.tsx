@@ -8,6 +8,7 @@ import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
 import { FocusModeCollapseButton } from "@/components/FocusModeCollapseButton";
 import { ProfileMenu } from "@/components/header/ProfileMenu";
+import { GroupBell } from "@/components/header/GroupBell";
 import { DestinationBadge } from "@/components/header/DestinationBadge";
 import { TrialCountdown } from "@/components/TrialCountdown";
 import { GuideMenuButton } from "@/components/GuideMenuButton";
@@ -250,6 +251,7 @@ export function AppSidebar({
           style={{ borderRadius: "var(--radius, 10px)", background: "var(--surface, #fff)", border: "1px solid color-mix(in srgb, var(--primary, #333) 14%, transparent)" }}
         >
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+          <GroupBell isLoggedIn={isLoggedIn} />
           <Link href="/" className="flex min-w-0 flex-1 items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.svg" alt="טראבי" className="h-8 w-8 shrink-0" />
@@ -394,7 +396,10 @@ export function AppSidebar({
             zIndex: 40,
           }}
         >
-          <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+          <div className="flex items-center gap-2">
+            <GroupBell isLoggedIn={isLoggedIn} compact />
+            <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
+          </div>
         </div>
       )}
 

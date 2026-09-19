@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveItineraryOwnerId } from "@/lib/access";
+import { logGroupActivity } from "@/lib/groupActivity";
 
 export type LiveWeather = {
   tempC: number;
@@ -47,7 +48,7 @@ export async function getLiveWeather(lat: number, lng: number): Promise<LiveWeat
 /** The day belongs to the caller's (shared) personal itinerary — the only
  * itinerary Live is allowed to edit. Throws otherwise so a guessed id can't
  * touch someone else's plan. */
-async function requireOwnDay(dayId: string) {
+async function requireOwnDay(dayId: string): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) throw new Error("יש להתחבר");
   const ownerId = await resolveItineraryOwnerId(session.user.id);
@@ -56,6 +57,7 @@ async function requireOwnDay(dayId: string) {
     select: { id: true },
   });
   if (!day) throw new Error("היום לא נמצא");
+  return session.user.id;
 }
 
 function shiftTime(hhmm: string, minutes: number): string {
@@ -68,7 +70,7 @@ function shiftTime(hhmm: string, minutes: number): string {
  * after `fromTime` (HH:MM) later by `minutes`. Stops with no time are left
  * alone. */
 export async function shiftRemainingStops(dayId: string, fromTime: string, minutes: number, slug: string) {
-  await requireOwnDay(dayId);
+  const userId = await requireOwnDay(dayId);
   if (!Number.isFinite(minutes) || minutes < -180 || minutes > 480) throw new Error("ערך לא תקין");
   const items = await prisma.itineraryItem.findMany({ where: { itineraryDayId: dayId, timeOfDay: { not: null } } });
   const [fh, fm] = fromTime.split(":").map(Number);
@@ -81,6 +83,7 @@ export async function shiftRemainingStops(dayId: string, fromTime: string, minut
       })
       .map((i) => prisma.itineraryItem.update({ where: { id: i.id }, data: { timeOfDay: shiftTime(i.timeOfDay!, minutes) } }))
   );
+  await logGroupActivity(userId, { type: "plan_shifted", summary: `הזיז/ה את הנקודות הבאות היום ב-${minutes} דקות`, slug });
   revalidatePath(`/trip/${slug}/itinerary`);
   revalidatePath(`/trip/${slug}/now`);
 }
@@ -92,11 +95,13 @@ export async function swapStopForPoi(itemId: string, poiId: string, slug: string
   if (!session?.user?.id) throw new Error("יש להתחבר");
   const item = await prisma.itineraryItem.findUnique({ where: { id: itemId }, select: { itineraryDayId: true } });
   if (!item) throw new Error("הנקודה לא נמצאה");
-  await requireOwnDay(item.itineraryDayId);
+  const userId = await requireOwnDay(item.itineraryDayId);
   await prisma.itineraryItem.update({
     where: { id: itemId },
     data: { poiId, customLabel: null, customLat: null, customLng: null },
   });
+  const swapped = await prisma.pointOfInterest.findUnique({ where: { id: poiId }, select: { name: true } });
+  await logGroupActivity(userId, { type: "item_added", summary: `החליף/ה נקודה ב-“${swapped?.name ?? "נקודה"}”`, slug });
   revalidatePath(`/trip/${slug}/itinerary`);
   revalidatePath(`/trip/${slug}/now`);
 }

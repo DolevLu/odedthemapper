@@ -8,6 +8,7 @@ import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/use
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile, getMyRouteDays } from "@/lib/actions/trip";
+import { voteSavedMapPin } from "@/lib/actions/group";
 import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket, standardCategoryColor, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { pathForCategory } from "@/components/CategoryIcon";
@@ -126,6 +127,39 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
  * PlacesService data Google's card is built from and lays it out ourselves,
  * plus a direct link to open the real thing on Google Maps for anything
  * (reviews, full photo set) that genuinely can't be reproduced here. */
+type GoogleDetails = NonNullable<PendingSavePin["google"]>;
+
+/** Maps Google's place "types" onto the app's fixed pin categories so a saved
+ * place starts out in a sensible category instead of the generic "אחר". */
+function suggestedCategoryFromTypes(types: string[] | undefined): string | null {
+  if (!types) return null;
+  const has = (...names: string[]) => names.some((n) => types.includes(n));
+  if (has("cafe", "bakery")) return "בתי קפה";
+  if (has("bar", "night_club")) return "ברים";
+  if (has("restaurant", "meal_takeaway", "meal_delivery", "food")) return "מסעדות";
+  if (has("park", "campground", "natural_feature")) return "פארקים";
+  if (has("subway_station", "train_station", "transit_station", "light_rail_station")) return "תחנות מטרו ורכבת";
+  if (has("locality", "sublocality", "administrative_area_level_1", "administrative_area_level_2")) return "ערים ועיירות";
+  if (has("tourist_attraction", "museum", "art_gallery", "church", "place_of_worship", "amusement_park", "zoo", "aquarium")) return "אטרקציות";
+  return null;
+}
+
+/** Everything worth keeping from Google's place card, in the shape the save
+ * form posts. Photo is Google's own image URL (maxWidth 800). */
+function googleDetailsFromPlace(place: google.maps.places.PlaceResult): GoogleDetails {
+  return {
+    address: place.formatted_address ?? null,
+    phone: place.formatted_phone_number ?? null,
+    website: place.website ?? null,
+    url: place.url ?? null,
+    photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 800 }) ?? null,
+    rating: place.rating ?? null,
+    ratingCount: place.user_ratings_total ?? null,
+    hours: place.opening_hours?.weekday_text ?? null,
+    suggestedCategory: suggestedCategoryFromTypes(place.types),
+  };
+}
+
 function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId: string, lat: number, lng: number, lang: "he" | "en", t: (key: DictionaryKey) => string): string {
   const name = place.name ?? t("map.unnamedPlace");
   const photo = place.photos?.[0]
@@ -231,6 +265,20 @@ export function MapScreen({
     description: string | null;
     photoUrl: string | null;
     categoryName: string | null;
+    address?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    googleUrl?: string | null;
+    rating?: number | null;
+    ratingCount?: number | null;
+    openingHours?: string[] | null;
+    /** Name of the group member who saved it (null when it's mine). */
+    addedBy?: string | null;
+    /** True when this trip is shared with other people - votes show up. */
+    shared?: boolean;
+    likeCount?: number;
+    dislikeCount?: number;
+    myVote?: -1 | 0 | 1;
   }[];
   /** Anonymous/unsubscribed visitors: the map itself still renders (pan/zoom/
    * markers all work), but every control that reads or writes personal data —
@@ -282,6 +330,9 @@ export function MapScreen({
   const myRouteOverlaysRef = useRef<(google.maps.Marker | google.maps.Polyline)[]>([]);
   const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
+  // Google place details captured when a place card opens, keyed by placeId,
+  // so the save button can post every field with one click.
+  const googleDetailsRef = useRef<Record<string, GoogleDetails>>({});
   const savedPinMarkersRef = useRef<google.maps.Marker[]>([]);
   const savedPinsRef = useRef(savedPins);
   const showGooglePoisRef = useRef(false);
@@ -715,15 +766,28 @@ export function MapScreen({
       if (saveBtn) {
         saveBtn.onclick = (e) => {
           e.stopPropagation();
+          const savePlaceId = saveBtn.getAttribute("data-place-id")!;
           setPendingSavePin({
-            placeId: saveBtn.getAttribute("data-place-id")!,
+            placeId: savePlaceId,
             name: saveBtn.getAttribute("data-place-name")!,
             lat: Number(saveBtn.getAttribute("data-place-lat")),
             lng: Number(saveBtn.getAttribute("data-place-lng")),
+            google: googleDetailsRef.current[savePlaceId],
           });
           infoWindowRef.current?.close();
         };
       }
+      mapDivRef.current?.querySelectorAll<HTMLButtonElement>("[data-pin-vote]").forEach((btn) => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("data-pin-id")!;
+          const value = Number(btn.getAttribute("data-pin-vote")) === 1 ? 1 : -1;
+          voteSavedMapPin(id, value, slug)
+            .then(() => router.refresh())
+            .catch(() => {});
+          infoWindowRef.current?.close();
+        };
+      });
       const deletePinBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-delete-pin-btn]");
       if (deletePinBtn) {
         deletePinBtn.onclick = (e) => {
@@ -804,12 +868,14 @@ export function MapScreen({
                 "website",
                 "photos",
                 "url",
+                "types",
               ],
             },
             (place, status) => {
               if (status !== google.maps.places.PlacesServiceStatus.OK || !place?.geometry?.location) return;
               const lat = place.geometry.location.lat();
               const lng = place.geometry.location.lng();
+              googleDetailsRef.current[e.placeId!] = googleDetailsFromPlace(place);
               infoWindowRef.current?.setContent(richPlaceInfoWindowHtml(place, e.placeId!, lat, lng, lang, t));
               infoWindowRef.current?.setPosition({ lat, lng });
               infoWindowRef.current?.open({ map: mapRef.current! });
@@ -866,11 +932,36 @@ export function MapScreen({
         const description = pin.description
           ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${escapeHtml(pin.description)}</div>`
           : "";
+        const line = (html: string) => `<div style="font-size:12px;margin-top:3px;max-width:230px">${html}</div>`;
+        const safeLink = (u: string) => (/^https?:\/\//i.test(u) ? escapeHtml(u) : "#");
+        const details = [
+          pin.rating != null
+            ? line(`⭐ ${pin.rating}${pin.ratingCount ? ` · ${pin.ratingCount.toLocaleString(lang === "en" ? "en-US" : "he-IL")} ${t("map.reviews")}` : ""}`)
+            : "",
+          pin.address ? line(`📍 ${escapeHtml(pin.address)}`) : "",
+          pin.phone ? line(`<a href="tel:${escapeHtml(pin.phone)}" style="color:#7C3AED">📞 ${escapeHtml(pin.phone)}</a>`) : "",
+          pin.website ? line(`<a href="${safeLink(pin.website)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.website")}</a>`) : "",
+          pin.googleUrl ? line(`<a href="${safeLink(pin.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.openInGoogleMaps")}</a>`) : "",
+          pin.openingHours && pin.openingHours.length > 0
+            ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${pin.openingHours.map((h) => `<div>${escapeHtml(h)}</div>`).join("")}</details>`
+            : "",
+        ].join("");
+        const addedBy = pin.addedBy ? line(`<span style="opacity:.6">${t("group.addedBy")} ${escapeHtml(pin.addedBy)}</span>`) : "";
+        const voteBtnStyle = (active: boolean) => `${INFO_ACTION_BTN_STYLE};${active ? "background:#7C3AED;color:#fff" : ""}`;
+        const votes = pin.shared
+          ? `<div style="margin-top:8px;display:flex;gap:6px">
+              <button data-pin-vote="1" data-pin-id="${pin.id}" aria-label="${t("group.likeAria")}" style="${voteBtnStyle(pin.myVote === 1)}">👍 ${pin.likeCount ?? 0}</button>
+              <button data-pin-vote="-1" data-pin-id="${pin.id}" aria-label="${t("group.dislikeAria")}" style="${voteBtnStyle(pin.myVote === -1)}">👎 ${pin.dislikeCount ?? 0}</button>
+            </div>`
+          : "";
         infoWindowRef.current?.setContent(
           `<div style="font-family:'Rubik',sans-serif;padding:8px">
             ${photo}
             <strong>📌 ${escapeHtml(pin.name)}</strong>
             ${description}
+            ${details}
+            ${addedBy}
+            ${votes}
             <div style="margin-top:8px;display:flex;gap:6px">
               <button data-edit-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.editPin")}</button>
               <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.removeFromMyMap")}</button>

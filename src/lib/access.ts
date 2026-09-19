@@ -120,6 +120,26 @@ export async function getResolvedSubscriptionForAccount(userId: string) {
   return { subscription: membership.subscription, isOwner: false };
 }
 
+/** Everyone who shares this user's trip group: the subscription owner plus
+ * every invited seat that has actually signed up (always includes the caller).
+ * This is the boundary for shared editing, shared saved pins, votes and the
+ * activity feed. `size` is 1 for anyone without a shared plan. */
+export const getGroupContext = cache(async (userId: string): Promise<{ ownerId: string; userIds: string[]; size: number }> => {
+  const sub = await getActiveSubscription(userId);
+  if (!sub) return { ownerId: userId, userIds: [userId], size: 1 };
+  const full = await prisma.subscription.findUnique({
+    where: { id: sub.id },
+    select: { userId: true, members: { select: { invitedEmail: true } } },
+  });
+  if (!full) return { ownerId: userId, userIds: [userId], size: 1 };
+  const users = await prisma.user.findMany({
+    where: { OR: [{ id: full.userId }, { email: { in: full.members.map((m) => m.invitedEmail) } }] },
+    select: { id: true },
+  });
+  const ids = [...new Set([userId, full.userId, ...users.map((u) => u.id)])];
+  return { ownerId: full.userId, userIds: ids, size: ids.length };
+});
+
 /** Other members sharing this user's active subscription (owner + invited
  * seats who've actually signed up) — used to offer "split this expense
  * with" choices. Excludes the caller themselves. */

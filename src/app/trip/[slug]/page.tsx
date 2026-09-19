@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getFlatPoisForDestination } from "@/lib/data/pois";
-import { getAccessLevel, canManageContent, getActiveSubscriptionSummary } from "@/lib/access";
+import { getAccessLevel, canManageContent, getActiveSubscriptionSummary, getGroupContext } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { MapScreen } from "./map/MapScreen";
 import { sortCategoryNames } from "@/lib/mapStyles";
@@ -19,6 +19,9 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
   // logistics, GPS trail) to load for them, so those queries are simply
   // skipped rather than crashing on a missing userId.
   const isFullAccess = accessLevel !== "none";
+  // Saved pins are shared by the whole trip group (owner + invited seats),
+  // not private to whoever saved them - everyone edits the same map.
+  const groupUserIds = isFullAccess && userId ? (await getGroupContext(userId)).userIds : [];
 
   const [pois, favorites, ratings, logisticPinRows, trail, savedMapPins, nextFlight, isAdmin] = await Promise.all([
     getFlatPoisForDestination(destination.id),
@@ -35,7 +38,11 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
         })
       : Promise.resolve([]),
     isFullAccess && userId
-      ? prisma.savedMapPin.findMany({ where: { userId, destinationId: destination.id } })
+      ? prisma.savedMapPin.findMany({
+          where: { userId: { in: groupUserIds }, destinationId: destination.id },
+          include: { votes: { select: { userId: true, value: true } }, user: { select: { name: true, email: true } } },
+          orderBy: { createdAt: "asc" },
+        })
       : Promise.resolve([]),
     // Same "earliest logistics start" the Now screen's countdown uses — a
     // future flight date means the traveler isn't there yet, so their real
@@ -80,6 +87,37 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
     return { id: l.id, type: l.type, title: details.title, lat: l.lat!, lng: l.lng!, dateRange };
   });
 
+  const sharedGroup = groupUserIds.length > 1;
+  const savedPins = savedMapPins.map((pin) => {
+    let openingHours: string[] | null = null;
+    try {
+      const parsed = pin.openingHours ? JSON.parse(pin.openingHours) : null;
+      if (Array.isArray(parsed)) openingHours = parsed.filter((x): x is string => typeof x === "string");
+    } catch {}
+    return {
+      id: pin.id,
+      placeId: pin.placeId,
+      name: pin.name,
+      lat: pin.lat,
+      lng: pin.lng,
+      description: pin.description,
+      photoUrl: pin.photoUrl,
+      categoryName: pin.categoryName,
+      address: pin.address,
+      phone: pin.phone,
+      website: pin.website,
+      googleUrl: pin.googleUrl,
+      rating: pin.rating,
+      ratingCount: pin.ratingCount,
+      openingHours,
+      addedBy: sharedGroup && pin.userId !== userId ? (pin.user.name?.trim() || pin.user.email.split("@")[0]) : null,
+      shared: sharedGroup,
+      likeCount: pin.votes.filter((v) => v.value === 1).length,
+      dislikeCount: pin.votes.filter((v) => v.value === -1).length,
+      myVote: (pin.votes.find((v) => v.userId === userId)?.value ?? 0) as -1 | 0 | 1,
+    };
+  });
+
   return (
     <MapScreen
       pois={pois}
@@ -90,7 +128,7 @@ export default async function TripHomePage({ params }: { params: Promise<{ slug:
       logisticPins={logisticPins}
       destinationId={destination.id}
       initialTrail={trail}
-      savedPins={savedMapPins}
+      savedPins={savedPins}
       preview={!isFullAccess}
       autoLocate={autoLocate}
       isAdmin={isAdmin}

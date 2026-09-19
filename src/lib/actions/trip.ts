@@ -5,7 +5,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { saveUploadedFile } from "@/lib/uploads";
-import { resolveItineraryOwnerId, canManageContent } from "@/lib/access";
+import { resolveItineraryOwnerId, canManageContent, getGroupContext } from "@/lib/access";
+import { assertDayAccess, assertItemAccess, itemLabel } from "@/lib/groupAccess";
+import { logGroupActivity } from "@/lib/groupActivity";
 import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { parsePersonalMapFile } from "@/lib/kml/parsePersonalPoints";
 import { extractTextDescription } from "@/lib/data/pois";
@@ -91,9 +93,11 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
   const lng = Number(formData.get("lng"));
   const description = (formData.get("description") as string)?.trim() || null;
   const categoryName = (formData.get("categoryName") as string) || null;
+  const googleDetails = readGoogleDetails(formData);
 
   const photoFile = formData.get("photo") as File | null;
-  const photoUrl = photoFile && photoFile.size > 0 ? await saveUploadedFile(photoFile, "saved-pins") : undefined;
+  const uploadedPhotoUrl = photoFile && photoFile.size > 0 ? await saveUploadedFile(photoFile, "saved-pins") : undefined;
+  const photoUrl = uploadedPhotoUrl ?? googleDetails.photoUrl ?? undefined;
 
   if (await canManageContent(userId)) {
     // Files under the destination's first/primary area — a destination
@@ -119,6 +123,8 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
         geometryType: "point",
         iconCategory: categoryName,
         rawDescriptionHtml: description ? `<p>${escapeHtml(description)}</p>` : null,
+        address: googleDetails.address,
+        website: googleDetails.website,
         enrichedAt: new Date(), // admin-authored — nothing generic here to backfill later
       },
     });
@@ -132,17 +138,90 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
     return;
   }
 
-  await prisma.savedMapPin.upsert({
+  const existedBefore = await prisma.savedMapPin.findUnique({
     where: { userId_destinationId_placeId: { userId, destinationId, placeId } },
-    update: { name, description, categoryName, ...(photoUrl ? { photoUrl } : {}) },
-    create: { userId, destinationId, placeId, name, lat, lng, description, categoryName, photoUrl: photoUrl ?? null },
+    select: { id: true },
+  });
+  const detailFields = {
+    address: googleDetails.address,
+    phone: googleDetails.phone,
+    website: googleDetails.website,
+    googleUrl: googleDetails.googleUrl,
+    rating: googleDetails.rating,
+    ratingCount: googleDetails.ratingCount,
+    openingHours: googleDetails.openingHours,
+  };
+  // On an edit, only overwrite the Google fields when the form actually
+  // carried them - re-saving from the edit modal must not blank them out.
+  const definedDetails = Object.fromEntries(Object.entries(detailFields).filter(([, v]) => v != null));
+  const pin = await prisma.savedMapPin.upsert({
+    where: { userId_destinationId_placeId: { userId, destinationId, placeId } },
+    update: { name, description, categoryName, ...(photoUrl ? { photoUrl } : {}), ...definedDetails },
+    create: {
+      userId, destinationId, placeId, name, lat, lng, description, categoryName,
+      photoUrl: photoUrl ?? null, source: "google", ...detailFields,
+    },
+  });
+  await logGroupActivity(userId, {
+    type: existedBefore ? "pin_edited" : "pin_added",
+    summary: existedBefore ? `עדכן/ה את \u201C${name}\u201D במפה` : `הוסיף/ה את \u201C${name}\u201D למפה`,
+    destinationId, slug, entityId: pin.id,
   });
   revalidatePath(`/trip/${slug}`);
 }
 
+const safeHttpUrl = (v: FormDataEntryValue | null): string | null => {
+  const raw = typeof v === "string" ? v.trim() : "";
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+};
+const cleanText = (v: FormDataEntryValue | null, max: number): string | null => {
+  const raw = typeof v === "string" ? v.trim() : "";
+  return raw ? raw.slice(0, max) : null;
+};
+
+/** Everything the map's Google place card knew, posted along with the save
+ * form so one click keeps all of it. Every field is untrusted client input:
+ * URLs must be http(s), text is length-capped, hours must be a JSON array of
+ * strings. */
+function readGoogleDetails(formData: FormData) {
+  const ratingRaw = Number(formData.get("g_rating"));
+  const countRaw = Number(formData.get("g_ratingCount"));
+  let openingHours: string | null = null;
+  try {
+    const parsed = JSON.parse(String(formData.get("g_hours") ?? "null"));
+    if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) {
+      openingHours = JSON.stringify(parsed.slice(0, 7).map((x: string) => x.slice(0, 120)));
+    }
+  } catch {}
+  return {
+    address: cleanText(formData.get("g_address"), 300),
+    phone: cleanText(formData.get("g_phone"), 40),
+    website: safeHttpUrl(formData.get("g_website")),
+    googleUrl: safeHttpUrl(formData.get("g_url")),
+    photoUrl: safeHttpUrl(formData.get("g_photo")),
+    rating: Number.isFinite(ratingRaw) && ratingRaw > 0 && ratingRaw <= 5 ? ratingRaw : null,
+    ratingCount: Number.isFinite(countRaw) && countRaw > 0 ? Math.round(countRaw) : null,
+    openingHours,
+  };
+}
+
 export async function deleteSavedMapPin(id: string, slug: string) {
   const userId = await requireUserId();
-  await prisma.savedMapPin.deleteMany({ where: { id, userId } });
+  const { userIds } = await getGroupContext(userId);
+  const pin = await prisma.savedMapPin.findFirst({ where: { id, userId: { in: userIds } }, select: { name: true, destinationId: true } });
+  if (!pin) return;
+  await prisma.savedMapPin.delete({ where: { id } });
+  await logGroupActivity(userId, {
+    type: "pin_removed",
+    summary: `הסיר/ה את \u201C${pin.name}\u201D מהמפה`,
+    destinationId: pin.destinationId, slug,
+  });
   revalidatePath(`/trip/${slug}`);
 }
 
@@ -436,10 +515,12 @@ async function getOrCreateItinerary(userId: string, destinationId: string, kind:
 }
 
 export async function createItineraryDay(destinationId: string, slug: string) {
+  const userId = await requireUserId();
   const ownerId = await requirePersonalItineraryOwnerId();
   const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
   const dayCount = await prisma.itineraryDay.count({ where: { itineraryId: itinerary.id } });
   await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayCount + 1 } });
+  await logGroupActivity(userId, { type: "day_added", summary: `הוסיף/ה את יום ${dayCount + 1} למסלול`, destinationId, slug });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
@@ -500,6 +581,7 @@ export async function addSwipedItineraryItem(
   customLabel: string | null,
   slug: string
 ): Promise<{ ok: true } | { error: string }> {
+  const userId = await requireUserId();
   const ownerId = await requirePersonalItineraryOwnerId();
   const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
   let day = await prisma.itineraryDay.findFirst({ where: { itineraryId: itinerary.id, dayIndex } });
@@ -520,6 +602,14 @@ export async function addSwipedItineraryItem(
       timeOfDay: nextSwipeTimeSlot(existing),
       ...(poiId ? { poiId } : { customLabel: (customLabel ?? "אטרקציה").slice(0, 120) }),
     },
+  });
+  const swipedName = poiId
+    ? (await prisma.pointOfInterest.findUnique({ where: { id: poiId }, select: { name: true } }))?.name
+    : customLabel;
+  await logGroupActivity(userId, {
+    type: "item_added",
+    summary: `הוסיף/ה את \u201C${swipedName ?? "נקודה"}\u201D ליום ${dayIndex}`,
+    destinationId, slug,
   });
   revalidatePath(`/trip/${slug}/itinerary`);
   return { ok: true };
@@ -658,6 +748,7 @@ export async function fetchAiSuggestedPois(
  * everyone sharing the itinerary so the group can spot unpopular stops. */
 export async function voteItineraryItem(itemId: string, value: 1 | -1, slug: string) {
   const userId = await requireUserId();
+  const item = await assertItemAccess(userId, itemId);
   const existing = await prisma.itineraryItemVote.findUnique({
     where: { itineraryItemId_userId: { itineraryItemId: itemId, userId } },
   });
@@ -668,14 +759,20 @@ export async function voteItineraryItem(itemId: string, value: 1 | -1, slug: str
   } else {
     await prisma.itineraryItemVote.create({ data: { itineraryItemId: itemId, userId, value } });
   }
+  await logGroupActivity(userId, {
+    type: "item_voted",
+    summary: `${value === 1 ? "הצביע/ה בעד" : "הצביע/ה נגד"} \u201C${itemLabel(item)}\u201D`,
+    destinationId: item.day.itinerary.destinationId, slug, entityId: itemId,
+  });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
 /** Deletes a day (and its items, via cascade) and renumbers the remaining
  * days sequentially so there's no gap in the "יום N" labels. */
 export async function deleteItineraryDay(dayId: string, slug: string, path = "itinerary") {
-  const day = await prisma.itineraryDay.findUnique({ where: { id: dayId } });
-  if (!day) return;
+  const userId = await requireUserId();
+  const day = await assertDayAccess(userId, dayId);
+  await logGroupActivity(userId, { type: "day_removed", summary: `מחק/ה את יום ${day.dayIndex} מהמסלול`, destinationId: day.itinerary.destinationId, slug });
 
   await prisma.itineraryDay.delete({ where: { id: dayId } });
 
@@ -697,18 +794,28 @@ export async function deleteItineraryDay(dayId: string, slug: string, path = "it
  * own value format), so the date comparison in resolveTodayDayIndexFromDates
  * only ever compares whole days, never a time-of-day/timezone offset. */
 export async function setItineraryDayDate(dayId: string, dateStr: string, slug: string) {
+  await assertDayAccess(await requireUserId(), dayId);
   const date = dateStr ? new Date(`${dateStr}T00:00:00Z`) : null;
   await prisma.itineraryDay.update({ where: { id: dayId }, data: { date } });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
 export async function addItineraryItem(itineraryDayId: string, poiId: string, slug: string) {
+  const userId = await requireUserId();
+  const day = await assertDayAccess(userId, itineraryDayId);
   const count = await prisma.itineraryItem.count({ where: { itineraryDayId } });
   await prisma.itineraryItem.create({ data: { itineraryDayId, poiId, order: count } });
+  const poi = await prisma.pointOfInterest.findUnique({ where: { id: poiId }, select: { name: true } });
+  await logGroupActivity(userId, {
+    type: "item_added", summary: `הוסיף/ה את \u201C${poi?.name ?? "נקודה"}\u201D ליום ${day.dayIndex}`,
+    destinationId: day.itinerary.destinationId, slug,
+  });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
 export async function addCustomItineraryItem(itineraryDayId: string, slug: string, formData: FormData) {
+  const userId = await requireUserId();
+  const day = await assertDayAccess(userId, itineraryDayId);
   const customLabel = String(formData.get("customLabel") ?? "").trim();
   if (!customLabel) return;
   // Optional — set when this came from a Google Places pick or a manually
@@ -729,11 +836,21 @@ export async function addCustomItineraryItem(itineraryDayId: string, slug: strin
       ...(hasLocation ? { customLat, customLng } : {}),
     },
   });
+  await logGroupActivity(userId, {
+    type: "item_added", summary: `הוסיף/ה את \u201C${customLabel.slice(0, 60)}\u201D ליום ${day.dayIndex}`,
+    destinationId: day.itinerary.destinationId, slug,
+  });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
 export async function removeItineraryItem(itemId: string, slug: string) {
+  const userId = await requireUserId();
+  const item = await assertItemAccess(userId, itemId);
   await prisma.itineraryItem.delete({ where: { id: itemId } });
+  await logGroupActivity(userId, {
+    type: "item_removed", summary: `הסיר/ה את \u201C${itemLabel(item)}\u201D מיום ${item.day.dayIndex}`,
+    destinationId: item.day.itinerary.destinationId, slug,
+  });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
@@ -742,6 +859,7 @@ export async function removeItineraryItem(itemId: string, slug: string) {
  * input already shows what was typed, and refetching mid-edit would fight
  * the debounced autosave. */
 export async function setItineraryItemNote(itemId: string, note: string) {
+  await assertItemAccess(await requireUserId(), itemId);
   await prisma.itineraryItem.update({ where: { id: itemId }, data: { note: note.trim() || null } });
 }
 
@@ -751,7 +869,13 @@ export async function setItineraryItemNote(itemId: string, note: string) {
  * the current/next "where am I" highlight elsewhere on the page, which
  * needs the fresh value on save, not just whatever the input already shows. */
 export async function setItineraryItemTime(itemId: string, timeOfDay: string, slug: string) {
+  const userId = await requireUserId();
+  const item = await assertItemAccess(userId, itemId);
   await prisma.itineraryItem.update({ where: { id: itemId }, data: { timeOfDay: timeOfDay.trim() || null } });
+  await logGroupActivity(userId, {
+    type: "item_time", summary: `שינה/תה את השעה של \u201C${itemLabel(item)}\u201D ל-${timeOfDay.trim() || "ללא שעה"}`,
+    destinationId: item.day.itinerary.destinationId, slug,
+  });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
@@ -762,6 +886,8 @@ export async function setItineraryItemTime(itemId: string, timeOfDay: string, sl
  * the user sees when they drag a card to a new position.
  */
 export async function reorderItineraryDay(dayId: string, orderedItemIds: string[], slug: string, path = "itinerary") {
+  const userId = await requireUserId();
+  const day = await assertDayAccess(userId, dayId);
   const items = await prisma.itineraryItem.findMany({ where: { itineraryDayId: dayId }, orderBy: { order: "asc" } });
   // The time slot that belonged to position N stays at position N — so dragging an
   // item into a new slot carries that slot's time, effectively swapping the times.
@@ -775,6 +901,10 @@ export async function reorderItineraryDay(dayId: string, orderedItemIds: string[
       })
     )
   );
+  await logGroupActivity(userId, {
+    type: "item_moved", summary: `סידר/ה מחדש את יום ${day.dayIndex}`,
+    destinationId: day.itinerary.destinationId, slug,
+  });
   revalidatePath(`/trip/${slug}/${path}`);
 }
 
@@ -789,6 +919,8 @@ export async function moveItineraryItemToDay(
   slug: string,
   path = "itinerary"
 ): Promise<{ ok: true } | { error: string }> {
+  const userId = await requireUserId();
+  const access = await assertItemAccess(userId, itemId);
   const item = await prisma.itineraryItem.findUnique({ where: { id: itemId }, include: { day: true } });
   if (!item) return { error: "הנקודה לא נמצאה" };
   if (item.day.dayIndex === newDayIndex) return { ok: true };
@@ -807,6 +939,10 @@ export async function moveItineraryItemToDay(
   await prisma.itineraryItem.update({
     where: { id: itemId },
     data: { itineraryDayId: targetDay.id, order: existing.length, timeOfDay: nextSwipeTimeSlot(existing) },
+  });
+  await logGroupActivity(userId, {
+    type: "item_moved", summary: `העביר/ה את \u201C${itemLabel(access)}\u201D ליום ${newDayIndex}`,
+    destinationId: access.day.itinerary.destinationId, slug,
   });
   revalidatePath(`/trip/${slug}/${path}`);
   return { ok: true };

@@ -266,6 +266,8 @@ model User {
   locationPings LocationPing[]
   phrasebookProgress PhrasebookProgress[]
   savedMapPins SavedMapPin[]
+  savedMapPinVotes SavedMapPinVote[]
+  groupActivitySeenAt DateTime?
   countryPhotos CountryPhoto[]
   pushSubscriptions PushSubscription[]
   expenseSplits ExpenseSplit[]
@@ -610,12 +612,56 @@ model SavedMapPin {
   description   String?
   photoUrl      String?
   categoryName  String?
+  // Everything Google shows for a saved place, kept with the pin so it is
+  // all there later (and offline-friendly): the pin is one click to save.
+  address       String?
+  phone         String?
+  website       String?
+  googleUrl     String?
+  rating        Float?
+  ratingCount   Int?
+  openingHours  String? // JSON array of weekday text lines
+  source        String? // google | upload | google_list | ai | manual
   createdAt     DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  votes       SavedMapPinVote[]
 
   @@unique([userId, destinationId, placeId])
+}
+
+/** A group member's like/dislike on a shared saved pin - one per user per
+ * pin, same idea as ItineraryItemVote. */
+model SavedMapPinVote {
+  id        String   @id @default(cuid())
+  pinId     String
+  userId    String
+  value     Int // 1 = like, -1 = dislike
+  createdAt DateTime @default(now())
+
+  pin  SavedMapPin @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pinId, userId])
+}
+
+/** One line in a shared trip group's change feed (who added/edited/voted on
+ * what) - the source of the notification bell. groupOwnerId is the
+ * subscription owner, i.e. the shared itinerary owner. */
+model GroupActivity {
+  id            String   @id @default(cuid())
+  groupOwnerId  String
+  actorUserId   String
+  actorName     String
+  destinationId String?
+  slug          String?
+  type          String
+  summary       String
+  entityId      String?
+  createdAt     DateTime @default(now())
+
+  @@index([groupOwnerId, createdAt])
 }
 
 /** A photo manually attached to a visited country on the profile/quizzes
