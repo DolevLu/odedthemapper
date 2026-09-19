@@ -103,6 +103,7 @@ export function LiveHub({
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const [reply, setReply] = useState<TraviReply | null>(null);
+  const [showAllRemaining, setShowAllRemaining] = useState(false);
 
   useEffect(() => {
     setNow(new Date());
@@ -383,7 +384,7 @@ export function LiveHub({
                 </button>
               </div>
               <ul className="flex flex-col gap-1.5">
-                {remaining.map((s) => (
+                {(showAllRemaining ? remaining : remaining.slice(0, 2)).map((s) => (
                   <li key={s.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="min-w-0 truncate">
                       <span className="font-mono text-xs opacity-60">{s.time}</span> {s.label}
@@ -393,6 +394,17 @@ export function LiveHub({
                   </li>
                 ))}
               </ul>
+              {remaining.length > 2 && (
+                <button
+                  onClick={() => setShowAllRemaining((v) => !v)}
+                  aria-expanded={showAllRemaining}
+                  aria-label={showAllRemaining ? t("live.showLess") : t("live.showAll")}
+                  className="mx-auto flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-semibold opacity-70 hover:opacity-100"
+                >
+                  <span aria-hidden className="inline-block transition-transform" style={{ transform: showAllRemaining ? "rotate(180deg)" : "none" }}>⌄</span>
+                  {showAllRemaining ? t("live.showLess") : `${t("live.showAll")} (${remaining.length})`}
+                </button>
+              )}
 
               <div className="mt-1 flex flex-wrap items-center gap-2 border-t pt-2" style={{ borderColor: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
                 <span className="text-xs font-semibold">

@@ -400,6 +400,8 @@ export const DICTIONARY = {
   "book.moveLater": { he: "אחורה", en: "Later" },
   "book.duplicate": { he: "שכפול", en: "Duplicate" },
   "book.deletePage": { he: "מחיקה", en: "Delete" },
+  "live.showAll": { he: "הצגת הכל", en: "Show all" },
+  "live.showLess": { he: "הצגת פחות", en: "Show less" },
   "now.title": { he: "טראבי לייב", en: "Travi Live" },
   "now.sortedByProximity": { he: "הרשימות ממוינות לפי קרבה אליכם", en: "Lists sorted by proximity to you" },
   "now.chooseOrShare": { he: "בחרו קטגוריה, או שתפו מיקום למיון לפי קרבה", en: "Choose a category, or share your location to sort by proximity" },

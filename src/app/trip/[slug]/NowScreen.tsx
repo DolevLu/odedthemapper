@@ -7,7 +7,6 @@ import { CategoryIcon, CategoryGlyphWhite } from "@/components/CategoryIcon";
 import { PoiDetailModal } from "@/components/PoiDetailModal";
 import { TodayCard } from "@/components/TodayCard";
 import { PoiCard } from "@/components/PoiCard";
-import { HomeLocalTime } from "@/components/HomeLocalTime";
 import { BookableReminders } from "@/components/BookableReminders";
 import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
 import { OnboardingNudge } from "@/components/OnboardingNudge";
@@ -122,6 +121,16 @@ export function NowScreen({
   return (
     <div className="flex flex-col gap-6">
       {today.showOnboarding && <OnboardingNudge slug={slug} />}
+      <TodayCard
+        destinationId={today.destinationId}
+        destinationName={today.destinationName}
+        heroImage={today.heroImage}
+        slug={slug}
+        logisticId={today.logisticId}
+        targetDateTimeIso={today.targetDateTimeIso}
+        myDestinations={today.myDestinations}
+      />
+
       <LiveHub
         slug={slug}
         destinationId={today.destinationId}
@@ -130,18 +139,6 @@ export function NowScreen({
         stops={today.todayDayItems}
         pois={pois}
       />
-      <TodayCard
-        destinationId={today.destinationId}
-        destinationName={today.destinationName}
-        heroImage={today.heroImage}
-        slug={slug}
-        logisticId={today.logisticId}
-        targetDateTimeIso={today.targetDateTimeIso}
-        todayDayItems={today.todayDayItems}
-        myDestinations={today.myDestinations}
-      />
-
-      <HomeLocalTime slug={slug} />
 
       <AdUnit slot="6290998567" format="auto" fullWidthResponsive show={showAds} />
 
