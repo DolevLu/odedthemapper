@@ -5,6 +5,7 @@ import { getFlatPoisForDestination } from "@/lib/data/pois";
 import { getAccessLevel, getUserPurchasedSlugs, shouldShowAds } from "@/lib/access";
 import { resolveEffectiveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
+import { destinationCenter } from "@/lib/geo";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NowScreen } from "../NowScreen";
 
@@ -38,7 +39,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
               orderBy: { order: "asc" },
               include: {
                 poi: {
-                  select: { id: true, name: true, category: { select: { name: true } }, photos: { take: 1, select: { url: true } } },
+                  select: { id: true, name: true, lat: true, lng: true, category: { select: { name: true } }, photos: { take: 1, select: { url: true } } },
                 },
               },
             },
@@ -105,13 +106,17 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
   );
 
   let todayDayItems:
-    | { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[]
+    | { id: string; dayId: string; time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null; lat: number | null; lng: number | null }[]
     | null = null;
 
   if (todayDayIndex !== null) {
     const day = itinerary?.days.find((d) => d.dayIndex === todayDayIndex);
     if (day) {
       todayDayItems = day.items.map((item) => ({
+        id: item.id,
+        dayId: day.id,
+        lat: item.poi?.lat ?? item.customLat ?? null,
+        lng: item.poi?.lng ?? item.customLng ?? null,
         time: item.timeOfDay,
         label: item.poi?.name ?? item.customLabel ?? "",
         poiId: item.poi?.id ?? null,
@@ -136,6 +141,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
         logisticId: logistics[0]?.id ?? null,
         targetDateTimeIso: tripStartExact ? tripStartExact.toISOString() : null,
         todayDayItems,
+        center: destinationCenter(pois),
         bookableItems: bookablePois,
         myDestinations,
         // Once they've started on either the flight or the itinerary, they've

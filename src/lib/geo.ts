@@ -76,3 +76,26 @@ export function googleMapsDirectionsUrl(from: { lat: number; lng: number }, to: 
   const travelmode = distanceKm < 1 ? "walking" : "transit";
   return `https://www.google.com/maps/dir/?api=1&origin=${from.lat},${from.lng}&destination=${to.lat},${to.lng}&travelmode=${travelmode}`;
 }
+
+/** Rough "main city" coordinates for a destination: the average of the busiest
+ * named area's points (generic catch-all folders skipped) — same heuristic the
+ * weather page and the map's default zoom use, so weather/recommendations line
+ * up with where travelers actually are. */
+export function destinationCenter(pois: { lat: number; lng: number; areaName: string; geometryType?: string }[]): { lat: number; lng: number } | null {
+  const points = pois.filter((p) => (p.geometryType ?? "point") === "point");
+  const byArea = new Map<string, { lat: number; lng: number }[]>();
+  for (const p of points) {
+    const list = byArea.get(p.areaName) ?? [];
+    list.push({ lat: p.lat, lng: p.lng });
+    byArea.set(p.areaName, list);
+  }
+  const named = [...byArea.entries()].filter(([name]) => !isGenericAreaName(name));
+  const candidates = named.length > 0 ? named : [...byArea.entries()];
+  let best: { lat: number; lng: number }[] = [];
+  for (const [, list] of candidates) if (list.length > best.length) best = list;
+  if (best.length === 0) return null;
+  return {
+    lat: best.reduce((sum, p) => sum + p.lat, 0) / best.length,
+    lng: best.reduce((sum, p) => sum + p.lng, 0) / best.length,
+  };
+}

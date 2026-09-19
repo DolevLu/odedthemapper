@@ -105,3 +105,11 @@ export function useGoogleMaps() {
   const error = !apiKey ? "חסר מפתח Google Maps API" : loadError;
   return { loaded, error };
 }
+
+/** Loads the Maps script on demand (outside a map screen) - e.g. for a
+ * one-off Places lookup - reusing the same window-singleton guard. */
+export function ensureGoogleMaps(): Promise<void> {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return Promise.reject(new Error("חסר מפתח Google Maps API"));
+  return loadGoogleMaps(apiKey);
+}

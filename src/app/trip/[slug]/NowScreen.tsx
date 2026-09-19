@@ -11,6 +11,8 @@ import { HomeLocalTime } from "@/components/HomeLocalTime";
 import { BookableReminders } from "@/components/BookableReminders";
 import { EmergencyInfoButton } from "@/components/EmergencyInfoButton";
 import { OnboardingNudge } from "@/components/OnboardingNudge";
+import { isIndoorFriendly } from "@/lib/indoor";
+import { LiveHub, type LiveStop } from "@/components/LiveHub";
 import { AdUnit } from "@/components/AdUnit";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
@@ -20,32 +22,12 @@ type TodayData = {
   heroImage: string | null;
   logisticId: string | null;
   targetDateTimeIso: string | null;
-  todayDayItems: { time: string | null; label: string; poiId: string | null; categoryName: string | null; photoUrl: string | null }[] | null;
+  todayDayItems: LiveStop[] | null;
+  center: { lat: number; lng: number } | null;
   bookableItems: { id: string; name: string }[];
   myDestinations: { slug: string; name: string }[];
   showOnboarding: boolean;
 };
-
-// Best-effort heuristic — there's no dedicated "indoor" field on a POI, so
-// this matches category names against known indoor/outdoor keywords.
-// Outdoor keywords win over indoor ones (e.g. an outdoor "shopping street"
-// won't get suggested), and a category matching neither is left out
-// entirely rather than guessed — a shorter, reliable list beats a longer,
-// noisy one for a "it's raining" suggestion.
-const INDOOR_HINTS = [
-  "מוזיאון", "גלריה", "קניון", "מסעד", "קפה", "בר", "ספא", "תיאטרון", "מועדון",
-  "אולם", "שוק מקור", "אקווריום", "פלנטריום", "כנסיי", "מסגד", "ארמון", "קולנוע",
-  "מרכז קניות", "בריכה מקורה",
-];
-const OUTDOOR_HINTS = [
-  "פארק", "טבע", "חוף", "טיול רגלי", "שביל", "הרים", "מפל", "יער", "טיילת",
-  "נוף", "road trip", "רחוב", "גן ציבורי",
-];
-
-function isIndoorFriendly(categoryName: string): boolean {
-  if (OUTDOOR_HINTS.some((h) => categoryName.includes(h))) return false;
-  return INDOOR_HINTS.some((h) => categoryName.includes(h));
-}
 
 function haversineKm(a: [number, number], b: [number, number]) {
   const [lat1, lng1] = a;
@@ -140,6 +122,14 @@ export function NowScreen({
   return (
     <div className="flex flex-col gap-6">
       {today.showOnboarding && <OnboardingNudge slug={slug} />}
+      <LiveHub
+        slug={slug}
+        destinationId={today.destinationId}
+        destinationName={today.destinationName}
+        center={today.center}
+        stops={today.todayDayItems}
+        pois={pois}
+      />
       <TodayCard
         destinationId={today.destinationId}
         destinationName={today.destinationName}
@@ -162,7 +152,7 @@ export function NowScreen({
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
       >
         <div>
-          <h1 className="text-base font-bold sm:text-xl">{t("now.title")}</h1>
+          <h2 className="text-base font-bold sm:text-xl">📍 {t("live.nearMe")}</h2>
           <p className="text-xs opacity-70 sm:text-sm">{location ? t("now.sortedByProximity") : t("now.chooseOrShare")}</p>
           {locationError && <p className="text-xs text-red-600 sm:text-sm">{locationError}</p>}
         </div>

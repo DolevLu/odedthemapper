@@ -53,7 +53,7 @@ const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
   { keywords: ["חידון", "משחק", "לבדוק את עצמי", "טריוויה"], answer: "יש לכם מסך \"חידונים\" עם חידונים קצרים בספורט, היסטוריה וגאוגרפיה של היעד." },
   { keywords: ["מסמך", "כרטיס טיסה", "אישור הזמנה", "לוגיסטיקה", "דרכון", "ויזה", "ביטוח נסיעות"], answer: "במסך \"לוגיסטיקה\" תוכלו לשמור טיסות, מלונות, כרטיסים, דרכון, ויזה וביטוח - עם תזכורות אוטומטיות לפני שהם מתקרבים." },
   { keywords: ["חג", "חגים", "יום חג", "אירוע קרוב"], answer: "במסך \"להזמנה\" יש לוח חגים קרובים ביעד, כדי לדעת מראש על ימים שבהם עסקים ואתרים עשויים לפעול אחרת." },
-  { keywords: ["מה עכשיו", "מה כדאי עכשיו", "מה לעשות עכשיו", "המלצה עכשיו"], answer: "במסך \"מה עכשיו\" יש המלצות לפי קרבה למיקום שלכם, שעון מקומי מול שעון הבית, וכפתור מידע חירום עם שקעים/ויזה/טיפים." },
+  { keywords: ["מה עכשיו", "מה כדאי עכשיו", "מה לעשות עכשיו", "המלצה עכשיו"], answer: "במסך \"טראבי לייב\" (מה עכשיו) יש המלצות לפי קרבה למיקום שלכם, שעון מקומי מול שעון הבית, וכפתור מידע חירום עם שקעים/ויזה/טיפים." },
   { keywords: ["מזג אוויר", "תחזית", "גשם", "טמפרטורה"], answer: "במסך \"מזג אוויר\" יש תחזית ליומיים הקרובים ביעד." },
   { keywords: ["שיחון", "מילים בשפה", "לתרגם", "תרגום", "הגייה"], answer: "במסך \"שיחון\" יש מילים וביטויים שימושיים בשפה המקומית, כולל הקראה קולית של ההגייה." },
   { keywords: ["ציוד", "מה לקחת", "צ'ק ליסט", "רשימת אריזה", "מה לארוז"], answer: "במסך \"ציוד וצ'ק ליסט\" יש רשימת ציוד מומלצת לפני הטיסה, עם אפשרות לסמן מה כבר ארזתם." },
@@ -64,7 +64,7 @@ const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
 // answer app-usage questions accurately regardless of phrasing.
 const APP_SCREENS_REFERENCE = `
 מסכי האפליקציה הזמינים למשתמש ביעד:
-- מה עכשיו: קטגוריות נקודות עניין (מסעדות, ברים, קפה, מוזיאונים, פארקים וכו') עם מיון לפי קרבה
+- טראבי לייב (מה עכשיו): המסך החי בזמן הטיול - שעה, מזג אוויר, הנקודה הנוכחית והבאה במסלול, המלצות להחלפה בגשם, כפתור "התעכבנו", בדיקת מה פתוח, ושאלות חופשיות אליי; וגם קטגוריות נקודות עניין עם מיון לפי קרבה
 - מפה: מפה אינטראקטיבית עם כל הנקודות, סינון קטגוריה, וניווט לפי מיקום נוכחי
 - מסלול: בניית מסלול יומי - הוספת נקודות לימים, גרירה לשינוי סדר, יצירת מסלול אוטומטי
 - מועדפים: נקודות ואטרקציות שסומנו בלב, כולל המלצות "אסור לפספס" וטיפים לפני הנסיעה
@@ -125,11 +125,12 @@ async function askGemini(params: {
   destinationName: string;
   suggestions: TraviSuggestion[];
   intentLabel: string | null;
+  liveContext?: string | null;
 }): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const { message, destinationName, suggestions, intentLabel } = params;
+  const { message, destinationName, suggestions, intentLabel, liveContext } = params;
 
   const suggestionsBlock =
     suggestions.length > 0
@@ -143,7 +144,9 @@ async function askGemini(params: {
 ${APP_SCREENS_REFERENCE}
 
 ${suggestionsBlock}
-
+${liveContext ? `מצב חי של המטייל ברגע זה (השתמשו בו כדי להתאים את ההמלצה לשעה, למזג האוויר ולמקום שבו הוא נמצא):
+${liveContext}
+` : ""}
 כללים:
 - אם יש נקודות מהמאגר למעלה - התייחסו אליהן בשמן בתשובה באופן טבעי (הן כבר יוצגו למשתמש ככרטיסיות נפרדות, אין צורך לפרט כתובות).
 - אם השאלה עוסקת בשימוש באפליקציה - ענו לפי רשימת המסכים למעלה בלבד, אל תמציאו תכונות שלא קיימות שם.
@@ -193,7 +196,8 @@ ${suggestionsBlock}
 export async function askTravi(
   destinationId: string,
   message: string,
-  userPosition?: { lat: number; lng: number } | null
+  userPosition?: { lat: number; lng: number } | null,
+  liveContext?: string | null
 ): Promise<TraviReply> {
   const rawQ = message.trim().toLowerCase();
   if (!rawQ) return { text: "ספרו לי מה אתם מחפשים - למשל \"מסעדה טובה בסביבה\" או \"מה יש לעשות פה\".", suggestions: [] };
@@ -267,6 +271,7 @@ export async function askTravi(
     destinationName: destination?.name ?? "היעד",
     suggestions,
     intentLabel,
+    liveContext: liveContext?.slice(0, 600) ?? null,
   });
   if (geminiText) return { text: geminiText, suggestions };
 
