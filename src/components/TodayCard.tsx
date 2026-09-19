@@ -54,6 +54,22 @@ export function TodayCard({
     targetDateTimeIso ? toDateTimeLocalValue(new Date(targetDateTimeIso)) : ""
   );
   const [now, setNow] = useState<Date | null>(null);
+  // Hide is remembered per destination (device-local) - for when the
+  // countdown is just in the way, or the trip has already started.
+  const hideKey = `countdown-hidden-${slug}`;
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setHidden(localStorage.getItem(hideKey) === "1");
+    } catch {}
+  }, [hideKey]);
+  function setHiddenPersist(value: boolean) {
+    setHidden(value);
+    try {
+      if (value) localStorage.setItem(hideKey, "1");
+      else localStorage.removeItem(hideKey);
+    } catch {}
+  }
 
   // Ticks the live countdown every minute — started only after mount so the
   // server-rendered HTML and the first client render match (a `now` computed
@@ -126,6 +142,11 @@ export function TodayCard({
        * earlier than the top-to-bottom span, not gradually across all of it)
        * so the countdown numbers below it stay fully legible regardless of
        * the photo's own brightness/colors. */}
+      {hidden ? (
+        <button onClick={() => setHiddenPersist(false)} className="self-center text-xs underline opacity-60 hover:opacity-100">
+          ⏱️ הצגת הספירה לאחור
+        </button>
+      ) : (
       <div
         className="relative flex flex-col items-center gap-3 overflow-hidden border p-6 text-center"
         style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
@@ -209,7 +230,17 @@ export function TodayCard({
             </div>
           )}
         </div>
+        <button
+          onClick={() => setHiddenPersist(true)}
+          aria-label="הסתרת הספירה לאחור"
+          title="הסתרת הספירה לאחור"
+          className="absolute end-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full text-sm shadow-sm"
+          style={{ background: "rgba(255,255,255,0.85)", color: "#333" }}
+        >
+          ✕
+        </button>
       </div>
+      )}
     </div>
   );
 }
