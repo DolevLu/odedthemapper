@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { addItineraryItem, addCustomItineraryItem } from "@/lib/actions/trip";
 import { loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import { PinPickerModal } from "./PinPickerModal";
+import type { DayListItem } from "./DayItemsList";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
@@ -89,10 +90,13 @@ export function AddItemToDay({
   dayId,
   slug,
   pois,
+  onOptimisticAdd,
 }: {
   dayId: string;
   slug: string;
   pois: PoiOption[];
+  /** Shows the new stop in the list right away, before the server confirms. */
+  onOptimisticAdd?: (item: DayListItem) => void;
 }) {
   const [mode, setMode] = useState<Mode>("pick");
   const [, startTransition] = useTransition();
@@ -181,18 +185,26 @@ export function AddItemToDay({
   const [customLabel, setCustomLabel] = useState("");
   const [pinPickerOpen, setPinPickerOpen] = useState(false);
 
+  function tempItem(label: string, lat: number | null = null, lng: number | null = null): DayListItem {
+    return { id: `optimistic-${crypto.randomUUID()}`, timeOfDay: null, customLabel: label, customLat: lat, customLng: lng, note: null, poi: null, likeCount: 0, dislikeCount: 0, myVote: 0 };
+  }
+
   function handleAddPoi() {
     if (!poiId) return;
-    startTransition(() => {
-      addItineraryItem(dayId, poiId, slug);
+    const name = pois.find((p) => p.id === poiId)?.name ?? "";
+    startTransition(async () => {
+      onOptimisticAdd?.(tempItem(name));
+      await addItineraryItem(dayId, poiId, slug);
     });
     setCategory("");
     setPoiId("");
   }
 
   function handlePickSearchPoi(id: string) {
-    startTransition(() => {
-      addItineraryItem(dayId, id, slug);
+    const name = pois.find((p) => p.id === id)?.name ?? "";
+    startTransition(async () => {
+      onOptimisticAdd?.(tempItem(name));
+      await addItineraryItem(dayId, id, slug);
     });
     setQuery("");
     setSearchOpen(false);
@@ -207,8 +219,9 @@ export function AddItemToDay({
       fd.set("customLabel", resolved.name || prediction.description);
       fd.set("customLat", String(resolved.lat));
       fd.set("customLng", String(resolved.lng));
-      startTransition(() => {
-        addCustomItineraryItem(dayId, slug, fd);
+      startTransition(async () => {
+        onOptimisticAdd?.(tempItem(resolved.name || prediction.description, resolved.lat, resolved.lng));
+        await addCustomItineraryItem(dayId, slug, fd);
       });
       setQuery("");
       setSearchOpen(false);
@@ -219,8 +232,10 @@ export function AddItemToDay({
     if (!customLabel.trim()) return;
     const fd = new FormData();
     fd.set("customLabel", customLabel.trim());
-    startTransition(() => {
-      addCustomItineraryItem(dayId, slug, fd);
+    const optimisticLabel = customLabel.trim();
+    startTransition(async () => {
+      onOptimisticAdd?.(tempItem(optimisticLabel));
+      await addCustomItineraryItem(dayId, slug, fd);
     });
     setCustomLabel("");
   }
@@ -231,8 +246,9 @@ export function AddItemToDay({
     fd.set("customLabel", label);
     fd.set("customLat", String(lat));
     fd.set("customLng", String(lng));
-    startTransition(() => {
-      addCustomItineraryItem(dayId, slug, fd);
+    startTransition(async () => {
+      onOptimisticAdd?.(tempItem(label, lat, lng));
+      await addCustomItineraryItem(dayId, slug, fd);
     });
     setPinPickerOpen(false);
     setCustomLabel("");

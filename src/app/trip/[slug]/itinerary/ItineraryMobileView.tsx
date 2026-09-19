@@ -99,7 +99,7 @@ export function ItineraryMobileView({
   const [localDates, setLocalDates] = useState<Record<string, string>>({});
   function handleDateChange(dayId: string, value: string) {
     setLocalDates((prev) => ({ ...prev, [dayId]: value }));
-    setItineraryDayDate(dayId, value, slug);
+    setItineraryDayDate(dayId, value, slug).then((r) => r && setFocusedDayIndex(r.dayIndex));
   }
   const [drawerState, setDrawerState] = useState<"open" | "peek">("open");
   const [dragOffset, setDragOffset] = useState(0);

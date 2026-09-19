@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useState } from "react";
 import { colorForDay } from "@/lib/geo";
 import { deleteItineraryDay, setItineraryDayDate } from "@/lib/actions/trip";
 import { AddItemToDay } from "./AddItemToDay";
@@ -60,6 +60,11 @@ export function ItineraryDaysView({
   const [internalFocusedIndex, setInternalFocusedIndex] = useState(0);
   const { t, lang } = useTranslation();
 
+  function handleDateMoved(dayIndex: number) {
+    onFocusedDayIndexChange?.(dayIndex);
+    setInternalFocusedIndex(dayIndex - 1);
+  }
+
   if (days.length === 0) return null;
 
   const controlledArrayIndex =
@@ -75,7 +80,7 @@ export function ItineraryDaysView({
 
   if (hideHeader) {
     return (
-      <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large />
+      <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
     );
   }
 
@@ -152,7 +157,7 @@ export function ItineraryDaysView({
           {/* Independently scrollable on desktop so a long day's stop list
            * doesn't push this column taller than the route map beside it. */}
           <div className="min-h-0 flex-1 overflow-y-auto pe-1">
-            <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large />
+            <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
           </div>
         </div>
       )}
@@ -167,6 +172,7 @@ function DayCard({
   path,
   isToday = false,
   large,
+  onDateMoved,
 }: {
   day: Day;
   slug: string;
@@ -174,6 +180,8 @@ function DayCard({
   path: string;
   isToday?: boolean;
   large?: boolean;
+  /** Called with the day's new number after a date change re-sorted the days. */
+  onDateMoved?: (dayIndex: number) => void;
 }) {
   const color = colorForDay(day.dayIndex - 1);
   // Tracked locally rather than bound straight to the day.date prop — that
@@ -182,6 +190,7 @@ function DayCard({
   // (same bug, same fix as DayItemsList's time input — see its own comment).
   const [localDate, setLocalDate] = useState(day.date ?? "");
   const { t } = useTranslation();
+  const [shownItems, addOptimisticItem] = useOptimistic(day.items, (state: DayListItem[], item: DayListItem) => [...state, item]);
 
   function handleDelete() {
     if (!window.confirm(`${t("daysView.confirmDeleteDayPrefix")} ${day.dayIndex} ${t("daysView.confirmDeleteDaySuffix")}`)) return;
@@ -190,7 +199,7 @@ function DayCard({
 
   function handleDateChange(value: string) {
     setLocalDate(value);
-    setItineraryDayDate(day.id, value, slug);
+    setItineraryDayDate(day.id, value, slug).then((r) => r && onDateMoved?.(r.dayIndex));
   }
 
   return (
@@ -234,8 +243,8 @@ function DayCard({
       </div>
 
       <div className="flex flex-col gap-3 px-4 pb-4">
-        <DayItemsList dayId={day.id} slug={slug} path={path} items={day.items} isToday={isToday} />
-        <AddItemToDay dayId={day.id} slug={slug} pois={poiOptions} />
+        <DayItemsList dayId={day.id} slug={slug} path={path} items={shownItems} isToday={isToday} />
+        <AddItemToDay dayId={day.id} slug={slug} pois={poiOptions} onOptimisticAdd={addOptimisticItem} />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
@@ -32,6 +33,12 @@ async function syncDietaryTags(poiId: string, selectedLabels: string[]) {
     ...toRemove.map((t) => prisma.poiTag.delete({ where: { id: t.id } })),
     ...toAdd.map((label) => prisma.poiTag.create({ data: { poiId, label } })),
   ]);
+}
+
+/** Logs to the group feed after the response has been sent - the feed is a
+ * side channel, so the edit itself never waits on it. */
+function logLater(userId: string, entry: Parameters<typeof logGroupActivity>[1]) {
+  after(() => logGroupActivity(userId, entry));
 }
 
 async function requireUserId() {
@@ -162,7 +169,7 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
       photoUrl: photoUrl ?? null, source: "google", ...detailFields,
     },
   });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: existedBefore ? "pin_edited" : "pin_added",
     summary: existedBefore ? `עדכן/ה את \u201C${name}\u201D במפה` : `הוסיף/ה את \u201C${name}\u201D למפה`,
     destinationId, slug, entityId: pin.id,
@@ -217,7 +224,7 @@ export async function deleteSavedMapPin(id: string, slug: string) {
   const pin = await prisma.savedMapPin.findFirst({ where: { id, userId: { in: userIds } }, select: { name: true, destinationId: true } });
   if (!pin) return;
   await prisma.savedMapPin.delete({ where: { id } });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "pin_removed",
     summary: `הסיר/ה את \u201C${pin.name}\u201D מהמפה`,
     destinationId: pin.destinationId, slug,
@@ -520,7 +527,7 @@ export async function createItineraryDay(destinationId: string, slug: string) {
   const itinerary = await getOrCreateItinerary(ownerId, destinationId, "personal");
   const dayCount = await prisma.itineraryDay.count({ where: { itineraryId: itinerary.id } });
   await prisma.itineraryDay.create({ data: { itineraryId: itinerary.id, dayIndex: dayCount + 1 } });
-  await logGroupActivity(userId, { type: "day_added", summary: `הוסיף/ה את יום ${dayCount + 1} למסלול`, destinationId, slug });
+  logLater(userId, { type: "day_added", summary: `הוסיף/ה את יום ${dayCount + 1} למסלול`, destinationId, slug });
   revalidatePath(`/trip/${slug}/itinerary`);
 }
 
@@ -606,7 +613,7 @@ export async function addSwipedItineraryItem(
   const swipedName = poiId
     ? (await prisma.pointOfInterest.findUnique({ where: { id: poiId }, select: { name: true } }))?.name
     : customLabel;
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_added",
     summary: `הוסיף/ה את \u201C${swipedName ?? "נקודה"}\u201D ליום ${dayIndex}`,
     destinationId, slug,
@@ -759,7 +766,7 @@ export async function voteItineraryItem(itemId: string, value: 1 | -1, slug: str
   } else {
     await prisma.itineraryItemVote.create({ data: { itineraryItemId: itemId, userId, value } });
   }
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_voted",
     summary: `${value === 1 ? "הצביע/ה בעד" : "הצביע/ה נגד"} \u201C${itemLabel(item)}\u201D`,
     destinationId: item.day.itinerary.destinationId, slug, entityId: itemId,
@@ -772,7 +779,7 @@ export async function voteItineraryItem(itemId: string, value: 1 | -1, slug: str
 export async function deleteItineraryDay(dayId: string, slug: string, path = "itinerary") {
   const userId = await requireUserId();
   const day = await assertDayAccess(userId, dayId);
-  await logGroupActivity(userId, { type: "day_removed", summary: `מחק/ה את יום ${day.dayIndex} מהמסלול`, destinationId: day.itinerary.destinationId, slug });
+  logLater(userId, { type: "day_removed", summary: `מחק/ה את יום ${day.dayIndex} מהמסלול`, destinationId: day.itinerary.destinationId, slug });
 
   await prisma.itineraryDay.delete({ where: { id: dayId } });
 
@@ -794,10 +801,28 @@ export async function deleteItineraryDay(dayId: string, slug: string, path = "it
  * own value format), so the date comparison in resolveTodayDayIndexFromDates
  * only ever compares whole days, never a time-of-day/timezone offset. */
 export async function setItineraryDayDate(dayId: string, dateStr: string, slug: string) {
-  await assertDayAccess(await requireUserId(), dayId);
+  const dayRow = await assertDayAccess(await requireUserId(), dayId);
   const date = dateStr ? new Date(`${dateStr}T00:00:00Z`) : null;
   await prisma.itineraryDay.update({ where: { id: dayId }, data: { date } });
+
+  // Days always read in calendar order: dated days are re-sorted by date and
+  // renumbered, while undated days keep the slots they already had. Adding a
+  // day and giving it the earliest date makes it day 1, and so on.
+  const days = await prisma.itineraryDay.findMany({
+    where: { itineraryId: dayRow.itineraryId },
+    orderBy: { dayIndex: "asc" },
+    select: { id: true, dayIndex: true, date: true },
+  });
+  const dated = days
+    .filter((d) => d.date)
+    .sort((a, b) => a.date!.getTime() - b.date!.getTime() || a.dayIndex - b.dayIndex);
+  let next = 0;
+  const ordered = days.map((d) => (d.date ? dated[next++] : d));
+  const changes = ordered.flatMap((d, i) => (d.dayIndex !== i + 1 ? [prisma.itineraryDay.update({ where: { id: d.id }, data: { dayIndex: i + 1 } })] : []));
+  if (changes.length > 0) await prisma.$transaction(changes);
   revalidatePath(`/trip/${slug}/itinerary`);
+  // Where the changed day ended up, so the UI can keep it in focus.
+  return { dayIndex: ordered.findIndex((d) => d.id === dayId) + 1 };
 }
 
 export async function addItineraryItem(itineraryDayId: string, poiId: string, slug: string) {
@@ -806,7 +831,7 @@ export async function addItineraryItem(itineraryDayId: string, poiId: string, sl
   const count = await prisma.itineraryItem.count({ where: { itineraryDayId } });
   await prisma.itineraryItem.create({ data: { itineraryDayId, poiId, order: count } });
   const poi = await prisma.pointOfInterest.findUnique({ where: { id: poiId }, select: { name: true } });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_added", summary: `הוסיף/ה את \u201C${poi?.name ?? "נקודה"}\u201D ליום ${day.dayIndex}`,
     destinationId: day.itinerary.destinationId, slug,
   });
@@ -836,7 +861,7 @@ export async function addCustomItineraryItem(itineraryDayId: string, slug: strin
       ...(hasLocation ? { customLat, customLng } : {}),
     },
   });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_added", summary: `הוסיף/ה את \u201C${customLabel.slice(0, 60)}\u201D ליום ${day.dayIndex}`,
     destinationId: day.itinerary.destinationId, slug,
   });
@@ -847,7 +872,7 @@ export async function removeItineraryItem(itemId: string, slug: string) {
   const userId = await requireUserId();
   const item = await assertItemAccess(userId, itemId);
   await prisma.itineraryItem.delete({ where: { id: itemId } });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_removed", summary: `הסיר/ה את \u201C${itemLabel(item)}\u201D מיום ${item.day.dayIndex}`,
     destinationId: item.day.itinerary.destinationId, slug,
   });
@@ -872,7 +897,7 @@ export async function setItineraryItemTime(itemId: string, timeOfDay: string, sl
   const userId = await requireUserId();
   const item = await assertItemAccess(userId, itemId);
   await prisma.itineraryItem.update({ where: { id: itemId }, data: { timeOfDay: timeOfDay.trim() || null } });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_time", summary: `שינה/תה את השעה של \u201C${itemLabel(item)}\u201D ל-${timeOfDay.trim() || "ללא שעה"}`,
     destinationId: item.day.itinerary.destinationId, slug,
   });
@@ -901,7 +926,7 @@ export async function reorderItineraryDay(dayId: string, orderedItemIds: string[
       })
     )
   );
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_moved", summary: `סידר/ה מחדש את יום ${day.dayIndex}`,
     destinationId: day.itinerary.destinationId, slug,
   });
@@ -940,7 +965,7 @@ export async function moveItineraryItemToDay(
     where: { id: itemId },
     data: { itineraryDayId: targetDay.id, order: existing.length, timeOfDay: nextSwipeTimeSlot(existing) },
   });
-  await logGroupActivity(userId, {
+  logLater(userId, {
     type: "item_moved", summary: `העביר/ה את \u201C${itemLabel(access)}\u201D ליום ${newDayIndex}`,
     destinationId: access.day.itinerary.destinationId, slug,
   });
