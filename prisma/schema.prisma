@@ -849,6 +849,9 @@ model AlbumSettings {
   templateKey     String  @default("polaroid") // polaroid | timeline | postcard
   backgroundColor String?
   daysJson        String? // { [dayIndex]: { title, subtitle } }
+  // The interactive flip-book: { look, pages: [{ id, layout, frame, photos, title, caption }] }
+  // (see lib/albumBook.ts). Null until the traveler builds or auto-builds one.
+  bookJson        String?
   shareToken      String? @unique
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

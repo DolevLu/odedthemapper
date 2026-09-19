@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import type { ThemeConfig } from "@/lib/theme/types";
 import { DigitalAlbumView } from "@/app/trip/[slug]/album/DigitalAlbumView";
 import { PrintButton } from "../../itinerary/[token]/PrintButton";
+import { parseBook } from "@/lib/albumBook";
+import { BookViewer } from "@/components/album/BookViewer";
+import { getLang } from "@/lib/i18n/server";
 
 export default async function SharedAlbumPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -25,6 +28,8 @@ export default async function SharedAlbumPage({ params }: { params: Promise<{ to
     }),
   ]);
 
+  const book = parseBook(settings.bookJson);
+  const lang = await getLang();
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-12 print:py-4">
       <div className="flex items-center justify-between gap-3 border-b pb-4 print:hidden" style={{ borderColor: "#1A1A1A22" }}>
@@ -39,6 +44,9 @@ export default async function SharedAlbumPage({ params }: { params: Promise<{ to
         <PrintButton />
       </div>
 
+      {book ? (
+        <BookViewer book={book} lang={lang} title={settings.destination.name} />
+      ) : (
       <DigitalAlbumView
         destinationName={settings.destination.name}
         theme={JSON.parse(settings.destination.themeConfig) as ThemeConfig}
@@ -50,6 +58,7 @@ export default async function SharedAlbumPage({ params }: { params: Promise<{ to
           days: settings.daysJson ? JSON.parse(settings.daysJson) : {},
         }}
       />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { saveUploadedFile } from "@/lib/uploads";
+import { parseBook, serializeBook } from "@/lib/albumBook";
 
 async function requireUserId() {
   const session = await auth();
@@ -74,6 +75,23 @@ export async function saveAlbumSettings(
       backgroundColor: settings.backgroundColor,
       daysJson: JSON.stringify(settings.days),
     },
+  });
+  revalidatePath(`/trip/${slug}/album`);
+}
+
+/** Saves the interactive album book. The JSON comes from the browser, so it is
+ * re-parsed and re-serialised through parseBook (layouts/frames whitelisted,
+ * URLs http(s) or same-origin only, text length-capped) before it is stored. */
+export async function saveAlbumBook(destinationId: string, slug: string, bookJson: string) {
+  const userId = await requireUserId();
+  if (bookJson.length > 200_000) throw new Error("האלבום גדול מדי");
+  const book = parseBook(bookJson);
+  if (!book) throw new Error("האלבום לא תקין");
+  const value = serializeBook(book);
+  await prisma.albumSettings.upsert({
+    where: { userId_destinationId: { userId, destinationId } },
+    update: { bookJson: value },
+    create: { userId, destinationId, bookJson: value },
   });
   revalidatePath(`/trip/${slug}/album`);
 }

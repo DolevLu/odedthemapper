@@ -8,6 +8,7 @@ import { AlbumGrid } from "./AlbumGrid";
 import { CollageBuilder } from "./CollageBuilder";
 import { DigitalAlbumView } from "./DigitalAlbumView";
 import { AlbumSettingsPanel } from "./AlbumSettingsPanel";
+import { AlbumBookPanel } from "@/components/album/AlbumBookPanel";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
@@ -35,6 +36,8 @@ export function AlbumScreen({
   curatedPhotos,
   tripDayCount,
   initialSettings,
+  samplePhotos,
+  initialBookJson,
 }: {
   slug: string;
   destinationId: string;
@@ -44,6 +47,8 @@ export function AlbumScreen({
   curatedPhotos: CuratedPhoto[];
   tripDayCount: number;
   initialSettings: { templateKey: string; backgroundColor: string | null; days: AlbumDaysConfig };
+  samplePhotos: { url: string; caption: string }[];
+  initialBookJson: string | null;
 }) {
   const [tab, setTab] = useState<TabKey>("upload");
   const { t, lang } = useTranslation();
@@ -91,8 +96,23 @@ export function AlbumScreen({
 
       {tab === "book" && (
         <div className="flex flex-col gap-5">
-          <AlbumSettingsPanel destinationId={destinationId} slug={slug} initialSettings={initialSettings} dayNumbers={titleableDayNumbers} />
-          <DigitalAlbumView destinationName={destinationName} theme={theme} media={media} curatedPhotos={curatedPhotos} settings={initialSettings} lang={lang} />
+          <AlbumBookPanel
+            destinationId={destinationId}
+            destinationName={destinationName}
+            slug={slug}
+            media={media}
+            samplePhotos={samplePhotos}
+            initialBookJson={initialBookJson}
+            dayConfig={initialSettings.days}
+            onGoUpload={() => setTab("upload")}
+          />
+          <details className="rounded-xl border p-3" style={{ borderColor: "rgba(0,0,0,.12)" }}>
+            <summary className="cursor-pointer text-sm font-semibold">{t("book.classic")}</summary>
+            <div className="mt-3 flex flex-col gap-5">
+              <AlbumSettingsPanel destinationId={destinationId} slug={slug} initialSettings={initialSettings} dayNumbers={titleableDayNumbers} />
+              <DigitalAlbumView destinationName={destinationName} theme={theme} media={media} curatedPhotos={curatedPhotos} settings={initialSettings} lang={lang} />
+            </div>
+          </details>
         </div>
       )}
     </div>

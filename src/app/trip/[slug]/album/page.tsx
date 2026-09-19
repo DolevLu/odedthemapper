@@ -17,7 +17,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   // Curated photos are the same for every visitor — no reason to hide them
   // behind login, matching every other free screen's "preview, don't block"
   // pattern instead of this one's old hard redirect to /login.
-  const [media, curatedPhotos, albumSettings, itineraryDayCount] = await Promise.all([
+  const [media, curatedPhotos, albumSettings, itineraryDayCount, samplePhotoRows] = await Promise.all([
     userId
       ? prisma.albumMedia.findMany({ where: { userId, destinationId: destination.id }, orderBy: { createdAt: "desc" } })
       : Promise.resolve([]),
@@ -32,6 +32,15 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     userId
       ? prisma.itineraryDay.count({ where: { itinerary: { userId, destinationId: destination.id, kind: "personal" } } })
       : Promise.resolve(0),
+    // The example album every destination ships with - built from this
+    // destination's own curated photos so it always looks like the place.
+    prisma.poiPhoto.findMany({
+      where: { poi: { category: { area: { destinationId: destination.id } } } },
+      include: { poi: { select: { name: true } } },
+      // Must-see places first: they are the photogenic ones.
+      orderBy: { poi: { isMustSee: "desc" } },
+      take: 12,
+    }),
   ]);
 
   const t = await getServerT();
@@ -52,6 +61,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         }))}
         curatedPhotos={curatedPhotos.map((p) => ({ id: p.id, url: p.url, caption: p.poi.name }))}
         tripDayCount={itineraryDayCount}
+        samplePhotos={samplePhotoRows.map((p) => ({ url: p.url, caption: p.poi.name }))}
+        initialBookJson={albumSettings?.bookJson ?? null}
         initialSettings={{
           templateKey: albumSettings?.templateKey ?? "polaroid",
           backgroundColor: albumSettings?.backgroundColor ?? null,
