@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { haversineKm } from "@/lib/geo";
 import { getAiChatDailyQuota } from "@/lib/access";
 import { consumeAiChatQuota } from "@/lib/aiChatQuota";
+import { geminiGenerate } from "@/lib/gemini";
 
 export type TraviSuggestion = { id: string; name: string; categoryName: string; areaName: string; distanceKm: number | null };
 export type TraviReply = { text: string; suggestions: TraviSuggestion[] };
@@ -154,12 +155,7 @@ ${liveContext}
 - לעולם אל תמציאו שם של מסעדה/בר/אטרקציה שלא הופיע ברשימה שסופקה.`;
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    const res = await geminiGenerate({
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: [{ role: "user", parts: [{ text: message }] }],
           // thinkingBudget:0 — confirmed live that without this, the current
@@ -170,16 +166,8 @@ ${liveContext}
           // slowness/timeouts, not just a theoretical risk. Travi's replies are
           // meant to be fast conversational answers, not deep reasoning.
           generationConfig: { maxOutputTokens: 1024, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
-        }),
-        // Confirmed live (this exact question, twice in a row) that the
-        // flash model can take longer than 15s to respond — 25s gives real
-        // slow responses a chance to land instead of forcing every one of
-        // them onto the FAQ fallback, which — while now covering every
-        // screen — is still a fixed canned answer rather than Gemini's
-        // actual understanding of arbitrary phrasing.
-        signal: AbortSignal.timeout(25000),
-      }
-    );
+        }, 25000);
+    if (!res) return null;
     if (!res.ok) {
       console.error("Gemini API error:", res.status, await res.text().catch(() => ""));
       return null;

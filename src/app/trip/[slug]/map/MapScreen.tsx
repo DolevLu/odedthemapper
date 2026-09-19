@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
@@ -9,6 +9,8 @@ import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile, getMyRouteDays } from "@/lib/actions/trip";
 import { voteSavedMapPin } from "@/lib/actions/group";
+import { googleDetailsFromPlace, type GoogleDetails } from "@/lib/googlePlaceDetails";
+import { AddToMapDialog } from "@/components/map/AddToMapDialog";
 import { ratePoi } from "@/lib/actions/memories";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon, SAVED_PIN_FALLBACK_COLOR, standardCategoryBucket, standardCategoryColor, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { pathForCategory } from "@/components/CategoryIcon";
@@ -127,39 +129,6 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
  * PlacesService data Google's card is built from and lays it out ourselves,
  * plus a direct link to open the real thing on Google Maps for anything
  * (reviews, full photo set) that genuinely can't be reproduced here. */
-type GoogleDetails = NonNullable<PendingSavePin["google"]>;
-
-/** Maps Google's place "types" onto the app's fixed pin categories so a saved
- * place starts out in a sensible category instead of the generic "אחר". */
-function suggestedCategoryFromTypes(types: string[] | undefined): string | null {
-  if (!types) return null;
-  const has = (...names: string[]) => names.some((n) => types.includes(n));
-  if (has("cafe", "bakery")) return "בתי קפה";
-  if (has("bar", "night_club")) return "ברים";
-  if (has("restaurant", "meal_takeaway", "meal_delivery", "food")) return "מסעדות";
-  if (has("park", "campground", "natural_feature")) return "פארקים";
-  if (has("subway_station", "train_station", "transit_station", "light_rail_station")) return "תחנות מטרו ורכבת";
-  if (has("locality", "sublocality", "administrative_area_level_1", "administrative_area_level_2")) return "ערים ועיירות";
-  if (has("tourist_attraction", "museum", "art_gallery", "church", "place_of_worship", "amusement_park", "zoo", "aquarium")) return "אטרקציות";
-  return null;
-}
-
-/** Everything worth keeping from Google's place card, in the shape the save
- * form posts. Photo is Google's own image URL (maxWidth 800). */
-function googleDetailsFromPlace(place: google.maps.places.PlaceResult): GoogleDetails {
-  return {
-    address: place.formatted_address ?? null,
-    phone: place.formatted_phone_number ?? null,
-    website: place.website ?? null,
-    url: place.url ?? null,
-    photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 800 }) ?? null,
-    rating: place.rating ?? null,
-    ratingCount: place.user_ratings_total ?? null,
-    hours: place.opening_hours?.weekday_text ?? null,
-    suggestedCategory: suggestedCategoryFromTypes(place.types),
-  };
-}
-
 function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId: string, lat: number, lng: number, lang: "he" | "en", t: (key: DictionaryKey) => string): string {
   const name = place.name ?? t("map.unnamedPlace");
   const photo = place.photos?.[0]
@@ -466,6 +435,11 @@ export function MapScreen({
   const [showGooglePois, setShowGooglePois] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const [pendingSavePin, setPendingSavePin] = useState<PendingSavePin | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const getMapCenter = useCallback(() => {
+    const c = mapRef.current?.getCenter();
+    return c ? { lat: c.lat(), lng: c.lng() } : null;
+  }, []);
   const [editingPin, setEditingPin] = useState<EditablePin | null>(null);
 
   useEffect(() => {
@@ -1745,7 +1719,7 @@ export function MapScreen({
           onChange={handlePersonalFileSelected}
         />
         <button
-          onClick={previewGate(() => personalUploadInputRef.current?.click())}
+          onClick={previewGate(() => setAddOpen(true))}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-md sm:h-7 sm:w-7"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--primary)", ...previewDim }}
           disabled={personalUploadStatus?.kind === "working"}
@@ -2093,6 +2067,15 @@ export function MapScreen({
         {listOpen && <div className="flex-1 overflow-y-auto overscroll-contain">{sortedList.map((poi) => renderListItem(poi))}</div>}
       </div>
     </div>
+    {addOpen && (
+      <AddToMapDialog
+        destinationId={destinationId}
+        slug={slug}
+        getCenter={getMapCenter}
+        onPickKml={() => personalUploadInputRef.current?.click()}
+        onClose={() => setAddOpen(false)}
+      />
+    )}
     {pendingSavePin && (
       <SavePinModal destinationId={destinationId} slug={slug} pin={pendingSavePin} isAdmin={isAdmin} onClose={() => setPendingSavePin(null)} />
     )}

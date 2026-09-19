@@ -5,6 +5,7 @@ import { saveMapPin } from "@/lib/actions/trip";
 import { SAVED_PIN_CATEGORY_OPTIONS, RESTAURANT_CATEGORY_MATCH } from "@/lib/mapStyles";
 import { DIETARY_FILTERS } from "@/components/KosherStar";
 import { useTranslation } from "@/components/i18n/LanguageContext";
+import type { GoogleDetails } from "@/lib/googlePlaceDetails";
 
 export type PendingSavePin = {
   placeId: string;
@@ -20,17 +21,7 @@ export type PendingSavePin = {
   categoryName?: string | null;
   /** Everything Google showed for this place - posted with the form so a
    * single click on Save keeps all of it. Absent when editing an existing pin. */
-  google?: {
-    address: string | null;
-    phone: string | null;
-    website: string | null;
-    url: string | null;
-    photoUrl: string | null;
-    rating: number | null;
-    ratingCount: number | null;
-    hours: string[] | null;
-    suggestedCategory: string | null;
-  };
+  google?: GoogleDetails;
 };
 
 /** Opened from the "💾 שמירה למפה" button (on a native Google POI or the
