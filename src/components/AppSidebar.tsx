@@ -75,9 +75,9 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
 
 function LiveDot() {
   return (
-    <span className="relative ms-1.5 inline-flex h-2 w-2 shrink-0 align-middle" aria-hidden>
+    <span className="relative ms-2 inline-flex h-2.5 w-2.5 shrink-0 align-middle" aria-hidden>
       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
     </span>
   );
 }
