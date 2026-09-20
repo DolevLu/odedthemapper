@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -54,74 +55,93 @@ public class MainActivity extends BridgeActivity {
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     super.onCreate(savedInstanceState);
 
-    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-        != PackageManager.PERMISSION_GRANTED) {
-      ActivityCompat.requestPermissions(
-          this,
-          new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-          LOCATION_PERMISSION_REQUEST
-      );
-    }
-
-    // Android 13+ (API 33) treats notifications as a "dangerous" permission
-    // requiring an explicit runtime grant, same as location above — without
-    // it, the account page's own web-standard Notification.requestPermission()
-    // call (see NotificationOptIn.tsx) resolves to denied with no OS prompt
-    // ever shown, since the WebView has no notification channel to grant in
-    // the first place. Requested up front here rather than lazily from the
-    // web page specifically because Android WebView has no equivalent of the
-    // onGeolocationPermissionsShowPrompt bridge callback for notifications —
-    // there's no reliable way to trigger the native dialog from JS at all.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-        && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED) {
-      ActivityCompat.requestPermissions(
-          this,
-          new String[] {Manifest.permission.POST_NOTIFICATIONS},
-          NOTIFICATION_PERMISSION_REQUEST
-      );
-    }
-
-    // Edge-to-edge (setDecorFitsSystemWindows(false) above) means the app
-    // owns every inset itself, including the on-screen keyboard's — without
-    // this, android:windowSoftInputMode="adjustResize" on its own wasn't
-    // enough to actually shrink the WebView when the keyboard opened
-    // (confirmed live: the points-list drawer, anchored to the page's own
-    // fixed bottom edge via CSS, stayed pinned under the keyboard with a
-    // stray gap above the real bottom nav — the web-side visualViewport
-    // fix alone can't help if the WebView's own Android View never
-    // resizes to begin with). Applying the IME inset as real bottom
-    // padding on the WebView is what actually shrinks it, which is what
-    // makes visualViewport correctly reflect the keyboard's height inside
-    // the page's own JS afterward.
-    ViewCompat.setOnApplyWindowInsetsListener(getBridge().getWebView(), (view, insets) -> {
-      int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-      view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), imeHeight);
-      return insets;
-    });
-
-    getBridge().getWebView().getSettings().setGeolocationEnabled(true);
-    getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
-      @Override
-      public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-        boolean granted =
-            ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED;
-        callback.invoke(origin, granted, false);
+    // Everything below is cosmetic/optional polish on top of the stock
+    // Capacitor activity. Each piece is isolated so that a failure in any one
+    // of them (a missing WebView provider, an OEM quirk, a permission dialog
+    // racing the activity lifecycle) degrades that one feature instead of
+    // crashing the app at launch.
+    try {
+      if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+          != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(
+            this,
+            new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+            LOCATION_PERMISSION_REQUEST
+        );
       }
-    });
 
-    // The app wraps a real remote site (see capacitor.config.ts) — there's no
-    // bundled local page to show instantly, so the WebView is blank white
-    // from the moment the OS's own native splash theme dismisses (right
-    // after onCreate) until the real page has fetched and painted, which
-    // over mobile data can take a couple of seconds and reads as "the app is
-    // frozen/slow" with zero feedback. This overlay keeps a branded, animated
-    // version of the splash badge on screen for that entire gap, then fades
-    // out the instant the WebView actually has something to show
-    // (onPageCommitVisible — first paint, not full page-load-complete, so it
-    // dismisses as early as it honestly can).
-    showLoadingOverlay();
+      // Android 13+ (API 33) treats notifications as a "dangerous" permission
+      // requiring an explicit runtime grant, same as location above — without
+      // it, the account page's own web-standard Notification.requestPermission()
+      // call (see NotificationOptIn.tsx) resolves to denied with no OS prompt
+      // ever shown, since the WebView has no notification channel to grant in
+      // the first place. Requested up front here rather than lazily from the
+      // web page specifically because Android WebView has no equivalent of the
+      // onGeolocationPermissionsShowPrompt bridge callback for notifications —
+      // there's no reliable way to trigger the native dialog from JS at all.
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+          && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+              != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(
+            this,
+            new String[] {Manifest.permission.POST_NOTIFICATIONS},
+            NOTIFICATION_PERMISSION_REQUEST
+        );
+      }
+    } catch (Throwable t) {
+      Log.e("Travi", "permission request failed", t);
+    }
+
+    if (getBridge() == null || getBridge().getWebView() == null) return;
+
+    try {
+      // Edge-to-edge (setDecorFitsSystemWindows(false) above) means the app
+      // owns every inset itself, including the on-screen keyboard's — without
+      // this, android:windowSoftInputMode="adjustResize" on its own wasn't
+      // enough to actually shrink the WebView when the keyboard opened
+      // (confirmed live: the points-list drawer, anchored to the page's own
+      // fixed bottom edge via CSS, stayed pinned under the keyboard with a
+      // stray gap above the real bottom nav — the web-side visualViewport
+      // fix alone can't help if the WebView's own Android View never
+      // resizes to begin with). Applying the IME inset as real bottom
+      // padding on the WebView is what actually shrinks it, which is what
+      // makes visualViewport correctly reflect the keyboard's height inside
+      // the page's own JS afterward.
+      ViewCompat.setOnApplyWindowInsetsListener(getBridge().getWebView(), (view, insets) -> {
+        int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), imeHeight);
+        return insets;
+      });
+
+      getBridge().getWebView().getSettings().setGeolocationEnabled(true);
+      getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
+        @Override
+        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+          boolean granted =
+              ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                  == PackageManager.PERMISSION_GRANTED;
+          callback.invoke(origin, granted, false);
+        }
+      });
+    } catch (Throwable t) {
+      Log.e("Travi", "webview setup failed", t);
+    }
+
+    try {
+      // The app wraps a real remote site (see capacitor.config.ts) — there's no
+      // bundled local page to show instantly, so the WebView is blank white
+      // from the moment the OS's own native splash theme dismisses (right
+      // after onCreate) until the real page has fetched and painted, which
+      // over mobile data can take a couple of seconds and reads as "the app is
+      // frozen/slow" with zero feedback. This overlay keeps a branded, animated
+      // version of the splash badge on screen for that entire gap, then fades
+      // out the instant the WebView actually has something to show
+      // (onPageCommitVisible — first paint, not full page-load-complete, so it
+      // dismisses as early as it honestly can).
+      showLoadingOverlay();
+    } catch (Throwable t) {
+      Log.e("Travi", "loading overlay failed", t);
+    }
   }
 
   private void showLoadingOverlay() {
@@ -149,6 +169,16 @@ public class MainActivity extends BridgeActivity {
       ((ObjectAnimator) anim).setRepeatMode(ObjectAnimator.REVERSE);
     }
     pulse.start();
+
+    // Safety net: if the page never commits (offline, DNS failure), don't leave
+    // the app stuck behind the overlay forever — let the WebView's own error
+    // page show through instead.
+    overlay.postDelayed(() -> {
+      pulse.cancel();
+      if (overlay.getParent() != null) {
+        ((ViewGroup) overlay.getParent()).removeView(overlay);
+      }
+    }, 12000);
 
     getBridge().getWebView().setWebViewClient(new BridgeWebViewClient(getBridge()) {
       @Override
