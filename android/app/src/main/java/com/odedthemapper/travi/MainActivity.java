@@ -107,11 +107,26 @@ public class MainActivity extends BridgeActivity {
       // padding on the WebView is what actually shrinks it, which is what
       // makes visualViewport correctly reflect the keyboard's height inside
       // the page's own JS afterward.
+      // Android 15+ (targetSdk 35/36) forces edge-to-edge: the app draws under the
+      // status and navigation bars and the WebView reports NO safe-area insets
+      // to the page, so the web layout stretched under both bars. Reserve the
+      // system bars (and the keyboard, when open) natively as padding and
+      // consume the insets so the page's own env(safe-area-inset-*) stays 0
+      // instead of being counted twice.
       ViewCompat.setOnApplyWindowInsetsListener(getBridge().getWebView(), (view, insets) -> {
+        androidx.core.graphics.Insets bars =
+            insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
         int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), imeHeight);
-        return insets;
+        view.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, imeHeight));
+        return WindowInsetsCompat.CONSUMED;
       });
+      ViewCompat.requestApplyInsets(getBridge().getWebView());
+      // The padded-out bar areas show the window background — match the page
+      // (cream) instead of the black a null background gives, and use dark
+      // status/nav icons so they stay readable on it.
+      getWindow().getDecorView().setBackgroundColor(0xFFFBF6EE);
+      androidx.core.view.WindowInsetsControllerCompat ctl = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+      ctl.setAppearanceLightStatusBars(true);
 
       getBridge().getWebView().getSettings().setGeolocationEnabled(true);
       getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
@@ -170,20 +185,85 @@ public class MainActivity extends BridgeActivity {
     }
     pulse.start();
 
-    // Safety net: if the page never commits (offline, DNS failure), don't leave
-    // the app stuck behind the overlay forever — let the WebView's own error
-    // page show through instead.
-    overlay.postDelayed(() -> {
-      pulse.cancel();
-      if (overlay.getParent() != null) {
-        ((ViewGroup) overlay.getParent()).removeView(overlay);
-      }
-    }, 12000);
+    final String startUrl = getBridge().getServerUrl();
+    final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    final int[] failures = {0};
+    final boolean[] failing = {false};
+
+    // The WebView's own "page couldn't load" screen must never be what the
+    // user sees: a main-frame failure right at cold start (network not ready
+    // yet, radio waking up) is usually gone a moment later. So keep the
+    // branded overlay up and quietly retry; only after several failures show
+    // a native message with the real error and a retry button.
+    Runnable[] retry = new Runnable[1];
+    final android.widget.TextView message = new android.widget.TextView(this);
+    message.setTextColor(Color.DKGRAY);
+    message.setTextSize(15);
+    message.setGravity(Gravity.CENTER);
+    message.setVisibility(android.view.View.GONE);
+    final android.widget.Button retryButton = new android.widget.Button(this);
+    retryButton.setText("נסו שוב");
+    retryButton.setVisibility(android.view.View.GONE);
+    FrameLayout.LayoutParams msgParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+    msgParams.setMargins(dpToPx(24), dpToPx(120), dpToPx(24), 0);
+    overlay.addView(message, msgParams);
+    FrameLayout.LayoutParams btnParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+    btnParams.setMargins(0, dpToPx(260), 0, 0);
+    overlay.addView(retryButton, btnParams);
+
+    retry[0] = () -> {
+      if (getBridge() != null && getBridge().getWebView() != null) getBridge().getWebView().loadUrl(startUrl);
+    };
+    retryButton.setOnClickListener(v -> {
+      failures[0] = 0;
+      message.setVisibility(android.view.View.GONE);
+      retryButton.setVisibility(android.view.View.GONE);
+      badge.setVisibility(android.view.View.VISIBLE);
+      handler.post(retry[0]);
+    });
 
     getBridge().getWebView().setWebViewClient(new BridgeWebViewClient(getBridge()) {
+      private void onMainFrameFailed(String description) {
+        failing[0] = true;
+        failures[0]++;
+        if (failures[0] <= 6) {
+          handler.postDelayed(retry[0], Math.min(4000, 700L * failures[0]));
+        } else {
+          badge.setVisibility(android.view.View.GONE);
+          message.setText("לא הצלחנו להתחבר לטראבי.\nבדקו את החיבור לאינטרנט ונסו שוב.\n(" + description + ")");
+          message.setVisibility(android.view.View.VISIBLE);
+          retryButton.setVisibility(android.view.View.VISIBLE);
+        }
+      }
+
+      @Override
+      public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+        super.onPageStarted(view, url, favicon);
+        failing[0] = false;
+      }
+
+      @Override
+      public void onReceivedError(WebView view, android.webkit.WebResourceRequest request, android.webkit.WebResourceError error) {
+        if (request.isForMainFrame()) {
+          onMainFrameFailed(error.getDescription() + "");
+          return; // deliberately NOT calling super: no error page / errorPath navigation
+        }
+        super.onReceivedError(view, request, error);
+      }
+
+      @Override
+      public void onReceivedHttpError(WebView view, android.webkit.WebResourceRequest request, android.webkit.WebResourceResponse errorResponse) {
+        super.onReceivedHttpError(view, request, errorResponse);
+        if (request.isForMainFrame() && errorResponse.getStatusCode() >= 500) {
+          onMainFrameFailed("HTTP " + errorResponse.getStatusCode());
+        }
+      }
+
       @Override
       public void onPageCommitVisible(WebView view, String url) {
         super.onPageCommitVisible(view, url);
+        if (failing[0]) return; // that was an error page, not the app
+        failures[0] = 0;
         pulse.cancel();
         overlay.animate().alpha(0f).setDuration(250).withEndAction(() -> {
           if (overlay.getParent() != null) {
