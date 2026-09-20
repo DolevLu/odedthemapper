@@ -80,7 +80,7 @@ export function ItineraryDaysView({
 
   if (hideHeader) {
     return (
-      <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
+      <DayCard key={focusedDay.id} day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
     );
   }
 
@@ -157,7 +157,7 @@ export function ItineraryDaysView({
           {/* Independently scrollable on desktop so a long day's stop list
            * doesn't push this column taller than the route map beside it. */}
           <div className="min-h-0 flex-1 overflow-y-auto pe-1">
-            <DayCard day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
+            <DayCard key={focusedDay.id} day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
           </div>
         </div>
       )}
@@ -189,6 +189,12 @@ function DayCard({
   // which reset the date picker out from under whoever was still using it
   // (same bug, same fix as DayItemsList's time input — see its own comment).
   const [localDate, setLocalDate] = useState(day.date ?? "");
+  // Follow the server value when it changes underneath us (e.g. a re-sort).
+  const [seenDate, setSeenDate] = useState(day.date ?? "");
+  if ((day.date ?? "") !== seenDate) {
+    setSeenDate(day.date ?? "");
+    setLocalDate(day.date ?? "");
+  }
   const { t } = useTranslation();
   const [shownItems, addOptimisticItem] = useOptimistic(day.items, (state: DayListItem[], item: DayListItem) => [...state, item]);
 
