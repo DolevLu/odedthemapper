@@ -95,38 +95,12 @@ public class MainActivity extends BridgeActivity {
     if (getBridge() == null || getBridge().getWebView() == null) return;
 
     try {
-      // Edge-to-edge (setDecorFitsSystemWindows(false) above) means the app
-      // owns every inset itself, including the on-screen keyboard's — without
-      // this, android:windowSoftInputMode="adjustResize" on its own wasn't
-      // enough to actually shrink the WebView when the keyboard opened
-      // (confirmed live: the points-list drawer, anchored to the page's own
-      // fixed bottom edge via CSS, stayed pinned under the keyboard with a
-      // stray gap above the real bottom nav — the web-side visualViewport
-      // fix alone can't help if the WebView's own Android View never
-      // resizes to begin with). Applying the IME inset as real bottom
-      // padding on the WebView is what actually shrinks it, which is what
-      // makes visualViewport correctly reflect the keyboard's height inside
-      // the page's own JS afterward.
-      // Android 15+ (targetSdk 35/36) forces edge-to-edge: the app draws under the
-      // status and navigation bars and the WebView reports NO safe-area insets
-      // to the page, so the web layout stretched under both bars. Reserve the
-      // system bars (and the keyboard, when open) natively as padding and
-      // consume the insets so the page's own env(safe-area-inset-*) stays 0
-      // instead of being counted twice.
-      ViewCompat.setOnApplyWindowInsetsListener(getBridge().getWebView(), (view, insets) -> {
-        androidx.core.graphics.Insets bars =
-            insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-        int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-        view.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, imeHeight));
-        return WindowInsetsCompat.CONSUMED;
-      });
-      ViewCompat.requestApplyInsets(getBridge().getWebView());
-      // The padded-out bar areas show the window background — match the page
-      // (cream) instead of the black a null background gives, and use dark
-      // status/nav icons so they stay readable on it.
-      getWindow().getDecorView().setBackgroundColor(0xFFFBF6EE);
-      androidx.core.view.WindowInsetsControllerCompat ctl = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-      ctl.setAppearanceLightStatusBars(true);
+      // NOTE: no custom window-insets listener on the WebView. Capacitor 8's
+      // SystemBars plugin already owns insets (safe-area CSS vars + keyboard
+      // padding on the WebView's parent). A listener set directly on the WebView
+      // REPLACES the WebView's own inset handling, so the page received no
+      // safe-area insets and its bottom nav/top bar were laid out under the
+      // Android system bars.
 
       getBridge().getWebView().getSettings().setGeolocationEnabled(true);
       getBridge().getWebView().setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
@@ -189,6 +163,15 @@ public class MainActivity extends BridgeActivity {
     final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     final int[] failures = {0};
     final boolean[] failing = {false};
+    final Runnable reveal = () -> {
+      failures[0] = 0;
+      pulse.cancel();
+      overlay.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+        if (overlay.getParent() != null) {
+          ((ViewGroup) overlay.getParent()).removeView(overlay);
+        }
+      }).start();
+    };
 
     // The WebView's own "page couldn't load" screen must never be what the
     // user sees: a main-frame failure right at cold start (network not ready
@@ -222,18 +205,28 @@ public class MainActivity extends BridgeActivity {
       handler.post(retry[0]);
     });
 
+    final java.util.function.Consumer<String> failNow = (description) -> {
+      failing[0] = true;
+      failures[0]++;
+      if (failures[0] <= 6) {
+        handler.postDelayed(retry[0], Math.min(4000, 700L * failures[0]));
+      } else {
+        badge.setVisibility(android.view.View.GONE);
+        message.setText("לא הצלחנו להתחבר לטראבי.\nבדקו את החיבור לאינטרנט ונסו שוב.\n(" + description + ")");
+        message.setVisibility(android.view.View.VISIBLE);
+        retryButton.setVisibility(android.view.View.VISIBLE);
+      }
+    };
+
+    // Hard ceiling: a page that never reports finished must not hold the app
+    // behind the overlay forever.
+    handler.postDelayed(() -> {
+      if (!failing[0] && overlay.getParent() != null) reveal.run();
+    }, 25000);
+
     getBridge().getWebView().setWebViewClient(new BridgeWebViewClient(getBridge()) {
       private void onMainFrameFailed(String description) {
-        failing[0] = true;
-        failures[0]++;
-        if (failures[0] <= 6) {
-          handler.postDelayed(retry[0], Math.min(4000, 700L * failures[0]));
-        } else {
-          badge.setVisibility(android.view.View.GONE);
-          message.setText("לא הצלחנו להתחבר לטראבי.\nבדקו את החיבור לאינטרנט ונסו שוב.\n(" + description + ")");
-          message.setVisibility(android.view.View.VISIBLE);
-          retryButton.setVisibility(android.view.View.VISIBLE);
-        }
+        failNow.accept(description);
       }
 
       @Override
@@ -260,16 +253,28 @@ public class MainActivity extends BridgeActivity {
       }
 
       @Override
-      public void onPageCommitVisible(WebView view, String url) {
-        super.onPageCommitVisible(view, url);
-        if (failing[0]) return; // that was an error page, not the app
-        failures[0] = 0;
-        pulse.cancel();
-        overlay.animate().alpha(0f).setDuration(250).withEndAction(() -> {
-          if (overlay.getParent() != null) {
-            ((ViewGroup) overlay.getParent()).removeView(overlay);
-          }
-        }).start();
+      public void onPageFinished(WebView view, String url) {
+        super.onPageFinished(view, url);
+        if (failing[0] || overlay.getParent() == null) return;
+        // Only reveal the page once a quick look at it confirms it is the
+        // real app. Next's own "This page couldn't load" screen (server
+        // error, or a client exception right after hydration) and the
+        // service worker's offline fallback are both perfectly valid HTML as
+        // far as the WebView is concerned, so they are recognised by their
+        // text and retried behind the overlay instead of ever being shown.
+        handler.postDelayed(() -> {
+          if (failing[0] || getBridge() == null || overlay.getParent() == null) return;
+          view.evaluateJavascript(
+              "(function(){try{var t=(document.title||'')+' '+((document.body&&document.body.innerText)||'').slice(0,600);"
+                  + "return /^500:|This page couldn.t load|A server error occurred|Application error: a (client|server)-side exception|אין חיבור לאינטרנט/.test(t)}catch(e){return false}})()",
+              result -> {
+                if ("true".equals(result)) {
+                  onMainFrameFailed("error page");
+                } else {
+                  reveal.run();
+                }
+              });
+        }, 900);
       }
     });
   }
