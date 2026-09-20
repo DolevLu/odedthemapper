@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { getGroupFeed, markGroupFeedSeen, type GroupFeed } from "@/lib/actions/group";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
-const POLL_MS = 30_000;
+// Each poll is a DB round trip on a pooler with very few connections, so it is
+// deliberately slow and skipped entirely while the tab/app is in the background.
+const POLL_MS = 60_000;
 
 function timeAgo(iso: string, lang: "he" | "en"): string {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -55,7 +57,9 @@ export function GroupBell({ isLoggedIn, compact = false }: { isLoggedIn: boolean
   useEffect(() => {
     if (!isLoggedIn) return;
     void load();
-    const id = setInterval(() => void load(), POLL_MS);
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, POLL_MS);
     const onFocus = () => void load();
     window.addEventListener("focus", onFocus);
     return () => {
