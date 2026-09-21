@@ -109,16 +109,80 @@ public class MainActivity extends BridgeActivity {
     }
     pulse.start();
 
+    // The overlay stays up until the page on screen is verifiably the real
+    // app. Dismissing it at first paint (onPageCommitVisible) showed whatever
+    // was painted first — including Next's "This page couldn't load" error
+    // page or a WebView network-error page — for a moment before the real
+    // page replaced it. Instead: on a load error, or if the loaded page turns
+    // out to be an error page, reload quietly behind the overlay.
+    final String startUrl = getBridge().getServerUrl();
+    final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    final int[] attempts = {0};
+    final boolean[] failed = {false};
+    final Runnable reveal = () -> {
+      pulse.cancel();
+      overlay.animate().alpha(0f).setDuration(250).withEndAction(() -> {
+        if (overlay.getParent() != null) {
+          ((ViewGroup) overlay.getParent()).removeView(overlay);
+        }
+      }).start();
+    };
+    final Runnable reload = () -> {
+      if (overlay.getParent() != null) getBridge().getWebView().loadUrl(startUrl);
+    };
+    final Runnable onFailure = () -> {
+      failed[0] = true;
+      attempts[0]++;
+      // Past the retry budget, stop hiding it: let whatever the WebView has
+      // show, rather than trapping the user behind the logo forever.
+      if (attempts[0] > 8) reveal.run();
+      else handler.postDelayed(reload, Math.min(3000, 600L * attempts[0]));
+    };
+    // Absolute ceiling for a page that never reports finished.
+    handler.postDelayed(() -> {
+      if (overlay.getParent() != null) reveal.run();
+    }, 30000);
+
     getBridge().getWebView().setWebViewClient(new BridgeWebViewClient(getBridge()) {
       @Override
-      public void onPageCommitVisible(WebView view, String url) {
-        super.onPageCommitVisible(view, url);
-        pulse.cancel();
-        overlay.animate().alpha(0f).setDuration(250).withEndAction(() -> {
-          if (overlay.getParent() != null) {
-            ((ViewGroup) overlay.getParent()).removeView(overlay);
-          }
-        }).start();
+      public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+        super.onPageStarted(view, url, favicon);
+        failed[0] = false;
+      }
+
+      @Override
+      public void onReceivedError(WebView view, android.webkit.WebResourceRequest request, android.webkit.WebResourceError error) {
+        if (overlay.getParent() != null && request.isForMainFrame()) {
+          onFailure.run();
+          return; // no WebView error page / Capacitor error-path navigation
+        }
+        super.onReceivedError(view, request, error);
+      }
+
+      @Override
+      public void onReceivedHttpError(WebView view, android.webkit.WebResourceRequest request, android.webkit.WebResourceResponse errorResponse) {
+        super.onReceivedHttpError(view, request, errorResponse);
+        if (overlay.getParent() != null && request.isForMainFrame() && errorResponse.getStatusCode() >= 500) {
+          onFailure.run();
+        }
+      }
+
+      @Override
+      public void onPageFinished(WebView view, String url) {
+        super.onPageFinished(view, url);
+        if (failed[0] || overlay.getParent() == null) return;
+        // Give hydration a moment (a client-side exception replaces the page
+        // with the error screen right after it), then look at the page text.
+        handler.postDelayed(() -> {
+          if (failed[0] || overlay.getParent() == null) return;
+          view.evaluateJavascript(
+              "(function(){try{var t=(document.title||'')+' '+((document.body&&document.body.innerText)||'').slice(0,600);"
+                  + "return /^500:|This page couldn.t load|A server error occurred|Application error: a (client|server)-side exception|אין חיבור לאינטרנט/.test(t)}catch(e){return false}})()",
+              result -> {
+                if ("true".equals(result)) onFailure.run();
+                else reveal.run();
+              });
+        }, 1200);
       }
     });
   }

@@ -47,3 +47,6 @@ next-env.d.ts
 # user-uploaded content (runtime-generated, not source)
 /public/uploads/
 .claude/settings.local.json
+
+# signed Android builds (kept locally, never committed)
+/releases/
