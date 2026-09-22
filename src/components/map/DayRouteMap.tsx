@@ -50,12 +50,25 @@ const LABEL_ZOOM_THRESHOLD = 16;
  * google.maps.Symbol (the plain SymbolPath.CIRCLE icon this replaces)
  * doesn't support labelOrigin — only an Icon (image/data-url) does — which
  * is the real reason this needs to be an SVG icon instead of a Symbol. */
-function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean): google.maps.Icon {
+// Green = DONE_COLOR everywhere below (points, ring, the walked portion of
+// the route line) — one constant so all three visibly agree with each other.
+const DONE_COLOR = "#22C55E";
+
+function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean, isDone: boolean): google.maps.Icon {
   const scale = isCurrent ? 13 : 10;
   const size = scale * 2;
+  // A stop already reached today (its time-of-day is at or before right now,
+  // and it's earlier in the day than the current stop) fills solid green —
+  // "already done" — same idea as the day view's own current/next highlight,
+  // extended backward to the whole walked stretch instead of just the one
+  // stop happening right now. The current stop itself keeps its own
+  // distinct treatment (day color + green ring, bigger) rather than also
+  // going solid green, so "here right now" still reads differently from
+  // "already visited".
+  const fill = isDone ? DONE_COLOR : color;
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <circle cx="${scale}" cy="${scale}" r="${scale - 1.5}" fill="${color}" stroke="${isCurrent ? "#22C55E" : "white"}" stroke-width="${isCurrent ? 3 : 2}" />
+      <circle cx="${scale}" cy="${scale}" r="${scale - 1.5}" fill="${fill}" stroke="${isCurrent ? DONE_COLOR : "white"}" stroke-width="${isCurrent ? 3 : 2}" />
       <text x="${scale}" y="${scale + 4}" font-size="11" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="white">${stopNumber}</text>
     </svg>`;
   return {
@@ -190,8 +203,31 @@ export function DayRouteMap({
       const color = colorForDay(day.dayIndex - 1);
 
       const path = day.points.map((p) => ({ lat: p.lat, lng: p.lng }));
+      const currentId = day.dayIndex === todayDayIndex ? currentPointId(day.points) : null;
+      const currentIndex = currentId ? day.points.findIndex((p) => p.id === currentId) : -1;
+
+      // The stretch already walked today (stop 0 through the current stop)
+      // draws in green, on top of the day's own normal-colored line for the
+      // stretch still ahead — same "where am I" cue as the numbered stops
+      // themselves, extended to the route line connecting them. A separate
+      // polyline rather than one with a gradient stroke (Maps' Polyline
+      // doesn't support one) — the two segments share the current stop's
+      // point so there's no visible gap between them.
+      if (currentIndex > 0) {
+        const donePath = path.slice(0, currentIndex + 1);
+        const donePolyline = new google.maps.Polyline({
+          path: donePath,
+          strokeColor: DONE_COLOR,
+          strokeWeight: 4,
+          strokeOpacity: 0.9,
+          zIndex: 10,
+          map: mapRef.current!,
+        });
+        overlaysRef.current.push(donePolyline);
+      }
+      const remainingPath = currentIndex > 0 ? path.slice(currentIndex) : path;
       const polyline = new google.maps.Polyline({
-        path,
+        path: remainingPath,
         strokeColor: color,
         strokeWeight: 3,
         strokeOpacity: 0.8,
@@ -224,13 +260,13 @@ export function DayRouteMap({
         overlaysRef.current.push(transportMarker);
       }
 
-      const currentId = day.dayIndex === todayDayIndex ? currentPointId(day.points) : null;
       day.points.forEach((p, idx) => {
-        const isCurrent = p.id === currentId;
+        const isCurrent = idx === currentIndex;
+        const isDone = currentIndex > 0 && idx < currentIndex;
         const marker = new google.maps.Marker({
           position: { lat: p.lat, lng: p.lng },
           map: mapRef.current!,
-          title: `יום ${day.dayIndex} · ${p.name}${isCurrent ? " (עכשיו)" : ""}`,
+          title: `יום ${day.dayIndex} · ${p.name}${isCurrent ? " (עכשיו)" : isDone ? " (בוצע)" : ""}`,
           // Same "where am I" cue as the list view's green highlight — a
           // slightly bigger circle with a green ring instead of the usual
           // white one, so the current stop reads at a glance on the map too.
@@ -238,8 +274,8 @@ export function DayRouteMap({
           // numberedStopIcon) rather than using .label — that slot is
           // reserved for the POI name tag shown once zoomed in (below),
           // matching the Map screen's own points.
-          icon: numberedStopIcon(idx + 1, color, isCurrent),
-          zIndex: isCurrent ? 500 : undefined,
+          icon: numberedStopIcon(idx + 1, color, isCurrent, isDone),
+          zIndex: isCurrent ? 500 : isDone ? 100 : undefined,
         });
         marker.addListener("click", () => {
           infoWindowRef.current?.setContent(infoWindowHtml(p, day.dayIndex, days.length, Boolean(onMoveToDayRef.current)));
