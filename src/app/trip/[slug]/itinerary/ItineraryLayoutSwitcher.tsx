@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { moveItineraryItemToDay } from "@/lib/actions/trip";
-import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
+import { DayRouteMap, type MapDay, type OtherPoi } from "@/components/map/DayRouteMap";
 import { ItineraryDaysView } from "./ItineraryDaysView";
 import type { DayListItem } from "./DayItemsList";
 import { ItineraryMobileView } from "./ItineraryMobileView";
@@ -33,6 +33,7 @@ export function ItineraryLayoutSwitcher({
   categoryNames,
   areas,
   todayDayIndex,
+  otherPois,
 }: {
   slug: string;
   destinationId: string;
@@ -47,6 +48,9 @@ export function ItineraryLayoutSwitcher({
    * resolveTodayDayIndex) — null when there's no trip-start date set or
    * today falls outside the trip's span. */
   todayDayIndex: number | null;
+  /** Every other curated point on this destination — see DayRouteMap's own
+   * "ghost dot" layer. */
+  otherPois: OtherPoi[];
 }) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
@@ -96,6 +100,7 @@ export function ItineraryLayoutSwitcher({
         categoryNames={categoryNames}
         areas={areas}
         todayDayIndex={todayDayIndex}
+        otherPois={otherPois}
       />
     );
   }
@@ -163,6 +168,7 @@ export function ItineraryLayoutSwitcher({
             todayDayIndex={todayDayIndex}
             activeDayIndex={mapOverride !== undefined ? mapOverride : focusedDayIndex}
             onActiveDayIndexChange={setMapOverride}
+            otherPois={otherPois}
           />
         </div>
       )}

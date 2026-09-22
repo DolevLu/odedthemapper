@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getDestinationBySlug } from "@/lib/data/destinations";
-import { getPoiOptionsForDestination, extractTextDescription } from "@/lib/data/pois";
+import { getPoiOptionsForDestination, getFlatPoisForDestination, extractTextDescription } from "@/lib/data/pois";
+import type { OtherPoi } from "@/components/map/DayRouteMap";
 import { getAccessLevel, resolveItineraryOwnerId } from "@/lib/access";
 import { resolveEffectiveTodayDayIndex } from "@/lib/tripSchedule";
 import { prisma } from "@/lib/prisma";
@@ -35,7 +36,7 @@ export default async function ItineraryPage({
   const ownerId = await resolveItineraryOwnerId(userId);
   const t = await getServerT();
 
-  const [itinerary, poiOptions, areas, templates, logistics] = await Promise.all([
+  const [itinerary, poiOptions, areas, templates, logistics, flatPois] = await Promise.all([
     prisma.itinerary.findUnique({
       where: { userId_destinationId_kind: { userId: ownerId, destinationId: destination.id, kind: "personal" } },
       include: {
@@ -60,6 +61,13 @@ export default async function ItineraryPage({
     // lookup on, so the two screens agree on which single day is "today"
     // instead of each computing it a different way (see resolveEffectiveTodayDayIndex).
     prisma.tripLogistic.findMany({ where: { userId, destinationId: destination.id, startsAt: { not: null } } }),
+    // Every curated point on this destination's real map — see DayRouteMap's
+    // own "other points" layer: small grey ghost dots showing what's nearby
+    // while following the planned route, each revealing its real color/icon
+    // and details on click. getFlatPoisForDestination is already Data-Cache
+    // wrapped (1h revalidate, tag-invalidated on content edits), so this
+    // costs nothing extra beyond the Map/Now screens already paying for it.
+    getFlatPoisForDestination(destination.id),
   ]);
   const todayDayIndex = resolveEffectiveTodayDayIndex(
     logistics,
@@ -110,6 +118,26 @@ export default async function ItineraryPage({
       return [];
     }),
   }));
+
+  // The "planned route" IDs (real POI ids only — a custom hand-dropped stop
+  // has no corresponding flatPois entry to duplicate anyway) get excluded
+  // from the ghost layer below, so a point already shown as a big numbered
+  // stop never ALSO shows as a small grey dot sitting right on top of it.
+  const plannedPoiIds = new Set((itinerary?.days ?? []).flatMap((day) => day.items.flatMap((i) => (i.poi ? [i.poiId!] : []))));
+  const otherPois: OtherPoi[] = flatPois
+    .filter((p) => p.geometryType === "point" && !plannedPoiIds.has(p.id))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      lat: p.lat,
+      lng: p.lng,
+      categoryName: p.categoryName,
+      categoryColor: p.categoryColor,
+      colorHex: p.colorHex,
+      iconCategory: p.iconCategory,
+      photoUrl: p.photoUrl,
+      description: p.description,
+    }));
 
   const dayListDays = (itinerary?.days ?? []).map((day) => ({
     id: day.id,
@@ -195,6 +223,7 @@ export default async function ItineraryPage({
         categoryNames={categoryNames}
         areas={areas}
         todayDayIndex={todayDayIndex}
+        otherPois={otherPois}
       />
     </div>
   );

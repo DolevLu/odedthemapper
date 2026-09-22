@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colorForDay } from "@/lib/geo";
 import { moveItineraryItemToDay } from "@/lib/actions/trip";
-import { DayRouteMap, type MapDay } from "@/components/map/DayRouteMap";
+import { DayRouteMap, type MapDay, type OtherPoi } from "@/components/map/DayRouteMap";
 import { ItineraryDaysView } from "./ItineraryDaysView";
 import type { DayListItem } from "./DayItemsList";
 import { ItineraryTopBar } from "./ItineraryTopBar";
@@ -65,6 +65,7 @@ export function ItineraryMobileView({
   categoryNames,
   areas,
   todayDayIndex,
+  otherPois,
 }: {
   slug: string;
   destinationId: string;
@@ -79,6 +80,9 @@ export function ItineraryMobileView({
    * resolveTodayDayIndex) — null when there's no trip-start date set or
    * today falls outside the trip's span. */
   todayDayIndex: number | null;
+  /** Every other curated point on this destination — see DayRouteMap's own
+   * "ghost dot" layer. */
+  otherPois: OtherPoi[];
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -180,6 +184,7 @@ export function ItineraryMobileView({
         onActiveDayIndexChange={(d) => d != null && setFocusedDayIndex(d)}
         onMoveToDay={handleMoveToDay}
         todayDayIndex={todayDayIndex}
+        otherPois={otherPois}
       />
 
       {/* Floats over the map, at the very top — the map's own Map/Satellite

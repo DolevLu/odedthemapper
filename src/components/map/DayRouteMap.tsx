@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { colorForDay, haversineKm, transportIconFor } from "@/lib/geo";
-import { DECLUTTERED_MAP_STYLES } from "@/lib/mapStyles";
+import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
 
 export type MapDay = {
   dayIndex: number;
@@ -16,6 +16,24 @@ export type MapDay = {
     photoUrl?: string | null;
     timeOfDay?: string | null;
   }[];
+};
+
+/** Every other curated point on this destination's real map, NOT part of the
+ * planned route — rendered as small grey "ghost" dots so following the route
+ * doesn't mean losing sight of what's actually nearby (see the click-to-
+ * reveal marker layer below). Same shape as MapScreen's own FlatPoi, trimmed
+ * to just what a marker + a lightweight popup need. */
+export type OtherPoi = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  categoryName: string;
+  categoryColor: string;
+  colorHex: string | null;
+  iconCategory: string | null;
+  photoUrl: string | null;
+  description: string | null;
 };
 
 /** Same "where am I" cue as DayItemsList's timeStatusMap — the last
@@ -79,6 +97,30 @@ function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean,
   };
 }
 
+// Deliberately tiny and plain grey — a passive "here's what else is around"
+// layer, not competing with the route's own numbered stops for attention.
+function ghostDotIcon(): google.maps.Icon {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10">
+      <circle cx="5" cy="5" r="3.5" fill="#9CA3AF" stroke="white" stroke-width="1.5" />
+    </svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(10, 10),
+    anchor: new google.maps.Point(5, 5),
+  };
+}
+
+function otherPoiInfoWindowHtml(p: OtherPoi): string {
+  const photo = p.photoUrl
+    ? `<img src="${p.photoUrl}" alt="" style="width:200px;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+    : "";
+  const description = p.description
+    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${p.description.slice(0, 200)}</div>`
+    : "";
+  return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong><div style="font-size:11px;opacity:.6;margin-top:2px">${p.categoryName}</div>${description}</div>`;
+}
+
 function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, totalDays: number, movable: boolean): string {
   const photo = p.photoUrl
     ? `<img src="${p.photoUrl}" alt="" style="width:200px;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
@@ -108,6 +150,7 @@ export function DayRouteMap({
   onActiveDayIndexChange,
   onMoveToDay,
   todayDayIndex = null,
+  otherPois = [],
 }: {
   days: MapDay[];
   fillHeight?: boolean;
@@ -130,6 +173,10 @@ export function DayRouteMap({
    * only ever appears on the one day genuinely happening right now, not on
    * any day whose stop time-of-day happens to match the clock. */
   todayDayIndex?: number | null;
+  /** Every other curated point on this destination, shown as small grey
+   * ghost dots so the route stays the visual focus while what's actually
+   * nearby is still one click away — see OtherPoi. */
+  otherPois?: OtherPoi[];
 }) {
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -143,6 +190,14 @@ export function DayRouteMap({
   // midpoint markers or needing to rebuild anything.
   const stopMarkersRef = useRef<Map<string, { marker: google.maps.Marker; name: string }>>(new Map());
   const labeledStopIdsRef = useRef<Set<string>>(new Set());
+  // The ghost layer's own markers, separate from overlaysRef (which gets
+  // torn down and rebuilt on every day-filter change) — these don't depend
+  // on which day is active, so they're managed independently and only
+  // rebuilt when the underlying otherPois list itself changes.
+  const otherPoiMarkersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const revealedOtherPoiIdsRef = useRef<Set<string>>(new Set());
+  const watchIdRef = useRef<number | null>(null);
+  const userMarkerRef = useRef<google.maps.Marker | null>(null);
 
   const [internalActiveDayIndex, setInternalActiveDayIndex] = useState<number | null>(null);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
@@ -289,6 +344,82 @@ export function DayRouteMap({
 
     if (!bounds.isEmpty()) mapRef.current.fitBounds(bounds);
   }, [loaded, days, visibleDays, todayDayIndex]);
+
+  // The "ghost" layer: every other curated point on this destination, as
+  // small grey dots — independent of which day is filtered (it's "what's
+  // around", not part of any one day's route) so it only rebuilds when the
+  // underlying list itself changes, not on every day-pill click. Clicking a
+  // dot reveals it in place: swaps its icon for the real category icon/color
+  // (same categoryMarkerIcon the main Map screen uses) and opens its info
+  // window, rather than needing a separate "explore mode" toggle — exactly
+  // the requested "overlap" between staying focused on the route and still
+  // seeing what's nearby while walking it.
+  useEffect(() => {
+    if (!loaded || !mapRef.current) return;
+    otherPoiMarkersRef.current.forEach((m) => m.setMap(null));
+    otherPoiMarkersRef.current.clear();
+    revealedOtherPoiIdsRef.current.clear();
+
+    otherPois.forEach((p) => {
+      const marker = new google.maps.Marker({
+        position: { lat: p.lat, lng: p.lng },
+        map: mapRef.current!,
+        icon: ghostDotIcon(),
+        title: p.name,
+        zIndex: 10,
+      });
+      marker.addListener("click", () => {
+        if (!revealedOtherPoiIdsRef.current.has(p.id)) {
+          revealedOtherPoiIdsRef.current.add(p.id);
+          marker.setIcon(categoryMarkerIcon(p.categoryColor, p.iconCategory ?? p.categoryName, 11, false, p.colorHex, p.name));
+          marker.setZIndex(200);
+        }
+        infoWindowRef.current?.setContent(otherPoiInfoWindowHtml(p));
+        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+      });
+      otherPoiMarkersRef.current.set(p.id, marker);
+    });
+
+    return () => {
+      otherPoiMarkersRef.current.forEach((m) => m.setMap(null));
+      otherPoiMarkersRef.current.clear();
+    };
+  }, [loaded, otherPois]);
+
+  // "You are here", same blue-dot treatment as the main Map screen — auto-
+  // starts once today is genuinely a day of this trip (todayDayIndex set,
+  // the same signal the current-stop highlight above already gates on),
+  // matching "from the moment the countdown ends, show me where I actually
+  // am" rather than needing a manual GPS toggle here too.
+  useEffect(() => {
+    if (!loaded || !mapRef.current || todayDayIndex == null) return;
+    if (!navigator.geolocation) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (!userMarkerRef.current && mapRef.current) {
+          userMarkerRef.current = new google.maps.Marker({
+            position: point,
+            map: mapRef.current,
+            icon: currentLocationIcon(),
+            zIndex: 999,
+          });
+        } else {
+          userMarkerRef.current?.setPosition(point);
+        }
+      },
+      () => {},
+      { enableHighAccuracy: true }
+    );
+
+    return () => {
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+      userMarkerRef.current?.setMap(null);
+      userMarkerRef.current = null;
+    };
+  }, [loaded, todayDayIndex]);
 
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
