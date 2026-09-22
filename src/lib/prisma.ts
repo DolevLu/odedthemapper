@@ -15,7 +15,7 @@ function pooledUrl(): string | undefined {
   if (!raw) return undefined;
   try {
     const url = new URL(raw);
-    if (!url.searchParams.has("connection_limit")) url.searchParams.set("connection_limit", "3");
+    if (!url.searchParams.has("connection_limit")) url.searchParams.set("connection_limit", "6");
     if (!url.searchParams.has("pool_timeout")) url.searchParams.set("pool_timeout", "30");
     return url.toString();
   } catch {
