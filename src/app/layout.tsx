@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GOOGLE_FONTS_HREF } from "@/lib/theme/fonts";
+import { getLang } from "@/lib/i18n/server";
 import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
@@ -34,11 +35,19 @@ export function generateViewport() {
   return { themeColor: "#7C3AED", viewportFit: "cover" };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read once, here, and threaded down through Providers to LanguageProvider
+  // as its React state's OWN initial value — not just used to pick server-
+  // rendered text elsewhere. See LanguageContext.tsx's own comment: this is
+  // the actual fix for a reproducible "This page couldn't load" (React error
+  // #418, an unrecoverable hydration mismatch) hitting every navigation for
+  // anyone whose "lang" cookie says "en", confirmed from a real console
+  // screenshot.
+  const initialLang = await getLang();
   return (
     // suppressHydrationWarning: the theme-init script below sets data-theme
     // (and this element's own font-size) from localStorage before React
@@ -65,7 +74,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <PortraitOnlyGate />
-        <Providers>
+        <Providers initialLang={initialLang}>
           {children}
           <ReferralClaimer />
         </Providers>
