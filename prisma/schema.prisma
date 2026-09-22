@@ -275,6 +275,7 @@ model User {
   poiRatings    PoiRating[]
   destinationAccessLog DestinationAccess[]
   feedback      Feedback[]
+  clientErrorReports ClientErrorReport[]
 }
 
 /** Org-tier trip planners can brand client-facing exported plans with their
@@ -950,4 +951,27 @@ model Feedback {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([status])
+}
+
+/** Auto-captured (not user-submitted) the moment the root error boundary
+ * (src/app/error.tsx) first catches anything, before it decides whether to
+ * retry silently or show a message — added specifically to root-cause a
+ * "This page couldn't load" report that couldn't be reproduced from outside
+ * the reporter's own session/network despite extensive testing. Best-effort:
+ * a failure to write this row must never block the boundary's own retry/
+ * recovery flow. userId nullable since the boundary can catch an error for
+ * a signed-out visitor too. */
+model ClientErrorReport {
+  id        String   @id @default(cuid())
+  userId    String?
+  message   String
+  digest    String?
+  stack     String?
+  url       String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }

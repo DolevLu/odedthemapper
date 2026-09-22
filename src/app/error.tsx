@@ -39,9 +39,34 @@ const INCIDENT_TTL_MS = 30_000;
  * path with it (confirmed the hard way once already). Plain hardcoded
  * Hebrew only.
  */
-export default function Error({ reset }: { error: Error; reset: () => void }) {
+export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"retrying" | "giveup">("retrying");
+
+  // Fire-and-forget, once per catch: this is the ONLY reason this route
+  // exists — to actually see what's throwing in a report that couldn't be
+  // reproduced from outside the reporter's own session/network despite
+  // extensive testing. Never awaited, never allowed to affect the retry
+  // flow below even if it fails.
+  useEffect(() => {
+    try {
+      void fetch("/api/diagnostics/client-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: error?.message || String(error),
+          digest: error?.digest ?? null,
+          stack: error?.stack ?? null,
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+        }),
+        keepalive: true,
+      });
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
