@@ -222,6 +222,48 @@ function readGoogleDetails(formData: FormData) {
   };
 }
 
+/** Self-heals a saved pin's broken photo (the red-X icon) the first time
+ * anyone views it after this fix shipped. Every pin saved before it mirrored
+ * Google's own short-lived photo URL directly — that token has since expired
+ * for most of them, and there is no way to tell from the stored URL alone
+ * whether it still works. Re-resolving from the pin's placeId and mirroring
+ * again (same as a fresh save now does) is the only real fix; the client
+ * triggers this itself, once per pin, for exactly the pins whose photoUrl
+ * still points at Google instead of our own storage — see MapScreen. */
+export async function repairSavedPinPhoto(pinId: string) {
+  const userId = await requireUserId();
+  const { userIds } = await getGroupContext(userId);
+  const pin = await prisma.savedMapPin.findFirst({
+    where: { id: pinId, userId: { in: userIds } },
+    select: { id: true, placeId: true, photoUrl: true },
+  });
+  // "import:..." placeIds are locally generated (personal KML/KMZ uploads
+  // with no real Google place behind them) — nothing to re-resolve.
+  if (!pin || pin.placeId.startsWith("import:")) return { photoUrl: pin?.photoUrl ?? null };
+
+  const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return { photoUrl: pin.photoUrl };
+
+  try {
+    const detailsRes = await fetch(
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(pin.placeId)}&fields=photo&key=${apiKey}`
+    );
+    const details = await detailsRes.json();
+    const photoReference = details?.result?.photos?.[0]?.photo_reference as string | undefined;
+    if (!photoReference) return { photoUrl: pin.photoUrl };
+
+    const freshPhotoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${encodeURIComponent(photoReference)}&key=${apiKey}`;
+    const mirroredUrl = await mirrorRemoteImage(freshPhotoUrl, "saved-pins");
+    if (!mirroredUrl) return { photoUrl: pin.photoUrl };
+
+    await prisma.savedMapPin.update({ where: { id: pin.id }, data: { photoUrl: mirroredUrl } });
+    return { photoUrl: mirroredUrl };
+  } catch (err) {
+    console.error(`repairSavedPinPhoto failed for pin ${pin.id}:`, err);
+    return { photoUrl: pin.photoUrl };
+  }
+}
+
 export async function deleteSavedMapPin(id: string, slug: string) {
   const userId = await requireUserId();
   const { userIds } = await getGroupContext(userId);

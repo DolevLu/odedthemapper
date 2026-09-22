@@ -22,7 +22,23 @@ export function generateViewport() {
   // top of the screen instead of a visible OS-colored bar sitting above it;
   // content that shouldn't sit under the notch/status bar uses
   // env(safe-area-inset-top) padding (see AppSidebar's mobile header).
-  return { themeColor: "#7C3AED", viewportFit: "cover" };
+  //
+  // interactiveWidget: "resizes-content" — the actual, spec-level fix for
+  // the keyboard-gap bug (reported live, repeatedly): without this, opening
+  // the on-screen keyboard is free to shrink/offset only the VISUAL
+  // viewport while the LAYOUT viewport (what a plain `position: fixed`
+  // element like the bottom nav is anchored to) stays full-height, so a
+  // fixed-to-bottom element and anything tracking the visual viewport
+  // (AppSidebar's own --visual-vh-bottom-gap, MapScreen's --visual-vh) can
+  // end up computing two different "true bottom" positions. This tells any
+  // browser/WebView that supports it (Chrome/WebView 108+) to resize the
+  // LAYOUT viewport itself when the keyboard opens instead, so plain
+  // `position: fixed` elements are correct on their own and every
+  // visualViewport-based calculation collapses to the same numbers as the
+  // layout viewport instead of potentially disagreeing with it. Kept
+  // alongside (not instead of) the JS-based visualViewport tracking, which
+  // stays as the fallback for older WebView versions that ignore this.
+  return { themeColor: "#7C3AED", viewportFit: "cover", interactiveWidget: "resizes-content" };
 }
 
 export default function RootLayout({

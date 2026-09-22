@@ -89,7 +89,19 @@ export function GroupBell({ isLoggedIn, compact = false }: { isLoggedIn: boolean
   function toggle() {
     if (!open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 8, right: Math.max(8, window.innerWidth - rect.right) });
+      // The panel is nearly full-width on a phone (w-[min(92vw,22rem)]) —
+      // simply right-aligning it to the button (as if the button always sat
+      // near the screen's own right edge) opens it off the LEFT edge of the
+      // screen for any button that isn't there, exactly what moving the
+      // bell into the drawer's header caused (reported live). Clamping
+      // keeps its right edge aligned with the button — bottom-right of it,
+      // as intended — whenever there's room, and otherwise slides it just
+      // far enough to stay fully on screen instead of overflowing.
+      const rootFontPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const panelWidth = Math.min(window.innerWidth * 0.92, 22 * rootFontPx);
+      const desiredRight = window.innerWidth - rect.right;
+      const maxRight = window.innerWidth - panelWidth - 8;
+      setPos({ top: rect.bottom + 8, right: Math.min(Math.max(desiredRight, 8), Math.max(8, maxRight)) });
       // Opening the bell is what marks everything as seen.
       void markGroupFeedSeen().then(() => setFeed((f) => (f ? { ...f, unread: 0, items: f.items.map((i) => ({ ...i, unread: false })) } : f)));
     }

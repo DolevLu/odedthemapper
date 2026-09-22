@@ -88,7 +88,14 @@ export function SavePinModal({
             <div className="flex gap-3 rounded-xl border p-2.5 text-xs" style={{ borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)" }}>
               {g.photoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={g.photoUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                <img
+                  src={g.photoUrl}
+                  alt=""
+                  className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
               )}
               <div className="min-w-0">
                 <p className="font-semibold">{t("savePin.keepsAll")}</p>
@@ -163,7 +170,14 @@ export function SavePinModal({
           {isEditing && pin.photoUrl ? t("savePin.photoReplaceSuffix") : ""})
           {isEditing && pin.photoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={pin.photoUrl} alt="" className="mt-1 mb-1 h-20 w-full rounded-lg object-cover" />
+            <img
+              src={pin.photoUrl}
+              alt=""
+              className="mt-1 mb-1 h-20 w-full rounded-lg object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           )}
           <input
             name="photo"

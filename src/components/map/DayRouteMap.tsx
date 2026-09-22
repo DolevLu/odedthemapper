@@ -351,12 +351,13 @@ export function DayRouteMap({
         )}
         {/* Small Hebrew Map/Satellite toggle — top-left on desktop (matches
          * the main Map screen's own control). In the mobile full-screen
-         * layout it moves to the bottom-left instead, well above the
-         * bottom drawer's collapsed "peek" height, so the itinerary's own
-         * action pills can have the top strip to themselves. */}
+         * (itinerary) layout it sits top-right instead, just below the
+         * floating profile/bell header (AppSidebar) — same reserved right-
+         * side column that header's own pe-14 gap on the filter row above
+         * leaves empty, so it drops in there without overlapping either. */}
         <div
-          className={`absolute end-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md ${
-            mobileFullScreen ? "bottom-[190px] sm:top-2" : "top-2"
+          className={`absolute z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md ${
+            mobileFullScreen ? "start-2 top-[calc(3.5rem+env(safe-area-inset-top))] sm:end-2 sm:start-auto sm:top-2" : "end-2 top-2"
           }`}
         >
           <button

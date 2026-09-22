@@ -7,7 +7,7 @@ import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markercluste
 import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
-import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile, getMyRouteDays } from "@/lib/actions/trip";
+import { toggleFavorite, toggleWantsBooking, deleteSavedMapPin, uploadPersonalMapFile, getMyRouteDays, repairSavedPinPhoto } from "@/lib/actions/trip";
 import { voteSavedMapPin } from "@/lib/actions/group";
 import { googleDetailsFromPlace, type GoogleDetails } from "@/lib/googlePlaceDetails";
 import { AddToMapDialog } from "@/components/map/AddToMapDialog";
@@ -96,7 +96,7 @@ function starRatingHtml(poiId: string, myRating: number): string {
 
 function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, myRating: number, isAdmin: boolean, t: (key: DictionaryKey) => string): string {
   const photo = poi.photoUrl
-    ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+    ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" onerror="this.style.display='none'" />`
     : "";
   const description = poi.description
     ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${poi.description.slice(0, 220)}</div>`
@@ -132,7 +132,7 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
 function richPlaceInfoWindowHtml(place: google.maps.places.PlaceResult, placeId: string, lat: number, lng: number, lang: "he" | "en", t: (key: DictionaryKey) => string): string {
   const name = place.name ?? t("map.unnamedPlace");
   const photo = place.photos?.[0]
-    ? `<img src="${place.photos[0].getUrl({ maxWidth: 320, maxHeight: 160 })}" alt="" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+    ? `<img src="${place.photos[0].getUrl({ maxWidth: 320, maxHeight: 160 })}" alt="" style="width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:6px" onerror="this.style.display='none'" />`
     : "";
   const rating =
     place.rating != null
@@ -503,6 +503,34 @@ export function MapScreen({
     if (activeBucket === null) return [];
     return savedPins.filter((p) => p.categoryName != null && standardCategoryBucket(p.categoryName) === activeBucket);
   }, [savedPins, activeCategory]);
+
+  // Self-heals saved pins whose photo still points straight at Google
+  // instead of our own mirrored storage — every pin saved before that fix
+  // shipped, whose token has since expired into a red-X icon (reported
+  // live). Runs once per pin per page load (repairedPinIdsRef), quietly, in
+  // the background; a real fix (a fresh mirrored URL) triggers one refresh
+  // so it actually shows without the user needing to reopen the map.
+  const repairedPinIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const candidates = savedPins.filter(
+      (p) => p.photoUrl && !p.photoUrl.includes("vercel-storage.com") && !p.photoUrl.startsWith("/uploads/") && !repairedPinIdsRef.current.has(p.id)
+    );
+    if (candidates.length === 0) return;
+    let anyRepaired = false;
+    (async () => {
+      for (const pin of candidates) {
+        repairedPinIdsRef.current.add(pin.id);
+        try {
+          const result = await repairSavedPinPhoto(pin.id);
+          if (result.photoUrl && result.photoUrl !== pin.photoUrl) anyRepaired = true;
+        } catch {
+          // best-effort — a pin that fails to repair just keeps showing
+          // without a photo (see the onerror hide on its own <img>)
+        }
+      }
+      if (anyRepaired) router.refresh();
+    })();
+  }, [savedPins, router]);
 
   const sortedList = useMemo(() => {
     if (!gpsActive || !userPosition) return filtered;
@@ -1314,7 +1342,7 @@ export function MapScreen({
       });
       marker.addListener("click", () => {
         const photo = pin.photoUrl
-          ? `<img src="${escapeHtml(pin.photoUrl)}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+          ? `<img src="${escapeHtml(pin.photoUrl)}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" onerror="this.style.display='none'" />`
           : "";
         const description = pin.description
           ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${escapeHtml(pin.description)}</div>`
@@ -1598,6 +1626,30 @@ export function MapScreen({
         </div>
       )}
 
+      {/* Map/Satellite toggle — standalone on mobile ONLY (sm:hidden),
+       * floating just above the bottom nav/points-list on the same physical
+       * left side it always occupied, using the same dynamic
+       * --mobile-nav-height-based clearance already used for the chat/
+       * route-mode buttons. Moved to the itinerary screen's filter row on
+       * request for THAT screen specifically — this map screen's own copy
+       * stays put right here, unchanged. */}
+      <div className="absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)] left-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
+        <button
+          onClick={() => setMapType("roadmap")}
+          className="rounded-full px-2 py-0.5"
+          style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
+        >
+          {t("map.mapType")}
+        </button>
+        <button
+          onClick={() => setMapType("satellite")}
+          className="rounded-full px-2 py-0.5"
+          style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
+        >
+          {t("map.satellite")}
+        </button>
+      </div>
+
       {/* Search bar — always open now (not a toggle you have to tap first),
        * matching Google Maps' own persistent search field. The profile
        * button lives inside this same white pill's own right edge instead
@@ -1800,28 +1852,6 @@ export function MapScreen({
           ›
         </button>
 
-        {/* Map/Satellite toggle — mobile only, last child so it lands at
-         * this row's physical right edge (dir="ltr" row on an RTL page,
-         * same trick the desktop search bar below uses), i.e. top-right of
-         * the screen, right under the search bar. Previously floated on its
-         * own at the bottom-left, stacked above the bottom nav — moved up
-         * here on request, and this also frees that lower-left spot up. */}
-        <div className="flex shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
-          <button
-            onClick={() => setMapType("roadmap")}
-            className="rounded-full px-2 py-0.5"
-            style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
-          >
-            {t("map.mapType")}
-          </button>
-          <button
-            onClick={() => setMapType("satellite")}
-            className="rounded-full px-2 py-0.5"
-            style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
-          >
-            {t("map.satellite")}
-          </button>
-        </div>
 
         {/* Compact desktop-only search bar, sharing this row instead of a
          * full-width row of its own — narrow (w-52) and the same height as
