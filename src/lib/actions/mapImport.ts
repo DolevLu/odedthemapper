@@ -7,6 +7,7 @@ import { hasAccessToDestination, getAiChatDailyQuota } from "@/lib/access";
 import { consumeAiChatQuota } from "@/lib/aiChatQuota";
 import { requireSessionUserId } from "@/lib/groupAccess";
 import { logGroupActivity } from "@/lib/groupActivity";
+import { mirrorRemoteImage } from "@/lib/uploads";
 import { geminiGenerate } from "@/lib/gemini";
 import { SAVED_PIN_CATEGORY_OPTIONS } from "@/lib/mapStyles";
 import type { ResolvedPin } from "@/lib/googlePlaceDetails";
@@ -38,39 +39,48 @@ export async function saveResolvedPins(
   if (!(await hasAccessToDestination(userId, destinationId))) throw new Error("אין גישה ליעד הזה");
   if (!Array.isArray(pins) || pins.length === 0) return { saved: 0, skipped: 0 };
 
-  const rows = pins.slice(0, MAX_PINS_PER_SAVE).flatMap((p) => {
-    const name = text(p.name, 120);
-    if (!name || !Number.isFinite(p.lat) || !Number.isFinite(p.lng) || Math.abs(p.lat) > 90 || Math.abs(p.lng) > 180) return [];
-    const d = p.details;
-    let openingHours: string | null = null;
-    if (d?.hours && Array.isArray(d.hours) && d.hours.every((h) => typeof h === "string")) {
-      openingHours = JSON.stringify(d.hours.slice(0, 7).map((h) => h.slice(0, 120)));
-    }
-    const category = p.categoryName && SAVED_PIN_CATEGORY_OPTIONS.includes(p.categoryName) ? p.categoryName : "אחר";
-    const rating = typeof d?.rating === "number" && d.rating > 0 && d.rating <= 5 ? d.rating : null;
-    const ratingCount = typeof d?.ratingCount === "number" && d.ratingCount > 0 ? Math.round(d.ratingCount) : null;
-    return [
-      {
-        userId,
-        destinationId,
-        placeId: text(p.placeId, 200) ?? `import:${randomUUID()}`,
-        name,
-        lat: p.lat,
-        lng: p.lng,
-        description: text(p.note, 500),
-        categoryName: category,
-        photoUrl: httpUrl(d?.photoUrl),
-        address: text(d?.address, 300),
-        phone: text(d?.phone, 40),
-        website: httpUrl(d?.website),
-        googleUrl: httpUrl(d?.url),
-        rating,
-        ratingCount,
-        openingHours,
-        source,
-      },
-    ];
-  });
+  // Google's photo URLs carry a short-lived token (see mirrorRemoteImage's
+  // own comment) — mirrored into our own storage in parallel, while every
+  // token is still fresh, right after the browser resolved these places.
+  // Without this, an imported pin's photo reliably breaks into a red-X icon
+  // once the token ages out, sometimes before the user even looks at it.
+  const rows = (
+    await Promise.all(
+      pins.slice(0, MAX_PINS_PER_SAVE).map(async (p) => {
+        const name = text(p.name, 120);
+        if (!name || !Number.isFinite(p.lat) || !Number.isFinite(p.lng) || Math.abs(p.lat) > 90 || Math.abs(p.lng) > 180) return null;
+        const d = p.details;
+        let openingHours: string | null = null;
+        if (d?.hours && Array.isArray(d.hours) && d.hours.every((h) => typeof h === "string")) {
+          openingHours = JSON.stringify(d.hours.slice(0, 7).map((h) => h.slice(0, 120)));
+        }
+        const category = p.categoryName && SAVED_PIN_CATEGORY_OPTIONS.includes(p.categoryName) ? p.categoryName : "אחר";
+        const rating = typeof d?.rating === "number" && d.rating > 0 && d.rating <= 5 ? d.rating : null;
+        const ratingCount = typeof d?.ratingCount === "number" && d.ratingCount > 0 ? Math.round(d.ratingCount) : null;
+        const remotePhotoUrl = httpUrl(d?.photoUrl);
+        const photoUrl = remotePhotoUrl ? await mirrorRemoteImage(remotePhotoUrl, "saved-pins") : null;
+        return {
+          userId,
+          destinationId,
+          placeId: text(p.placeId, 200) ?? `import:${randomUUID()}`,
+          name,
+          lat: p.lat,
+          lng: p.lng,
+          description: text(p.note, 500),
+          categoryName: category,
+          photoUrl,
+          address: text(d?.address, 300),
+          phone: text(d?.phone, 40),
+          website: httpUrl(d?.website),
+          googleUrl: httpUrl(d?.url),
+          rating,
+          ratingCount,
+          openingHours,
+          source,
+        };
+      })
+    )
+  ).filter((row): row is NonNullable<typeof row> => row !== null);
 
   const result = await prisma.savedMapPin.createMany({ data: rows, skipDuplicates: true });
   if (result.count > 0) {

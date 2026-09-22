@@ -121,6 +121,15 @@ export function DayItemsList({
   const [swipeX, setSwipeX] = useState<Record<string, number>>({});
   const swipingId = useRef<string | null>(null);
   const swipeStartX = useRef(0);
+  // Tracks the largest vertical movement seen during the current gesture —
+  // a plain tap AND a tiny accidental wiggle both keep this near 0, but a
+  // real scroll through the list (dragging straight down/up, no meaningful
+  // horizontal movement) previously read as "too small a swipe to be a
+  // delete, so it must be a tap" and popped the detail sheet open on every
+  // scroll (reported live). Requiring vertical movement to ALSO stay small
+  // is what actually distinguishes a tap from a vertical drag.
+  const swipeMaxVerticalDelta = useRef(0);
+  const swipeStartY = useRef(0);
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
   // Which cards currently show their note's full text inline, instead of
   // just the first line — a per-card toggle, independent of opening the
@@ -236,6 +245,8 @@ export function DayItemsList({
     if ((e.target as HTMLElement).closest("[data-no-swipe]")) return;
     swipingId.current = itemId;
     swipeStartX.current = e.clientX;
+    swipeStartY.current = e.clientY;
+    swipeMaxVerticalDelta.current = 0;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
@@ -243,20 +254,25 @@ export function DayItemsList({
     if (swipingId.current !== itemId) return;
     const delta = Math.min(0, e.clientX - swipeStartX.current);
     setSwipeX((prev) => ({ ...prev, [itemId]: delta }));
+    swipeMaxVerticalDelta.current = Math.max(swipeMaxVerticalDelta.current, Math.abs(e.clientY - swipeStartY.current));
   }
 
   function handleSwipePointerEnd(itemId: string) {
     if (swipingId.current !== itemId) return;
     swipingId.current = null;
     const delta = swipeX[itemId] ?? 0;
+    const verticalDelta = swipeMaxVerticalDelta.current;
     setSwipeX((prev) => ({ ...prev, [itemId]: 0 }));
     if (delta < -SWIPE_DELETE_THRESHOLD) {
       removeItineraryItem(itemId, slug);
       return;
     }
-    // A swipe too small to count as a delete gesture is treated as a tap —
-    // opens the detail sheet, same as tapping the card normally would.
-    if (Math.abs(delta) < 6) setDetailItemId(itemId);
+    // A swipe too small to count as a delete gesture, AND with no real
+    // vertical movement either, is treated as a tap — opens the detail
+    // sheet, same as tapping the card normally would. Scrolling the list
+    // (vertical movement, however small the horizontal wobble) must never
+    // open it.
+    if (Math.abs(delta) < 6 && verticalDelta < 8) setDetailItemId(itemId);
   }
 
   function handleTimeChange(itemId: string, value: string) {

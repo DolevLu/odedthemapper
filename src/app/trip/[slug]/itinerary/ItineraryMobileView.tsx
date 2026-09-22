@@ -191,7 +191,17 @@ export function ItineraryMobileView({
        * action buttons stays reachable via a swipe instead of wrapping and
        * eating vertical space over the map. Each button keeps its own
        * existing color instead of being restyled into a uniform set. */}
-      <div dir="ltr" className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2">
+      {/* ps-2 pe-14 (not a plain px-2): the floating profile/bell header
+       * (AppSidebar) sits fixed at top-right on every non-map trip screen,
+       * this row included — a plain full-width row let its own scrollable
+       * content run in underneath it, overlapping (reported live). The
+       * extra end padding (physical right, since this row is dir="ltr")
+       * reserves exactly that corner instead. The buttons themselves are
+       * also nudged a size down via the descendant override below — they're
+       * shared components (ItineraryTopBar/Wizard/ExportPdfButton) also used
+       * on desktop, so this scopes the shrink to just this row rather than
+       * editing their own classes and affecting desktop too. */}
+      <div dir="ltr" className="absolute inset-x-0 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 ps-2 pe-14">
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm shadow-md"
@@ -200,7 +210,11 @@ export function ItineraryMobileView({
         >
           ‹
         </button>
-        <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto scroll-smooth p-1">
+        <div
+          ref={pillRowRef}
+          dir="rtl"
+          className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto scroll-smooth p-1 [&_button]:!px-2 [&_button]:!py-1 [&_button]:!text-[11px]"
+        >
           <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
           <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
           <ExportPdfButton destinationId={destinationId} slug={slug} />

@@ -197,6 +197,41 @@ export function AppSidebar({
     return () => observer.disconnect();
   }, [currentSlug]);
 
+  // Keeps the mobile bottom nav flush against the on-screen keyboard instead
+  // of leaving a gap (reported live: tapping the map screen's search field
+  // left a visible strip between the points-list drawer and the nav below
+  // it). Root cause: this nav is plain `fixed bottom: 0`, anchored to the
+  // LAYOUT viewport's bottom edge, while content that needs to stay above
+  // the keyboard (the map screen's own root, and everything inside it — see
+  // MapScreen's own --visual-vh/--visual-vh-offset) tracks the VISUAL
+  // viewport instead. Those two viewports only agree when no keyboard is
+  // open; opening one can shrink/offset the visual viewport without the
+  // layout viewport following (device- and WebView-version-dependent), so a
+  // plain `bottom: 0` element and a visual-viewport-tracked one drift apart
+  // exactly like this. Publishing the visual viewport's own distance from
+  // the layout viewport's bottom edge here — once, globally, since this
+  // component mounts on every screen — lets the nav (below) pin itself to
+  // that instead, so it and anything else already tracking the same
+  // --visual-vh math (the points list) stay flush by construction, keyboard
+  // or not, without either side having to special-case the other.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const bottomGap = Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
+      document.documentElement.style.setProperty("--visual-vh-bottom-gap", `${bottomGap}px`);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   // The map gets a reduced/read-only preview for anonymous visitors (see
   // MapScreen's `preview` prop), so it isn't actually locked for them the
   // way other silver items are — it just quietly degrades instead.
@@ -406,7 +441,9 @@ export function AppSidebar({
           }}
         >
           <div className="flex items-center gap-2">
-            <GroupBell isLoggedIn={isLoggedIn} compact />
+            {/* The bell used to live here too — moved into the drawer's own
+             * header (opened via the bottom nav's "עוד"/hamburger tab), to
+             * the left of the "טראבי" wordmark, on request. */}
             <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
           </div>
         </div>
@@ -415,8 +452,12 @@ export function AppSidebar({
       {/* Mobile bottom bar — 5 pinned icons, native-app style */}
       <nav
         ref={mobileNavRef}
-        className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
-        style={{ borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)", background: "var(--background, #FBF6EE)" }}
+        className="fixed inset-x-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
+        style={{
+          bottom: "var(--visual-vh-bottom-gap, 0px)",
+          borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)",
+          background: "var(--background, #FBF6EE)",
+        }}
       >
         <MobileTab href="/home" icon="home" label={t("nav.home")} active={pathname === "/home"} />
         {!hasDestContext && <MobileTab href="/destinations" icon="globe" label={t("nav.destinations")} active={pathname === "/destinations"} />}
@@ -492,6 +533,9 @@ export function AppSidebar({
                 <img src="/logo-mark.svg" alt="טראבי" className="site-logo h-8 w-8 shrink-0" />
                 <span className="text-[15px] font-extrabold">טראבי</span>
               </Link>
+              {/* To the left of the wordmark, on this same white header row —
+               * moved here from the floating top-right header on request. */}
+              <GroupBell isLoggedIn={isLoggedIn} compact />
               <button onClick={() => setDrawerOpen(false)} className="shrink-0 rounded-full px-2 py-1 text-lg opacity-60">
                 ✕
               </button>

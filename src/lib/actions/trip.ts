@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { saveUploadedFile } from "@/lib/uploads";
+import { saveUploadedFile, mirrorRemoteImage } from "@/lib/uploads";
 import { resolveItineraryOwnerId, canManageContent, getGroupContext } from "@/lib/access";
 import { assertDayAccess, assertItemAccess, itemLabel } from "@/lib/groupAccess";
 import { logGroupActivity } from "@/lib/groupActivity";
@@ -104,7 +104,11 @@ export async function saveMapPin(destinationId: string, slug: string, formData: 
 
   const photoFile = formData.get("photo") as File | null;
   const uploadedPhotoUrl = photoFile && photoFile.size > 0 ? await saveUploadedFile(photoFile, "saved-pins") : undefined;
-  const photoUrl = uploadedPhotoUrl ?? googleDetails.photoUrl ?? undefined;
+  // Google's photo URL carries a short-lived token (see mirrorRemoteImage) —
+  // mirror it into our own storage now, while it's still fresh, rather than
+  // persisting a link that breaks into a red-X icon later.
+  const mirroredGooglePhotoUrl = !uploadedPhotoUrl && googleDetails.photoUrl ? await mirrorRemoteImage(googleDetails.photoUrl, "saved-pins") : undefined;
+  const photoUrl = uploadedPhotoUrl ?? mirroredGooglePhotoUrl ?? undefined;
 
   if (await canManageContent(userId)) {
     // Files under the destination's first/primary area — a destination

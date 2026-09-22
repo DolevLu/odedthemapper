@@ -883,70 +883,12 @@ export function MapScreen({
     mapRef.current.setOptions({ styles: showGooglePois ? [] : DECLUTTERED_MAP_STYLES });
   }, [loaded, showGooglePois]);
 
-  // Renders this user's personal saved-pin layer (places they saved off the
-  // native Google POI layer) as small bookmark-styled markers.
-  useEffect(() => {
-    if (!loaded || !mapRef.current) return;
-    savedPinMarkersRef.current.forEach((m) => m.setMap(null));
-    savedPinMarkersRef.current = [];
-
-    const scale = markerScaleForZoom(mapRef.current.getZoom());
-    visibleSavedPins.forEach((pin) => {
-      const marker = new google.maps.Marker({
-        position: { lat: pin.lat, lng: pin.lng },
-        map: mapRef.current!,
-        icon: categoryMarkerIcon(SAVED_PIN_FALLBACK_COLOR, pin.categoryName ?? "אחר", scale, false, null, pin.name),
-        title: pin.name,
-        zIndex: 600,
-      });
-      marker.addListener("click", () => {
-        const photo = pin.photoUrl
-          ? `<img src="${escapeHtml(pin.photoUrl)}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
-          : "";
-        const description = pin.description
-          ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${escapeHtml(pin.description)}</div>`
-          : "";
-        const line = (html: string) => `<div style="font-size:12px;margin-top:3px;max-width:230px">${html}</div>`;
-        const safeLink = (u: string) => (/^https?:\/\//i.test(u) ? escapeHtml(u) : "#");
-        const details = [
-          pin.rating != null
-            ? line(`⭐ ${pin.rating}${pin.ratingCount ? ` · ${pin.ratingCount.toLocaleString(lang === "en" ? "en-US" : "he-IL")} ${t("map.reviews")}` : ""}`)
-            : "",
-          pin.address ? line(`📍 ${escapeHtml(pin.address)}`) : "",
-          pin.phone ? line(`<a href="tel:${escapeHtml(pin.phone)}" style="color:#7C3AED">📞 ${escapeHtml(pin.phone)}</a>`) : "",
-          pin.website ? line(`<a href="${safeLink(pin.website)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.website")}</a>`) : "",
-          pin.googleUrl ? line(`<a href="${safeLink(pin.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.openInGoogleMaps")}</a>`) : "",
-          pin.openingHours && pin.openingHours.length > 0
-            ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${pin.openingHours.map((h) => `<div>${escapeHtml(h)}</div>`).join("")}</details>`
-            : "",
-        ].join("");
-        const addedBy = pin.addedBy ? line(`<span style="opacity:.6">${t("group.addedBy")} ${escapeHtml(pin.addedBy)}</span>`) : "";
-        const voteBtnStyle = (active: boolean) => `${INFO_ACTION_BTN_STYLE};${active ? "background:#7C3AED;color:#fff" : ""}`;
-        const votes = pin.shared
-          ? `<div style="margin-top:8px;display:flex;gap:6px">
-              <button data-pin-vote="1" data-pin-id="${pin.id}" aria-label="${t("group.likeAria")}" style="${voteBtnStyle(pin.myVote === 1)}">👍 ${pin.likeCount ?? 0}</button>
-              <button data-pin-vote="-1" data-pin-id="${pin.id}" aria-label="${t("group.dislikeAria")}" style="${voteBtnStyle(pin.myVote === -1)}">👎 ${pin.dislikeCount ?? 0}</button>
-            </div>`
-          : "";
-        infoWindowRef.current?.setContent(
-          `<div style="font-family:'Rubik',sans-serif;padding:8px">
-            ${photo}
-            <strong>📌 ${escapeHtml(pin.name)}</strong>
-            ${description}
-            ${details}
-            ${addedBy}
-            ${votes}
-            <div style="margin-top:8px;display:flex;gap:6px">
-              <button data-edit-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.editPin")}</button>
-              <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.removeFromMyMap")}</button>
-            </div>
-          </div>`
-        );
-        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
-      });
-      savedPinMarkersRef.current.push(marker);
-    });
-  }, [loaded, visibleSavedPins]);
+  // Saved-pin markers (places saved off the native Google POI layer,
+  // including a whole Google list import) are now built together with the
+  // curated POI markers into one shared clusterer — see that combined
+  // effect below (kept next to it originally; moved so the single combined
+  // effect reads as one coherent unit instead of two effects that have to
+  // be read side by side to understand either one).
 
   // Render line/polygon geometries (metro lines, walking routes, districts,
   // etc.) — each in its own category's color (poi.categoryColor, sourced
@@ -1327,13 +1269,22 @@ export function MapScreen({
     }
   }
 
-  // Rebuild markers whenever the filtered set changes.
+  // Rebuild markers whenever the filtered POI set OR the personal saved-pin
+  // set changes — both feed the SAME clusterer (below), not two separate
+  // ones. A saved pin (including a whole batch dropped in from a Google
+  // list import) used to render as its own always-visible marker, outside
+  // clustering entirely — right next to a dense curated cluster it read as
+  // a stray extra pin instead of joining that same numbered bubble, and at
+  // any real zoomed-out scale a list import could paper the map solid.
+  // One shared clusterer is what actually unifies them.
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
 
     clustererRef.current?.clearMarkers();
     markersByPoiId.current.forEach((marker) => marker.setMap(null));
     markersByPoiId.current.clear();
+    savedPinMarkersRef.current.forEach((m) => m.setMap(null));
+    savedPinMarkersRef.current = [];
     // Fresh marker objects start with no label — forget which ids
     // updateLabels previously considered "labeled" so it doesn't skip
     // re-labeling them on the next idle event thinking nothing changed.
@@ -1343,7 +1294,7 @@ export function MapScreen({
 
     const initialScale = markerScaleForZoom(mapRef.current.getZoom());
     currentMarkerScaleRef.current = initialScale;
-    const markers = filtered.map((poi) => {
+    const poiMarkers = filtered.map((poi) => {
       const marker = new google.maps.Marker({
         position: { lat: poi.lat, lng: poi.lng },
         title: poi.name,
@@ -1354,9 +1305,65 @@ export function MapScreen({
       return marker;
     });
 
+    const savedMarkers = visibleSavedPins.map((pin) => {
+      const marker = new google.maps.Marker({
+        position: { lat: pin.lat, lng: pin.lng },
+        icon: categoryMarkerIcon(SAVED_PIN_FALLBACK_COLOR, pin.categoryName ?? "אחר", initialScale, false, null, pin.name),
+        title: pin.name,
+        zIndex: 600,
+      });
+      marker.addListener("click", () => {
+        const photo = pin.photoUrl
+          ? `<img src="${escapeHtml(pin.photoUrl)}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
+          : "";
+        const description = pin.description
+          ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${escapeHtml(pin.description)}</div>`
+          : "";
+        const line = (html: string) => `<div style="font-size:12px;margin-top:3px;max-width:230px">${html}</div>`;
+        const safeLink = (u: string) => (/^https?:\/\//i.test(u) ? escapeHtml(u) : "#");
+        const details = [
+          pin.rating != null
+            ? line(`⭐ ${pin.rating}${pin.ratingCount ? ` · ${pin.ratingCount.toLocaleString(lang === "en" ? "en-US" : "he-IL")} ${t("map.reviews")}` : ""}`)
+            : "",
+          pin.address ? line(`📍 ${escapeHtml(pin.address)}`) : "",
+          pin.phone ? line(`<a href="tel:${escapeHtml(pin.phone)}" style="color:#7C3AED">📞 ${escapeHtml(pin.phone)}</a>`) : "",
+          pin.website ? line(`<a href="${safeLink(pin.website)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.website")}</a>`) : "",
+          pin.googleUrl ? line(`<a href="${safeLink(pin.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.openInGoogleMaps")}</a>`) : "",
+          pin.openingHours && pin.openingHours.length > 0
+            ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${pin.openingHours.map((h) => `<div>${escapeHtml(h)}</div>`).join("")}</details>`
+            : "",
+        ].join("");
+        const addedBy = pin.addedBy ? line(`<span style="opacity:.6">${t("group.addedBy")} ${escapeHtml(pin.addedBy)}</span>`) : "";
+        const voteBtnStyle = (active: boolean) => `${INFO_ACTION_BTN_STYLE};${active ? "background:#7C3AED;color:#fff" : ""}`;
+        const votes = pin.shared
+          ? `<div style="margin-top:8px;display:flex;gap:6px">
+              <button data-pin-vote="1" data-pin-id="${pin.id}" aria-label="${t("group.likeAria")}" style="${voteBtnStyle(pin.myVote === 1)}">👍 ${pin.likeCount ?? 0}</button>
+              <button data-pin-vote="-1" data-pin-id="${pin.id}" aria-label="${t("group.dislikeAria")}" style="${voteBtnStyle(pin.myVote === -1)}">👎 ${pin.dislikeCount ?? 0}</button>
+            </div>`
+          : "";
+        infoWindowRef.current?.setContent(
+          `<div style="font-family:'Rubik',sans-serif;padding:8px">
+            ${photo}
+            <strong>📌 ${escapeHtml(pin.name)}</strong>
+            ${description}
+            ${details}
+            ${addedBy}
+            ${votes}
+            <div style="margin-top:8px;display:flex;gap:6px">
+              <button data-edit-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.editPin")}</button>
+              <button data-delete-pin-btn data-pin-id="${pin.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.removeFromMyMap")}</button>
+            </div>
+          </div>`
+        );
+        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+      });
+      savedPinMarkersRef.current.push(marker);
+      return marker;
+    });
+
     clustererRef.current = new MarkerClusterer({
       map: mapRef.current,
-      markers,
+      markers: [...poiMarkers, ...savedMarkers],
       algorithm: new SuperClusterAlgorithm({ maxZoom: CLUSTER_MAX_ZOOM }),
     });
     // gpsActive/userPosition are intentionally excluded — openPoi/drawRouteTo
@@ -1365,7 +1372,7 @@ export function MapScreen({
     // teardown/rebuild every time the position update, which now fires
     // constantly since location tracking auto-starts).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, filtered, heatmapVisible]);
+  }, [loaded, filtered, visibleSavedPins, heatmapVisible]);
 
   // Name-tag labels for nearby pins once zoomed in — lets you scan a
   // cluster of points at a glance instead of tapping each one.
@@ -1591,33 +1598,6 @@ export function MapScreen({
         </div>
       )}
 
-      {/* Map/Satellite toggle — standalone on mobile ONLY (sm:hidden),
-       * floating just above the bottom nav/points-list on the same physical
-       * left side it always occupied, using the same dynamic
-       * --mobile-nav-height-based clearance already used for the chat/
-       * route-mode buttons — frees the whole top row for the filter pills.
-       * Mirrors the itinerary screen's own DayRouteMap treatment of this
-       * exact control. A second copy renders inline in the pills row below
-       * for desktop (hidden here, hidden there in reverse) rather than one
-       * element trying to serve both very different layouts — desktop's
-       * row-sharing behavior stays byte-for-byte what it was before. */}
-      <div className="absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)] left-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
-        <button
-          onClick={() => setMapType("roadmap")}
-          className="rounded-full px-2 py-0.5"
-          style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
-        >
-          {t("map.mapType")}
-        </button>
-        <button
-          onClick={() => setMapType("satellite")}
-          className="rounded-full px-2 py-0.5"
-          style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
-        >
-          {t("map.satellite")}
-        </button>
-      </div>
-
       {/* Search bar — always open now (not a toggle you have to tap first),
        * matching Google Maps' own persistent search field. The profile
        * button lives inside this same white pill's own right edge instead
@@ -1693,7 +1673,7 @@ export function MapScreen({
        * like a swipeable strip. */}
       <div
         dir="ltr"
-        className="absolute inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
+        className="absolute inset-x-0 top-[calc(3.25rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 px-2 sm:top-[calc(0.5rem+env(safe-area-inset-top))]"
       >
         <div className="hidden shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-xs font-semibold shadow-md sm:flex">
           <button
@@ -1819,6 +1799,29 @@ export function MapScreen({
         >
           ›
         </button>
+
+        {/* Map/Satellite toggle — mobile only, last child so it lands at
+         * this row's physical right edge (dir="ltr" row on an RTL page,
+         * same trick the desktop search bar below uses), i.e. top-right of
+         * the screen, right under the search bar. Previously floated on its
+         * own at the bottom-left, stacked above the bottom nav — moved up
+         * here on request, and this also frees that lower-left spot up. */}
+        <div className="flex shrink-0 gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
+          <button
+            onClick={() => setMapType("roadmap")}
+            className="rounded-full px-2 py-0.5"
+            style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "var(--text)" }}
+          >
+            {t("map.mapType")}
+          </button>
+          <button
+            onClick={() => setMapType("satellite")}
+            className="rounded-full px-2 py-0.5"
+            style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "var(--text)" }}
+          >
+            {t("map.satellite")}
+          </button>
+        </div>
 
         {/* Compact desktop-only search bar, sharing this row instead of a
          * full-width row of its own — narrow (w-52) and the same height as
