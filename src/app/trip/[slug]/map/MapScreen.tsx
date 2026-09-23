@@ -43,7 +43,10 @@ const METERS_PER_DEGREE_LAT = 111320;
 
 // Only label individual pins once zoomed in enough that a name tag per
 // marker is legible rather than overlapping clutter.
-const LABEL_ZOOM_THRESHOLD = 16;
+// One zoom level closer than before (was 16) - name tags now appear only once
+// you're a bit further into the city, and clustering (below, tied to this)
+// therefore holds for one level longer too.
+const LABEL_ZOOM_THRESHOLD = 17;
 
 // The clustering library's own default (maxZoom: 16) kept blue "N nearby
 // points" bubbles up almost to the same zoom where per-pin labels start
@@ -57,10 +60,10 @@ const CLUSTER_MAX_ZOOM = LABEL_ZOOM_THRESHOLD - 2;
 // marker circle reads as a bit too big/cluttered. Shrinks slightly at that
 // city-overview zoom band; once zoomed in past it (individual streets/pins),
 // markers return to the normal, easier-to-tap size.
-const CITY_VIEW_MAX_ZOOM = 14;
-// Shrunk ~25% (was 12 / 15) - the pins read as too big on the map.
-const MARKER_SCALE_CITY_VIEW = 9;
-const MARKER_SCALE_DEFAULT = 11;
+const CITY_VIEW_MAX_ZOOM = 15;
+// Originally 12 / 15, shrunk to 9 / 11 (too small), now in between.
+const MARKER_SCALE_CITY_VIEW = 10;
+const MARKER_SCALE_DEFAULT = 13;
 function markerScaleForZoom(zoom: number | undefined): number {
   return zoom !== undefined && zoom < CITY_VIEW_MAX_ZOOM ? MARKER_SCALE_CITY_VIEW : MARKER_SCALE_DEFAULT;
 }

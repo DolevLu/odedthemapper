@@ -214,6 +214,8 @@ export function DayRouteMap({
 
   const [internalActiveDayIndex, setInternalActiveDayIndex] = useState<number | null>(null);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
+  // Master switch for the grey "other points" layer (see below).
+  const [showGhosts, setShowGhosts] = useState(true);
   const activeDayIndex = controlledActiveDayIndex !== undefined ? controlledActiveDayIndex : internalActiveDayIndex;
   const setActiveDayIndex = onActiveDayIndexChange ?? setInternalActiveDayIndex;
 
@@ -386,7 +388,7 @@ export function DayRouteMap({
   // opens its popup. Closing the popup - or tapping the map, or opening any
   // other point - puts it back to a grey dot (revertRevealed).
   useEffect(() => {
-    if (!loaded || !mapRef.current) return;
+    if (!loaded || !mapRef.current || !showGhosts) return;
     const map = mapRef.current;
     const circles = new Map<string, { circle: google.maps.Circle; lat: number }>();
 
@@ -443,7 +445,7 @@ export function DayRouteMap({
       circles.forEach(({ circle }) => circle.setMap(null));
       circles.clear();
     };
-  }, [loaded, otherPois]);
+  }, [loaded, otherPois, showGhosts]);
 
   // "You are here", same blue-dot treatment as the main Map screen — auto-
   // starts once today is genuinely a day of this trip (todayDayIndex set,
@@ -601,6 +603,27 @@ export function DayRouteMap({
             לוויין
           </button>
         </div>
+        {/* One small switch for the whole grey "other points" layer — right
+         * under the Map/Satellite toggle so the two map-display controls
+         * sit together. Only rendered when there ARE other points. */}
+        {otherPois.length > 0 && (
+          <button
+            onClick={() => setShowGhosts((v) => !v)}
+            aria-pressed={showGhosts}
+            title={showGhosts ? "הסתרת נקודות נוספות" : "הצגת נקודות נוספות"}
+            className={`absolute z-10 flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold shadow-md ${
+              mobileFullScreen ? "start-2 top-[calc(6.25rem+env(safe-area-inset-top))] sm:end-2 sm:start-auto sm:top-12" : "end-2 top-12"
+            }`}
+            style={{ color: "#1a1a1a" }}
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-full"
+              style={{ background: showGhosts ? "#9CA3AF" : "transparent", border: "1.5px solid #9CA3AF" }}
+            />
+            נקודות נוספות
+          </button>
+        )}
       </div>
     </div>
   );
