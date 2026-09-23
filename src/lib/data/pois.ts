@@ -30,6 +30,13 @@ export type FlatPoi = {
   description: string | null;
   wantsBooking: boolean;
   isMustSee: boolean;
+  /** Linked Google Place data - see PointOfInterest.googlePlaceId. */
+  website?: string | null;
+  phone?: string | null;
+  googleUrl?: string | null;
+  googleRating?: number | null;
+  googleRatingCount?: number | null;
+  googleHours?: string[] | null;
 };
 
 /** Strips <img> tags and remaining HTML markup from a KML description blob,
@@ -62,7 +69,7 @@ export function extractTextDescription(html: string | null, maxLength = 280): st
  * net for any edit path that doesn't go through those actions. This is the
  * main fix behind "switching between screens feels slow." */
 export async function getFlatPoisForDestination(destinationId: string): Promise<FlatPoi[]> {
-  return unstable_cache(() => fetchFlatPoisForDestination(destinationId), [`flat-pois-${destinationId}`], {
+  return unstable_cache(() => fetchFlatPoisForDestination(destinationId), [`flat-pois-v2-${destinationId}`], {
     tags: [`pois-${destinationId}`],
     revalidate: 3600,
   })();
@@ -150,8 +157,14 @@ async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatP
               rawDescriptionHtml: true,
               wantsBooking: true,
               isMustSee: true,
+              website: true,
+              phone: true,
+              googleUrl: true,
+              googleRating: true,
+              googleRatingCount: true,
+              googleHours: true,
               tags: { select: { label: true } },
-              photos: { take: 1, select: { url: true } },
+              photos: { take: 1, orderBy: { id: "asc" }, select: { url: true } },
             },
           },
         },
@@ -185,6 +198,12 @@ async function fetchFlatPoisForDestination(destinationId: string): Promise<FlatP
           description: extractTextDescription(poi.rawDescriptionHtml),
           wantsBooking: poi.wantsBooking,
           isMustSee: poi.isMustSee,
+          website: poi.website,
+          phone: poi.phone,
+          googleUrl: poi.googleUrl,
+          googleRating: poi.googleRating,
+          googleRatingCount: poi.googleRatingCount,
+          googleHours: poi.googleHours ? (JSON.parse(poi.googleHours) as string[]) : null,
         });
       }
     }

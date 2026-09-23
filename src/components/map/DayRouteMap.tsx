@@ -99,17 +99,7 @@ function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean,
 
 // Deliberately tiny and plain grey — a passive "here's what else is around"
 // layer, not competing with the route's own numbered stops for attention.
-function ghostDotIcon(): google.maps.Icon {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10">
-      <circle cx="5" cy="5" r="3.5" fill="#9CA3AF" stroke="white" stroke-width="1.5" />
-    </svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(10, 10),
-    anchor: new google.maps.Point(5, 5),
-  };
-}
+const GHOST_RADIUS_PX = 4;
 
 function otherPoiInfoWindowHtml(p: OtherPoi): string {
   const photo = p.photoUrl
@@ -194,8 +184,9 @@ export function DayRouteMap({
   // torn down and rebuilt on every day-filter change) — these don't depend
   // on which day is active, so they're managed independently and only
   // rebuilt when the underlying otherPois list itself changes.
-  const otherPoiMarkersRef = useRef<Map<string, google.maps.Marker>>(new Map());
-  const revealedOtherPoiIdsRef = useRef<Set<string>>(new Set());
+  const revealMarkerRef = useRef<google.maps.Marker | null>(null);
+  const revealedIdRef = useRef<string | null>(null);
+  const revertRevealedRef = useRef<(() => void) | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
 
@@ -229,6 +220,13 @@ export function DayRouteMap({
         styles: DECLUTTERED_MAP_STYLES,
       });
       infoWindowRef.current = new google.maps.InfoWindow();
+      // Closing the popup (its own X) or tapping empty map puts any revealed
+      // "ghost" point back to a grey dot - see the ghost layer below.
+      google.maps.event.addListener(infoWindowRef.current, "closeclick", () => revertRevealedRef.current?.());
+      mapRef.current.addListener("click", () => {
+        infoWindowRef.current?.close();
+        revertRevealedRef.current?.();
+      });
 
       // Wires the plain-HTML "move to day N" buttons inside the info
       // window — fires on every open() since Maps rebuilds the content DOM
@@ -286,6 +284,7 @@ export function DayRouteMap({
         strokeColor: color,
         strokeWeight: 3,
         strokeOpacity: 0.8,
+        zIndex: 5,
         map: mapRef.current!,
       });
       overlaysRef.current.push(polyline);
@@ -333,6 +332,7 @@ export function DayRouteMap({
           zIndex: isCurrent ? 500 : isDone ? 100 : undefined,
         });
         marker.addListener("click", () => {
+          revertRevealedRef.current?.();
           infoWindowRef.current?.setContent(infoWindowHtml(p, day.dayIndex, days.length, Boolean(onMoveToDayRef.current)));
           infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
         });
@@ -346,43 +346,80 @@ export function DayRouteMap({
   }, [loaded, days, visibleDays, todayDayIndex]);
 
   // The "ghost" layer: every other curated point on this destination, as
-  // small grey dots — independent of which day is filtered (it's "what's
-  // around", not part of any one day's route) so it only rebuilds when the
-  // underlying list itself changes, not on every day-pill click. Clicking a
-  // dot reveals it in place: swaps its icon for the real category icon/color
-  // (same categoryMarkerIcon the main Map screen uses) and opens its info
-  // window, rather than needing a separate "explore mode" toggle — exactly
-  // the requested "overlap" between staying focused on the route and still
-  // seeing what's nearby while walking it.
+  // small grey dots - independent of which day is filtered (it's "what's
+  // around", not part of any one day's route), so it only rebuilds when the
+  // underlying list itself changes.
+  //
+  // Drawn as google.maps.Circle shapes, NOT Markers, on purpose: shapes render
+  // in the map's overlay layer, which sits UNDER the marker layer, so the dots
+  // end up behind the route's own numbered stops (markers) AND behind its
+  // lines (polylines, given a higher zIndex than these circles) - the route is
+  // the centre of this screen, the dots are background. A Marker could never
+  // go under a polyline. The radius is recomputed on zoom so a dot stays a
+  // constant few pixels wide instead of scaling with the map like a real
+  // metres-radius circle would.
+  //
+  // Clicking one reveals it: a Marker with its real category icon/colour
+  // (same categoryMarkerIcon the main Map screen uses) takes its place and
+  // opens its popup. Closing the popup - or tapping the map, or opening any
+  // other point - puts it back to a grey dot (revertRevealed).
   useEffect(() => {
     if (!loaded || !mapRef.current) return;
-    otherPoiMarkersRef.current.forEach((m) => m.setMap(null));
-    otherPoiMarkersRef.current.clear();
-    revealedOtherPoiIdsRef.current.clear();
+    const map = mapRef.current;
+    const circles = new Map<string, { circle: google.maps.Circle; lat: number }>();
+
+    function radiusFor(lat: number): number {
+      const zoom = map.getZoom() ?? 12;
+      return (GHOST_RADIUS_PX * 156543.03392 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, zoom);
+    }
+
+    function revert() {
+      revealMarkerRef.current?.setMap(null);
+      const id = revealedIdRef.current;
+      if (id) circles.get(id)?.circle.setVisible(true);
+      revealedIdRef.current = null;
+    }
+    revertRevealedRef.current = revert;
 
     otherPois.forEach((p) => {
-      const marker = new google.maps.Marker({
-        position: { lat: p.lat, lng: p.lng },
-        map: mapRef.current!,
-        icon: ghostDotIcon(),
-        title: p.name,
-        zIndex: 10,
+      const circle = new google.maps.Circle({
+        center: { lat: p.lat, lng: p.lng },
+        radius: radiusFor(p.lat),
+        map,
+        fillColor: "#9CA3AF",
+        fillOpacity: 0.95,
+        strokeColor: "#FFFFFF",
+        strokeOpacity: 1,
+        strokeWeight: 1,
+        clickable: true,
+        zIndex: 1,
       });
-      marker.addListener("click", () => {
-        if (!revealedOtherPoiIdsRef.current.has(p.id)) {
-          revealedOtherPoiIdsRef.current.add(p.id);
-          marker.setIcon(categoryMarkerIcon(p.categoryColor, p.iconCategory ?? p.categoryName, 11, false, p.colorHex, p.name));
-          marker.setZIndex(200);
-        }
+      circle.addListener("click", () => {
+        revert();
+        revealedIdRef.current = p.id;
+        circle.setVisible(false);
+        if (!revealMarkerRef.current) revealMarkerRef.current = new google.maps.Marker({ zIndex: 300 });
+        const marker = revealMarkerRef.current;
+        marker.setPosition({ lat: p.lat, lng: p.lng });
+        marker.setTitle(p.name);
+        marker.setIcon(categoryMarkerIcon(p.categoryColor, p.iconCategory ?? p.categoryName, 10, false, p.colorHex, p.name));
+        marker.setMap(map);
         infoWindowRef.current?.setContent(otherPoiInfoWindowHtml(p));
-        infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
+        infoWindowRef.current?.open({ map, anchor: marker });
       });
-      otherPoiMarkersRef.current.set(p.id, marker);
+      circles.set(p.id, { circle, lat: p.lat });
+    });
+
+    const zoomListener = map.addListener("zoom_changed", () => {
+      circles.forEach(({ circle, lat }) => circle.setRadius(radiusFor(lat)));
     });
 
     return () => {
-      otherPoiMarkersRef.current.forEach((m) => m.setMap(null));
-      otherPoiMarkersRef.current.clear();
+      google.maps.event.removeListener(zoomListener);
+      revert();
+      revertRevealedRef.current = null;
+      circles.forEach(({ circle }) => circle.setMap(null));
+      circles.clear();
     };
   }, [loaded, otherPois]);
 

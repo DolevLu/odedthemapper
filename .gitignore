@@ -50,3 +50,6 @@ next-env.d.ts
 
 # signed Android builds (kept locally, never committed)
 /releases/
+
+# local safety backups from data scripts
+/backups/

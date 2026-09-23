@@ -58,8 +58,9 @@ const CLUSTER_MAX_ZOOM = LABEL_ZOOM_THRESHOLD - 2;
 // city-overview zoom band; once zoomed in past it (individual streets/pins),
 // markers return to the normal, easier-to-tap size.
 const CITY_VIEW_MAX_ZOOM = 14;
-const MARKER_SCALE_CITY_VIEW = 12;
-const MARKER_SCALE_DEFAULT = 15;
+// Shrunk ~25% (was 12 / 15) - the pins read as too big on the map.
+const MARKER_SCALE_CITY_VIEW = 9;
+const MARKER_SCALE_DEFAULT = 11;
 function markerScaleForZoom(zoom: number | undefined): number {
   return zoom !== undefined && zoom < CITY_VIEW_MAX_ZOOM ? MARKER_SCALE_CITY_VIEW : MARKER_SCALE_DEFAULT;
 }
@@ -113,10 +114,29 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
     <button data-book-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${wantsBooking ? t("map.addedToBooking") : t("map.toBooking")}</button>
     ${isAdmin ? `<button data-edit-style-btn data-poi-id="${poi.id}" style="${INFO_ACTION_BTN_STYLE}">${t("map.editStyle")}</button>` : ""}
   </div>`;
+  // Points linked to a real Google Place (see PointOfInterest.googlePlaceId)
+  // get the same detail block a place saved straight from Google gets:
+  // Google's rating, address, phone, website, the link into Google Maps and
+  // the week's opening hours.
+  const line = (html: string) => `<div style="font-size:12px;margin-top:3px;max-width:230px">${html}</div>`;
+  const safeLink = (u: string) => (/^https?:\/\//i.test(u) ? escapeHtml(u) : "#");
+  const googleDetails = [
+    poi.googleRating != null
+      ? line(`⭐ ${poi.googleRating}${poi.googleRatingCount ? ` · ${poi.googleRatingCount.toLocaleString("he-IL")} ${t("map.reviews")}` : ""}`)
+      : "",
+    poi.address ? line(`📍 ${escapeHtml(poi.address)}`) : "",
+    poi.phone ? line(`<a href="tel:${escapeHtml(poi.phone)}" style="color:#7C3AED">📞 ${escapeHtml(poi.phone)}</a>`) : "",
+    poi.website ? line(`<a href="${safeLink(poi.website)}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 ${t("map.website")}</a>`) : "",
+    poi.googleUrl ? line(`<a href="${safeLink(poi.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">🗺️ ${t("map.openInGoogleMaps")}</a>`) : "",
+    poi.googleHours && poi.googleHours.length > 0
+      ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${poi.googleHours.map((h) => `<div>${escapeHtml(h)}</div>`).join("")}</details>`
+      : "",
+  ].join("");
   return `<div style="font-family:'Rubik',sans-serif;padding:8px">
     ${photo}
     <strong>${poi.name}</strong><br/>
     <span style="opacity:.6;font-size:12px">${poi.categoryName} · ${poi.areaName}</span>
+    ${googleDetails}
     ${description}
     ${starRatingHtml(poi.id, myRating)}
     ${actions}
