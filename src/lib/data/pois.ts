@@ -69,7 +69,7 @@ export function extractTextDescription(html: string | null, maxLength = 280): st
  * net for any edit path that doesn't go through those actions. This is the
  * main fix behind "switching between screens feels slow." */
 export async function getFlatPoisForDestination(destinationId: string): Promise<FlatPoi[]> {
-  return unstable_cache(() => fetchFlatPoisForDestination(destinationId), [`flat-pois-v2-${destinationId}`], {
+  return unstable_cache(() => fetchFlatPoisForDestination(destinationId), [`flat-pois-v3-${destinationId}`], {
     tags: [`pois-${destinationId}`],
     revalidate: 3600,
   })();
