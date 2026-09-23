@@ -21,6 +21,8 @@ const { PrismaClient } = require("@prisma/client");
 const args = process.argv.slice(2);
 const slug = args[args.indexOf("--slug") + 1];
 const DRY = args.includes("--dry");
+// Appended to each name query to keep a common name ("Central Station") in the right city.
+const CITY = args.includes("--city") ? args[args.indexOf("--city") + 1] : "";
 const LIMIT = args.includes("--limit") ? Number(args[args.indexOf("--limit") + 1]) : Infinity;
 if (!slug) throw new Error("--slug is required");
 
@@ -33,7 +35,7 @@ const env = Object.fromEntries(
 const KEY = env.GOOGLE_MAPS_SERVER_API_KEY || env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 const prisma = new PrismaClient({ datasources: { db: { url: env.POSTGRES_PRISMA_URL + "&connection_limit=4" } } });
 
-const STOP = new Set(["the", "of", "in", "and", "a", "at", "de", "la", "restaurant", "cafe", "bar", "prague", "praha", "praga"]);
+const STOP = new Set(["the", "of", "in", "and", "a", "at", "de", "la", "restaurant", "cafe", "bar", "prague", "praha", "praga", "copenhagen", "kobenhavn", "japan", ...CITY.toLowerCase().split(" ")]);
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9֐-׿]+/g, " ").trim();
 const tokens = (s) => norm(s).split(" ").filter((t) => t && !STOP.has(t));
 function similarity(a, b) {
@@ -41,7 +43,8 @@ function similarity(a, b) {
   if (!A.size || !B.size) return 0;
   let common = 0;
   for (const t of A) if (B.has(t) || [...B].some((u) => u.length > 4 && t.length > 4 && (u.startsWith(t) || t.startsWith(u)))) common++;
-  return common / Math.min(A.size, B.size);
+  // Capped: several of A's tokens can prefix-match one token of B, which used to push this above 1.
+  return Math.min(1, common / Math.min(A.size, B.size));
 }
 function meters(aLat, aLng, bLat, bLng) {
   const R = 6371000, r = (d) => (d * Math.PI) / 180;
@@ -59,12 +62,12 @@ async function g(url) {
   }
   return { status: "FETCH_FAILED" };
 }
-const accept = (sim, dist) => (sim >= 0.6 && dist <= 500) || (sim >= 0.34 && dist <= 120) || (sim >= 0.9 && dist <= 3000);
+const accept = (sim, dist) => (sim >= 0.6 && dist <= 500) || (sim >= 0.34 && dist <= 120) || (sim >= 0.9 && dist <= 300);
 
 async function findMatch(poi) {
   const cands = [];
   const fp = await g(
-    `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(poi.name + " Prague")}&inputtype=textquery&locationbias=circle:800@${poi.lat},${poi.lng}&fields=place_id,name,geometry&language=en&key=${KEY}`
+    `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent((poi.name + " " + CITY).trim())}&inputtype=textquery&locationbias=circle:800@${poi.lat},${poi.lng}&fields=place_id,name,geometry,types&language=en&key=${KEY}`
   );
   cands.push(...(fp.candidates || []));
   let best = pick(cands, poi);
@@ -74,9 +77,18 @@ async function findMatch(poi) {
   );
   return pick(ts.results || [], poi);
 }
+// Places that are an AREA or a ROAD rather than somewhere you go: a KML pin named after a town, ward or highway
+// would otherwise pick up an unrelated shop/office that happens to share the name.
+const NOT_A_PLACE = new Set(["locality", "political", "route", "street_address", "neighborhood", "sublocality", "sublocality_level_1", "administrative_area_level_1", "administrative_area_level_2", "administrative_area_level_3", "postal_code", "country"]);
+function isAreaOrRoad(types) {
+  if (!types || !types.length) return false;
+  if (types.includes("point_of_interest") || types.includes("establishment")) return false;
+  return types.some((t) => NOT_A_PLACE.has(t));
+}
 function pick(cands, poi) {
   let best = null;
   for (const c of cands) {
+    if (isAreaOrRoad(c.types)) continue;
     const loc = c.geometry && c.geometry.location;
     if (!loc) continue;
     const dist = meters(poi.lat, poi.lng, loc.lat, loc.lng);
@@ -149,7 +161,9 @@ function pick(cands, poi) {
       });
     }
   }
+  const ticker = setInterval(() => console.log(`  ...${Math.min(idx, todo.length)}/${todo.length} (matched ${report.matched.length}, skipped ${report.skipped.length})`), 30000);
   await Promise.all([worker(), worker(), worker()]);
+  clearInterval(ticker);
 
   const reportFile = path.join(__dirname, "..", "backups", `${slug}-enrich-report-${DRY ? "dry-" : ""}${stamp}.json`);
   fs.writeFileSync(reportFile, JSON.stringify(report, null, 1));
