@@ -126,8 +126,8 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
       : "",
     poi.address ? line(`📍 ${escapeHtml(poi.address)}`) : "",
     poi.phone ? line(`<a href="tel:${escapeHtml(poi.phone)}" style="color:#7C3AED">📞 ${escapeHtml(poi.phone)}</a>`) : "",
-    poi.website ? line(`<a href="${safeLink(poi.website)}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 ${t("map.website")}</a>`) : "",
-    poi.googleUrl ? line(`<a href="${safeLink(poi.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">🗺️ ${t("map.openInGoogleMaps")}</a>`) : "",
+    poi.website ? line(`<a href="${safeLink(poi.website)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.website")}</a>`) : "",
+    poi.googleUrl ? line(`<a href="${safeLink(poi.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.openInGoogleMaps")}</a>`) : "",
     poi.googleHours && poi.googleHours.length > 0
       ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${poi.googleHours.map((h) => `<div>${escapeHtml(h)}</div>`).join("")}</details>`
       : "",

@@ -137,6 +137,13 @@ export default async function ItineraryPage({
       iconCategory: p.iconCategory,
       photoUrl: p.photoUrl,
       description: p.description,
+      address: p.address,
+      website: p.website,
+      phone: p.phone,
+      googleUrl: p.googleUrl,
+      googleRating: p.googleRating,
+      googleRatingCount: p.googleRatingCount,
+      googleHours: p.googleHours,
     }));
 
   const dayListDays = (itinerary?.days ?? []).map((day) => ({

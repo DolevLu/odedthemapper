@@ -34,6 +34,13 @@ export type OtherPoi = {
   iconCategory: string | null;
   photoUrl: string | null;
   description: string | null;
+  address?: string | null;
+  website?: string | null;
+  phone?: string | null;
+  googleUrl?: string | null;
+  googleRating?: number | null;
+  googleRatingCount?: number | null;
+  googleHours?: string[] | null;
 };
 
 /** Same "where am I" cue as DayItemsList's timeStatusMap — the last
@@ -108,7 +115,22 @@ function otherPoiInfoWindowHtml(p: OtherPoi): string {
   const description = p.description
     ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${p.description.slice(0, 200)}</div>`
     : "";
-  return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong><div style="font-size:11px;opacity:.6;margin-top:2px">${p.categoryName}</div>${description}</div>`;
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const safe = (u: string) => (/^https?:\/\//i.test(u) ? esc(u) : "#");
+  const line = (html: string) => `<div style="font-size:12px;margin-top:3px;max-width:230px">${html}</div>`;
+  // Same details block the main Map screen's popup shows for a point linked
+  // to a Google Place, so a point reads the same wherever it's opened.
+  const google = [
+    p.googleRating != null ? line(`⭐ ${p.googleRating}${p.googleRatingCount ? ` · ${p.googleRatingCount.toLocaleString("he-IL")} ביקורות` : ""}`) : "",
+    p.address ? line(`📍 ${esc(p.address)}`) : "",
+    p.phone ? line(`<a href="tel:${esc(p.phone)}" style="color:#7C3AED">📞 ${esc(p.phone)}</a>`) : "",
+    p.website ? line(`<a href="${safe(p.website)}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 אתר</a>`) : "",
+    p.googleUrl ? line(`<a href="${safe(p.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">🗺️ פתיחה ב-Google Maps</a>`) : "",
+    p.googleHours && p.googleHours.length > 0
+      ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${p.googleHours.map((h) => `<div>${esc(h)}</div>`).join("")}</details>`
+      : "",
+  ].join("");
+  return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong><div style="font-size:11px;opacity:.6;margin-top:2px">${p.categoryName}</div>${google}${description}</div>`;
 }
 
 function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, totalDays: number, movable: boolean): string {
