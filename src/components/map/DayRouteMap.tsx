@@ -215,7 +215,7 @@ export function DayRouteMap({
   const [internalActiveDayIndex, setInternalActiveDayIndex] = useState<number | null>(null);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   // Master switch for the grey "other points" layer (see below).
-  const [showGhosts, setShowGhosts] = useState(true);
+  const [showGhosts, setShowGhosts] = useState(false);
   const activeDayIndex = controlledActiveDayIndex !== undefined ? controlledActiveDayIndex : internalActiveDayIndex;
   const setActiveDayIndex = onActiveDayIndexChange ?? setInternalActiveDayIndex;
 

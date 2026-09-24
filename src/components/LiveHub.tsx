@@ -11,6 +11,15 @@ import { haversineKm } from "@/lib/geo";
 import { isIndoorFriendly, isOutdoorStop } from "@/lib/indoor";
 import { ensureGoogleMaps, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
+import { DESTINATION_FACTS } from "@/lib/destinationFacts";
+
+/** Wall-clock hour/minute at the destination (its own IANA timezone), regardless of where the device is. */
+function wallClock(date: Date, timeZone: string | undefined): { h: number; m: number } {
+  if (!timeZone) return { h: date.getHours(), m: date.getMinutes() };
+  const parts = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return { h: get("hour") % 24, m: get("minute") };
+}
 
 export type LiveStop = {
   id: string;
@@ -139,7 +148,10 @@ export function LiveHub({
     );
   }
 
-  const nowMinutes = now ? now.getHours() * 60 + now.getMinutes() : null;
+  // Everything on this screen (the clock, the current/next stop) runs on the destination's own time, not the device's.
+  const timeZone = DESTINATION_FACTS[slug]?.timezone;
+  const clock = now ? wallClock(now, timeZone) : null;
+  const nowMinutes = clock ? clock.h * 60 + clock.m : null;
   const timed = useMemo(() => (stops ?? []).filter((s) => s.time), [stops]);
 
   const { current, next, remaining } = useMemo(() => {
@@ -221,7 +233,7 @@ export function LiveHub({
 
   function liveContext(): string {
     const parts: string[] = [];
-    if (now) parts.push(`${lang === "he" ? "שעה" : "Time"}: ${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`);
+    if (clock) parts.push(`${lang === "he" ? "שעה" : "Time"}: ${clock.h}:${String(clock.m).padStart(2, "0")}`);
     if (weather) {
       parts.push(
         `${lang === "he" ? "מזג אוויר" : "Weather"}: ${weatherLabel(weather.code, lang)} ${weather.tempC}°C, ${lang === "he" ? "סיכוי גשם" : "rain chance"} ${weather.rainChanceNext6hPct}%`
@@ -247,7 +259,7 @@ export function LiveHub({
   }
 
   const chips = [t("live.chipHungry"), t("live.chipCoffee"), t("live.chipRain"), t("live.chipKids"), t("live.chipQuiet")];
-  const timeText = now ? now.toLocaleTimeString(lang === "he" ? "he-IL" : "en-GB", { hour: "2-digit", minute: "2-digit" }) : "--:--";
+  const timeText = clock ? `${String(clock.h).padStart(2, "0")}:${String(clock.m).padStart(2, "0")}` : "--:--";
   const stateBadge = (s: OpenState | undefined) =>
     s === "open" ? (
       <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">{t("live.open")}</span>
