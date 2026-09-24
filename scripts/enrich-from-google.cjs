@@ -22,6 +22,9 @@ const args = process.argv.slice(2);
 const slug = args[args.indexOf("--slug") + 1];
 const DRY = args.includes("--dry");
 // Appended to each name query to keep a common name ("Central Station") in the right city.
+// Destination's own language code for a second search pass ("it", "pl", "vi", "hu"...).
+const LANG2 = args.includes("--lang2") ? args[args.indexOf("--lang2") + 1] : "";
+const WORKERS = args.includes("--workers") ? Number(args[args.indexOf("--workers") + 1]) : 6;
 const CITY = args.includes("--city") ? args[args.indexOf("--city") + 1] : "";
 const LIMIT = args.includes("--limit") ? Number(args[args.indexOf("--limit") + 1]) : Infinity;
 if (!slug) throw new Error("--slug is required");
@@ -33,7 +36,7 @@ const env = Object.fromEntries(
   })
 );
 const KEY = env.GOOGLE_MAPS_SERVER_API_KEY || env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-const prisma = new PrismaClient({ datasources: { db: { url: env.POSTGRES_PRISMA_URL + "&connection_limit=4" } } });
+const prisma = new PrismaClient({ datasources: { db: { url: env.POSTGRES_PRISMA_URL + "&connection_limit=3" } } });
 
 const STOP = new Set(["the", "of", "in", "and", "a", "at", "de", "la", "restaurant", "cafe", "bar", "prague", "praha", "praga", "copenhagen", "kobenhavn", "japan", ...CITY.toLowerCase().split(" ")]);
 const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9֐-׿]+/g, " ").trim();
@@ -62,42 +65,87 @@ async function g(url) {
   }
   return { status: "FETCH_FAILED" };
 }
-const accept = (sim, dist) => (sim >= 0.6 && dist <= 500) || (sim >= 0.34 && dist <= 120) || (sim >= 0.9 && dist <= 300);
+// ---- matching ---------------------------------------------------------
+// Words that name a KIND of place, not a particular one: "Train Station" matches every station in town, so for a
+// pin named only with these the candidate has to be practically on top of the pin.
+const GENERIC = new Set(["station", "train", "metro", "market", "park", "bridge", "street", "square", "plaza", "road", "avenue", "church", "castle", "museum", "garden", "gardens", "tower", "beach", "temple", "shrine", "hotel", "hostel", "store", "supermarket", "parking", "airport", "lake", "river", "island", "viewpoint", "observation", "deck", "point", "view", "main", "old", "new", "central", "city", "town", "hall", "gate", "square", "port", "harbour", "harbor", "ferry", "bus", "stop", "cafe", "coffee", "restaurant", "bar", "club", "mall", "shop", "center", "centre", "monument", "statue", "fountain", "field", "playground", "pier", "wall", "house"]);
+const isGeneric = (name) => {
+  const t = tokens(name);
+  return t.length === 0 || t.every((x) => GENERIC.has(x)) || (t.length === 1 && t[0].length < 6);
+};
+const hasLatin = (s) => /[a-zA-ZÀ-ɏ]/.test(s);
+const hasHebrew = (s) => /[֐-׿]/.test(s);
+
+/** The name as typed, plus cleaner spellings of it: without a parenthetical, the part before/after " - " or a
+ * comma, without a trailing block number - so "Ameyoko Street, Ueno 6" is also tried as "Ameyoko Street". */
+function variants(name) {
+  const out = [];
+  const add = (x) => { x = x.replace(/\s+/g, " ").replace(/[\s,.-]+$/, "").trim(); if (x.length > 1 && (hasLatin(x) || hasHebrew(x)) && !out.includes(x)) out.push(x); };
+  add(name);
+  const noParen = name.replace(/\([^)]*\)/g, " ");
+  add(noParen);
+  noParen.split(/\s[-–—|]\s|,/).forEach((p) => { add(p); add(p.replace(/\s+\d+([-\s]?chome)?$/i, "")); });
+  return out.slice(0, 4);
+}
+
+function score(cand, poi, vars) {
+  const loc = cand.geometry && cand.geometry.location;
+  if (!loc) return null;
+  const dist = meters(poi.lat, poi.lng, loc.lat, loc.lng);
+  let sim = 0, exact = false, generic = true;
+  for (const v of vars) {
+    sim = Math.max(sim, similarity(v, cand.name || ""));
+    if (norm(v) && tokens(v).join(" ") === tokens(cand.name || "").join(" ") && tokens(v).length) exact = true;
+    if (!isGeneric(v)) generic = false;
+  }
+  // A pin named only "Train Station" / "Observation Deck" must sit right on that place.
+  const ok = generic
+    ? sim >= 0.5 && dist <= 150
+    : (sim >= 0.6 && dist <= 500) || (sim >= 0.34 && dist <= 120) || (sim >= 0.9 && dist <= 300) || (exact && dist <= 600);
+  return ok ? { placeId: cand.place_id, name: cand.name, dist, sim, types: cand.types, score: sim * 2 - dist / 1000 } : null;
+}
+function best(cands, poi, vars) {
+  let b = null;
+  for (const c of cands) {
+    const r = score(c, poi, vars);
+    if (r && (!b || r.score > b.score)) b = r;
+  }
+  return b;
+}
 
 async function findMatch(poi) {
-  const cands = [];
-  const fp = await g(
-    `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent((poi.name + " " + CITY).trim())}&inputtype=textquery&locationbias=circle:800@${poi.lat},${poi.lng}&fields=place_id,name,geometry,types&language=en&key=${KEY}`
-  );
-  cands.push(...(fp.candidates || []));
-  let best = pick(cands, poi);
-  if (best) return best;
-  const ts = await g(
-    `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(poi.name)}&location=${poi.lat},${poi.lng}&radius=800&language=en&key=${KEY}`
-  );
-  return pick(ts.results || [], poi);
-}
-// Places that are an AREA or a ROAD rather than somewhere you go: a KML pin named after a town, ward or highway
-// would otherwise pick up an unrelated shop/office that happens to share the name.
-const NOT_A_PLACE = new Set(["locality", "political", "route", "street_address", "neighborhood", "sublocality", "sublocality_level_1", "administrative_area_level_1", "administrative_area_level_2", "administrative_area_level_3", "postal_code", "country"]);
-function isAreaOrRoad(types) {
-  if (!types || !types.length) return false;
-  if (types.includes("point_of_interest") || types.includes("establishment")) return false;
-  return types.some((t) => NOT_A_PLACE.has(t));
-}
-function pick(cands, poi) {
-  let best = null;
-  for (const c of cands) {
-    if (isAreaOrRoad(c.types)) continue;
-    const loc = c.geometry && c.geometry.location;
-    if (!loc) continue;
-    const dist = meters(poi.lat, poi.lng, loc.lat, loc.lng);
-    const sim = similarity(poi.name, c.name || "");
-    if (!accept(sim, dist)) continue;
-    const score = sim * 2 - dist / 1000;
-    if (!best || score > best.score) best = { placeId: c.place_id, name: c.name, dist, sim, score };
+  const vars = variants(poi.name);
+  if (vars.length === 0) return { skip: "nothing searchable in the name" };
+  const at = `${poi.lat},${poi.lng}`;
+  // A name with no Latin letters is searched in Hebrew (and compared to Google's Hebrew name), everything else in
+  // English first, then in the destination's own language (--lang2) - Google names "Arco di Costantino" as "Arch of
+  // Constantine" in English, which is what the pin says only in the local language.
+  const latin = vars.some(hasLatin);
+  const langs = latin ? ["en", ...(LANG2 ? [LANG2] : [])] : ["he"];
+  const q = vars[vars.length > 1 && latin ? 1 : 0];
+  for (const lang of langs) {
+    // 1. Find Place, once per spelling
+    for (const v of vars.slice(0, 2)) {
+      const fp = await g(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent((v + " " + CITY).trim())}&inputtype=textquery&locationbias=circle:800@${at}&fields=place_id,name,geometry,types&language=${lang}&key=${KEY}`);
+      const m = best(fp.candidates || [], poi, vars);
+      if (m) return m;
+    }
+    // 2. Text Search: up to 20 candidates, so a chain or common name resolves to the one that is actually here
+    const ts = await g(`https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(q)}&location=${at}&radius=1500&language=${lang}&key=${KEY}`);
+    const m2 = best(ts.results || [], poi, vars);
+    if (m2) return m2;
   }
-  return best;
+  // 3. Nearby Search around the pin itself (English names only)
+  if (!latin) return null;
+  const ns = await g(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${at}&radius=200&keyword=${encodeURIComponent(q)}&language=en&key=${KEY}`);
+  return best(ns.results || [], poi, vars);
+}
+// After details are known: an area or a road with no photo and no rating has nothing to give the pin.
+const AREA_TYPES = new Set(["locality", "political", "route", "street_address", "neighborhood", "sublocality", "sublocality_level_1", "administrative_area_level_1", "administrative_area_level_2", "administrative_area_level_3", "postal_code", "country"]);
+function worthless(r) {
+  const types = r.types || [];
+  const isArea = types.some((t) => AREA_TYPES.has(t)) && !types.includes("point_of_interest") && !types.includes("establishment");
+  return isArea && !(r.photos && r.photos.length) && !(r.user_ratings_total > 0);
 }
 
 (async () => {
@@ -121,12 +169,13 @@ function pick(cands, poi) {
     while (idx < todo.length) {
       const poi = todo[idx++];
       const match = await findMatch(poi);
-      if (!match) { report.skipped.push({ name: poi.name, category: poi.category.name, reason: "no confident match" }); continue; }
+      if (!match || match.skip) { report.skipped.push({ id: poi.id, name: poi.name, category: poi.category.name, reason: (match && match.skip) || "no confident match" }); continue; }
       const d = await g(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${match.placeId}&fields=name,geometry,formatted_address,formatted_phone_number,international_phone_number,website,url,rating,user_ratings_total,opening_hours,photos,business_status&language=en&key=${KEY}`
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${match.placeId}&fields=name,geometry,formatted_address,formatted_phone_number,international_phone_number,website,url,rating,user_ratings_total,opening_hours,photos,business_status,types&language=en&key=${KEY}`
       );
       const r = d.result;
       if (!r) { report.skipped.push({ name: poi.name, category: poi.category.name, reason: "details failed: " + d.status }); continue; }
+      if (worthless(r)) { report.skipped.push({ id: poi.id, name: poi.name, category: poi.category.name, reason: "an area/road with no photo or rating" }); continue; }
       if (r.business_status === "CLOSED_PERMANENTLY") { report.skipped.push({ name: poi.name, category: poi.category.name, reason: "permanently closed on Google" }); continue; }
 
       const useGoogleCoords = match.dist <= 250 && r.geometry && r.geometry.location;
@@ -142,7 +191,7 @@ function pick(cands, poi) {
         ...(r.website ? { website: r.website } : {}),
         ...(useGoogleCoords ? { lat: r.geometry.location.lat, lng: r.geometry.location.lng } : {}),
       };
-      report.matched.push({ name: poi.name, google: r.name, dist: Math.round(match.dist), sim: Number(match.sim.toFixed(2)), photo: !!data.googlePhotoRef, rating: data.googleRating });
+      report.matched.push({ id: poi.id, name: poi.name, google: r.name, dist: Math.round(match.dist), sim: Number(match.sim.toFixed(2)), photo: !!data.googlePhotoRef, rating: data.googleRating });
       if (DRY) continue;
 
       await prisma.$transaction(async (tx) => {
@@ -162,7 +211,7 @@ function pick(cands, poi) {
     }
   }
   const ticker = setInterval(() => console.log(`  ...${Math.min(idx, todo.length)}/${todo.length} (matched ${report.matched.length}, skipped ${report.skipped.length})`), 30000);
-  await Promise.all([worker(), worker(), worker()]);
+  await Promise.all(Array.from({ length: WORKERS }, worker));
   clearInterval(ticker);
 
   const reportFile = path.join(__dirname, "..", "backups", `${slug}-enrich-report-${DRY ? "dry-" : ""}${stamp}.json`);
