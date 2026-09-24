@@ -4,7 +4,8 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { getAccessLevel } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
-import { PoiCard } from "@/components/PoiCard";
+import { FavoritesGrid } from "./FavoritesGrid";
+import { InfoStrip, InfoCard } from "@/components/InfoStrip";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { getServerT } from "@/lib/i18n/server";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
@@ -87,87 +88,62 @@ export default async function FavoritesPage({ params }: { params: Promise<{ slug
         {favorites.length === 0 ? (
           <p className="text-sm opacity-60">{t("favorites.empty")}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6">
-            {favorites.map((fav) => (
-              <PoiCard
-                key={fav.id}
-                poi={{
-                  id: fav.poi.id,
-                  name: fav.poi.name,
-                  areaName: fav.poi.category.area.name,
-                  categoryName: fav.poi.category.name,
-                  categoryColor: fav.poi.category.colorHex,
-                  photoUrl: fav.poi.photos[0]?.url ?? null,
-                  hours: fav.poi.hours,
-                  tags: fav.poi.tags.map((t) => t.label),
-                }}
-                slug={slug}
-                favorited
-              />
-            ))}
-          </div>
+          <FavoritesGrid
+            slug={slug}
+            pois={favorites.map((fav) => ({
+              id: fav.poi.id,
+              name: fav.poi.name,
+              areaName: fav.poi.category.area.name,
+              categoryName: fav.poi.category.name,
+              categoryColor: fav.poi.category.colorHex,
+              photoUrl: fav.poi.photos[0]?.url ?? null,
+              hours: fav.poi.hours,
+              tags: fav.poi.tags.map((t) => t.label),
+            }))}
+          />
         )}
       </section>
 
       {tips.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            {t("favorites.importantTips")}
-          </h2>
-          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {tips.map((tip) => (
-              <div
-                key={tip.id}
-                className="game-pop-in border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
-                style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-              >
-                <p className="mb-0.5 text-[11px] font-semibold opacity-60">
-                  {TIP_CATEGORY_KEYS[tip.category] ? t(TIP_CATEGORY_KEYS[tip.category]) : tip.category}
-                </p>
-                <p>{tip.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        <InfoStrip title={t("favorites.importantTips")}>
+          {tips.map((tip) => (
+            <InfoCard key={tip.id} label={TIP_CATEGORY_KEYS[tip.category] ? t(TIP_CATEGORY_KEYS[tip.category]) : tip.category} body={tip.text} />
+          ))}
+        </InfoStrip>
       )}
 
-      <section>
-        <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("favorites.discountsAndCoupons")}
-        </h2>
-        {coupons.length === 0 ? (
+      {coupons.length === 0 ? (
+        <section>
+          <h2 className="mb-2 text-base font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+            {t("favorites.discountsAndCoupons")}
+          </h2>
           <p className="text-sm opacity-60">{t("favorites.noDiscounts")}</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {coupons.map((c) => (
-              <div
-                key={c.id}
-                className="game-pop-in group flex flex-col gap-0.5 border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
-                style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-              >
-                <h3 className="font-semibold">🎁 {c.partnerName}</h3>
-                <p className="opacity-70">{c.discountDesc}</p>
-                {c.code && (
-                  <p className="font-mono">
-                    {t("favorites.code")} {c.code}
-                  </p>
-                )}
-                {c.url && (
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-semibold underline transition-transform duration-200 group-hover:translate-x-[-2px]"
-                    style={{ color: "var(--primary)" }}
-                  >
-                    {t("favorites.detailsAndBenefit")}
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <InfoStrip title={t("favorites.discountsAndCoupons")}>
+          {coupons.map((c) => (
+            <InfoCard
+              key={c.id}
+              title={`🎁 ${c.partnerName}`}
+              body={c.discountDesc}
+              footer={
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  {c.code && (
+                    <span className="rounded-md px-2 py-0.5 font-mono text-xs" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}>
+                      {t("favorites.code")} {c.code}
+                    </span>
+                  )}
+                  {c.url && (
+                    <a href={c.url} target="_blank" rel="noreferrer" className="font-semibold underline" style={{ color: "var(--primary)" }}>
+                      {t("favorites.detailsAndBenefit")}
+                    </a>
+                  )}
+                </span>
+              }
+            />
+          ))}
+        </InfoStrip>
+      )}
     </div>
   );
 }

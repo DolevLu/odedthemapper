@@ -135,6 +135,9 @@ export function PoiCard({
             <CategoryIcon name={poi.categoryName} size={12} />
             {poi.name}
           </h3>
+          <p className="truncate text-[11px] font-semibold leading-tight" style={{ color: poi.categoryColor }}>
+            {poi.categoryName}
+          </p>
           <p className="truncate text-[10px] leading-tight opacity-60">{poi.areaName}</p>
           {(tag || poi.hours || scheduled !== undefined) && (
             <div className="flex flex-wrap items-center gap-1">

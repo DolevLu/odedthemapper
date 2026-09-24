@@ -7,6 +7,7 @@ import { getBookingRecommendations } from "@/lib/bookingRecommendations";
 import { getUpcomingHolidays } from "@/lib/holidays";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { BookableList } from "./BookableList";
+import { InfoStrip, InfoCard } from "@/components/InfoStrip";
 import { getLang, getServerT } from "@/lib/i18n/server";
 
 export default async function BookablePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -55,49 +56,26 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
   const holidays = getUpcomingHolidays(slug).slice(0, 5);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {holidays.length > 0 && (
-        <section className="border p-3" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-          <h2 className="mb-0.5 text-sm font-bold">{t("bookable.upcomingHolidays")}</h2>
-          <p className="mb-2 text-xs opacity-70">{t("bookable.holidaysNote")}</p>
-          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {holidays.map((h) => (
-              <div
-                key={`${h.date}-${h.name}`}
-                className="flex items-center justify-between gap-2 border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.5deg]"
-                style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
-              >
-                <span className="truncate font-semibold">🎉 {h.name}</span>
-                <span className="shrink-0 text-[11px] opacity-60">{new Date(h.date).toLocaleDateString(dateLocale)}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+        <InfoStrip title={t("bookable.upcomingHolidays")} hint={t("bookable.holidaysNote")}>
+          {holidays.map((h) => (
+            <InfoCard key={`${h.date}-${h.name}`} title={`🎉 ${h.name}`} label={new Date(h.date).toLocaleDateString(dateLocale, { day: "numeric", month: "long" })} />
+          ))}
+        </InfoStrip>
       )}
 
-      <section
-        className="border p-3"
-        style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-      >
-        <h1 className="mb-0.5 text-base font-bold">{t("bookable.recommendationsTitle")}</h1>
-        <p className="mb-2 text-xs opacity-70">{t("bookable.recommendationsBody")}</p>
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-          {recommendations.map((rec) => (
-            <div
-              key={rec.title}
-              className="border px-2.5 py-1.5 text-xs transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[0.5deg]"
-              style={{ background: "var(--background)", borderRadius: "var(--radius)", borderColor: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
-            >
-              <p className="font-semibold">✨ {rec.title}</p>
-              <p className="text-[11px] opacity-70">{rec.note}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <InfoStrip title={t("bookable.recommendationsTitle")} hint={t("bookable.recommendationsBody")}>
+        {recommendations.map((rec) => (
+          <InfoCard key={rec.title} title={`✨ ${rec.title}`} body={rec.note} />
+        ))}
+      </InfoStrip>
 
       <section>
-        <h2 className="mb-2 text-lg font-bold">{t("bookable.listTitle")}</h2>
-        <p className="mb-6 text-sm opacity-70">{t("bookable.listBody")}</p>
+        <h2 className="text-lg font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+          {t("bookable.listTitle")}
+        </h2>
+        <p className="mb-3 text-sm opacity-70">{t("bookable.listBody")}</p>
         <BookableList pois={items} slug={slug} />
       </section>
     </div>
