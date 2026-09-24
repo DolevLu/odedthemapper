@@ -42,40 +42,12 @@ export function CurrencyConverterWidget() {
     setTo(from);
   }
 
+  const field = "rounded-xl border px-3 py-2.5 text-base";
   return (
-    <div
-      className="flex flex-col gap-2 border p-2.5 sm:gap-3 sm:p-4"
-      style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-    >
-      <h2 className="text-xs font-bold sm:text-sm">{t("currency.title")}</h2>
-      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-20 min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-xs sm:w-28 sm:flex-initial sm:px-3 sm:py-2 sm:text-sm"
-          style={{ borderColor: "var(--primary)" }}
-        />
-        <select value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-lg border px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }}>
-          {CURRENCIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.code}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={swap}
-          type="button"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs sm:h-8 sm:w-8 sm:text-sm"
-          style={{ borderColor: "var(--primary)" }}
-          aria-label={t("currency.swapDirection")}
-          title={t("currency.swapDirection")}
-        >
-          ⇄
-        </button>
-        <select value={to} onChange={(e) => setTo(e.target.value)} className="rounded-lg border px-1.5 py-1.5 text-xs sm:px-2 sm:py-2 sm:text-sm" style={{ borderColor: "var(--primary)" }}>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${field} w-full min-w-0 flex-1`} style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" }} />
+        <select value={from} onChange={(e) => setFrom(e.target.value)} className={field} style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" }}>
           {CURRENCIES.map((c) => (
             <option key={c.code} value={c.code}>
               {c.code}
@@ -83,11 +55,23 @@ export function CurrencyConverterWidget() {
           ))}
         </select>
       </div>
-      <div className="text-sm font-bold sm:text-lg" style={{ color: "var(--primary)" }}>
-        {loading ? t("currency.calculating") : result !== null ? `= ${result.toLocaleString(numberLocale, { maximumFractionDigits: 2 })} ${to}` : "-"}
+      <div className="flex items-center gap-2">
+        <button onClick={swap} type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }} aria-label={t("currency.swapDirection")} title={t("currency.swapDirection")}>
+          ⇅
+        </button>
+        <div className="min-w-0 flex-1 truncate text-2xl font-extrabold" style={{ color: "var(--primary)" }}>
+          {loading ? t("currency.calculating") : result !== null ? result.toLocaleString(numberLocale, { maximumFractionDigits: 2 }) : "-"}
+        </div>
+        <select value={to} onChange={(e) => setTo(e.target.value)} className={field} style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" }}>
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code}
+            </option>
+          ))}
+        </select>
       </div>
       {rate !== null && !loading && (
-        <p className="text-[11px] opacity-50 sm:text-xs">
+        <p className="text-xs opacity-50">
           {t("currency.rate")} 1 {from} = {rate.toLocaleString(numberLocale, { maximumFractionDigits: 4 })} {to}
         </p>
       )}

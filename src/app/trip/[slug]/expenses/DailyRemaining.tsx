@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
+/** "What's left for the day" as one compact row: pick a day, see what remains of the daily allowance. */
 export function DailyRemaining({
   dailyBudget,
   spentByDay,
@@ -27,14 +28,14 @@ export function DailyRemaining({
   const remaining = dailyBudget !== null && selectedDay ? dailyBudget - selectedDay.total : null;
 
   return (
-    <div>
-      <label className="text-[10px] opacity-60 sm:text-xs">
-        {t("expenses.remainingToday")}
+    <div className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 18%, transparent)", background: "var(--surface)" }}>
+      <div className="min-w-0">
+        <p className="text-xs opacity-60">{t("expenses.remainingToday")}</p>
         <select
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
-          className="mt-1 block w-full rounded-lg border px-1.5 py-1 text-xs sm:px-2 sm:text-sm"
-          style={{ borderColor: "var(--primary)" }}
+          className="mt-0.5 max-w-full bg-transparent text-sm font-semibold"
+          aria-label={t("expenses.remainingToday")}
         >
           {options.map((o) => (
             <option key={o.date} value={o.date}>
@@ -42,8 +43,8 @@ export function DailyRemaining({
             </option>
           ))}
         </select>
-      </label>
-      <div className="mt-1 text-sm font-extrabold sm:text-lg" style={{ color: remaining !== null && remaining < 0 ? "#DC2626" : "var(--primary)" }}>
+      </div>
+      <div className="shrink-0 text-2xl font-extrabold tabular-nums" style={{ color: remaining !== null && remaining < 0 ? "#DC2626" : "var(--primary)" }}>
         {remaining !== null ? `₪${remaining.toFixed(0)}` : "—"}
       </div>
     </div>
