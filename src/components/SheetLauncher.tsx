@@ -46,19 +46,18 @@ export function SheetLauncher({
         {label}
       </button>
       <div hidden={!open} className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
-        <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+        <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
         <div
-          className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl sm:max-w-lg sm:rounded-3xl"
-          style={{ background: "var(--background)", paddingBottom: "env(safe-area-inset-bottom)" }}
+          className="relative flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-3xl"
+          style={{ background: "color-mix(in srgb, var(--primary) 8%, #ffffff)", color: "#1F2937", paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-black/15 sm:hidden" />
-          <div className="flex items-center justify-between px-5 pb-1 pt-3">
+          <div className="flex shrink-0 items-center justify-between px-5 pb-3.5 pt-4 text-white" style={{ background: "linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, #000))" }}>
             <h2 className="text-lg font-bold">{title}</h2>
-            <button type="button" onClick={() => setOpen(false)} aria-label="✕" className="flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-base">
+            <button type="button" onClick={() => setOpen(false)} aria-label="✕" className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-base">
               ✕
             </button>
           </div>
-          <div className="overflow-y-auto px-5 pb-5 pt-2" onSubmit={() => setTimeout(() => setOpen(false), 0)}>
+          <div className="sheet-content overflow-y-auto px-5 pb-6 pt-4" onSubmit={() => setTimeout(() => setOpen(false), 0)}>
             {children}
           </div>
         </div>

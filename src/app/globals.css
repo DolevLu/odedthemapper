@@ -374,3 +374,16 @@ button:disabled {
     color: var(--text);
   }
 }
+
+/* Forms inside bottom sheets / dialogs: always dark text on a white field, whatever the destination theme's colours
+ * are (a themed --text/--surface could otherwise leave typed text nearly invisible). */
+.sheet-content input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+.sheet-content select,
+.sheet-content textarea {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+.sheet-content input::placeholder,
+.sheet-content textarea::placeholder {
+  color: #6b7280;
+}
