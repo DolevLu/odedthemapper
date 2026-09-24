@@ -5,6 +5,8 @@ import { getPoiLocationsForDestination } from "@/lib/data/pois";
 import { prisma } from "@/lib/prisma";
 import { addLogistic } from "@/lib/actions/trip";
 import { LoginPromptBanner } from "@/components/LoginPromptBanner";
+import { SheetLauncher } from "@/components/SheetLauncher";
+import type { DictionaryKey } from "@/lib/i18n/dictionary";
 import { WhereToStayHeatmap } from "./WhereToStayHeatmap";
 import { LogisticsList } from "./LogisticsList";
 import type { LogisticItem } from "./LogisticTicketCard";
@@ -47,54 +49,73 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
     };
   });
 
+  const inputCls = "w-full rounded-xl border px-3 py-2.5 text-base";
+  const inputStyle = { borderColor: "color-mix(in srgb, var(--primary) 35%, transparent)", background: "var(--surface)" };
+  const TYPES = [
+    { value: "flight", icon: "✈️" },
+    { value: "hotel", icon: "🏨" },
+    { value: "ticket", icon: "🎫" },
+    { value: "passport", icon: "🛂" },
+    { value: "visa", icon: "📋" },
+    { value: "insurance", icon: "🛡️" },
+    { value: "vaccination", icon: "💉" },
+    { value: "other", icon: "📄" },
+  ] as const;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold">{t("logistics.title")}</h1>
-        {heatmapPoints.length > 0 && <WhereToStayHeatmap points={heatmapPoints} destinationName={destination.name} />}
+        <div className="flex items-center gap-2">
+          {heatmapPoints.length > 0 && <WhereToStayHeatmap points={heatmapPoints} destinationName={destination.name} />}
+          {userId && (
+            <SheetLauncher label={<>＋ {t("logistics.add")}</>} title={t("logistics.add")}>
+              <form action={addAction} className="flex flex-col gap-3">
+                <div className="grid grid-cols-4 gap-2">
+                  {TYPES.map((ty, i) => (
+                    <label key={ty.value} className="cursor-pointer">
+                      <input type="radio" name="type" value={ty.value} defaultChecked={i === 0} className="peer sr-only" />
+                      <span
+                        className="flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2 text-center text-[11px] font-semibold peer-checked:border-[color:var(--primary)] peer-checked:bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]"
+                        style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
+                      >
+                        <span className="text-xl">{ty.icon}</span>
+                        {t(`logistics.type.${ty.value}` as DictionaryKey)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <input name="title" placeholder={t("logistics.titlePlaceholder")} required className={inputCls} style={inputStyle} />
+                <input name="confirmationNumber" placeholder={t("logistics.confirmationPlaceholder")} className={inputCls} style={inputStyle} />
+                <div className="flex gap-2">
+                  <label className="flex-1 text-xs opacity-70">
+                    {t("logistics.fromDate")}
+                    <input name="startsAt" type="date" className={`${inputCls} mt-1`} style={inputStyle} />
+                  </label>
+                  <label className="flex-1 text-xs opacity-70">
+                    {t("logistics.toDate")}
+                    <input name="endsAt" type="date" className={`${inputCls} mt-1`} style={inputStyle} />
+                  </label>
+                </div>
+                <input name="address" placeholder={t("logistics.addressPlaceholder")} className={inputCls} style={inputStyle} />
+                <input name="notes" placeholder={t("logistics.notesPlaceholder")} className={inputCls} style={inputStyle} />
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed px-3 py-3 text-sm" style={{ borderColor: "color-mix(in srgb, var(--primary) 40%, transparent)" }}>
+                  <span className="text-2xl">📎</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs opacity-60">{t("logistics.imageOrPdf")}</span>
+                    <input name="image" type="file" accept="image/*,application/pdf" className="w-full text-sm" />
+                  </span>
+                </label>
+                <button type="submit" className="mt-1 rounded-full py-3 text-base font-bold text-white" style={{ background: "var(--primary)" }}>
+                  {t("logistics.add")}
+                </button>
+              </form>
+            </SheetLauncher>
+          )}
+        </div>
       </div>
 
-      {userId ? (
-        <form
-          action={addAction}
-          className="grid grid-cols-1 gap-3 border p-4 sm:grid-cols-2"
-          style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
-        >
-          <select name="type" className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }}>
-            <option value="flight">{t("logistics.type.flight")}</option>
-            <option value="hotel">{t("logistics.type.hotel")}</option>
-            <option value="ticket">{t("logistics.type.ticket")}</option>
-            <option value="passport">{t("logistics.type.passport")}</option>
-            <option value="visa">{t("logistics.type.visa")}</option>
-            <option value="insurance">{t("logistics.type.insurance")}</option>
-            <option value="vaccination">{t("logistics.type.vaccination")}</option>
-            <option value="other">{t("logistics.type.other")}</option>
-          </select>
-          <input name="title" placeholder={t("logistics.titlePlaceholder")} required className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-          <input name="confirmationNumber" placeholder={t("logistics.confirmationPlaceholder")} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-          <input name="address" placeholder={t("logistics.addressPlaceholder")} className="rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-          <div className="flex gap-2">
-            <label className="flex-1 text-xs opacity-60">
-              {t("logistics.fromDate")}
-              <input name="startsAt" type="date" className="mt-1 w-full rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-            </label>
-            <label className="flex-1 text-xs opacity-60">
-              {t("logistics.toDate")}
-              <input name="endsAt" type="date" className="mt-1 w-full rounded-lg border px-3 py-2" style={{ borderColor: "var(--primary)" }} />
-            </label>
-          </div>
-          <input name="notes" placeholder={t("logistics.notesPlaceholder")} className="rounded-lg border px-3 py-2 sm:col-span-2" style={{ borderColor: "var(--primary)" }} />
-          <label className="text-sm sm:col-span-2">
-            <span className="mb-1 block text-xs opacity-60">{t("logistics.imageOrPdf")}</span>
-            <input name="image" type="file" accept="image/*,application/pdf" className="w-full text-sm" />
-          </label>
-          <button type="submit" className="rounded-full px-4 py-2 font-semibold text-white sm:col-span-2" style={{ background: "var(--primary)" }}>
-            {t("logistics.add")}
-          </button>
-        </form>
-      ) : (
-        <LoginPromptBanner slug={slug} path="/logistics" message={t("logistics.loginPrompt")} />
-      )}
+      {!userId && <LoginPromptBanner slug={slug} path="/logistics" message={t("logistics.loginPrompt")} />}
 
       <LogisticsList items={logisticItems} slug={slug} />
     </div>

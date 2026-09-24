@@ -25,71 +25,78 @@ export type LogisticItem = {
   imageUrl: string | null;
 };
 
+/** A booking as a real ticket: coloured header with what it is and when, the uploaded picture as the body of the
+ * card (tap to open it full size), then the confirmation code and details under a perforated line. */
 export function LogisticTicketCard({ item, onDelete }: { item: LogisticItem; onDelete: () => void }) {
   const { t, lang } = useTranslation();
   const meta = TYPE_META[item.type] ?? TYPE_META.other;
   const isPdf = item.imageUrl?.toLowerCase().endsWith(".pdf") ?? false;
 
   return (
-    <div
-      className="game-pop-in group flex overflow-hidden shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:rotate-[-0.3deg] hover:shadow-md"
-      style={{ borderRadius: "var(--radius)" }}
-    >
-      {/* Stub */}
-      <div
-        className="relative flex w-20 shrink-0 flex-col items-center justify-center gap-1 p-2 text-center text-white"
-        style={{ background: meta.color }}
-      >
-        <span className="inline-block text-2xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">{meta.icon}</span>
-        <span className="text-[10px] font-semibold leading-tight">{meta.label[lang]}</span>
+    <article className="game-pop-in flex flex-col overflow-hidden shadow-md" style={{ borderRadius: "calc(var(--radius) + 6px)", background: "var(--surface)" }}>
+      <header className="flex items-center justify-between gap-2 px-4 py-2.5 text-white" style={{ background: `linear-gradient(135deg, ${meta.color}, color-mix(in srgb, ${meta.color} 70%, #000))` }}>
+        <span className="flex items-center gap-2 text-sm font-bold">
+          <span className="text-lg" aria-hidden>
+            {meta.icon}
+          </span>
+          {meta.label[lang]}
+        </span>
+        {item.dateRange && <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold">{item.dateRange}</span>}
+      </header>
+
+      {item.imageUrl && !isPdf && (
+        <a href={item.imageUrl} target="_blank" rel="noreferrer" className="block bg-black/5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.imageUrl} alt={item.title} className="h-44 w-full object-cover" loading="lazy" />
+        </a>
+      )}
+      {item.imageUrl && isPdf && (
+        <a
+          href={item.imageUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 px-4 py-3 text-sm font-semibold"
+          style={{ background: `color-mix(in srgb, ${meta.color} 10%, transparent)`, color: meta.color }}
+        >
+          <span className="text-2xl">📄</span>
+          PDF
+        </a>
+      )}
+
+      {/* perforation */}
+      <div className="relative my-0.5 h-0 border-t-2 border-dashed" style={{ borderColor: "color-mix(in srgb, var(--text) 18%, transparent)" }}>
+        <span className="absolute -start-2 -top-2.5 h-5 w-5 rounded-full" style={{ background: "var(--background)" }} />
+        <span className="absolute -end-2 -top-2.5 h-5 w-5 rounded-full" style={{ background: "var(--background)" }} />
       </div>
 
-      {/* Perforated divider */}
-      <div className="relative w-0 shrink-0" style={{ borderInlineStart: "2px dashed rgba(255,255,255,0.6)" }}>
-        <span className="absolute -top-2 -start-2 h-4 w-4 rounded-full" style={{ background: "var(--background)" }} />
-        <span className="absolute -bottom-2 -start-2 h-4 w-4 rounded-full" style={{ background: "var(--background)" }} />
-      </div>
-
-      {/* Main details */}
-      <div className="flex flex-1 items-start justify-between gap-3 p-3" style={{ background: "var(--surface)" }}>
-        <div className="flex min-w-0 gap-3">
-          {item.imageUrl && isPdf && (
-            <a
-              href={item.imageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg text-xs font-semibold"
-              style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}
-            >
-              <span className="text-lg">📄</span>
-              PDF
-            </a>
-          )}
-          {item.imageUrl && !isPdf && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={item.imageUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
-          )}
-          <div className="min-w-0">
-            <p className="truncate font-bold">{item.title}</p>
-            {item.confirmationNumber && (
-              <p className="text-xs opacity-70">
-                {t("logistics.confirmationCode")} <span className="font-mono">{item.confirmationNumber}</span>
-              </p>
-            )}
-            {item.dateRange && <p className="text-xs opacity-70">{item.dateRange}</p>}
-            {item.notes && <p className="text-xs opacity-70">{item.notes}</p>}
-            {item.address && (
-              <p className="text-xs opacity-60">
-                📍 {item.address} {item.hasMapPin ? t("logistics.markedOnMap") : ""}
-              </p>
-            )}
+      <div className="flex flex-col gap-2 px-4 pb-3.5 pt-2.5">
+        <h3 className="text-base font-extrabold leading-snug">{item.title}</h3>
+        {item.confirmationNumber && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="opacity-60">{t("logistics.confirmationCode")}</span>
+            <span className="rounded-md px-2 py-0.5 font-mono text-sm font-bold tracking-wide" style={{ background: `color-mix(in srgb, ${meta.color} 14%, transparent)`, color: meta.color }}>
+              {item.confirmationNumber}
+            </span>
           </div>
+        )}
+        {item.notes && <p className="text-sm opacity-75">{item.notes}</p>}
+        {item.address && (
+          <p className="text-xs opacity-60">
+            📍 {item.address} {item.hasMapPin ? t("logistics.markedOnMap") : ""}
+          </p>
+        )}
+        <div className="flex justify-end">
+          <button
+            onClick={() => {
+              if (window.confirm(t("logistics.delete") + "?")) onDelete();
+            }}
+            className="text-xs opacity-45 hover:opacity-100"
+          >
+            🗑 {t("logistics.delete")}
+          </button>
         </div>
-        <button onClick={onDelete} className="shrink-0 text-xs opacity-50 underline hover:opacity-100">
-          {t("logistics.delete")}
-        </button>
       </div>
-    </div>
+    </article>
   );
 }
 
