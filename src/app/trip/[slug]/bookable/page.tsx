@@ -58,14 +58,16 @@ export default async function BookablePage({ params }: { params: Promise<{ slug:
     <div className="flex flex-col gap-3">
       {/* Holidays + booking tips: a single slim row each, so the attractions list below is what you see first. */}
       {holidays.length > 0 && (
-        <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:px-0" title={t("bookable.holidaysNote")}>
-          <span className="shrink-0 text-xs font-bold opacity-70">{t("bookable.upcomingHolidays")}</span>
-          {holidays.map((h) => (
-            <span key={`${h.date}-${h.name}`} className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
-              🎉 {h.name} · <span className="opacity-60">{new Date(h.date).toLocaleDateString(dateLocale, { day: "numeric", month: "numeric" })}</span>
-            </span>
-          ))}
-        </div>
+        <section title={t("bookable.holidaysNote")}>
+          <h2 className="mb-1.5 text-sm font-bold">{t("bookable.upcomingHolidays")}</h2>
+          <div className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 pb-0.5 sm:mx-0 sm:px-0">
+            {holidays.map((h) => (
+              <span key={`${h.date}-${h.name}`} className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }}>
+                🎉 {h.name} · <span className="opacity-60">{new Date(h.date).toLocaleDateString(dateLocale, { day: "numeric", month: "numeric" })}</span>
+              </span>
+            ))}
+          </div>
+        </section>
       )}
 
       {recommendations.length > 0 && (

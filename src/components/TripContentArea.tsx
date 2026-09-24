@@ -35,8 +35,10 @@ export function TripContentArea({
   // would behave) instead of one stale instance reused across routes.
   if (isFullBleed) return <div className="min-w-0 flex-1">{children}</div>;
 
+  // On a phone the content starts lower (pt-16): the floating profile button sits in the top corner, and the first
+  // few rows under it are hard to see.
   return (
-    <div className="min-w-0 flex-1 p-6 pb-32 sm:pb-6">
+    <div className="min-w-0 flex-1 p-6 pb-32 pt-16 sm:pb-6 sm:pt-6">
       {children}
       <div className="mt-8">
         <AdUnit key={pathname} slot="6290998567" format="auto" fullWidthResponsive show={showAds} />
