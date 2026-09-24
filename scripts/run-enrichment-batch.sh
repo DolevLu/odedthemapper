@@ -4,5 +4,5 @@
 for spec in "$@"; do
   slug=${spec%%:*}; rest=${spec#*:}; city=${rest%%:*}; lang=${rest#*:}
   echo "=== $slug ($city) $(date +%H:%M:%S)"
-  node scripts/enrich-from-google.cjs --slug "$slug" --city "$city" ${lang:+--lang2 "$lang"} --workers 6 2>&1 | tail -3
+  node scripts/enrich-from-google.cjs --slug "$slug" --city "$city" ${lang:+--lang2 "$lang"} --workers 6 --beneath 2>&1 | tail -3
 done
