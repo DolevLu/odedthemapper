@@ -28,7 +28,7 @@ function safeName(name: string): string {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
 }
 
-export function AlbumUploadForm({ destinationId, slug }: { destinationId: string; slug: string }) {
+export function AlbumUploadForm({ destinationId, slug, variant = "hero" }: { destinationId: string; slug: string; variant?: "tile" | "hero" }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -74,31 +74,36 @@ export function AlbumUploadForm({ destinationId, slug }: { destinationId: string
     router.refresh();
   }
 
+  const label = uploading ? `${progress?.done ?? 0}/${progress?.total ?? 0}` : null;
+
   return (
-    <div className="flex flex-wrap items-center gap-3 border p-4" style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*,video/*"
-        multiple
-        disabled={uploading}
-        onChange={(e) => handleFiles(e.target.files)}
-        className="hidden"
-        id="album-upload-input"
-      />
-      <label
-        htmlFor="album-upload-input"
-        className="flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5 aria-disabled:pointer-events-none aria-disabled:opacity-50"
-        aria-disabled={uploading}
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
-      >
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
-          <UploadIcon size={16} />
-        </span>
-        {uploading ? `${t("album.uploading")} ${progress?.done ?? 0}/${progress?.total ?? 0}` : t("album.uploadButton")}
-      </label>
-      <span className="text-xs opacity-50">{t("album.uploadHint")}</span>
-      {error && <p className="w-full text-xs text-red-600">{error}</p>}
-    </div>
+    <>
+      <input ref={inputRef} type="file" accept="image/*,video/*" multiple disabled={uploading} onChange={(e) => handleFiles(e.target.files)} className="hidden" id={`album-upload-input-${variant}`} />
+      {variant === "tile" ? (
+        <label
+          htmlFor={`album-upload-input-${variant}`}
+          aria-disabled={uploading}
+          className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 border-2 border-dashed text-center transition-colors hover:bg-black/5 aria-disabled:pointer-events-none aria-disabled:opacity-60"
+          style={{ borderRadius: "calc(var(--radius) - 4px)", borderColor: "color-mix(in srgb, var(--primary) 45%, transparent)", color: "var(--primary)" }}
+        >
+          <span className="text-2xl font-light leading-none">{uploading ? "⏳" : "＋"}</span>
+          <span className="px-1 text-[11px] font-semibold leading-tight">{label ?? t("album.uploadButton")}</span>
+        </label>
+      ) : (
+        <label
+          htmlFor={`album-upload-input-${variant}`}
+          aria-disabled={uploading}
+          className="flex cursor-pointer flex-col items-center gap-3 border-2 border-dashed px-6 py-12 text-center transition-colors hover:bg-black/5 aria-disabled:pointer-events-none aria-disabled:opacity-60"
+          style={{ borderRadius: "calc(var(--radius) + 6px)", borderColor: "color-mix(in srgb, var(--primary) 45%, transparent)", background: "var(--surface)" }}
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED22, #EC489922)" }}>
+            <UploadIcon size={30} />
+          </span>
+          <span className="text-base font-bold">{uploading ? `${t("album.uploading")} ${label}` : t("album.uploadButton")}</span>
+          <span className="text-xs opacity-55">{t("album.uploadHint")}</span>
+        </label>
+      )}
+      {error && <p className="col-span-full text-xs text-red-600">{error}</p>}
+    </>
   );
 }

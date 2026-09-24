@@ -66,16 +66,20 @@ export function AlbumScreen({
       <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
         {t("album.titlePrefix")} {destinationName}
       </h1>
-      <p className="mb-4 text-sm opacity-60">{t("album.subtitle")}</p>
+      <p className="mb-3 text-sm opacity-60">
+        {media.length > 0 ? `${media.length} · ` : ""}
+        {t("album.subtitle")}
+      </p>
 
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-5 grid grid-cols-3 gap-1 rounded-full p-1" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }} role="tablist">
         {TABS.map((tabItem) => (
           <button
             key={tabItem.key}
+            role="tab"
+            aria-selected={tab === tabItem.key}
             onClick={() => setTab(tabItem.key)}
-            className="rounded-full border px-4 py-1.5 text-sm font-semibold"
+            className="rounded-full px-2 py-2 text-sm font-semibold transition-colors"
             style={{
-              borderColor: "var(--primary)",
               background: tab === tabItem.key ? "var(--primary)" : "transparent",
               color: tab === tabItem.key ? "white" : "var(--text)",
             }}
@@ -86,10 +90,11 @@ export function AlbumScreen({
       </div>
 
       {tab === "upload" && (
-        <div className="flex flex-col gap-5">
-          <AlbumUploadForm destinationId={destinationId} slug={slug} />
-          <AlbumGrid media={media} slug={slug} dayOptions={dayOptions} />
-        </div>
+        media.length === 0 ? (
+          <AlbumUploadForm destinationId={destinationId} slug={slug} variant="hero" />
+        ) : (
+          <AlbumGrid media={media} slug={slug} dayOptions={dayOptions} uploadTile={<AlbumUploadForm destinationId={destinationId} slug={slug} variant="tile" />} />
+        )
       )}
 
       {tab === "collage" && <CollageBuilder photos={allPhotos} destinationName={destinationName} slug={slug} />}
