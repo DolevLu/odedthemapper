@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useBackToClose } from "@/hooks/useBackToClose";
 import { Capacitor } from "@capacitor/core";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { DiamondIcon } from "@/components/DiamondIcon";
@@ -166,6 +167,7 @@ export function AppSidebar({
   const { t } = useTranslation();
   const [lockedTier, setLockedTier] = useState<"silver" | "gold" | "no-destination" | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  useBackToClose(drawerOpen, () => setDrawerOpen(false));
   const mobileNavRef = useRef<HTMLElement>(null);
   // Belt-and-suspenders hard guard for the desktop sidebar (logo/name row +
   // full nav list) on top of its own `hidden sm:flex` Tailwind classes — a

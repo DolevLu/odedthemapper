@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { fcmConfigured, sendFcm } from "@/lib/fcm";
 
 /** A short, generic pool for the once-a-week "occasional tip" push (see
  * the notifications cron) — not destination-specific, since there's no
@@ -33,29 +34,48 @@ function ensureConfigured(publicKey: string, privateKey: string) {
   configured = true;
 }
 
-/** Sends a push notification to every device this user has granted
- * notification permission on. A silent no-op (never throws) if VAPID keys
- * aren't configured in this environment, so a missing env var never breaks
- * whatever server code triggered the notification. Auto-cleans up any
- * subscription the browser has since revoked (404/410 from the push
- * service — the standard signal a subscription is dead). */
-export async function sendPushToUser(userId: string, payload: { title: string; body: string; url?: string }) {
+/** Sends a push notification to every device this user has: web-push subscriptions (browsers) and native app
+ * tokens (Android, through Firebase Cloud Messaging). Does nothing for a user who switched notifications off in
+ * Settings. A silent no-op (never throws) where neither channel is configured in this environment, so a missing env
+ * var never breaks whatever server code triggered the notification. Auto-cleans up any subscription/token the push
+ * service reports as dead. Returns how many devices it delivered to. */
+export async function sendPushToUser(userId: string, payload: { title: string; body: string; url?: string }): Promise<number> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { notificationsEnabled: true } });
+  if (!user || !user.notificationsEnabled) return 0;
+
+  let delivered = 0;
+
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  if (!publicKey || !privateKey) return;
-  ensureConfigured(publicKey, privateKey);
-
-  const subs = await prisma.pushSubscription.findMany({ where: { userId } });
-  await Promise.all(
-    subs.map(async (sub) => {
-      try {
-        await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(payload));
-      } catch (err) {
-        const statusCode = (err as { statusCode?: number })?.statusCode;
-        if (statusCode === 404 || statusCode === 410) {
-          await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+  if (publicKey && privateKey) {
+    ensureConfigured(publicKey, privateKey);
+    const subs = await prisma.pushSubscription.findMany({ where: { userId } });
+    await Promise.all(
+      subs.map(async (sub) => {
+        try {
+          await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(payload));
+          delivered++;
+        } catch (err) {
+          const statusCode = (err as { statusCode?: number })?.statusCode;
+          if (statusCode === 404 || statusCode === 410) {
+            await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+          }
         }
-      }
-    })
-  );
+      })
+    );
+  }
+
+  if (fcmConfigured()) {
+    const tokens = await prisma.deviceToken.findMany({ where: { userId } });
+    await Promise.all(
+      tokens.map(async (device) => {
+        const result = await sendFcm(device.token, payload);
+        if (result === "ok") delivered++;
+        else if (result === "dead") await prisma.deviceToken.delete({ where: { id: device.id } }).catch(() => {});
+      })
+    );
+  }
+
+  if (delivered > 0) await prisma.user.update({ where: { id: userId }, data: { lastPushAt: new Date() } }).catch(() => {});
+  return delivered;
 }

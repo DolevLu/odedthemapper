@@ -249,6 +249,10 @@ model User {
   // one once at least 7 days have passed since the last one, so this is
   // the once-a-week guard, not a per-tip index.
   lastTipNotifiedAt DateTime?
+  /// Push notifications are ON by default; the user can switch them off from Settings (the 3-dot menu).
+  notificationsEnabled Boolean @default(true)
+  /// Last time any push was sent to this user - the daily-push job uses it so everyone gets one a day, never two.
+  lastPushAt DateTime?
 
   // Referral program (see lib/referral.ts): a short shareable code (lazily
   // generated on first profile visit), who referred this user (if anyone),
@@ -284,6 +288,7 @@ model User {
   groupActivitySeenAt DateTime?
   countryPhotos CountryPhoto[]
   pushSubscriptions PushSubscription[]
+  deviceTokens  DeviceToken[]
   expenseSplits ExpenseSplit[]
   aiChatUsages  AiChatUsage[]
   poiRatings    PoiRating[]
@@ -578,6 +583,20 @@ model ExpenseSplit {
 
 /** A browser's Web Push subscription (see lib/push.ts) — one row per
  * device/browser a user has granted notification permission on. */
+/// A native (Android app) push token from Firebase Cloud Messaging. Web browsers use PushSubscription instead.
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   @default("android")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendPushToUser, tipForThisWeek } from "@/lib/push";
+import { sendPushToUser } from "@/lib/push";
+import { buildDailyPush } from "@/lib/dailyPush";
 import { resolveTodayDayIndex, resolveTodayDayIndexFromDates } from "@/lib/tripSchedule";
-
-const TIP_INTERVAL_DAYS = 7;
 
 // Most airlines open online check-in 24-48h before departure — 24h is a
 // conservative window that still lands well inside that range for almost
@@ -130,23 +129,21 @@ export async function GET(request: Request) {
     dayStartsNotified++;
   }
 
-  // Occasional tip — once every TIP_INTERVAL_DAYS per user, regardless of
-  // whether they have an active itinerary at all (a browsing user still
-  // benefits from a general tip). Only users who ever subscribed to push
-  // have any PushSubscription row, so this stays scoped to people who
-  // actually opted in rather than the whole user table.
-  const tipCutoff = new Date(now.getTime() - TIP_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
-  const tipCandidates = await prisma.user.findMany({
+  // The daily push: everyone with notifications on gets at least one a day. This runs last, so anyone who already
+  // got a specific push above (check-in, budget alert, "your day starts") is skipped via lastPushAt - never two.
+  const dailyCutoff = new Date(now.getTime() - 18 * 60 * 60 * 1000);
+  const dailyCandidates = await prisma.user.findMany({
     where: {
-      pushSubscriptions: { some: {} },
-      OR: [{ lastTipNotifiedAt: null }, { lastTipNotifiedAt: { lt: tipCutoff } }],
+      notificationsEnabled: true,
+      OR: [{ pushSubscriptions: { some: {} } }, { deviceTokens: { some: {} } }],
+      AND: [{ OR: [{ lastPushAt: null }, { lastPushAt: { lt: dailyCutoff } }] }],
     },
     select: { id: true },
   });
-  const tip = tipForThisWeek();
-  for (const user of tipCandidates) {
-    await sendPushToUser(user.id, { title: "💡 טיפ לדרך", body: tip });
-    await prisma.user.update({ where: { id: user.id }, data: { lastTipNotifiedAt: now } });
+  let dailySent = 0;
+  for (const user of dailyCandidates) {
+    const message = await buildDailyPush(user.id, now);
+    if ((await sendPushToUser(user.id, message)) > 0) dailySent++;
   }
 
   return NextResponse.json({
@@ -154,6 +151,6 @@ export async function GET(request: Request) {
     flightsNotified: flights.length,
     budgetsAlerted,
     dayStartsNotified,
-    tipsSent: tipCandidates.length,
+    dailyPushesSent: dailySent,
   });
 }

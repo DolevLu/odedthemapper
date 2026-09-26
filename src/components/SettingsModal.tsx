@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "@/components/i18n/LanguageContext";
+import { useBackToClose } from "@/hooks/useBackToClose";
+import { fetchPreference, setNotifications } from "@/lib/pushClient";
 import type { Lang } from "@/lib/i18n/dictionary";
 
 type ThemeChoice = "light" | "dark" | "system";
@@ -47,6 +49,27 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const [theme, setTheme] = useState<ThemeChoice>("system");
   const [font, setFont] = useState<FontChoice>("medium");
   const { lang, setLang, t } = useTranslation();
+  useBackToClose(true, onClose);
+  // Notifications switch: null = not logged in (row hidden), otherwise the saved preference (default ON).
+  const [notifications, setNotificationsState] = useState<boolean | null>(null);
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifNote, setNotifNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPreference().then(setNotificationsState);
+  }, []);
+
+  async function toggleNotifications() {
+    if (notifications === null || notifBusy) return;
+    setNotifBusy(true);
+    setNotifNote(null);
+    const next = !notifications;
+    const result = await setNotifications(next);
+    setNotificationsState(next && result === "ok");
+    if (next && result === "denied") setNotifNote(t("notif.deniedDesc"));
+    else if (next && result === "error") setNotifNote(t("notif.subscribeFailedError"));
+    setNotifBusy(false);
+  }
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as ThemeChoice | null;
@@ -114,6 +137,29 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             ))}
           </div>
         </div>
+
+        {notifications !== null && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-bold opacity-60">🔔 {t("notif.title")}</span>
+            <button
+              onClick={toggleNotifications}
+              disabled={notifBusy}
+              role="switch"
+              aria-checked={notifications}
+              className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-start text-xs font-semibold disabled:opacity-60"
+              style={{ background: "color-mix(in srgb, var(--text) 6%, transparent)" }}
+            >
+              <span className="min-w-0">
+                {notifications ? t("notif.enabled") : t("notif.disableBtn")}
+                <span className="block text-[11px] font-normal opacity-60">{t("notif.defaultDesc")}</span>
+              </span>
+              <span className="relative h-6 w-11 shrink-0 rounded-full transition-colors" style={{ background: notifications ? "#16A34A" : "color-mix(in srgb, var(--text) 25%, transparent)" }}>
+                <span className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all" style={{ insetInlineStart: notifications ? "1.375rem" : "0.125rem" }} />
+              </span>
+            </button>
+            {notifNote && <p className="text-[11px] text-red-600">{notifNote}</p>}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           <span className="text-xs font-bold opacity-60">{t("settings.language")}</span>

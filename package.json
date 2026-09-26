@@ -20,6 +20,7 @@
     "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.5.0",
+    "@capacitor/push-notifications": "^8.1.2",
     "@googlemaps/markerclusterer": "^2.6.2",
     "@prisma/client": "^6.19.3",
     "@stripe/stripe-js": "^9.12.0",

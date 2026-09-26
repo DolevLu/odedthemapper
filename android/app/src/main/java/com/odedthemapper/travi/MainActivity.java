@@ -7,6 +7,8 @@ import android.animation.ObjectAnimator;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.widget.Toast;
+import androidx.activity.OnBackPressedCallback;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.ViewGroup;
@@ -30,6 +32,9 @@ import com.getcapacitor.BridgeWebViewClient;
 // the normal Android runtime permission dialog, requested below on launch.
 public class MainActivity extends BridgeActivity {
   private static final int LOCATION_PERMISSION_REQUEST = 1001;
+  // The Back button steps back inside the app; only two quick presses in a row (at the first screen) leave it.
+  private static final long BACK_EXIT_WINDOW_MS = 2000;
+  private long lastBackPressAt = 0;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -81,6 +86,42 @@ public class MainActivity extends BridgeActivity {
     // (onPageCommitVisible — first paint, not full page-load-complete, so it
     // dismisses as early as it honestly can).
     showLoadingOverlay();
+    installBackHandler();
+    createNotificationChannel();
+  }
+
+  // The system Back button (or gesture) goes back one screen/step inside the app, using the WebView's own history
+  // (the site pushes a history entry for every screen and for open sheets/viewers). At the very first screen a
+  // single press only shows a hint; a second press within two seconds closes the app.
+  private void installBackHandler() {
+    getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+      @Override
+      public void handleOnBackPressed() {
+        WebView web = getBridge().getWebView();
+        if (web != null && web.canGoBack()) {
+          web.goBack();
+          return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - lastBackPressAt < BACK_EXIT_WINDOW_MS) {
+          finish();
+        } else {
+          lastBackPressAt = now;
+          Toast.makeText(MainActivity.this, "לחצו שוב כדי לצאת מהאפליקציה", Toast.LENGTH_SHORT).show();
+        }
+      }
+    });
+  }
+
+  // Android 8+ needs a notification channel; created here so push works even before the web page registers it.
+  private void createNotificationChannel() {
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+      android.app.NotificationChannel channel = new android.app.NotificationChannel(
+          "travi_default", "טראבי", android.app.NotificationManager.IMPORTANCE_HIGH);
+      channel.setDescription("עדכונים והמלצות לטיול");
+      android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
+      if (manager != null) manager.createNotificationChannel(channel);
+    }
   }
 
   private void showLoadingOverlay() {

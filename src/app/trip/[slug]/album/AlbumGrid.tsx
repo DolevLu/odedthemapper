@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useBackToClose } from "@/hooks/useBackToClose";
 import { useRouter } from "next/navigation";
 import { deleteAlbumMedia, setAlbumMediaDay } from "@/lib/actions/album";
 import type { AlbumMediaItem } from "./AlbumScreen";
@@ -19,6 +20,7 @@ export function AlbumGrid({ media, slug, dayOptions, uploadTile }: { media: Albu
   const flat = dayKeys.flatMap((d) => media.filter((m) => m.dayIndex === d));
   const openIndex = openId ? flat.findIndex((m) => m.id === openId) : -1;
   const current = openIndex >= 0 ? flat[openIndex] : null;
+  useBackToClose(current !== null, () => setOpenId(null));
 
   useEffect(() => {
     if (!current) return;

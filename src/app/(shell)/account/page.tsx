@@ -22,7 +22,6 @@ import { CancelSubscriptionButton } from "./CancelSubscriptionButton";
 import { SwapDestinationButton } from "./SwapDestinationButton";
 import { LevelCard } from "./LevelCard";
 import { ReferralCard } from "./ReferralCard";
-import { NotificationOptIn } from "./NotificationOptIn";
 
 export default async function AccountPage() {
   const session = await auth();
@@ -76,8 +75,6 @@ export default async function AccountPage() {
       <h1 className="mb-4 text-2xl font-extrabold">{t("account.myProfile")}</h1>
 
       <LevelCard level={level} totalPoints={stats.totalPoints} discountPct={credits.discountPct} />
-
-      <NotificationOptIn />
 
       <ReferralCard code={referral.code} referredCount={referral.referredCount} rewardIls={REFERRAL_REWARD_CENTS / 100} />
 

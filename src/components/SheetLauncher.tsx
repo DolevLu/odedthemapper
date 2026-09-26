@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useBackToClose } from "@/hooks/useBackToClose";
 
 /** A button that opens its children in a bottom sheet (phone) / centred dialog (wide screens) — keeps forms and tools
  * out of the page until they're wanted. The content stays mounted while closed so a form's server action isn't
@@ -19,6 +20,7 @@ export function SheetLauncher({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  useBackToClose(open, () => setOpen(false));
 
   useEffect(() => {
     if (!open) return;
