@@ -1010,18 +1010,23 @@ export function MapScreen({
     shapesRef.current = [];
 
     shapePois.forEach((poi) => {
+      // A shape explicitly filed under one of the standard categories (via the shape editor's category select)
+      // participates in that category's eye-toggle hide/show, same as a real point of that category would — an
+      // unassigned shape (still just the default purple line) isn't tied to any category and always shows.
+      if (poi.iconCategory && hiddenCategories.has(poi.iconCategory)) return;
       const path = (poi.geometryCoords ?? []).map(([lng, lat]) => ({ lat, lng }));
       if (path.length < 2) return;
       // 2026-09-27 brand-color pass: every line/polygon defaults to our own brand purple now, on every
       // destination, regardless of whatever color (often an arbitrary blue/green/red) the source KML happened to
       // assign that placemark or its category folder — a KML-derived color no longer wins by default the way it
-      // used to. An admin's own explicit colorHex override (set via the shape color editor) still wins over the
-      // default, since that's a deliberate per-shape choice rather than incidental KML data.
-      const color = poi.colorHex || SHAPE_COLOR;
+      // used to. An admin can instead explicitly file a shape under one of the standard categories (see the shape
+      // editor's category select) so it takes that category's real color (e.g. brown for "assigned to מטרו"); an
+      // outright custom colorHex still wins over both, since that's a deliberate per-shape choice either way.
+      const color = poi.colorHex || (poi.iconCategory ? standardCategoryColor(poi.iconCategory, SHAPE_COLOR) : SHAPE_COLOR);
       // Shapes aren't otherwise clickable (no info window/route/favorite
       // flow exists for a line/polygon) — only wired up in admin mode, to
-      // open the same color editor points get.
-      const openShapeEditor = () => setEditingPin({ id: poi.id, name: poi.name, colorHex: poi.colorHex, iconCategory: null, isShape: true });
+      // open the same color/category editor points get.
+      const openShapeEditor = () => setEditingPin({ id: poi.id, name: poi.name, colorHex: poi.colorHex, iconCategory: poi.iconCategory, isShape: true });
       if (poi.geometryType === "polygon") {
         const polygon = new google.maps.Polygon({
           paths: path,
@@ -1047,7 +1052,7 @@ export function MapScreen({
         shapesRef.current.push(polyline);
       }
     });
-  }, [loaded, shapePois, isAdmin]);
+  }, [loaded, shapePois, isAdmin, hiddenCategories]);
 
   // "Places I've been" trail — a single long-lived polyline whose path grows
   // as new GPS points come in, toggled on/off exactly like a category layer.

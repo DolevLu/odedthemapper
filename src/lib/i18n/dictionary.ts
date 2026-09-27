@@ -903,6 +903,11 @@ export const DICTIONARY = {
   "adminPin.chooseColor": { he: "בחירת צבע", en: "Choose color" },
   "adminPin.iconLabel": { he: "אייקון (קובע גם צבע ברירת מחדל אם אין צבע מותאם אישית)", en: "Icon (also sets the default color if there's no custom color)" },
   "adminPin.defaultByCategory": { he: "ברירת מחדל (לפי הקטגוריה האמיתית של הנקודה)", en: "Default (based on the point's real category)" },
+  "adminPin.shapeCategoryLabel": {
+    he: "שיוך לקטגוריה (קובע צבע וגם משתתף בהסתרה/הצגה של הקטגוריה)",
+    en: "Assign to category (sets its color and joins that category's hide/show toggle)",
+  },
+  "adminPin.shapeNoCategory": { he: "ללא שיוך (סגול ברירת המחדל)", en: "Unassigned (default purple)" },
 
   "map.favorited": { he: "❤️ מועדפים", en: "❤️ Favorited" },
   "map.notFavorited": { he: "🤍 מועדפים", en: "🤍 Favorite" },

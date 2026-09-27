@@ -110,24 +110,26 @@ export function AdminEditPinModal({
           </div>
         )}
 
-        {!pin.isShape && (
-          <label className="text-xs opacity-60">
-            {t("adminPin.iconLabel")}
-            <select
-              value={iconCategory}
-              onChange={(e) => setIconCategory(e.target.value)}
-              className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: "var(--primary)" }}
-            >
-              <option value="">{t("adminPin.defaultByCategory")}</option>
-              {SAVED_PIN_CATEGORY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+        <label className="text-xs opacity-60">
+          {/* For a point, this only swaps the displayed icon (see iconLabel's copy). For a shape (a line/polygon —
+              KML doesn't group these under our standard categories the way it does points), assigning one here is
+              a real category filing: it takes that category's actual color and starts participating in that
+              category's eye-toggle hide/show on the filter row, same as a real point of that category would. */}
+          {pin.isShape ? t("adminPin.shapeCategoryLabel") : t("adminPin.iconLabel")}
+          <select
+            value={iconCategory}
+            onChange={(e) => setIconCategory(e.target.value)}
+            className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm"
+            style={{ borderColor: "var(--primary)" }}
+          >
+            <option value="">{pin.isShape ? t("adminPin.shapeNoCategory") : t("adminPin.defaultByCategory")}</option>
+            {SAVED_PIN_CATEGORY_OPTIONS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
 
         {isRestaurant && (
           <div className="flex flex-col gap-1.5">
