@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GOOGLE_FONTS_HREF } from "@/lib/theme/fonts";
+import { Rubik } from "next/font/google";
 import { getLang } from "@/lib/i18n/server";
 import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
@@ -8,6 +8,12 @@ import { PromoDrawer } from "@/components/PromoDrawer";
 import { ReferralClaimer } from "@/components/ReferralClaimer";
 import { FocusModeExitButton } from "@/components/FocusModeExitButton";
 import "./globals.css";
+
+// Self-hosted (built at compile time, served from our own domain) instead of the old <link> to
+// fonts.googleapis.com — that was a render-blocking round trip (DNS + TLS + download to a third-party host) on
+// every cold app launch, before the very first paint could happen. This removes it entirely: the font files ship
+// as part of our own static assets, cached by the WebView exactly like every other app asset.
+const rubik = Rubik({ subsets: ["latin", "hebrew"], weight: ["400", "500", "600", "700", "800"], display: "swap", variable: "--font-rubik" });
 
 export const metadata: Metadata = {
   title: "טראבי",
@@ -53,12 +59,24 @@ export default async function RootLayout({
     // (and this element's own font-size) from localStorage before React
     // hydrates, so the server-rendered markup never has them — an expected,
     // deliberate mismatch on this one element, not a real bug to warn about.
-    <html lang="he" dir="rtl" className="h-full antialiased" suppressHydrationWarning>
+    <html
+      lang="he"
+      dir="rtl"
+      className={`h-full antialiased ${rubik.variable}`}
+      // Highest-specificity way to point the site's existing --font-heading/--font-body/--font-display-latin
+      // tokens (globals.css) at the self-hosted font without depending on cascade order between this and that
+      // stylesheet - inline style on the element always wins for a property set on that same element.
+      style={{ "--font-heading": "var(--font-rubik), sans-serif", "--font-body": "var(--font-rubik), sans-serif", "--font-display-latin": "var(--font-rubik), sans-serif" } as React.CSSProperties}
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        {/* The map screen (Google Maps JS SDK + tiles) is what the app opens to by default, right after this first
+         * paint — warming the connection to its two hosts here (instead of only starting it once useGoogleMaps'
+         * <script> tag itself gets inserted) overlaps that DNS+TLS handshake with everything else the launch is
+         * already doing, so the map script itself starts transferring sooner. */}
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="anonymous" />
         {/* Applies the saved theme/font-size preference (see SettingsModal)
          * before first paint — a synchronous head script runs and blocks
          * rendering before any CSS/hydration, which is what avoids a
