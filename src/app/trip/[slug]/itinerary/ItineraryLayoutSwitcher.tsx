@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { moveItineraryItemToDay } from "@/lib/actions/trip";
 import { DayRouteMap, type MapDay, type OtherPoi } from "@/components/map/DayRouteMap";
@@ -11,7 +11,6 @@ import { ItineraryMobileView } from "./ItineraryMobileView";
 import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
-import { AddDayButton } from "./AddDayButton";
 import { SaveItineraryButton } from "./SaveItineraryButton";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
@@ -70,6 +69,7 @@ export function ItineraryLayoutSwitcher({
   // arrows reset the next time they're used.
   const [focusedDayIndex, setFocusedDayIndex] = useState<number>(dayListDays[0]?.dayIndex ?? 1);
   const [mapOverride, setMapOverride] = useState<number | null | undefined>(undefined);
+  const pillRowRef = useRef<HTMLDivElement>(null);
 
   function handleFocusedDayIndexChange(dayIndex: number) {
     setFocusedDayIndex(dayIndex);
@@ -117,20 +117,40 @@ export function ItineraryLayoutSwitcher({
         className="flex h-full min-h-0 w-[420px] shrink-0 flex-col border-e"
         style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)", background: "var(--surface)" }}
       >
-        {/* "+ הוספת יום" deliberately lives down with the grid/focused toggle
-         * instead (see ItineraryDaysView's extraAction) — with 5 pills this
-         * row wrapped onto 2 lines at 420px; 4 fits on one. */}
-        <div className="flex flex-nowrap shrink-0 items-center gap-1.5 border-b p-2.5" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
-          <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} hideAddDay />
-          <ItineraryWizard
-            destinationId={destinationId}
-            slug={slug}
-            categories={categoryNames}
-            areas={areas}
-            hasExistingDays={hasExistingDays}
-            triggerLabel={t("itinerary.aiRoute")}
-          />
-          <ExportPdfButton destinationId={destinationId} slug={slug} />
+        {/* All six actions (שמורים, הוספת יום, מסלול טינדר, מסלול AI, שמירה, PDF) now live in this one row —
+         * they don't all fit at 420px, so this scrolls horizontally with a small arrow on each side (matching the
+         * same pattern the map/mobile itinerary's own pill rows already use) rather than wrapping onto a second
+         * line or hiding anything. */}
+        <div className="flex flex-nowrap shrink-0 items-center gap-1 border-b p-2" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
+          <button
+            onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm"
+            style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+            aria-label={t("mobileItinerary.scrollLeft")}
+          >
+            ‹
+          </button>
+          <div ref={pillRowRef} className="no-scrollbar flex flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto scroll-smooth p-0.5">
+            <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
+            <ItineraryWizard
+              destinationId={destinationId}
+              slug={slug}
+              categories={categoryNames}
+              areas={areas}
+              hasExistingDays={hasExistingDays}
+              triggerLabel={t("itinerary.aiRoute")}
+            />
+            <SaveItineraryButton destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} />
+            <ExportPdfButton destinationId={destinationId} slug={slug} />
+          </div>
+          <button
+            onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm"
+            style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
+            aria-label={t("mobileItinerary.scrollRight")}
+          >
+            ›
+          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
@@ -138,12 +158,6 @@ export function ItineraryLayoutSwitcher({
             slug={slug}
             poiOptions={poiOptions}
             days={dayListDays}
-            extraAction={
-              <div className="flex items-center gap-1.5">
-                <AddDayButton destinationId={destinationId} slug={slug} />
-                <SaveItineraryButton destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} />
-              </div>
-            }
             todayDayIndex={todayDayIndex}
             focusedDayIndex={focusedDayIndex}
             onFocusedDayIndexChange={handleFocusedDayIndexChange}

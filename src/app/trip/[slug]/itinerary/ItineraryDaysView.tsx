@@ -25,7 +25,6 @@ export function ItineraryDaysView({
   focusedDayIndex: controlledFocusedDayIndex,
   onFocusedDayIndexChange,
   hideHeader = false,
-  extraAction,
   todayDayIndex = null,
 }: {
   days: Day[];
@@ -37,13 +36,9 @@ export function ItineraryDaysView({
    * list in sync. Falls back to internal state when omitted. */
   focusedDayIndex?: number;
   onFocusedDayIndexChange?: (dayIndex: number) => void;
-  /** Skips the built-in switcher/mode-toggle header — the mobile drawer
-   * renders its own (shared with the map above it) instead. */
+  /** Skips the built-in day-switcher header — the mobile drawer renders its
+   * own (shared with the map above it) instead. */
   hideHeader?: boolean;
-  /** Rendered on the opposite side of the grid/focused toggle row — desktop
-   * puts "+ הוספת יום" here instead of its own action row, so the row of
-   * pills above doesn't have to fit it too. */
-  extraAction?: React.ReactNode;
   /** Which dayIndex is actually today's real calendar date (see
    * resolveTodayDayIndex) — null when there's no trip-start date or today
    * falls outside the trip's span. Passed down to gate DayItemsList's
@@ -51,12 +46,9 @@ export function ItineraryDaysView({
    * that's genuinely happening right now. */
   todayDayIndex?: number | null;
 }) {
-  // Defaults to the single-day focused view everywhere (desktop pairs it
-  // side-by-side with the route map; mobile pairs it with the route map
-  // stacked underneath) — planning one day at a time next to its route
-  // reads far better than a wall of day cards on any screen size. A manual
-  // toggle to "all days" is still one tap away.
-  const [mode, setMode] = useState<"grid" | "focused">("focused");
+  // Single-day focused view only now — the "כל הימים" grid mode this used to toggle to was removed per feedback
+  // (nobody used it; it's one less button and one less thing to explain). Desktop pairs this with the route map
+  // side-by-side; mobile pairs it with the route map stacked underneath.
   const [internalFocusedIndex, setInternalFocusedIndex] = useState(0);
   const { t, lang } = useTranslation();
 
@@ -90,77 +82,39 @@ export function ItineraryDaysView({
     // useIsDesktop's 640px breakpoint; an lg: (1024px) prefix left a real
     // gap between 640-1023px where the outer layout was full-height but this
     // component's own height-fitting classes hadn't kicked in yet.
-    <div className="flex h-full min-h-0 flex-col gap-4">
-      <div className={`flex items-center gap-1 ${extraAction ? "justify-between" : "justify-end"}`}>
-        {extraAction}
-        <div className="flex gap-1">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}>
         <button
-          onClick={() => setMode("grid")}
-          className="rounded-full border px-3 py-1 text-xs font-semibold"
-          style={{
-            borderColor: "var(--primary)",
-            background: mode === "grid" ? "var(--primary)" : "transparent",
-            color: mode === "grid" ? "white" : "var(--text)",
-          }}
+          onClick={() => goToIndex(Math.max(0, clampedIndex - 1))}
+          disabled={clampedIndex === 0}
+          className="flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+          style={{ borderColor: "var(--primary)" }}
         >
-          {t("daysView.allDays")}
+          ‹
         </button>
-        <button
-          onClick={() => setMode("focused")}
-          className="rounded-full border px-3 py-1 text-xs font-semibold"
-          style={{
-            borderColor: "var(--primary)",
-            background: mode === "focused" ? "var(--primary)" : "transparent",
-            color: mode === "focused" ? "white" : "var(--text)",
-          }}
-        >
-          {t("daysView.dayView")}
-        </button>
+        <div className="text-center">
+          <p className="text-xs opacity-60">
+            {t("daysView.dayLabel")} {clampedIndex + 1} {t("daysView.ofDays")} {days.length}
+            {focusedDay.date ? ` · ${formatDayDate(focusedDay.date, lang)}` : ""}
+          </p>
+          <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(clampedIndex) }}>
+            {t("daysView.dayLabel")} {focusedDay.dayIndex}
+          </p>
         </div>
+        <button
+          onClick={() => goToIndex(Math.min(days.length - 1, clampedIndex + 1))}
+          disabled={clampedIndex === days.length - 1}
+          className="flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+          style={{ borderColor: "var(--primary)" }}
+        >
+          ›
+        </button>
       </div>
-
-      {mode === "grid" ? (
-        <div className="grid grid-cols-2 gap-4">
-          {days.map((day) => (
-            <DayCard key={day.id} day={day} slug={slug} poiOptions={poiOptions} path={path} isToday={day.dayIndex === todayDayIndex} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-4">
-          <div className="flex items-center justify-between gap-3 border-b pb-3" style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}>
-            <button
-              onClick={() => goToIndex(Math.max(0, clampedIndex - 1))}
-              disabled={clampedIndex === 0}
-              className="flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30"
-              style={{ borderColor: "var(--primary)" }}
-            >
-              ‹
-            </button>
-            <div className="text-center">
-              <p className="text-xs opacity-60">
-                {t("daysView.dayLabel")} {clampedIndex + 1} {t("daysView.ofDays")} {days.length}
-                {focusedDay.date ? ` · ${formatDayDate(focusedDay.date, lang)}` : ""}
-              </p>
-              <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(clampedIndex) }}>
-                {t("daysView.dayLabel")} {focusedDay.dayIndex}
-              </p>
-            </div>
-            <button
-              onClick={() => goToIndex(Math.min(days.length - 1, clampedIndex + 1))}
-              disabled={clampedIndex === days.length - 1}
-              className="flex h-9 w-9 items-center justify-center rounded-full border text-lg disabled:opacity-30"
-              style={{ borderColor: "var(--primary)" }}
-            >
-              ›
-            </button>
-          </div>
-          {/* Independently scrollable on desktop so a long day's stop list
-           * doesn't push this column taller than the route map beside it. */}
-          <div className="min-h-0 flex-1 overflow-y-auto pe-1">
-            <DayCard key={focusedDay.id} day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
-          </div>
-        </div>
-      )}
+      {/* Independently scrollable on desktop so a long day's stop list
+       * doesn't push this column taller than the route map beside it. */}
+      <div className="min-h-0 flex-1 overflow-y-auto pe-1">
+        <DayCard key={focusedDay.id} day={focusedDay} slug={slug} poiOptions={poiOptions} path={path} isToday={focusedDay.dayIndex === todayDayIndex} large onDateMoved={handleDateMoved} />
+      </div>
     </div>
   );
 }

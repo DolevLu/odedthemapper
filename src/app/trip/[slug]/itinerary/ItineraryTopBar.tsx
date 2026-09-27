@@ -19,16 +19,11 @@ export function ItineraryTopBar({
   slug,
   hasExistingDays,
   templates,
-  hideAddDay = false,
 }: {
   destinationId: string;
   slug: string;
   hasExistingDays: boolean;
   templates: Template[];
-  /** Desktop's full-bleed layout puts "+ day" next to the day view's own
-   * grid/focused toggle instead (see ItineraryDaysView's extraAction), to
-   * fit everything else onto one action row without wrapping. */
-  hideAddDay?: boolean;
 }) {
   const router = useRouter();
   const { requestConfirm, modal } = useSaveOrDiscardFlow(destinationId, slug);
@@ -114,6 +109,8 @@ export function ItineraryTopBar({
         )}
       </div>
 
+      <AddDayButton destinationId={destinationId} slug={slug} />
+
       <button
         onClick={goToBuilder}
         className="game-pop-in shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
@@ -121,8 +118,6 @@ export function ItineraryTopBar({
       >
         {t("topBar.tinderRoute")}
       </button>
-
-      {!hideAddDay && <AddDayButton destinationId={destinationId} slug={slug} />}
 
       {modal}
     </div>

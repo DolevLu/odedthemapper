@@ -796,9 +796,6 @@ export const DICTIONARY = {
   "wizard.areasOptional": { he: "אזורים (אופציונלי - ריק = הכל)", en: "Areas (optional - empty = all)" },
   "wizard.howManyDays": { he: "כמה ימים?", en: "How many days?" },
   "wizard.building": { he: "בונה מסלול...", en: "Building itinerary..." },
-
-  "daysView.allDays": { he: "▦ כל הימים", en: "▦ All days" },
-  "daysView.dayView": { he: "📖 תצוגת יום", en: "📖 Day view" },
   "daysView.dayLabel": { he: "יום", en: "Day" },
   "daysView.ofDays": { he: "מתוך", en: "of" },
   "daysView.confirmDeleteDayPrefix": { he: "למחוק את יום", en: "Delete day" },
@@ -871,6 +868,8 @@ export const DICTIONARY = {
   "dayItems.next": { he: "הבא", en: "Next" },
   "dayItems.collapseNote": { he: "כיווץ ההערה", en: "Collapse note" },
   "dayItems.showFullNote": { he: "הצגת ההערה המלאה", en: "Show full note" },
+  "dayItems.less": { he: "פחות", en: "Less" },
+  "dayItems.more": { he: "עוד", en: "More" },
   "dayItems.meters": { he: "מ׳", en: "m" },
   "dayItems.km": { he: 'ק"מ', en: "km" },
   "dayItems.directionsFromPrefix": { he: "מסלול הגעה מ-", en: "Directions from " },

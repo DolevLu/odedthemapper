@@ -299,8 +299,6 @@ export function DayItemsList({
         const status = timeStatus.get(item.id);
         const categoryColor = standardCategoryColor(item.poi?.categoryName ?? "", "#94A3B8");
         const nextItem = ordered[idx + 1];
-        const isFirst = idx === 0;
-        const isLast = idx === ordered.length - 1;
         return (
           <div key={item.id} className="flex flex-col">
             <div className="relative overflow-hidden rounded-2xl">
@@ -331,37 +329,22 @@ export function DayItemsList({
                   transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
                 }}
               >
-                {/* Timeline column, rightmost (RTL — first in DOM order): the line is one continuous absolutely-
-                 * positioned strip pushed to this column's own right edge (close to the card's border — "the line
-                 * should be more to the right"), running the row's full height; the time sits centered on top of
-                 * it, with a background matching the card's own so the line reads as passing BEHIND the time
-                 * rather than stopping above it. */}
-                <div className="relative flex w-9 shrink-0 items-center justify-center self-stretch">
-                  {/* Starts/ends at the row's own vertical center for the first/last stop, so the line never pokes
-                   * out above the first stop or below the last one — the same effect the old top+bottom flex-1
-                   * segments (gated by isFirst/isLast) had, adapted to one continuous absolutely-positioned strip. */}
-                  <div
-                    className="absolute w-0"
-                    style={{
-                      insetInlineEnd: 3,
-                      top: isFirst ? "50%" : 0,
-                      bottom: isLast ? "50%" : 0,
-                      borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)",
-                    }}
-                    aria-hidden
-                  />
-                  <div
-                    className="relative z-10 flex flex-col items-center gap-0.5 px-1"
-                    style={{ background: status === "current" ? "color-mix(in srgb, #22C55E 8%, var(--surface))" : "var(--surface)" }}
-                  >
-                    {times[item.id] && (
-                      <span className="shrink-0 text-[12.5px] font-extrabold tabular-nums" style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}>
-                        {times[item.id]}
-                      </span>
-                    )}
-                    {status === "current" && <span className="text-[9.5px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
-                    {status === "next" && <span className="text-[9.5px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
-                  </div>
+                {/* Time column, rightmost (RTL — first in DOM order). Used to also carry a dashed timeline line
+                 * drawn along this column's inner edge — moving that line outside the cards (per feedback) turned
+                 * out not to hold up well across cards of very different heights (a long note vs. a bare name), so
+                 * it's dropped rather than shipped looking broken; the time itself stays centered here, just a
+                 * touch smaller and with a bit more breathing room so it never crowds this narrow a column. */}
+                <div className="flex w-9 shrink-0 flex-col items-center justify-center gap-0.5 self-stretch px-1">
+                  {times[item.id] && (
+                    <span
+                      className="shrink-0 whitespace-nowrap text-[11px] font-extrabold tabular-nums"
+                      style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}
+                    >
+                      {times[item.id]}
+                    </span>
+                  )}
+                  {status === "current" && <span className="text-[9px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
+                  {status === "next" && <span className="text-[9px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
                 </div>
 
                 <span
@@ -396,10 +379,26 @@ export function DayItemsList({
                           return next;
                         });
                       }}
-                      className="rounded-full px-1 text-xs opacity-50 hover:opacity-100"
+                      className="flex items-center gap-0.5 rounded-full px-1 text-xs opacity-50 hover:opacity-100"
                       aria-label={expandedNotes.has(item.id) ? t("dayItems.collapseNote") : t("dayItems.showFullNote")}
                     >
-                      {expandedNotes.has(item.id) ? "︿ פחות" : "﹀ עוד"}
+                      {expandedNotes.has(item.id) ? t("dayItems.less") : t("dayItems.more")}
+                      <svg
+                        width="9"
+                        height="9"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        style={{
+                          stroke: "currentColor",
+                          strokeWidth: 3,
+                          fill: "none",
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          transform: expandedNotes.has(item.id) ? "rotate(180deg)" : undefined,
+                        }}
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
                     </button>
                   )}
                 </div>
@@ -413,7 +412,7 @@ export function DayItemsList({
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
-                  className="shrink-0 cursor-grab touch-none select-none self-stretch px-0.5 text-base opacity-25 active:cursor-grabbing"
+                  className="flex shrink-0 cursor-grab touch-none select-none items-center justify-center self-stretch px-0.5 text-base opacity-25 active:cursor-grabbing"
                   aria-label={t("dayItems.dragToReorder")}
                 >
                   ⠿
