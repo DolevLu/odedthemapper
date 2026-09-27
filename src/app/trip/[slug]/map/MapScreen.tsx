@@ -1895,20 +1895,20 @@ export function MapScreen({
                 }}
                 aria-label={catHidden ? t("map.showCategory") : t("map.hideCategory")}
                 title={catHidden ? t("map.showCategory") : t("map.hideCategory")}
-                className="flex h-4 w-4 shrink-0 items-center justify-center sm:h-[18px] sm:w-[18px]"
-                style={{ opacity: 0.75 }}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full sm:h-7 sm:w-7"
+                style={{ background: catActive ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.06)" }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="sm:h-[18px] sm:w-[18px]">
                   <path
                     d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7-10-7-10-7Z"
                     fill="none"
                     stroke={catTextColor}
-                    strokeWidth="1.8"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  <circle cx="12" cy="12" r="3" fill="none" stroke={catTextColor} strokeWidth="1.8" />
-                  {catHidden && <path d="M4 4 20 20" stroke={catTextColor} strokeWidth="1.8" strokeLinecap="round" />}
+                  <circle cx="12" cy="12" r="3" fill="none" stroke={catTextColor} strokeWidth="2" />
+                  {catHidden && <path d="M4 4 20 20" stroke={catTextColor} strokeWidth="2" strokeLinecap="round" />}
                 </svg>
               </button>
             </div>
