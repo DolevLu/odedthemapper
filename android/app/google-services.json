@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1091171506499",
+    "project_id": "travi-635fe",
+    "storage_bucket": "travi-635fe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1091171506499:android:af6c0b7ab38dc93af9f7f6",
+        "android_client_info": {
+          "package_name": "com.odedthemapper.travi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOLtA3G5lj9VmAR886jQVOCxff4N2jlkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
