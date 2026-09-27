@@ -1859,7 +1859,7 @@ export function MapScreen({
         <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 gap-1.5 overflow-x-auto scroll-smooth p-1">
         <button
           onClick={previewGate(() => setActiveCategory(null))}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
           style={{
             background: activeCategory === null ? "var(--primary)" : "rgba(255,255,255,0.94)",
             color: activeCategory === null ? "white" : "var(--text)",
@@ -1879,7 +1879,7 @@ export function MapScreen({
             // can't express validly.
             <div
               key={catName}
-              className="flex shrink-0 items-center gap-1 rounded-full py-1.5 ps-3 pe-1.5 text-xs font-semibold shadow-md sm:py-2 sm:ps-4 sm:pe-2 sm:text-sm"
+              className="flex shrink-0 items-center gap-0.5 rounded-full py-1 ps-2.5 pe-1 text-[11px] font-semibold shadow-md sm:py-1.5 sm:ps-3 sm:pe-1.5 sm:text-xs"
               style={{
                 background: catActive ? catColor : "rgba(255,255,255,0.94)",
                 color: catTextColor,
@@ -1887,8 +1887,8 @@ export function MapScreen({
                 ...previewDim,
               }}
             >
-              <button onClick={previewGate(() => setActiveCategory(catName))} className="flex shrink-0 items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-4 sm:w-4">
+              <button onClick={previewGate(() => setActiveCategory(catName))} className="flex shrink-0 items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-3.5 sm:w-3.5">
                   <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
                 </svg>
                 <span style={catHidden ? { textDecoration: "line-through" } : undefined}>{catName}</span>
@@ -1900,10 +1900,10 @@ export function MapScreen({
                 }}
                 aria-label={catHidden ? t("map.showCategory") : t("map.hideCategory")}
                 title={catHidden ? t("map.showCategory") : t("map.hideCategory")}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full sm:h-7 sm:w-7"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full sm:h-[22px] sm:w-[22px]"
                 style={{ background: catActive ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.06)" }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="sm:h-[18px] sm:w-[18px]">
+                <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" className="sm:h-[15px] sm:w-[15px]">
                   <path
                     d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7-10-7-10-7Z"
                     fill="none"
@@ -1921,28 +1921,28 @@ export function MapScreen({
         })}
         <button
           onClick={previewGate(handleToggleMyRoute)}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
           style={{ background: myRouteVisible ? "#0EA5E9" : "rgba(255,255,255,0.94)", color: myRouteVisible ? "white" : "#0369A1", ...previewDim }}
         >
           {myRouteLoading ? t("map.loadingEmoji") : "🧭"} {t("map.myRoute")}
         </button>
         <button
           onClick={previewGate(() => setHeatmapVisible((v) => !v))}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
           style={{ background: heatmapVisible ? "#F97316" : "rgba(255,255,255,0.94)", color: heatmapVisible ? "white" : "#EA580C", ...previewDim }}
         >
           {t("map.heatmap")}
         </button>
         <button
           onClick={previewGate(() => setTrailVisible((v) => !v))}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
           style={{ background: trailVisible ? "#22C55E" : "rgba(255,255,255,0.94)", color: trailVisible ? "white" : "#16A34A", ...previewDim }}
         >
           {t("map.whereIveBeen")}
         </button>
         <button
           onClick={previewGate(() => setHideVisited((v) => !v))}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
           style={{ background: hideVisited ? "#7C3AED" : "rgba(255,255,255,0.94)", color: hideVisited ? "white" : "#6D28D9", ...previewDim }}
           title={t("map.hideRatedTitle")}
         >
@@ -1950,7 +1950,7 @@ export function MapScreen({
         </button>
         <button
           onClick={previewGate(() => setShadowVisible((v) => !v))}
-          className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
           style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
           title={t("map.shadowTitle")}
         >
