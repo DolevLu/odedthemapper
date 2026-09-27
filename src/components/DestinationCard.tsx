@@ -24,7 +24,7 @@ export function DestinationCard({ destination, lang = "he" }: { destination: Des
       <Link
         href={isComingSoon ? "#" : `/trip/${destination.slug}`}
         aria-disabled={isComingSoon}
-        className="game-pop-in group flex h-full flex-col overflow-hidden border transition-all duration-300 hover:-translate-y-1.5 hover:rotate-[-0.5deg] hover:shadow-xl"
+        className="game-pop-in group flex h-full flex-col overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
         style={{
           borderRadius: "1.25rem",
           borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)",

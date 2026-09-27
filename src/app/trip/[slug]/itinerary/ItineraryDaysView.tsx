@@ -210,7 +210,7 @@ function DayCard({
 
   return (
     <div
-      className={`game-pop-in group flex flex-col gap-3 overflow-hidden border transition-transform duration-200 ${large ? "" : "hover:-translate-y-1 hover:rotate-[-0.3deg] hover:shadow-md"}`}
+      className={`game-pop-in group flex flex-col gap-3 overflow-hidden border transition-transform duration-200 ${large ? "" : "hover:-translate-y-0.5 hover:shadow-md"}`}
       style={{
         borderRadius: "var(--radius)",
         borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,

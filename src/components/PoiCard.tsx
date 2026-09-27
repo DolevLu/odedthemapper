@@ -95,7 +95,6 @@ export function PoiCard({
     // outer (non-clipping) wrapper — the inner card below is what actually
     // clips its rounded corners + photo.
     <div onClick={onClick} className="hand-card group relative cursor-pointer">
-      <span className="washi-tape" />
       <div
         className="overflow-hidden border shadow-sm transition-shadow hover:z-10 hover:shadow-lg"
         style={{
