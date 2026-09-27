@@ -12,9 +12,11 @@
      same brand purple/pink the logo and nav chrome use, so those pages read as the same product as the themed
      destination screens instead of a visibly different, off-brand look. */
   --primary: #7c3aed;
-  --secondary: #a78bfa;
+  --secondary: #c4b5fd;
   --accent: #ec4899;
-  --background: #fbf6ee;
+  /* Matches every destination's own --background now (see theme/presets.ts) — a consistent near-white with a hint
+     of lavender, replacing the old plain cream that didn't relate to the brand's own white/purple look at all. */
+  --background: #fbf9ff;
   --surface: #ffffff;
   --text: #2b2420;
   --font-heading: "Rubik", sans-serif;

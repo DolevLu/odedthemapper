@@ -1,18 +1,20 @@
 import type { ThemeConfig } from "./types";
 
 /**
- * Starting theme direction per destination — distinct color palette + shape
- * + mood note so every destination reads as its own product, not a reskin.
- * Typography is intentionally NOT part of this: one font (Rubik) is used
- * site-wide (see theme/fonts.ts) for consistency and readability.
+ * Starting theme direction per destination. As of the 2026-09-27 brand-color pass, `palette` is deliberately the
+ * SAME purple/pink/lavender family (with per-destination variation, never a flat repeat) for every destination —
+ * every screen and popup reads as our own brand rather than each destination's own unrelated color scheme, which
+ * is what this table used to do. `shape` and `mood` still vary per destination for some real distinctiveness
+ * without touching color. Typography is intentionally NOT part of this: one font (Rubik) is used site-wide (see
+ * theme/fonts.ts) for consistency and readability.
  */
 export const themePresets: Record<string, ThemeConfig> = {
   italy: {
     palette: {
       primary: "#7C3AED",
-      secondary: "#5B6E4E",
-      accent: "#E8B04B",
-      background: "#FBF6EE",
+      secondary: "#C4B5FD",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#2B2420",
     },
@@ -22,9 +24,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   prague: {
     palette: {
       primary: "#8B5CF6",
-      secondary: "#8A7A4E",
-      accent: "#C9A24B",
-      background: "#F3EDE4",
+      secondary: "#DDD6FE",
+      accent: "#F472B6",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#231C1E",
     },
@@ -34,9 +36,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   japan: {
     palette: {
       primary: "#6D28D9",
-      secondary: "#2E3B4E",
-      accent: "#C7A46B",
-      background: "#F7F5F0",
+      secondary: "#A78BFA",
+      accent: "#DB2777",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1F1F1F",
     },
@@ -46,9 +48,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   copenhagen: {
     palette: {
       primary: "#9F75E8",
-      secondary: "#C9A66B",
-      accent: "#D97757",
-      background: "#F5F1EA",
+      secondary: "#E9D5FF",
+      accent: "#F0ABFC",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#25272B",
     },
@@ -58,9 +60,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   budapest: {
     palette: {
       primary: "#7E22CE",
-      secondary: "#9C6B30",
-      accent: "#D4AF37",
-      background: "#F6F0E4",
+      secondary: "#D8B4FE",
+      accent: "#E879F9",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#20241F",
     },
@@ -70,9 +72,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   thailand: {
     palette: {
       primary: "#A78BFA",
-      secondary: "#F2542D",
-      accent: "#FFC857",
-      background: "#FBF8F1",
+      secondary: "#C4B5FD",
+      accent: "#F9A8D4",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1D2D2C",
     },
@@ -82,9 +84,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   china: {
     palette: {
       primary: "#6B46C1",
-      secondary: "#1B1B1B",
-      accent: "#D4AF37",
-      background: "#F7F1E8",
+      secondary: "#B4A7F5",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1A1A",
     },
@@ -94,9 +96,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   vietnam: {
     palette: {
       primary: "#9333EA",
-      secondary: "#D9A441",
-      accent: "#C1443C",
-      background: "#F5F3E8",
+      secondary: "#E9D5FF",
+      accent: "#F472B6",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1E2420",
     },
@@ -106,9 +108,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   poland: {
     palette: {
       primary: "#86198F",
-      secondary: "#33383D",
-      accent: "#C9A24B",
-      background: "#F4EFE6",
+      secondary: "#F0ABFC",
+      accent: "#DB2777",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1F1E1D",
     },
@@ -118,9 +120,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   usa: {
     palette: {
       primary: "#7C2D92",
-      secondary: "#B5303B",
-      accent: "#E8B93D",
-      background: "#F6F3EC",
+      secondary: "#E9D5FF",
+      accent: "#F0ABFC",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1A1A",
     },
@@ -130,9 +132,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   laos: {
     palette: {
       primary: "#5B21B6",
-      secondary: "#2E6E5C",
-      accent: "#D4AF37",
-      background: "#F6F1E6",
+      secondary: "#C4B5FD",
+      accent: "#E879F9",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#231E19",
     },
@@ -142,9 +144,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   cambodia: {
     palette: {
       primary: "#A855F7",
-      secondary: "#B23A2A",
-      accent: "#D4AF37",
-      background: "#F5F0E2",
+      secondary: "#F5D0FE",
+      accent: "#F9A8D4",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#201C16",
     },
@@ -154,9 +156,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   sweden: {
     palette: {
       primary: "#7C3AED",
-      secondary: "#D9A441",
-      accent: "#C1443C",
-      background: "#F4F5F7",
+      secondary: "#C4B5FD",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1E24",
     },
@@ -166,9 +168,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   dubai: {
     palette: {
       primary: "#8B5CF6",
-      secondary: "#1B2A41",
-      accent: "#E4C27A",
-      background: "#F7F3E9",
+      secondary: "#DDD6FE",
+      accent: "#F472B6",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#201C14",
     },
@@ -178,9 +180,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   england: {
     palette: {
       primary: "#6D28D9",
-      secondary: "#8C1F2C",
-      accent: "#C9A24B",
-      background: "#F3F1EC",
+      secondary: "#A78BFA",
+      accent: "#DB2777",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1B1B1B",
     },
@@ -190,9 +192,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   netherlands: {
     palette: {
       primary: "#9F75E8",
-      secondary: "#1E4B8C",
-      accent: "#F2C744",
-      background: "#F5F3EC",
+      secondary: "#E9D5FF",
+      accent: "#F0ABFC",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1E1D1A",
     },
@@ -202,9 +204,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   tanzania: {
     palette: {
       primary: "#7E22CE",
-      secondary: "#2E6E5C",
-      accent: "#E8B93D",
-      background: "#F6F0E2",
+      secondary: "#D8B4FE",
+      accent: "#E879F9",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#231C15",
     },
@@ -214,9 +216,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   greece: {
     palette: {
       primary: "#A78BFA",
-      secondary: "#2E3B4E",
-      accent: "#E8B93D",
-      background: "#F5F5F2",
+      secondary: "#C4B5FD",
+      accent: "#F9A8D4",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1E22",
     },
@@ -226,9 +228,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   norway: {
     palette: {
       primary: "#6B46C1",
-      secondary: "#4E7A9C",
-      accent: "#D97757",
-      background: "#F2F3F5",
+      secondary: "#B4A7F5",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1E24",
     },
@@ -238,9 +240,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   singapore: {
     palette: {
       primary: "#9333EA",
-      secondary: "#1E5C4A",
-      accent: "#D4AF37",
-      background: "#F5F3EC",
+      secondary: "#E9D5FF",
+      accent: "#F472B6",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1A1A",
     },
@@ -250,9 +252,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   spain: {
     palette: {
       primary: "#86198F",
-      secondary: "#E8B93D",
-      accent: "#2E5C8A",
-      background: "#FAF4E8",
+      secondary: "#F0ABFC",
+      accent: "#DB2777",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#221C15",
     },
@@ -262,9 +264,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   portugal: {
     palette: {
       primary: "#7C2D92",
-      secondary: "#C8422E",
-      accent: "#E8B93D",
-      background: "#F3F4F2",
+      secondary: "#E9D5FF",
+      accent: "#F0ABFC",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1B1E1D",
     },
@@ -274,9 +276,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   france: {
     palette: {
       primary: "#5B21B6",
-      secondary: "#8C1F2C",
-      accent: "#C9A24B",
-      background: "#F5F3EE",
+      secondary: "#C4B5FD",
+      accent: "#E879F9",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1D1B18",
     },
@@ -286,9 +288,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   korea: {
     palette: {
       primary: "#A855F7",
-      secondary: "#C8302E",
-      accent: "#2B2B2B",
-      background: "#F5F5F3",
+      secondary: "#F5D0FE",
+      accent: "#F9A8D4",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1A1A",
     },
@@ -298,9 +300,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   cyprus: {
     palette: {
       primary: "#7C3AED",
-      secondary: "#C8703A",
-      accent: "#E8B93D",
-      background: "#F6F3E9",
+      secondary: "#C4B5FD",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1D1F1A",
     },
@@ -310,9 +312,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   croatia: {
     palette: {
       primary: "#8B5CF6",
-      secondary: "#1E3A6B",
-      accent: "#E8E4D8",
-      background: "#F3F1EA",
+      secondary: "#DDD6FE",
+      accent: "#F472B6",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1B1B1B",
     },
@@ -322,9 +324,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   romania: {
     palette: {
       primary: "#6D28D9",
-      secondary: "#B5202A",
-      accent: "#D4AF37",
-      background: "#F4F1E9",
+      secondary: "#A78BFA",
+      accent: "#DB2777",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1D1B18",
     },
@@ -334,9 +336,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   argentina: {
     palette: {
       primary: "#9F75E8",
-      secondary: "#1E1E1E",
-      accent: "#E8B93D",
-      background: "#F4F6F8",
+      secondary: "#E9D5FF",
+      accent: "#F0ABFC",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1A1A",
     },
@@ -346,9 +348,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   austria: {
     palette: {
       primary: "#7E22CE",
-      secondary: "#2E3B4E",
-      accent: "#D4AF37",
-      background: "#F5F3EC",
+      secondary: "#D8B4FE",
+      accent: "#E879F9",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1D1B18",
     },
@@ -358,9 +360,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   hungary: {
     palette: {
       primary: "#A78BFA",
-      secondary: "#9C6B30",
-      accent: "#D4AF37",
-      background: "#F6F0E4",
+      secondary: "#C4B5FD",
+      accent: "#F9A8D4",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#20241F",
     },
@@ -370,9 +372,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   philippines: {
     palette: {
       primary: "#6B46C1",
-      secondary: "#D9A441",
-      accent: "#C1443C",
-      background: "#F5F6EE",
+      secondary: "#B4A7F5",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1E1B",
     },
@@ -382,9 +384,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   estonia: {
     palette: {
       primary: "#9333EA",
-      secondary: "#C9885B",
-      accent: "#D4AF37",
-      background: "#F3F1EA",
+      secondary: "#E9D5FF",
+      accent: "#F472B6",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1E2328",
     },
@@ -394,9 +396,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   latvia: {
     palette: {
       primary: "#86198F",
-      secondary: "#C9A24B",
-      accent: "#4E7A6E",
-      background: "#F6F1E8",
+      secondary: "#F0ABFC",
+      accent: "#DB2777",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#231C1A",
     },
@@ -406,9 +408,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   lithuania: {
     palette: {
       primary: "#7C2D92",
-      secondary: "#4B5E4A",
-      accent: "#D9A441",
-      background: "#F5F0E6",
+      secondary: "#E9D5FF",
+      accent: "#F0ABFC",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#231D18",
     },
@@ -418,9 +420,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   malta: {
     palette: {
       primary: "#5B21B6",
-      secondary: "#1E5B7A",
-      accent: "#C1443C",
-      background: "#F7F3E8",
+      secondary: "#C4B5FD",
+      accent: "#E879F9",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#231F1A",
     },
@@ -430,9 +432,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   switzerland: {
     palette: {
       primary: "#A855F7",
-      secondary: "#3E5C4E",
-      accent: "#4E8FBF",
-      background: "#F5F6F5",
+      secondary: "#F5D0FE",
+      accent: "#F9A8D4",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1B1E1D",
     },
@@ -442,9 +444,9 @@ export const themePresets: Record<string, ThemeConfig> = {
   hongkong: {
     palette: {
       primary: "#7C3AED",
-      secondary: "#1E5B6E",
-      accent: "#D4AF37",
-      background: "#F5F3EE",
+      secondary: "#C4B5FD",
+      accent: "#EC4899",
+      background: "#FBF9FF",
       surface: "#FFFFFF",
       text: "#1A1A1E",
     },

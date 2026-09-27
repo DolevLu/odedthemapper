@@ -12,7 +12,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "warm-terracotta",
     label: "טרקוטה חמה",
     theme: {
-      palette: { primary: "#7C3AED", secondary: "#5B6E4E", accent: "#E8B04B", background: "#FBF6EE", surface: "#FFFFFF", text: "#2B2420" },
+      palette: { primary: "#7C3AED", secondary: "#C4B5FD", accent: "#EC4899", background: "#FBF9FF", surface: "#FFFFFF", text: "#2B2420" },
       shape: "organic",
       mood: "Warm Mediterranean terracotta, olive, sun-bleached stone.",
     },
@@ -21,7 +21,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "gothic-burgundy",
     label: "בורגונדי גותי",
     theme: {
-      palette: { primary: "#8B5CF6", secondary: "#8A7A4E", accent: "#C9A24B", background: "#F3EDE4", surface: "#FFFFFF", text: "#231C1E" },
+      palette: { primary: "#8B5CF6", secondary: "#DDD6FE", accent: "#F472B6", background: "#FBF9FF", surface: "#FFFFFF", text: "#231C1E" },
       shape: "sharp",
       mood: "Gothic burgundy and gold, old-world engraved elegance.",
     },
@@ -30,7 +30,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "nordic-blue",
     label: "כחול נורדי",
     theme: {
-      palette: { primary: "#6D28D9", secondary: "#C9A66B", accent: "#D97757", background: "#F5F1EA", surface: "#FFFFFF", text: "#25272B" },
+      palette: { primary: "#6D28D9", secondary: "#A78BFA", accent: "#DB2777", background: "#FBF9FF", surface: "#FFFFFF", text: "#25272B" },
       shape: "rounded",
       mood: "Hygge Scandinavian calm, dusty blue and warm wood.",
     },
@@ -39,7 +39,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "tropical-teal",
     label: "טורקיז טרופי",
     theme: {
-      palette: { primary: "#9F75E8", secondary: "#F2542D", accent: "#FFC857", background: "#FBF8F1", surface: "#FFFFFF", text: "#1D2D2C" },
+      palette: { primary: "#9F75E8", secondary: "#E9D5FF", accent: "#F0ABFC", background: "#FBF9FF", surface: "#FFFFFF", text: "#1D2D2C" },
       shape: "rounded",
       mood: "Tropical saturated turquoise and coral, temple gold.",
     },
@@ -48,7 +48,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "imperial-red",
     label: "אדום קיסרי",
     theme: {
-      palette: { primary: "#7E22CE", secondary: "#1B1B1B", accent: "#D4AF37", background: "#F7F1E8", surface: "#FFFFFF", text: "#1A1A1A" },
+      palette: { primary: "#7E22CE", secondary: "#D8B4FE", accent: "#E879F9", background: "#FBF9FF", surface: "#FFFFFF", text: "#1A1A1A" },
       shape: "sharp",
       mood: "Imperial red and gold, bold lacquer-and-ink confidence.",
     },
@@ -57,7 +57,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "desert-gold",
     label: "זהב מדברי",
     theme: {
-      palette: { primary: "#A78BFA", secondary: "#1B2A41", accent: "#E4C27A", background: "#F7F3E9", surface: "#FFFFFF", text: "#201C14" },
+      palette: { primary: "#A78BFA", secondary: "#C4B5FD", accent: "#F9A8D4", background: "#FBF9FF", surface: "#FFFFFF", text: "#201C14" },
       shape: "sharp",
       mood: "Desert gold skyline, deep navy night, futuristic luxury.",
     },
@@ -66,7 +66,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "aegean-blue",
     label: "כחול אגאי",
     theme: {
-      palette: { primary: "#6B46C1", secondary: "#2E3B4E", accent: "#E8B93D", background: "#F5F5F2", surface: "#FFFFFF", text: "#1A1E22" },
+      palette: { primary: "#6B46C1", secondary: "#B4A7F5", accent: "#EC4899", background: "#FBF9FF", surface: "#FFFFFF", text: "#1A1E22" },
       shape: "rounded",
       mood: "Whitewashed walls, Aegean blue, sun-bleached stone.",
     },
@@ -75,7 +75,7 @@ export const STARTER_THEMES: StarterTheme[] = [
     key: "forest-emerald",
     label: "ירוק יער",
     theme: {
-      palette: { primary: "#9333EA", secondary: "#D9A441", accent: "#C1443C", background: "#F5F3E8", surface: "#FFFFFF", text: "#1E2420" },
+      palette: { primary: "#9333EA", secondary: "#E9D5FF", accent: "#F472B6", background: "#FBF9FF", surface: "#FFFFFF", text: "#1E2420" },
       shape: "organic",
       mood: "Lush emerald forest, saffron light, riverside calm.",
     },

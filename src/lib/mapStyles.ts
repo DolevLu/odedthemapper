@@ -203,25 +203,41 @@ export function categoryMarkerIcon(
 
   const standard = isClub ? CLUB_STYLE : STANDARD_CATEGORY_STYLES.find((s) => s.match.test(categoryName));
   const color = overrideColor || standard?.color || fallbackColor;
-  // Favorited points get a bright yellow glyph instead of white so they
-  // stand out ("shine") at a glance while scanning the map, without needing
-  // to open each one to check.
-  const glyphFill = favorited ? "#FDE047" : "white";
   const glyph =
     standard?.icon.type === "text"
-      ? `<text x="12" y="17" font-size="15" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="${glyphFill}">${standard.icon.char}</text>`
-      : `<path d="${standard?.icon.type === "path" ? standard.icon.d : pathForCategory(categoryName)}" fill="${glyphFill}" />`;
+      ? `<text x="12" y="17" font-size="15" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="white">${standard.icon.char}</text>`
+      : `<path d="${standard?.icon.type === "path" ? standard.icon.d : pathForCategory(categoryName)}" fill="white" />`;
+
+  // Favorited points used to get their glyph tinted yellow instead of white — replaced 2026-09-27 with a small
+  // yellow star badge stuck to the pin's own bottom-right edge (half sitting on the circle, half poking outside
+  // it), since that reads as a real "favorited" badge at a glance instead of just a slightly different-colored
+  // icon. The canvas is padded out on that corner only (badgePad) so the star isn't clipped; the circle itself and
+  // the anchor point stay exactly where they were, so this doesn't shift where the pin actually points.
+  const badgePad = favorited ? scale * 0.55 : 0;
+  const canvasSize = scale * 2 + badgePad;
+  const circleR = scale - 1.5;
+  // On the circle's own edge at the 45°(bottom-right) point — so the star's center sits right on the pin's
+  // boundary, half inside/half outside.
+  const badgeCx = scale + circleR * 0.75;
+  const badgeCy = scale + circleR * 0.75;
+  const badgeR = scale * 0.4;
+  const starBadge = favorited
+    ? `<g transform="translate(${badgeCx}, ${badgeCy}) scale(${badgeR / 11}) translate(-12,-12)">
+         <path d="${STAR_PATH}" fill="#FDE047" stroke="white" stroke-width="1.6" stroke-linejoin="round" />
+       </g>`
+    : "";
 
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${scale * 2}" height="${scale * 2}" viewBox="0 0 ${scale * 2} ${scale * 2}">
-      <circle cx="${scale}" cy="${scale}" r="${scale - 1.5}" fill="${color}" stroke="white" stroke-width="2" />
+    <svg xmlns="http://www.w3.org/2000/svg" width="${canvasSize}" height="${canvasSize}" viewBox="0 0 ${canvasSize} ${canvasSize}">
+      <circle cx="${scale}" cy="${scale}" r="${circleR}" fill="${color}" stroke="white" stroke-width="2" />
       <g transform="translate(${scale * 0.5}, ${scale * 0.5}) scale(${scale / 24})">
         ${glyph}
       </g>
+      ${starBadge}
     </svg>`;
   const icon: google.maps.Icon = {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(scale * 2, scale * 2),
+    scaledSize: new google.maps.Size(canvasSize, canvasSize),
     anchor: new google.maps.Point(scale, scale),
     // Positions an optional marker.setLabel(...) name tag just above the pin
     // instead of centered on top of it.

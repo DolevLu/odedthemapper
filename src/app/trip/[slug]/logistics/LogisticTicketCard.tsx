@@ -2,14 +2,18 @@
 
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
+// 2026-09-27 brand-color pass: these used to be each type's own unrelated color (a blue, a terracotta orange, a
+// teal, a brown...) — a leftover from the old per-destination palette era. Recolored to the brand's own
+// purple/pink family (still one distinct shade per type, so cards are still easy to tell apart at a glance);
+// "other" stays a neutral gray on purpose, since it's a real catch-all rather than a category of its own.
 const TYPE_META: Record<string, { label: { he: string; en: string }; icon: string; color: string }> = {
-  flight: { label: { he: "טיסה", en: "Flight" }, icon: "✈️", color: "#3E5C76" },
-  hotel: { label: { he: "מלון", en: "Hotel" }, icon: "🏨", color: "#B5502A" },
-  ticket: { label: { he: "כרטיס", en: "Ticket" }, icon: "🎫", color: "#8A5CF6" },
-  passport: { label: { he: "דרכון", en: "Passport" }, icon: "🛂", color: "#1E5B5A" },
-  visa: { label: { he: "ויזה", en: "Visa" }, icon: "📋", color: "#9C6B30" },
-  insurance: { label: { he: "ביטוח נסיעות", en: "Travel insurance" }, icon: "🛡️", color: "#0E7C7B" },
-  vaccination: { label: { he: "חיסון", en: "Vaccination" }, icon: "💉", color: "#B23A48" },
+  flight: { label: { he: "טיסה", en: "Flight" }, icon: "✈️", color: "#7C3AED" },
+  hotel: { label: { he: "מלון", en: "Hotel" }, icon: "🏨", color: "#EC4899" },
+  ticket: { label: { he: "כרטיס", en: "Ticket" }, icon: "🎫", color: "#8B5CF6" },
+  passport: { label: { he: "דרכון", en: "Passport" }, icon: "🛂", color: "#6D28D9" },
+  visa: { label: { he: "ויזה", en: "Visa" }, icon: "📋", color: "#A78BFA" },
+  insurance: { label: { he: "ביטוח נסיעות", en: "Travel insurance" }, icon: "🛡️", color: "#9333EA" },
+  vaccination: { label: { he: "חיסון", en: "Vaccination" }, icon: "💉", color: "#DB2777" },
   other: { label: { he: "אחר", en: "Other" }, icon: "📄", color: "#6B7280" },
 };
 

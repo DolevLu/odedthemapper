@@ -306,6 +306,9 @@ export function AppSidebar({
         style={{
           borderColor: NAV_BORDER,
           background: "#FFFFFF",
+          // A little cast shadow toward the rest of the screen, so the sidebar reads as sitting slightly above the
+          // page content rather than just a flat bordered panel.
+          boxShadow: "2px 0 12px rgba(124,58,237,0.06)",
           ...(isNativeApp ? { display: "none" } : {}),
         }}
       >
