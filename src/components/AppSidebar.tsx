@@ -32,6 +32,12 @@ const TOP_ITEMS: { href: string; labelKey: DictionaryKey; icon: NavIconName }[] 
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.odedthemapper.travi";
 
+// Our Laya partnership (multi-currency digital wallet) — shown as one more nav row, pinned last, for every visitor
+// regardless of destination/tier (it's a partner referral, not a gated app feature). Uses Laya's own logo tile
+// directly (a real image, not one of NavIcon's glyphs) rather than the usual solid-color icon box, since the logo
+// is already a colorful rounded-square mark of its own.
+const LAYA_URL = "https://laya.onelink.me/5Liq/h08iuvx6";
+
 /** Standalone pill, same size/shape as the "שדרג עכשיו" upgrade CTA — not a
  * plain nav-list row — linking to the Play Store listing. Shown only on the
  * web, since a visitor already inside the native app has no use for a link
@@ -398,6 +404,22 @@ export function AppSidebar({
               })}
             </div>
           ))}
+          <div className="my-1.5 h-px shrink-0 bg-black/10" />
+          <a
+            href={LAYA_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 px-2.5 py-1.5 text-[13.5px] font-medium"
+            style={{ borderRadius: 12 }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in srgb, #8B7FD9 10%, transparent)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/laya-icon.png" alt="" className="h-[26px] w-[26px] shrink-0 rounded-[8px]" />
+            <span className="flex-1" style={{ color: "var(--text, #1a1a1a)" }}>
+              {t("nav.laya")}
+            </span>
+          </a>
           <Link href="/privacy" className="mt-2 block px-2.5 py-1 text-xs opacity-40 hover:opacity-70">
             {t("nav.privacyPolicy")}
           </Link>
@@ -613,6 +635,21 @@ export function AppSidebar({
                 </div>
               );
             })}
+            <div className="my-1.5 h-px bg-black/10" />
+            <a
+              href={LAYA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setDrawerOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium"
+              style={{ borderRadius: 12 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/laya-icon.png" alt="" className="h-[28px] w-[28px] shrink-0 rounded-[8px]" />
+              <span className="flex-1" style={{ color: "var(--text, #1a1a1a)" }}>
+                {t("nav.laya")}
+              </span>
+            </a>
             <Link href="/privacy" onClick={() => setDrawerOpen(false)} className="mt-2 block px-2.5 py-1 text-xs opacity-40">
               {t("nav.privacyPolicy")}
             </Link>

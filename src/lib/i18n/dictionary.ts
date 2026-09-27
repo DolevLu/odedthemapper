@@ -26,6 +26,7 @@ export const DICTIONARY = {
   "item.itinerary": { he: "מסלול", en: "Itinerary" },
   "item.favorites": { he: "מועדפים והטבות", en: "Favorites & Perks" },
   "item.bookable": { he: "להזמנה", en: "Bookable" },
+  "nav.laya": { he: "Laya - ארנק דיגיטלי", en: "Laya - Digital Wallet" },
   "item.logistics": { he: "לוגיסטיקה", en: "Logistics" },
   "item.expenses": { he: "הוצאות", en: "Expenses" },
   "item.clientPlanner": { he: "תכנון מסלול ללקוח", en: "Client Itinerary Planner" },
