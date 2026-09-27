@@ -83,10 +83,21 @@ export default async function RootLayout({
          * flash-of-wrong-theme that setting these from a React effect would
          * cause. No DB/auth lookup, so this doesn't affect this layout's
          * static-route status (see the AdSense comment below for why that
-         * matters here). */}
+         * matters here).
+         *
+         * "system" (default and explicit) deliberately does NOT follow the
+         * device's prefers-color-scheme right now — confirmed live: a visitor
+         * whose OS/browser is in dark mode got a half-finished dark theme
+         * (some sections' hardcoded light backgrounds left their text
+         * unreadably faint against a now-dark surface), on the marketing
+         * home page and elsewhere, logged in or not. Until dark mode gets a
+         * real pass across every screen, everyone sees the light theme
+         * unless they explicitly pick "כהה" in Settings — that stays honored
+         * below, since it's a deliberate opt-in rather than a silent OS
+         * side-effect. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("theme")||"system";document.documentElement.dataset.theme=t==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t;var f=localStorage.getItem("fontScale");if(f)document.documentElement.style.fontSize=f;var l=localStorage.getItem("lang");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";document.cookie="lang=en; path=/; max-age=31536000; SameSite=Lax";}}catch(e){}`,
+            __html: `try{var t=localStorage.getItem("theme")||"light";document.documentElement.dataset.theme=t==="dark"?"dark":"light";var f=localStorage.getItem("fontScale");if(f)document.documentElement.style.fontSize=f;var l=localStorage.getItem("lang");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";document.cookie="lang=en; path=/; max-age=31536000; SameSite=Lax";}}catch(e){}`,
           }}
         />
       </head>

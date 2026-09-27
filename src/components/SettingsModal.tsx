@@ -11,10 +11,11 @@ type ThemeChoice = "light" | "dark" | "system";
 type FontChoice = "small" | "medium" | "large";
 
 const FONT_SCALE: Record<FontChoice, string> = { small: "87.5%", medium: "100%", large: "115%" };
+// "מערכת" (follow OS dark mode) is deliberately not offered right now — see layout.tsx's theme-init script for why:
+// dark mode isn't finished across every screen yet, so it stayed reachable only as an explicit opt-in.
 const THEME_OPTIONS: { value: ThemeChoice; labelKey: "settings.light" | "settings.dark" | "settings.system"; icon: string }[] = [
   { value: "light", labelKey: "settings.light", icon: "☀️" },
   { value: "dark", labelKey: "settings.dark", icon: "🌙" },
-  { value: "system", labelKey: "settings.system", icon: "🖥️" },
 ];
 const FONT_OPTIONS: { value: FontChoice; labelKey: "settings.small" | "settings.regular" | "settings.large" }[] = [
   { value: "small", labelKey: "settings.small" },
@@ -27,8 +28,9 @@ const LANG_OPTIONS: { value: Lang; labelKey: "settings.hebrew" | "settings.engli
 ];
 
 function applyTheme(choice: ThemeChoice) {
-  const resolved = choice === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : choice;
-  document.documentElement.dataset.theme = resolved;
+  // Matches layout.tsx's init script: only an explicit "dark" stays dark; "system" (a legacy stored value, no
+  // longer offered in the UI above) and "light" both resolve to light.
+  document.documentElement.dataset.theme = choice === "dark" ? "dark" : "light";
   localStorage.setItem("theme", choice);
 }
 
@@ -46,7 +48,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   // the same default on server and client to avoid a hydration mismatch, so
   // the "real" localStorage-derived state is applied via this effect rather
   // than in useState's initializer.
-  const [theme, setTheme] = useState<ThemeChoice>("system");
+  const [theme, setTheme] = useState<ThemeChoice>("light");
   const [font, setFont] = useState<FontChoice>("medium");
   const { lang, setLang, t } = useTranslation();
   useBackToClose(true, onClose);
@@ -73,7 +75,9 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as ThemeChoice | null;
-    if (savedTheme) setTheme(savedTheme);
+    // A legacy "system" value (the option is no longer offered above) resolves to "light", same as applyTheme/the
+    // init script — so the toggle here shows a real, matching selection instead of neither button highlighted.
+    if (savedTheme) setTheme(savedTheme === "system" ? "light" : savedTheme);
     const savedScale = localStorage.getItem("fontScale");
     const matchedFont = (Object.keys(FONT_SCALE) as FontChoice[]).find((k) => FONT_SCALE[k] === savedScale);
     if (matchedFont) setFont(matchedFont);
