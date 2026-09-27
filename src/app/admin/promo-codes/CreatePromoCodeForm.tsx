@@ -43,7 +43,12 @@ export function CreatePromoCodeForm() {
         <input name="expiresAt" type="date" className="mt-1 block w-full rounded-lg border border-black/10 px-3 py-2 font-normal" />
       </label>
       <div className="flex items-end gap-3">
-        <button type="submit" disabled={pending} className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+        >
           {pending ? "יוצר..." : "+ יצירת קוד"}
         </button>
         {error && <span className="text-sm text-red-600">{error}</span>}

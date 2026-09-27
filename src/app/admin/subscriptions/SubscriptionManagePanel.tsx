@@ -82,7 +82,8 @@ export function SubscriptionManagePanel({
               <input type="date" value={periodInput} onChange={(e) => setPeriodInput(e.target.value)} className="rounded border border-black/10 px-1.5 py-1" />
               <button
                 onClick={() => startTransition(() => extendSubscriptionPeriod(subscriptionId, periodInput))}
-                className="rounded bg-black px-2 py-1 font-semibold text-white"
+                className="rounded px-2 py-1 font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
               >
                 שמירה
               </button>

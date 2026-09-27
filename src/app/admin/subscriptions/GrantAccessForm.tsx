@@ -80,7 +80,12 @@ export function GrantAccessForm({ destinations }: { destinations: DestOption[] }
       )}
 
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={pending} className="w-fit rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-fit rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+        >
           {pending ? "מעניק..." : "הענקת גישה"}
         </button>
         {error && <span className="text-sm text-red-600">{error}</span>}

@@ -88,7 +88,8 @@ export function RegisterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-black px-4 py-2 font-semibold text-white disabled:opacity-50"
+          className="rounded-lg px-4 py-2 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
         >
           {loading ? "נרשם..." : "הרשמה"}
         </button>

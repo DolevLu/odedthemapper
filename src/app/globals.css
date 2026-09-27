@@ -6,9 +6,14 @@
  * one consistent font (Rubik) is used everywhere, site-wide.
  */
 :root {
-  --primary: #2b2420;
-  --secondary: #5b6e4e;
-  --accent: #b5502a;
+  /* 2026-09-27 brand-color pass: this is what every non-destination page (home, login, account, trips list,
+     settings, admin — anywhere DestinationThemeProvider isn't wrapping the content) actually renders buttons and
+     accents in. It used to be an unrelated dark brown/terracotta pair left over from an old default; now it's the
+     same brand purple/pink the logo and nav chrome use, so those pages read as the same product as the themed
+     destination screens instead of a visibly different, off-brand look. */
+  --primary: #7c3aed;
+  --secondary: #a78bfa;
+  --accent: #ec4899;
   --background: #fbf6ee;
   --surface: #ffffff;
   --text: #2b2420;

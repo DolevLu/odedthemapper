@@ -61,7 +61,10 @@ export function EnrichmentPanel({
         <>
           <div className="mb-3 flex items-center gap-3">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/10">
-              <div className="h-full rounded-full bg-black transition-[width] duration-300" style={{ width: `${pct}%` }} />
+              <div
+                className="h-full rounded-full transition-[width] duration-300"
+                style={{ width: `${pct}%`, background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+              />
             </div>
             <span className="shrink-0 text-xs font-semibold opacity-70">
               {done}/{total}
@@ -74,7 +77,8 @@ export function EnrichmentPanel({
             <button
               onClick={runLoop}
               disabled={running}
-              className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
             >
               {running ? `מעשיר... (${remaining} נקודות נותרו)` : `העשרת ${remaining} נקודות`}
             </button>

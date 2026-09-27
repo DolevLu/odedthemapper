@@ -139,7 +139,8 @@ export function NewDestinationForm({ starterThemes }: { starterThemes: StarterTh
       <button
         type="submit"
         disabled={pending || !name}
-        className="rounded-lg bg-black px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+        className="rounded-lg px-4 py-2.5 font-semibold text-white disabled:opacity-50"
+        style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
       >
         {pending ? "יוצר..." : "יצירת יעד"}
       </button>

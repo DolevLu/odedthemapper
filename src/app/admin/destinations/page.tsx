@@ -12,7 +12,11 @@ export default async function AdminDestinationsPage() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">יעדים</h1>
-        <Link href="/admin/destinations/new" className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white">
+        <Link
+          href="/admin/destinations/new"
+          className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+          style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+        >
           + הוספת יעד
         </Link>
       </div>

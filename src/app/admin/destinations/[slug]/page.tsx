@@ -58,7 +58,11 @@ export default async function AdminDestinationPage({ params }: { params: Promise
             <option value="live">live</option>
           </select>
           <input name="tagline" defaultValue={destination.tagline ?? ""} placeholder="תגית שיווקית" className="rounded-lg border px-3 py-2" />
-          <button type="submit" className="rounded-lg bg-black px-4 py-2 font-semibold text-white sm:col-span-2">
+          <button
+            type="submit"
+            className="rounded-lg px-4 py-2 font-semibold text-white sm:col-span-2"
+            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+          >
             שמירה
           </button>
         </form>
@@ -74,7 +78,11 @@ export default async function AdminDestinationPage({ params }: { params: Promise
         </p>
         <form action={uploadAction} className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input type="file" name="files" accept=".kml" multiple required className="flex-1 text-sm" />
-          <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white">
+          <button
+            type="submit"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+          >
             שמירה והחלפה
           </button>
         </form>
@@ -109,7 +117,11 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           <input name="partnerName" placeholder="שם השותף" required className="rounded-lg border px-3 py-2" />
           <input name="discountDesc" placeholder="תיאור ההנחה" required className="rounded-lg border px-3 py-2" />
           <input name="code" placeholder="קוד קופון" className="rounded-lg border px-3 py-2" />
-          <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white">
+          <button
+            type="submit"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+          >
             הוספה
           </button>
         </form>
@@ -133,7 +145,11 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           <input name="localPhrase" placeholder="ביטוי בשפה המקומית" required className="rounded-lg border px-3 py-2" />
           <input name="translation" placeholder="תרגום" required className="rounded-lg border px-3 py-2" />
           <input name="pronunciation" placeholder="הגייה" className="rounded-lg border px-3 py-2" />
-          <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white">
+          <button
+            type="submit"
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+          >
             הוספה
           </button>
         </form>
