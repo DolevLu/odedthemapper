@@ -946,6 +946,8 @@ export const DICTIONARY = {
   "map.uploadPersonalMapAria": { he: "העלאת מפה אישית (KML / KMZ)", en: "Upload personal map (KML / KMZ)" },
   "map.scrollLeft": { he: "גלילה שמאלה", en: "Scroll left" },
   "map.all": { he: "הכל", en: "All" },
+  "map.hideCategory": { he: "הסתרת הקטגוריה הזו", en: "Hide this category" },
+  "map.showCategory": { he: "הצגת הקטגוריה הזו", en: "Show this category" },
   "map.loadingEmoji": { he: "⏳", en: "⏳" },
   "map.myRoute": { he: "המסלול שלי", en: "My Itinerary" },
   "map.heatmap": { he: "🔥 מפת חום", en: "🔥 Heatmap" },

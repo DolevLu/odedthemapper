@@ -544,8 +544,21 @@ export function MapScreen({
   // since requiring ALL of e.g. kosher AND gluten-free at once would hide
   // most real matches for little benefit.
   const [dietaryFilters, setDietaryFilters] = useState<Set<DietaryFilterKey>>(new Set());
+  // Per-category show/hide, independent of activeCategory's single-select "focus on just this one" — this is the
+  // additive one ("show everything except metro", "only metro + restaurants": hide every other pill one at a
+  // time). Toggled from the small eye icon on each pill; see the pill rendering below.
+  const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(new Set());
+  function toggleCategoryHidden(catName: string) {
+    setHiddenCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(catName)) next.delete(catName);
+      else next.add(catName);
+      return next;
+    });
+  }
   const filtered = useMemo(() => {
     let list = activeCategory ? pointPois.filter((p) => p.categoryName === activeCategory) : pointPois;
+    if (hiddenCategories.size > 0) list = list.filter((p) => !hiddenCategories.has(p.categoryName));
     if (hideVisited) list = list.filter((p) => !(p.id in ratingsByPoiIdRef.current));
     if (dietaryFilters.size > 0) {
       const activeMatchers = DIETARY_FILTERS.filter((f) => dietaryFilters.has(f.key)).map((f) => f.match);
@@ -556,7 +569,7 @@ export function MapScreen({
     // recomputes right after a rating is added/removed via the info window,
     // since ratingsByPoiIdRef itself is a ref and doesn't cause re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pointPois, activeCategory, hideVisited, dietaryFilters, ratingsVersion]);
+  }, [pointPois, activeCategory, hiddenCategories, hideVisited, dietaryFilters, ratingsVersion]);
 
   // Personal saved pins (see uploadPersonalMapFile) participate in the same
   // category filter as the destination's own curated points — their exact
@@ -1853,22 +1866,52 @@ export function MapScreen({
         {categoryNames.map((catName) => {
           const catColor = categoryColorByName.get(catName) ?? "#888888";
           const catActive = activeCategory === catName;
+          const catHidden = hiddenCategories.has(catName);
+          const catTextColor = catActive ? "white" : "var(--text)";
           return (
-            <button
+            // A plain div pill (not a <button>) since it now holds two independent click targets — the label
+            // (select this category) and the small eye (hide/show it) — which a nested <button>-in-<button>
+            // can't express validly.
+            <div
               key={catName}
-              onClick={previewGate(() => setActiveCategory(catName))}
-              className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold shadow-md sm:px-4 sm:py-2 sm:text-sm"
+              className="flex shrink-0 items-center gap-1 rounded-full py-1.5 ps-3 pe-1.5 text-xs font-semibold shadow-md sm:py-2 sm:ps-4 sm:pe-2 sm:text-sm"
               style={{
                 background: catActive ? catColor : "rgba(255,255,255,0.94)",
-                color: catActive ? "white" : "var(--text)",
+                color: catTextColor,
+                opacity: catHidden ? 0.5 : 1,
                 ...previewDim,
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-4 sm:w-4">
-                <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
-              </svg>
-              {catName}
-            </button>
+              <button onClick={previewGate(() => setActiveCategory(catName))} className="flex shrink-0 items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-4 sm:w-4">
+                  <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
+                </svg>
+                <span style={catHidden ? { textDecoration: "line-through" } : undefined}>{catName}</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  previewGate(() => toggleCategoryHidden(catName))();
+                }}
+                aria-label={catHidden ? t("map.showCategory") : t("map.hideCategory")}
+                title={catHidden ? t("map.showCategory") : t("map.hideCategory")}
+                className="flex h-4 w-4 shrink-0 items-center justify-center sm:h-[18px] sm:w-[18px]"
+                style={{ opacity: 0.75 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7-10-7-10-7Z"
+                    fill="none"
+                    stroke={catTextColor}
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="12" r="3" fill="none" stroke={catTextColor} strokeWidth="1.8" />
+                  {catHidden && <path d="M4 4 20 20" stroke={catTextColor} strokeWidth="1.8" strokeLinecap="round" />}
+                </svg>
+              </button>
+            </div>
           );
         })}
         <button
