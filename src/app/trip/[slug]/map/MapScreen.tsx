@@ -75,27 +75,28 @@ const SHADOW_MIN_ZOOM = 15;
 // Every line/polygon's default color (brand purple) — see the shapePois effect below.
 const SHAPE_COLOR = "#7C3AED";
 
-// The clustering library's own default renderer colors a "N nearby points" badge blue or red depending on how big
-// the cluster is relative to the others on screen — generic library colors that don't belong to our brand at all.
-// Recolored to our own purple family instead, in three shades by the same relative-size logic the default renderer
-// used (so a cluster still visually communicates "this one's bigger"), just purple end to end rather than switching
-// hue.
+// The clustering library's own DefaultRenderer (copied verbatim below, down to the exact layered-circle blob shape,
+// size and font) colors a "N nearby points" badge blue or red depending on how big the cluster is relative to the
+// others on screen. Recolored 2026-09-27 per feedback — the SHAPE was fine as the library's own default and didn't
+// need reinventing, only the two colors themselves needed to become ours: brand purple in place of red (bigger
+// clusters), light purple in place of blue (smaller ones).
 const clusterRenderer: Renderer = {
   render({ count, position }, stats) {
-    const color = count > Math.max(10, stats.clusters.markers.mean) ? "#6D28D9" : count > 4 ? "#8B5CF6" : "#C4B5FD";
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-        <circle cx="24" cy="24" r="20" fill="${color}" stroke="white" stroke-width="2.5" />
-        <text x="24" y="29" font-size="15" font-weight="700" font-family="Rubik, Arial, sans-serif" text-anchor="middle" fill="white">${count}</text>
-      </svg>`;
+    const color = count > Math.max(10, stats.clusters.markers.mean) ? "#7C3AED" : "#C4B5FD";
+    const svg = `<svg fill="${color}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="50" height="50">
+<circle cx="120" cy="120" opacity=".6" r="70" />
+<circle cx="120" cy="120" opacity=".3" r="90" />
+<circle cx="120" cy="120" opacity=".2" r="110" />
+<text x="50%" y="50%" style="fill:#fff" text-anchor="middle" font-size="50" dominant-baseline="middle" font-family="roboto,arial,sans-serif">${count}</text>
+</svg>`;
     return new google.maps.Marker({
       position,
+      title: `Cluster of ${count} markers`,
       icon: {
-        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-        scaledSize: new google.maps.Size(48, 48),
-        anchor: new google.maps.Point(24, 24),
+        url: `data:image/svg+xml;base64,${btoa(svg)}`,
+        anchor: new google.maps.Point(25, 25),
       },
-      zIndex: 1000 + count,
+      zIndex: Number(google.maps.Marker.MAX_ZINDEX) + count,
     });
   },
 };
@@ -237,6 +238,30 @@ const LOGISTIC_EMOJI: Record<string, string> = {
   vaccination: "💉",
   other: "📄",
 };
+
+// A small pink house pin for hotel logistics pins specifically (see the logisticPins effect below) — a plain
+// function rather than a module-level constant since it touches google.maps.* constructors, which don't exist
+// until the Maps JS API has actually loaded.
+function hotelPinIcon(): google.maps.Icon {
+  const pink = "#EC4899";
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="27" viewBox="0 0 24 30">
+      <path d="${LOGISTIC_PIN_PATH}" fill="${pink}" stroke="white" stroke-width="2" />
+      <g transform="translate(12,10.5)">
+        <path d="M-5 2.5 0 -3.5 5 2.5" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        <rect x="-3.6" y="0" width="7.2" height="5.4" fill="white" />
+        <rect x="-1.1" y="2.2" width="2.2" height="3.2" fill="${pink}" />
+      </g>
+    </svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(22, 27),
+    anchor: new google.maps.Point(11, 27),
+  };
+}
+// Same teardrop silhouette as DayRouteMap's own stop pins (PIN_PATH there) — kept as its own copy since the two
+// files don't share an icon-building module.
+const LOGISTIC_PIN_PATH = "M12 0C5.4 0 0 5.4 0 12c0 9 12 18 12 18s12-9 12-18C24 5.4 18.6 0 12 0z";
 
 export function MapScreen({
   pois,
@@ -1211,10 +1236,13 @@ export function MapScreen({
     logisticMarkersRef.current = [];
 
     logisticPins.forEach((pin) => {
+      // Hotel pins get their own small pink house marker instead of the plain default red teardrop + emoji label
+      // every other logistics type still uses — still stands out at a glance (the one pink pin on the whole map),
+      // just a smaller, quieter mark than a full-size default marker.
       const marker = new google.maps.Marker({
         position: { lat: pin.lat, lng: pin.lng },
         map: mapRef.current!,
-        label: { text: LOGISTIC_EMOJI[pin.type] ?? "📍", fontSize: "16px" },
+        ...(pin.type === "hotel" ? { icon: hotelPinIcon() } : { label: { text: LOGISTIC_EMOJI[pin.type] ?? "📍", fontSize: "16px" } }),
         title: pin.title,
         zIndex: 500,
       });
