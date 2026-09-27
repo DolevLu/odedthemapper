@@ -64,10 +64,10 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={onClick}
-      className="mt-2 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+      className="mt-2 flex shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold text-white shadow-md"
       style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
     >
-      <NavIcon name="download" size={16} />
+      <NavIcon name="download" size={14} />
       {t("nav.downloadApp")}
     </a>
   );
@@ -82,10 +82,10 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
     <Link
       href="/admin"
       onClick={onClick}
-      className="mt-2 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+      className="mt-2 flex shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold text-white shadow-md"
       style={{ background: "linear-gradient(135deg, #2563EB, #0EA5E9)" }}
     >
-      <NavIcon name="tool" size={16} />
+      <NavIcon name="tool" size={14} />
       {t("nav.adminPanel")}
     </Link>
   );
@@ -94,8 +94,8 @@ function AdminPanelLink({ onClick }: { onClick?: () => void }) {
 function LiveDot() {
   return (
     <span className="relative ms-2 inline-flex h-2.5 w-2.5 shrink-0 align-middle" aria-hidden>
-      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" style={{ background: NAV_PURPLE }} />
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: NAV_PURPLE }} />
     </span>
   );
 }
@@ -444,16 +444,20 @@ export function AppSidebar({
           </Link>
         </div>
 
-        <Link
-          href="/pricing"
-          className="mt-3 flex shrink-0 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
-          style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
-        >
-          <NavIcon name="sparkle" size={16} />
-          {t("nav.upgradeNow")}
-        </Link>
-        <DownloadAppLink />
-        {isAdmin && <AdminPanelLink />}
+        {/* Thin divider so the pinned CTA row below reads as separate from the scrollable nav list above it,
+            rather than blending straight into its last item. */}
+        <div className="mt-3 shrink-0 border-t pt-3" style={{ borderColor: NAV_BORDER }}>
+          <Link
+            href="/pricing"
+            className="flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold text-white shadow-md"
+            style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
+          >
+            <NavIcon name="sparkle" size={14} />
+            {t("nav.upgradeNow")}
+          </Link>
+          <DownloadAppLink />
+          {isAdmin && <AdminPanelLink />}
+        </div>
       </nav>
 
       {/* Mobile: no top header bar either — the profile button just floats
@@ -676,14 +680,16 @@ export function AppSidebar({
             </Link>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-1 p-4 pt-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          {/* Same divider treatment as the desktop sidebar — separates this pinned CTA row from the scrollable
+              nav list right above it. */}
+          <div className="flex shrink-0 flex-col gap-1 border-t p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]" style={{ borderColor: NAV_BORDER }}>
             <Link
               href="/pricing"
               onClick={() => setDrawerOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold text-white shadow-md"
+              className="flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold text-white shadow-md"
               style={{ background: "linear-gradient(135deg, #F59E0B, #EC4899)" }}
             >
-              <NavIcon name="sparkle" size={16} />
+              <NavIcon name="sparkle" size={14} />
               {t("nav.upgradeNow")}
             </Link>
             <DownloadAppLink onClick={() => setDrawerOpen(false)} />

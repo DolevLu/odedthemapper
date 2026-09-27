@@ -331,21 +331,37 @@ export function DayItemsList({
                   transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
                 }}
               >
-                {/* Timeline column, rightmost (RTL — first in DOM order): the connecting line is drawn as a top
-                 * half-segment + bottom half-segment per row (no dot — just the time, on request), exactly like
-                 * TransportConnector already does between rows — so consecutive segments chain into one continuous
-                 * line down the column regardless of each row's actual height (an absolutely-positioned overlay
-                 * line can't track that without knowing the total height up front). */}
-                <div className="flex w-11 shrink-0 flex-col items-center">
-                  <div className="w-0 flex-1" style={!isFirst ? { borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)" } : undefined} aria-hidden />
-                  <div className="w-0 flex-1" style={!isLast ? { borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)" } : undefined} aria-hidden />
-                  {times[item.id] && (
-                    <span className="mt-0.5 shrink-0 text-[12.5px] font-extrabold tabular-nums" style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}>
-                      {times[item.id]}
-                    </span>
-                  )}
-                  {status === "current" && <span className="text-[9.5px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
-                  {status === "next" && <span className="text-[9.5px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
+                {/* Timeline column, rightmost (RTL — first in DOM order): the line is one continuous absolutely-
+                 * positioned strip pushed to this column's own right edge (close to the card's border — "the line
+                 * should be more to the right"), running the row's full height; the time sits centered on top of
+                 * it, with a background matching the card's own so the line reads as passing BEHIND the time
+                 * rather than stopping above it. */}
+                <div className="relative flex w-9 shrink-0 items-center justify-center self-stretch">
+                  {/* Starts/ends at the row's own vertical center for the first/last stop, so the line never pokes
+                   * out above the first stop or below the last one — the same effect the old top+bottom flex-1
+                   * segments (gated by isFirst/isLast) had, adapted to one continuous absolutely-positioned strip. */}
+                  <div
+                    className="absolute w-0"
+                    style={{
+                      insetInlineEnd: 3,
+                      top: isFirst ? "50%" : 0,
+                      bottom: isLast ? "50%" : 0,
+                      borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)",
+                    }}
+                    aria-hidden
+                  />
+                  <div
+                    className="relative z-10 flex flex-col items-center gap-0.5 px-1"
+                    style={{ background: status === "current" ? "color-mix(in srgb, #22C55E 8%, var(--surface))" : "var(--surface)" }}
+                  >
+                    {times[item.id] && (
+                      <span className="shrink-0 text-[12.5px] font-extrabold tabular-nums" style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}>
+                        {times[item.id]}
+                      </span>
+                    )}
+                    {status === "current" && <span className="text-[9.5px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
+                    {status === "next" && <span className="text-[9.5px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
+                  </div>
                 </div>
 
                 <span
@@ -460,12 +476,15 @@ function TransportConnector({ from, to }: { from: { name: string; lat: number; l
       title={`${directionsFrom}${t("dayItems.directionsGoogleMapsSuffix")}`}
       aria-label={directionsFrom}
     >
-      <div className="flex w-10 shrink-0 flex-col items-center">
-        <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
-        <span className="my-1 flex h-6 w-6 shrink-0 items-center justify-center text-[15px] transition-transform group-hover:scale-110" aria-hidden>
+      {/* Line pushed to this column's own inline-start edge (right, in RTL — 3px in, matching the stop cards'
+       * timeline line directly above/below it) instead of centered; the icon sits a little further left of it
+       * (screen-space translateX, so it reads as "left" regardless of RTL) rather than sitting right on the line. */}
+      <div className="flex w-9 shrink-0 flex-col items-start ps-[3px]">
+        <div className="flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
+        <span className="my-1 flex h-6 w-6 shrink-0 items-center justify-center text-[15px] transition-transform group-hover:scale-110" style={{ transform: "translateX(-4px)" }} aria-hidden>
           {icon}
         </span>
-        <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
+        <div className="flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
       </div>
       <div className="flex flex-1 items-center text-xs font-medium opacity-45 transition-opacity group-hover:opacity-90">
         {distanceLabel} · {t("dayItems.directionsLink")}
@@ -508,8 +527,26 @@ function ItemDetailSheet({
   // was auto-focusing the first focusable descendant of this freshly-mounted dialog, which happens to be the time
   // input right below. Explicitly focusing the (non-editable) root the instant it mounts wins that race, so nothing
   // gets focused — and therefore no keyboard opens — until the visitor actually taps a real field themselves.
+  // A single synchronous focus() here isn't always enough: after the time input has been focused in an earlier
+  // open of this same sheet, some browsers restore focus to it a tick or two later (a native "remember the last
+  // focused form field in this subtree" heuristic), which lands after our effect runs and silently wins the race
+  // back. Re-asserting root focus on the next couple of animation frames catches that late restoration too, so the
+  // popup opens focus-free every single time regardless of what was focused on a previous open.
   useEffect(() => {
-    rootRef.current?.focus();
+    const el = rootRef.current;
+    if (!el) return;
+    el.focus();
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      if (document.activeElement !== el && el.contains(document.activeElement)) el.focus();
+      raf2 = requestAnimationFrame(() => {
+        if (document.activeElement !== el && el.contains(document.activeElement)) el.focus();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
   }, []);
   if (typeof document === "undefined") return null;
   return createPortal(
