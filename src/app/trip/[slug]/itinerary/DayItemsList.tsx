@@ -297,7 +297,6 @@ export function DayItemsList({
     <div className="flex flex-col gap-1.5">
       {ordered.map((item, idx) => {
         const status = timeStatus.get(item.id);
-        const dotColor = status === "current" ? "#22C55E" : status === "next" ? "#B45309" : "color-mix(in srgb, var(--text) 30%, transparent)";
         const categoryColor = standardCategoryColor(item.poi?.categoryName ?? "", "#94A3B8");
         const nextItem = ordered[idx + 1];
         const isFirst = idx === 0;
@@ -323,22 +322,22 @@ export function DayItemsList({
                 onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
                 onPointerUp={() => handleSwipePointerEnd(item.id)}
                 onPointerCancel={() => handleSwipePointerEnd(item.id)}
-                className="relative flex cursor-pointer items-stretch gap-2.5 overflow-hidden py-1.5 touch-pan-y"
+                className="relative flex cursor-pointer items-stretch gap-2.5 overflow-hidden rounded-2xl border py-1.5 touch-pan-y"
                 style={{
                   background: status === "current" ? "color-mix(in srgb, #22C55E 8%, var(--surface))" : "var(--surface)",
+                  borderColor: "color-mix(in srgb, var(--text) 10%, transparent)",
                   opacity: dragId === item.id ? 0.6 : 1,
                   transform: `translateX(${swipeX[item.id] ?? 0}px)`,
                   transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
                 }}
               >
                 {/* Timeline column, rightmost (RTL — first in DOM order): the connecting line is drawn as a top
-                 * half-segment + dot + bottom half-segment per row, exactly like TransportConnector already does
-                 * between rows — so consecutive segments chain into one continuous line down the column regardless
-                 * of each row's actual height (an absolutely-positioned overlay line can't track that without
-                 * knowing the total height up front). */}
+                 * half-segment + bottom half-segment per row (no dot — just the time, on request), exactly like
+                 * TransportConnector already does between rows — so consecutive segments chain into one continuous
+                 * line down the column regardless of each row's actual height (an absolutely-positioned overlay
+                 * line can't track that without knowing the total height up front). */}
                 <div className="flex w-11 shrink-0 flex-col items-center">
                   <div className="w-0 flex-1" style={!isFirst ? { borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)" } : undefined} aria-hidden />
-                  <span className="my-1 h-2.5 w-2.5 shrink-0 rounded-full border-2" style={{ background: "var(--surface)", borderColor: dotColor }} aria-hidden />
                   <div className="w-0 flex-1" style={!isLast ? { borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)" } : undefined} aria-hidden />
                   {times[item.id] && (
                     <span className="mt-0.5 shrink-0 text-[12.5px] font-extrabold tabular-nums" style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}>
@@ -463,11 +462,7 @@ function TransportConnector({ from, to }: { from: { name: string; lat: number; l
     >
       <div className="flex w-10 shrink-0 flex-col items-center">
         <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />
-        <span
-          className="my-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] shadow-sm transition-transform group-hover:scale-110"
-          style={{ background: color }}
-          aria-hidden
-        >
+        <span className="my-1 flex h-6 w-6 shrink-0 items-center justify-center text-[15px] transition-transform group-hover:scale-110" aria-hidden>
           {icon}
         </span>
         <div className="mx-auto flex-1" style={{ width: 0, borderInlineStart: `2px dashed ${color}` }} aria-hidden />

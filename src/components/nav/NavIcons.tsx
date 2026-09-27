@@ -113,12 +113,13 @@ export function NavIconSprite() {
           <circle cx="5" cy="19" r="1.3" fill="currentColor" stroke="none" />
           <circle cx="19" cy="5" r="1.3" fill="currentColor" stroke="none" />
         </symbol>
+        {/* A target/radar-pulse badge (matching the reference image directly): an outer ring, a solid filled disc
+         * inside it, and a white "punched out" center dot — not pure line-art like the rest of this set, but this
+         * is the exact icon asked for. */}
         <symbol id="nav-i-livepulse" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none" />
-          <path d="M8.6 8.6a5 5 0 0 0 0 6.8" />
-          <path d="M15.4 8.6a5 5 0 0 0 0 6.8" />
-          <path d="M6 6a9 9 0 0 0 0 12" opacity="0.5" />
-          <path d="M18 6a9 9 0 0 0 0 12" opacity="0.5" />
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="6.3" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="2.3" fill="white" stroke="none" />
         </symbol>
       </defs>
     </svg>
