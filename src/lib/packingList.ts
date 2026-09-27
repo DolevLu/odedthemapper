@@ -29,6 +29,7 @@ export const PACKING_LIST: PackingListItem[] = [
   },
   { key: "esim", label: { he: "סים מקומי או eSIM לאינטרנט בחו״ל", en: "A local SIM or eSIM for internet abroad" }, category: "before-flight", couponPartner: "Holafly" },
   { key: "currency", label: { he: "המרת מטבע / כרטיס אשראי מתאים לחו״ל", en: "Currency exchange / a credit card suited for abroad" }, category: "before-flight" },
+  { key: "digital_wallet", label: { he: "ארנק דיגיטלי רב-מטבעי לנסיעה (Laya)", en: "A multi-currency digital wallet for the trip (Laya)" }, category: "before-flight", couponPartner: "Laya" },
   { key: "checkin", label: { he: "צ׳ק אין מקוון לטיסה", en: "Online flight check-in" }, category: "before-flight" },
   { key: "notify_bank", label: { he: "עדכון הבנק/חברת האשראי על יציאה לחו״ל", en: "Notify your bank/credit card company about traveling abroad" }, category: "before-flight" },
   { key: "notify_home", label: { he: "תיאום עם מישהו בבית שיודע את פרטי הטיול", en: "Arrange for someone back home to know your trip details" }, category: "before-flight" },
