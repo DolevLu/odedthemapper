@@ -66,20 +66,20 @@ export function sortCategoryNames(names: string[]): string[] {
  * assign that category — so e.g. bars are always dark blue with a beer
  * icon everywhere, not a different shade per destination.
  */
-// Muted 2026-09-27 (editorial/calm pass): these used to be at near-full saturation (candy-bright orange/green/blue,
-// and the same vivid purple used for the brand's own CTA color, which coincidentally also matched "attraction" here
-// even though the two are unrelated). Dialed each one down toward a dustier, more considered tone — same hue family
-// so pins are still instantly recognizable per category, just calmer to look at across a whole map full of them.
-// Bar/club and transit were already muted earthy tones and are untouched. This table is the single source both the
-// map pins and every "show a category's color" UI (filter pills, DayItemsList's icon, PoiCard's accents) read from.
+// Recolored 2026-09-27 (brand-color pass, on top of the earlier editorial/calm muting): "אטרקציות כללי"
+// (general attractions) now takes the brand's own light-purple (the logo's hue, lightened) instead of a color that
+// merely happened to be in the same family — every OTHER category keeps its own distinct hue (still instantly
+// recognizable at a glance) but lightened to match the same airy, less-saturated brand feel: food/cafe a light
+// orange, bars/clubs a light blue, metro/transit a light brown. This table is the single source both the map pins
+// and every "show a category's color" UI (filter pills, DayItemsList's icon, PoiCard's accents) read from.
 const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "path"; d: string } | { type: "text"; char: string } }[] = [
-  { match: /קפה|בראנץ|גלידה|coffee|cafe/i, color: "#C2703D", icon: { type: "path", d: pathForCategory("קפה") } },
-  { match: RESTAURANT_CATEGORY_MATCH, color: "#C2703D", icon: { type: "path", d: pathForCategory("מסעדות") } },
-  { match: /פארק|גן|park|garden/i, color: "#5B8A64", icon: { type: "path", d: pathForCategory("פארק") } },
-  { match: /בר|לילה|pub|drink|מועדונ|club/i, color: "#1E3A5F", icon: { type: "path", d: pathForCategory("בר") } },
-  { match: /מטרו|רכבת|תחבורה|תחב"צ|metro|train|station/i, color: "#8B5A2B", icon: { type: "text", char: "M" } },
-  { match: /עייר|ערים|עיר|יישוב|town|city/i, color: "#3D6B96", icon: { type: "path", d: CHECK_PATH } },
-  { match: /אטרקצי|attraction/i, color: "#7A5CA8", icon: { type: "path", d: STAR_PATH } },
+  { match: /קפה|בראנץ|גלידה|coffee|cafe/i, color: "#E8985B", icon: { type: "path", d: pathForCategory("קפה") } },
+  { match: RESTAURANT_CATEGORY_MATCH, color: "#E8985B", icon: { type: "path", d: pathForCategory("מסעדות") } },
+  { match: /פארק|גן|park|garden/i, color: "#7FAF8A", icon: { type: "path", d: pathForCategory("פארק") } },
+  { match: /בר|לילה|pub|drink|מועדונ|club/i, color: "#6FA8DC", icon: { type: "path", d: pathForCategory("בר") } },
+  { match: /מטרו|רכבת|תחבורה|תחב"צ|metro|train|station/i, color: "#B08968", icon: { type: "text", char: "M" } },
+  { match: /עייר|ערים|עיר|יישוב|town|city/i, color: "#6FA8DC", icon: { type: "path", d: CHECK_PATH } },
+  { match: /אטרקצי|attraction/i, color: "#9F75E8", icon: { type: "path", d: STAR_PATH } },
 ];
 
 // Nightlife categories vary by destination — some KML sources already split
@@ -101,7 +101,7 @@ const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "p
 const BAR_ONLY_MATCH = /בר|לילה|pub|drink/i;
 const CLUB_ONLY_MATCH = /מועדונ|club|disco/i;
 const CLUB_NAME_MATCH = CLUB_ONLY_MATCH;
-const CLUB_STYLE = { color: "#1E3A5F", icon: { type: "path" as const, d: pathForCategory("מועדון") } };
+const CLUB_STYLE = { color: "#6FA8DC", icon: { type: "path" as const, d: pathForCategory("מועדון") } };
 
 /** The same standardized color categoryMarkerIcon draws map pins with, for
  * UI that shows a category's color WITHOUT drawing a full marker icon (e.g.

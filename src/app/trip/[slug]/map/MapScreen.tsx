@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MarkerClusterer, SuperClusterAlgorithm } from "@googlemaps/markerclusterer";
+import { MarkerClusterer, SuperClusterAlgorithm, type Renderer } from "@googlemaps/markerclusterer";
 import { useGoogleMaps, loadRoutesLibrary, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
 import type { FlatPoi } from "@/lib/data/pois";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -72,13 +72,33 @@ function markerScaleForZoom(zoom: number | undefined): number {
 // Overpass query (and the map would be too cluttered with shade lines).
 const SHADOW_MIN_ZOOM = 15;
 
-// Fallback only, for the rare shape with no category color at all — every
-// normal line/polygon renders in its own KML-derived category color instead.
+// Every line/polygon's default color (brand purple) — see the shapePois effect below.
 const SHAPE_COLOR = "#7C3AED";
 
-// Main-street lines always render in brand purple, not whatever color (often
-// a generic blue) the KML happened to assign them.
-const MAIN_STREET_PATTERN = /רחוב.*ראשי|ראשי.*רחוב|main street|main road/i;
+// The clustering library's own default renderer colors a "N nearby points" badge blue or red depending on how big
+// the cluster is relative to the others on screen — generic library colors that don't belong to our brand at all.
+// Recolored to our own purple family instead, in three shades by the same relative-size logic the default renderer
+// used (so a cluster still visually communicates "this one's bigger"), just purple end to end rather than switching
+// hue.
+const clusterRenderer: Renderer = {
+  render({ count, position }, stats) {
+    const color = count > Math.max(10, stats.clusters.markers.mean) ? "#6D28D9" : count > 4 ? "#8B5CF6" : "#C4B5FD";
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="20" fill="${color}" stroke="white" stroke-width="2.5" />
+        <text x="24" y="29" font-size="15" font-weight="700" font-family="Rubik, Arial, sans-serif" text-anchor="middle" fill="white">${count}</text>
+      </svg>`;
+    return new google.maps.Marker({
+      position,
+      icon: {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+        scaledSize: new google.maps.Size(48, 48),
+        anchor: new google.maps.Point(24, 24),
+      },
+      zIndex: 1000 + count,
+    });
+  },
+};
 
 const INFO_ACTION_BTN_STYLE =
   "cursor:pointer;border:1px solid #ddd;border-radius:999px;padding:4px 10px;font-size:12px;background:#fff;font-family:'Rubik',sans-serif;white-space:nowrap";
@@ -954,14 +974,12 @@ export function MapScreen({
     shapePois.forEach((poi) => {
       const path = (poi.geometryCoords ?? []).map(([lng, lat]) => ({ lat, lng }));
       if (path.length < 2) return;
-      // Prefers the placemark's own KML color (e.g. this exact metro line's
-      // real line color) over the category's one shared swatch — several
-      // differently-colored lines can otherwise be grouped in a single
-      // category/folder (e.g. all under "מטרו") and would wrongly render
-      // identically if only the category color were used. Main-street lines
-      // are a deliberate exception — always our own brand purple regardless
-      // of whatever color (usually blue) the KML assigned them.
-      const color = MAIN_STREET_PATTERN.test(poi.categoryName) ? SHAPE_COLOR : poi.colorHex || poi.categoryColor || SHAPE_COLOR;
+      // 2026-09-27 brand-color pass: every line/polygon defaults to our own brand purple now, on every
+      // destination, regardless of whatever color (often an arbitrary blue/green/red) the source KML happened to
+      // assign that placemark or its category folder — a KML-derived color no longer wins by default the way it
+      // used to. An admin's own explicit colorHex override (set via the shape color editor) still wins over the
+      // default, since that's a deliberate per-shape choice rather than incidental KML data.
+      const color = poi.colorHex || SHAPE_COLOR;
       // Shapes aren't otherwise clickable (no info window/route/favorite
       // flow exists for a line/polygon) — only wired up in admin mode, to
       // open the same color editor points get.
@@ -1416,6 +1434,7 @@ export function MapScreen({
       map: mapRef.current,
       markers: [...poiMarkers, ...savedMarkers],
       algorithm: new SuperClusterAlgorithm({ maxZoom: CLUSTER_MAX_ZOOM }),
+      renderer: clusterRenderer,
     });
     // gpsActive/userPosition are intentionally excluded — openPoi/drawRouteTo
     // read them from refs, so markers don't need rebuilding on every GPS
