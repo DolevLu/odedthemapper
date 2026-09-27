@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, setItineraryItemTime, voteItineraryItem } from "@/lib/actions/trip";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
-import { CategoryGlyphWhite } from "@/components/CategoryIcon";
+import { CategoryGlyph } from "@/components/CategoryIcon";
 import { standardCategoryColor } from "@/lib/mapStyles";
 import { haversineKm, transportIconFor, transportColorFor, googleMapsDirectionsUrl } from "@/lib/geo";
 import { useTranslation } from "@/components/i18n/LanguageContext";
@@ -17,7 +17,7 @@ import type { DictionaryKey } from "@/lib/i18n/dictionary";
 // rest of the app already uses for "where am I" cues; everything else gets
 // one calm, destination-independent slate tone.
 const TIME_CHIP_STYLE: Record<"default" | "current" | "next", { background: string; color: string }> = {
-  default: { background: "#E2E8F0", color: "#1E293B" },
+  default: { background: "color-mix(in srgb, var(--text) 7%, transparent)", color: "color-mix(in srgb, var(--text) 72%, transparent)" },
   current: { background: "#22C55E", color: "white" },
   next: { background: "#FEF3C7", color: "#B45309" },
 };
@@ -346,16 +346,16 @@ export function DayItemsList({
                 </span>
 
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-sm ring-2 ring-[color:var(--surface)]"
-                  style={{ background: categoryColor }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: `color-mix(in srgb, ${categoryColor} 16%, var(--surface))` }}
                   aria-hidden
                 >
-                  <CategoryGlyphWhite name={item.poi?.categoryName ?? ""} size={20} />
+                  <CategoryGlyph name={item.poi?.categoryName ?? ""} size={15} color={categoryColor} />
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
-                  <p className="truncate text-xs font-semibold leading-snug" style={{ color: categoryColor }}>
+                  <p className="line-clamp-2 break-words text-[15px] font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
+                  <p className="truncate text-xs font-medium leading-snug" style={{ color: `color-mix(in srgb, ${categoryColor} 75%, var(--text))` }}>
                     {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : t("dayItems.customItem")}
                     <span className="opacity-60"> {notes[item.id]?.trim() ? t("dayItems.hasNote") : ""}</span>
                   </p>
@@ -368,10 +368,10 @@ export function DayItemsList({
 
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {times[item.id] && (
-                    <span className="flex items-center gap-1 rounded-full py-1 ps-2 pe-2.5 text-[13px] font-extrabold tabular-nums tracking-tight" style={chip}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 opacity-70">
-                        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2.2" />
-                        <path d="M12 7v5.5l3.5 2" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                    <span className="flex items-center gap-1 rounded-full py-0.5 ps-1.5 pe-2 text-[11px] font-bold tabular-nums" style={chip}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 opacity-60">
+                        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2.4" />
+                        <path d="M12 7v5.5l3.5 2" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
                       </svg>
                       {times[item.id]}
                     </span>

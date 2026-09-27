@@ -176,55 +176,51 @@ body {
   75% { transform: rotate(4deg); }
 }
 
+/* Softened 2026-09-27: the original entrance had a cartoon-spring overshoot (scale past 1, aggressive
+ * cubic-bezier) that read as more "toy app" than the calm-but-charactered feel the app is going for now.
+ * Same idea (things settle gently into place) with the bounce mostly taken out. */
 @keyframes pop-in {
-  0% { opacity: 0; transform: scale(0.85) translateY(6px); }
-  60% { opacity: 1; transform: scale(1.03) translateY(0); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .game-pop-in {
-  animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: pop-in 0.28s ease-out both;
 }
 
-@keyframes idle-bob {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-3px) rotate(3deg); }
-}
-
-.site-logo {
-  animation: idle-bob 3.2s ease-in-out infinite;
-  transform-origin: 60% 90%;
-}
+/* The logo used to wobble constantly, unprompted, on every screen it appears on (the drawer header, the profile
+ * level badge) — a strong "toy" signal by itself. It now sits still and only plays the wiggle as a one-off response
+ * to a hover/tap, which reads as a nice bit of character instead of a permanent tic. */
 .site-logo:hover {
   animation: wiggle 0.5s ease-in-out;
 }
 
-/* Solid-filled pill buttons (primary CTAs across the whole app) get a
- * sticker-like lift on hover and a satisfying squash on press. Scoped to
- * actual clickable elements — not every rounded-full span/badge — so
- * static pills (status tags, category chips as plain <span>s) are untouched. */
+/* Solid-filled pill buttons (primary CTAs across the whole app) get a gentle lift on hover and a light press
+ * feedback. Scoped to actual clickable elements — not every rounded-full span/badge — so static pills (status tags,
+ * category chips as plain <span>s) are untouched. Softened 2026-09-27 (was a much bigger lift/scale/brighten and a
+ * harder squash) to read as calm and considered rather than bouncy. */
 button.rounded-full:not(:disabled),
 a.rounded-full {
   transform-origin: center;
 }
 button.rounded-full:not(:disabled):hover,
 a.rounded-full:hover {
-  transform: translateY(-2px) scale(1.035);
-  filter: brightness(1.04);
+  transform: translateY(-1px);
+  filter: brightness(1.02);
 }
 button.rounded-full:not(:disabled):active,
 a.rounded-full:active {
-  transform: scale(0.94);
+  transform: scale(0.97);
 }
 
 /* Emoji/icon glyphs (nav icons, category icons) get a little life on hover
  * instead of sitting completely static. */
 .icon-pop {
   display: inline-block;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s ease-out;
 }
 .icon-pop:hover {
-  transform: scale(1.25) rotate(-8deg);
+  transform: scale(1.1) rotate(-3deg);
 }
 
 /* A soft, colored glow on focus for every text input/select/textarea in the
