@@ -19,6 +19,17 @@ import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 type Tier = "free" | "silver" | "gold";
 
+// The nav chrome's own brand palette — deliberately fixed, not var(--primary)/var(--background) (which follow
+// whichever destination is open and used to make this bar/sidebar go, e.g., red for a destination whose theme
+// happens to be red). Requested on its own: white surfaces, purple active states, a soft pinkish-purple hover,
+// matching the app's own logo mark regardless of destination.
+const NAV_PURPLE = "#7C3AED";
+const NAV_ACTIVE_GRADIENT = "linear-gradient(135deg, #8B5CF6, #7C3AED)";
+const NAV_HOVER_TINT = "#F6ECFB";
+const NAV_ACTIVE_SHADOW = "0 2px 8px rgba(124,58,237,0.3)";
+const NAV_BORDER = "color-mix(in srgb, #7C3AED 12%, transparent)";
+const NAV_TEXT = "#1a1a1a";
+
 const TOP_ITEMS: { href: string; labelKey: DictionaryKey; icon: NavIconName }[] = [
   // Deliberately /home, not "/" — "/" redirects paying users straight to
   // their destination's map (see (shell)/page.tsx), so a Home nav item
@@ -293,14 +304,14 @@ export function AppSidebar({
       <nav
         className="app-sidebar-desktop hidden shrink-0 flex-col border-e p-3 sm:flex sm:w-64 sm:sticky sm:top-0 sm:h-screen"
         style={{
-          borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)",
-          background: "var(--background, #FBF6EE)",
+          borderColor: NAV_BORDER,
+          background: "#FFFFFF",
           ...(isNativeApp ? { display: "none" } : {}),
         }}
       >
         <div
           className="mb-3 flex shrink-0 items-center gap-2.5 p-2.5"
-          style={{ borderRadius: "var(--radius, 10px)", background: "var(--surface, #fff)", border: "1px solid color-mix(in srgb, var(--primary, #333) 14%, transparent)" }}
+          style={{ borderRadius: "var(--radius, 10px)", background: "#FFFFFF", border: `1px solid ${NAV_BORDER}`, boxShadow: "0 1px 4px rgba(124,58,237,0.08)" }}
         >
           <ProfileMenu isLoggedIn={isLoggedIn} name={name} planLabel={planLabel} />
           <GroupBell isLoggedIn={isLoggedIn} />
@@ -315,7 +326,7 @@ export function AppSidebar({
                 tierBadge && (
                   <span
                     className="mt-0.5 inline-flex w-fit rounded-full px-1.5 py-0.5 text-[10px] font-bold tracking-wide"
-                    style={{ color: "var(--primary, #7C3AED)", background: "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)" }}
+                    style={{ color: NAV_PURPLE, background: NAV_HOVER_TINT }}
                   >
                     {tierBadge}
                   </span>
@@ -341,19 +352,26 @@ export function AppSidebar({
                 key={item.href}
                 href={item.href}
                 className="flex items-center gap-2.5 px-2.5 py-1.5 text-[14px]"
-                style={{ borderRadius: 14, background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)" : "transparent" }}
+                style={{ borderRadius: 14, background: active ? NAV_HOVER_TINT : "transparent" }}
+                onMouseEnter={(e) => {
+                  if (!active) e.currentTarget.style.background = NAV_HOVER_TINT;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) e.currentTarget.style.background = "transparent";
+                }}
               >
                 <span
                   className="flex h-[30px] w-[30px] shrink-0 items-center justify-center"
                   style={{
                     borderRadius: 9,
-                    background: active ? "var(--primary, #7C3AED)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
-                    color: active ? "white" : "var(--primary, #7C3AED)",
+                    background: active ? NAV_ACTIVE_GRADIENT : NAV_HOVER_TINT,
+                    color: active ? "white" : NAV_PURPLE,
+                    boxShadow: active ? NAV_ACTIVE_SHADOW : undefined,
                   }}
                 >
                   <NavIcon name={item.icon} size={17} />
                 </span>
-                <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
+                <span style={{ fontWeight: active ? 700 : 600, color: NAV_TEXT, opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
               </Link>
             );
           })}
@@ -376,11 +394,12 @@ export function AppSidebar({
                     className="flex items-center gap-2.5 px-2.5 py-1.5 text-[13.5px] font-medium"
                     style={{
                       borderRadius: 12,
-                      background: active ? "var(--primary, #7C3AED)" : "transparent",
-                      color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
+                      background: active ? NAV_ACTIVE_GRADIENT : "transparent",
+                      color: active ? "white" : unlocked ? NAV_TEXT : "color-mix(in srgb, #1a1a1a 45%, transparent)",
+                      boxShadow: active ? NAV_ACTIVE_SHADOW : undefined,
                     }}
                     onMouseEnter={(e) => {
-                      if (!active) e.currentTarget.style.background = "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)";
+                      if (!active) e.currentTarget.style.background = NAV_HOVER_TINT;
                     }}
                     onMouseLeave={(e) => {
                       if (!active) e.currentTarget.style.background = "transparent";
@@ -390,8 +409,8 @@ export function AppSidebar({
                       className="flex h-[26px] w-[26px] shrink-0 items-center justify-center"
                       style={{
                         borderRadius: 8,
-                        background: active ? "rgba(255,255,255,.18)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
-                        color: active ? "white" : "var(--primary, #7C3AED)",
+                        background: active ? "rgba(255,255,255,.2)" : NAV_HOVER_TINT,
+                        color: active ? "white" : NAV_PURPLE,
                         opacity: unlocked ? 1 : 0.55,
                       }}
                     >
@@ -411,12 +430,12 @@ export function AppSidebar({
             rel="noopener noreferrer"
             className="flex items-center gap-2.5 px-2.5 py-1.5 text-[13.5px] font-medium"
             style={{ borderRadius: 12 }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "color-mix(in srgb, #8B7FD9 10%, transparent)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = NAV_HOVER_TINT)}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/laya-icon.png" alt="" className="h-[26px] w-[26px] shrink-0 rounded-[8px]" />
-            <span className="flex-1" style={{ color: "var(--text, #1a1a1a)" }}>
+            <span className="flex-1" style={{ color: NAV_TEXT }}>
               {t("nav.laya")}
             </span>
           </a>
@@ -479,8 +498,8 @@ export function AppSidebar({
         className="fixed inset-x-0 z-30 flex items-stretch justify-around border-t px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.08)] sm:hidden"
         style={{
           bottom: "var(--visual-vh-bottom-gap, 0px)",
-          borderColor: "color-mix(in srgb, var(--primary, #333) 15%, transparent)",
-          background: "var(--background, #FBF6EE)",
+          borderColor: NAV_BORDER,
+          background: "#FFFFFF",
         }}
       >
         <MobileTab href="/home" icon="home" label={t("nav.home")} active={pathname === "/home"} />
@@ -526,7 +545,7 @@ export function AppSidebar({
         <button
           onClick={() => setDrawerOpen(true)}
           className="flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-medium"
-          style={{ color: "color-mix(in srgb, var(--text, #1a1a1a) 65%, transparent)" }}
+          style={{ color: "color-mix(in srgb, #1a1a1a 65%, transparent)" }}
         >
           <NavIcon name="menu" size={20} />
           <span>{t("nav.more")}</span>
@@ -540,7 +559,7 @@ export function AppSidebar({
           <div
             onClick={(e) => e.stopPropagation()}
             className="flex w-[80%] max-w-xs flex-col shadow-2xl"
-            style={{ background: "var(--background, #FBF6EE)" }}
+            style={{ background: "#FFFFFF" }}
           >
           {/* Scrollable middle section — everything except the logo/close
            * header and the bottom action buttons, which stay fixed in place
@@ -549,7 +568,7 @@ export function AppSidebar({
           <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-4" style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}>
             <div
               className="mb-2 flex items-center gap-2.5 p-2.5"
-              style={{ borderRadius: "var(--radius, 10px)", background: "var(--surface, #fff)", border: "1px solid color-mix(in srgb, var(--primary, #333) 14%, transparent)" }}
+              style={{ borderRadius: "var(--radius, 10px)", background: "#FFFFFF", border: `1px solid ${NAV_BORDER}`, boxShadow: "0 1px 4px rgba(124,58,237,0.08)" }}
             >
               <GuideMenuButton onNavigate={() => setDrawerOpen(false)} />
               <Link href="/" onClick={() => setDrawerOpen(false)} className="flex min-w-0 flex-1 items-center gap-2">
@@ -576,19 +595,20 @@ export function AppSidebar({
                   href={item.href}
                   onClick={() => setDrawerOpen(false)}
                   className="flex items-center gap-2.5 px-2.5 py-1.5 text-[14px]"
-                  style={{ borderRadius: 14, background: active ? "color-mix(in srgb, var(--primary, #7C3AED) 10%, transparent)" : "transparent" }}
+                  style={{ borderRadius: 14, background: active ? NAV_HOVER_TINT : "transparent" }}
                 >
                   <span
                     className="flex h-[30px] w-[30px] shrink-0 items-center justify-center"
                     style={{
                       borderRadius: 9,
-                      background: active ? "var(--primary, #7C3AED)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
-                      color: active ? "white" : "var(--primary, #7C3AED)",
+                      background: active ? NAV_ACTIVE_GRADIENT : NAV_HOVER_TINT,
+                      color: active ? "white" : NAV_PURPLE,
+                      boxShadow: active ? NAV_ACTIVE_SHADOW : undefined,
                     }}
                   >
                     <NavIcon name={item.icon} size={17} />
                   </span>
-                  <span style={{ fontWeight: active ? 700 : 600, color: "var(--text, #1a1a1a)", opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
+                  <span style={{ fontWeight: active ? 700 : 600, color: NAV_TEXT, opacity: active ? 1 : 0.85 }}>{t(item.labelKey)}{item.href === "/now" && <LiveDot />}</span>
                 </Link>
               );
             })}
@@ -612,16 +632,17 @@ export function AppSidebar({
                         className="flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium"
                         style={{
                           borderRadius: 12,
-                          background: active ? "var(--primary, #7C3AED)" : "transparent",
-                          color: active ? "white" : unlocked ? "var(--text, #1a1a1a)" : "color-mix(in srgb, var(--text, #1a1a1a) 45%, transparent)",
+                          background: active ? NAV_ACTIVE_GRADIENT : "transparent",
+                          color: active ? "white" : unlocked ? NAV_TEXT : "color-mix(in srgb, #1a1a1a 45%, transparent)",
+                          boxShadow: active ? NAV_ACTIVE_SHADOW : undefined,
                         }}
                       >
                         <span
                           className="flex h-[28px] w-[28px] shrink-0 items-center justify-center"
                           style={{
                             borderRadius: 8,
-                            background: active ? "rgba(255,255,255,.18)" : "color-mix(in srgb, var(--primary, #7C3AED) 8%, transparent)",
-                            color: active ? "white" : "var(--primary, #7C3AED)",
+                            background: active ? "rgba(255,255,255,.2)" : NAV_HOVER_TINT,
+                            color: active ? "white" : NAV_PURPLE,
                             opacity: unlocked ? 1 : 0.55,
                           }}
                         >
@@ -646,7 +667,7 @@ export function AppSidebar({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/laya-icon.png" alt="" className="h-[28px] w-[28px] shrink-0 rounded-[8px]" />
-              <span className="flex-1" style={{ color: "var(--text, #1a1a1a)" }}>
+              <span className="flex-1" style={{ color: NAV_TEXT }}>
                 {t("nav.laya")}
               </span>
             </a>
@@ -739,7 +760,7 @@ function MobileTab({
       prefetch
       onClick={onClick}
       className="flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-medium"
-      style={{ color: active ? "var(--primary, #7C3AED)" : "color-mix(in srgb, var(--text, #1a1a1a) 65%, transparent)" }}
+      style={{ color: active ? NAV_PURPLE : "color-mix(in srgb, #1a1a1a 65%, transparent)" }}
     >
       <span
         className={active ? "game-pop-in" : ""}
@@ -750,8 +771,9 @@ function MobileTab({
           width: active ? 38 : 22,
           height: active ? 26 : 22,
           borderRadius: 13,
-          background: active ? "var(--primary, #7C3AED)" : "transparent",
+          background: active ? NAV_ACTIVE_GRADIENT : "transparent",
           color: active ? "white" : "inherit",
+          boxShadow: active ? NAV_ACTIVE_SHADOW : undefined,
         }}
       >
         <NavIcon name={icon} size={active ? 20 : 22} />
