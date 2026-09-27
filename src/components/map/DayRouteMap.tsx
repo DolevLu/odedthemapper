@@ -79,9 +79,15 @@ const LABEL_ZOOM_THRESHOLD = 16;
 // the route line) — one constant so all three visibly agree with each other.
 const DONE_COLOR = "#22C55E";
 
+// A real location-pin silhouette (head + pointed tail touching down on the exact spot), the same shape family used
+// for the app's other map pins — replaces the plain filled circle these used to be, which read as "just a dot," not
+// a pin you'd point at a specific spot.
+const PIN_PATH = "M12 0C5.4 0 0 5.4 0 12c0 9 12 18 12 18s12-9 12-18C24 5.4 18.6 0 12 0z";
+
 function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean, isDone: boolean): google.maps.Icon {
-  const scale = isCurrent ? 13 : 10;
-  const size = scale * 2;
+  const halfWidth = isCurrent ? 15 : 12;
+  const w = halfWidth * 2;
+  const h = Math.round(w * 1.25); // the path's own 24x30 proportions
   // A stop already reached today (its time-of-day is at or before right now,
   // and it's earlier in the day than the current stop) fills solid green —
   // "already done" — same idea as the day view's own current/next highlight,
@@ -92,15 +98,15 @@ function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean,
   // "already visited".
   const fill = isDone ? DONE_COLOR : color;
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <circle cx="${scale}" cy="${scale}" r="${scale - 1.5}" fill="${fill}" stroke="${isCurrent ? DONE_COLOR : "white"}" stroke-width="${isCurrent ? 3 : 2}" />
-      <text x="${scale}" y="${scale + 4}" font-size="11" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="white">${stopNumber}</text>
+    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 24 30">
+      <path d="${PIN_PATH}" fill="${fill}" stroke="${isCurrent ? DONE_COLOR : "white"}" stroke-width="${isCurrent ? 2.6 : 2}" />
+      <text x="12" y="16" font-size="12" font-weight="700" font-family="Arial, sans-serif" text-anchor="middle" fill="white">${stopNumber}</text>
     </svg>`;
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(size, size),
-    anchor: new google.maps.Point(scale, scale),
-    labelOrigin: new google.maps.Point(scale, -8),
+    scaledSize: new google.maps.Size(w, h),
+    anchor: new google.maps.Point(w / 2, h),
+    labelOrigin: new google.maps.Point(w / 2, -8),
   };
 }
 
@@ -290,13 +296,17 @@ export function DayRouteMap({
       // polyline rather than one with a gradient stroke (Maps' Polyline
       // doesn't support one) — the two segments share the current stop's
       // point so there's no visible gap between them.
+      // Dashed rather than solid — a small square "dash" symbol repeated along an invisible base line is the
+      // standard Maps technique for this (there's no plain strokeDasharray on a Polyline).
+      const dashedIcons = (strokeColor: string) => [
+        { icon: { path: "M 0,-1 0,1", strokeOpacity: 1, strokeColor, strokeWeight: 3, scale: 2 }, offset: "0", repeat: "14px" },
+      ];
       if (currentIndex > 0) {
         const donePath = path.slice(0, currentIndex + 1);
         const donePolyline = new google.maps.Polyline({
           path: donePath,
-          strokeColor: DONE_COLOR,
-          strokeWeight: 4,
-          strokeOpacity: 0.9,
+          strokeOpacity: 0,
+          icons: dashedIcons(DONE_COLOR),
           zIndex: 10,
           map: mapRef.current!,
         });
@@ -305,9 +315,8 @@ export function DayRouteMap({
       const remainingPath = currentIndex > 0 ? path.slice(currentIndex) : path;
       const polyline = new google.maps.Polyline({
         path: remainingPath,
-        strokeColor: color,
-        strokeWeight: 3,
-        strokeOpacity: 0.8,
+        strokeOpacity: 0,
+        icons: dashedIcons(color),
         zIndex: 5,
         map: mapRef.current!,
       });
@@ -324,7 +333,11 @@ export function DayRouteMap({
           position: midpoint,
           map: mapRef.current!,
           clickable: false,
-          zIndex: 50,
+          // Always below every stop pin (which start at zIndex 80 — see below) — this used to default to 50 while
+          // an ordinary (not current/done) stop marker had no explicit zIndex at all, which Maps then assigns by
+          // latitude alone, sometimes landing BELOW 50 and letting this hop icon cover the actual pin (confirmed
+          // live: reported as "the walking/metro icons are hiding the points").
+          zIndex: 20,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
             scale: 9,
@@ -353,7 +366,9 @@ export function DayRouteMap({
           // reserved for the POI name tag shown once zoomed in (below),
           // matching the Map screen's own points.
           icon: numberedStopIcon(idx + 1, color, isCurrent, isDone),
-          zIndex: isCurrent ? 500 : isDone ? 100 : undefined,
+          // Always explicit (never left undefined, which Maps then assigns by latitude alone and can land below
+          // the transport hop-icons' zIndex 20 above) — every stop pin stays above every hop icon regardless.
+          zIndex: isCurrent ? 500 : isDone ? 100 : 80,
         });
         marker.addListener("click", () => {
           revertRevealedRef.current?.();

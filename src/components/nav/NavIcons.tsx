@@ -108,6 +108,18 @@ export function NavIconSprite() {
         <symbol id="nav-i-tool" viewBox="0 0 24 24">
           <path d="M14.7 6.3a3.6 3.6 0 0 1-4.6 4.9L4.7 16.6a1.7 1.7 0 0 0 2.4 2.4l5.4-5.4a3.6 3.6 0 0 1 4.9-4.6L15 11.4l-1.4-1.4Z" />
         </symbol>
+        <symbol id="nav-i-route" viewBox="0 0 24 24">
+          <path d="M5 19Q5 12 12 12Q19 12 19 5" strokeDasharray="0.4 3.2" />
+          <circle cx="5" cy="19" r="1.3" fill="currentColor" stroke="none" />
+          <circle cx="19" cy="5" r="1.3" fill="currentColor" stroke="none" />
+        </symbol>
+        <symbol id="nav-i-livepulse" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none" />
+          <path d="M8.6 8.6a5 5 0 0 0 0 6.8" />
+          <path d="M15.4 8.6a5 5 0 0 0 0 6.8" />
+          <path d="M6 6a9 9 0 0 0 0 12" opacity="0.5" />
+          <path d="M18 6a9 9 0 0 0 0 12" opacity="0.5" />
+        </symbol>
       </defs>
     </svg>
   );
@@ -134,7 +146,9 @@ export type NavIconName =
   | "menu"
   | "sparkle"
   | "download"
-  | "tool";
+  | "tool"
+  | "route"
+  | "livepulse";
 
 export function NavIcon({ name, size = 18, className }: { name: NavIconName; size?: number; className?: string }) {
   return (

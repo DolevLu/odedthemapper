@@ -104,9 +104,9 @@ const DEST_GROUPS: { titleKey: DictionaryKey; items: DestItem[] }[] = [
   {
     titleKey: "group.tripPlanning",
     items: [
-      { href: "/now", labelKey: "item.now", icon: "compass", tier: "silver" },
+      { href: "/now", labelKey: "item.now", icon: "livepulse", tier: "silver" },
       { href: "", labelKey: "item.map", icon: "map", tier: "silver" },
-      { href: "/itinerary", labelKey: "item.itinerary", icon: "calendar", tier: "silver" },
+      { href: "/itinerary", labelKey: "item.itinerary", icon: "route", tier: "silver" },
     ],
   },
   {

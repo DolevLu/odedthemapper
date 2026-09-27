@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colorForDay } from "@/lib/geo";
 import { moveItineraryItemToDay } from "@/lib/actions/trip";
@@ -19,14 +19,11 @@ type PoiOption = { id: string; name: string; areaName: string; categoryName: str
 type Template = { id: string; name: string };
 
 const OPEN_VH = 76;
-// Was 108 — too short for its own content (the day-switcher header row plus
-// the collapsed card no longer fit, so the card was clipped by the
-// overflow-hidden container and read as "barely visible"). The redesigned
-// peek layout drops that separate header row (arrows now sit beside the
-// card itself, see below) and gives the card more breathing room, so this
-// needs to be tall enough for: drag handle + hint (~40px) + the day-nav
-// row with the current-stop card (~92px) + bottom padding.
-const PEEK_PX = 156;
+// Was 156 (then 108 before that) — the card itself shrank considerably (time now sits beside the name instead of
+// stacked above it, less padding), and the whole point of a "peek" is to leave most of the map visible, so this is
+// sized to hug that smaller card closely instead of leaving visible empty space above/below it: drag handle + hint
+// (~34px) + the one stop card + its side arrows (~72px) + minimal padding.
+const PEEK_PX = 118;
 
 /** Same "last timestamped stop at or before now" rule DayItemsList uses for
  * its green "עכשיו" badge — reused here so the collapsed drawer's single
@@ -112,6 +109,7 @@ export function ItineraryMobileView({
   const dragStartHeightPx = useRef(0);
 
   const focusedIdx = dayListDays.findIndex((d) => d.dayIndex === focusedDayIndex);
+  const focusedDayItems = dayListDays.find((d) => d.dayIndex === focusedDayIndex)?.items ?? [];
 
   function goToPreviousDay() {
     if (focusedIdx > 0) {
@@ -125,6 +123,32 @@ export function ItineraryMobileView({
       setFocusedDayIndex(dayListDays[focusedIdx + 1].dayIndex);
       setMapAllDays(false);
     }
+  }
+
+  // Which stop the collapsed "peek" card shows — null means "follow the real current stop" (see currentStopOf);
+  // an explicit index means the visitor arrowed away from it. Reset back to "follow" whenever the focused day
+  // changes, so a fresh day always opens on its own real current/first stop rather than some stale index carried
+  // over from the last day that was showing.
+  const [collapsedStopIdx, setCollapsedStopIdx] = useState<number | null>(null);
+  useEffect(() => setCollapsedStopIdx(null), [focusedDayIndex]);
+  const autoStop = currentStopOf(focusedDayItems);
+  const autoStopIdx = autoStop ? focusedDayItems.findIndex((i) => i.id === autoStop.id) : -1;
+  const collapsedIdx = collapsedStopIdx != null && collapsedStopIdx < focusedDayItems.length ? collapsedStopIdx : autoStopIdx;
+  const collapsedStop = collapsedIdx >= 0 ? focusedDayItems[collapsedIdx] : (focusedDayItems[0] ?? null);
+
+  // Cycles through THIS DAY's own stops (current → next → ... → last → back to the first), never between days —
+  // requested explicitly: switching days while collapsed happens by expanding the drawer instead, via its own day
+  // switcher.
+  function cyclePreviousStop() {
+    if (focusedDayItems.length === 0) return;
+    const base = collapsedIdx >= 0 ? collapsedIdx : 0;
+    setCollapsedStopIdx((base - 1 + focusedDayItems.length) % focusedDayItems.length);
+  }
+
+  function cycleNextStop() {
+    if (focusedDayItems.length === 0) return;
+    const base = collapsedIdx >= 0 ? collapsedIdx : 0;
+    setCollapsedStopIdx((base + 1) % focusedDayItems.length);
   }
 
   async function handleMoveToDay(itemId: string, dayIndex: number) {
@@ -275,8 +299,11 @@ export function ItineraryMobileView({
                   ‹
                 </button>
                 <div className="flex min-w-0 flex-col items-center">
-                  <p className="truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
+                  <p className="flex items-center gap-1.5 truncate text-lg font-extrabold" style={{ fontFamily: "var(--font-heading)", color: colorForDay(focusedDayIndex - 1) }}>
                     {t("mobileItinerary.day")} {focusedDayIndex}
+                    <span className="text-xs font-semibold opacity-60">
+                      · {dayListDays.find((d) => d.dayIndex === focusedDayIndex)?.items.length ?? 0} {t("mobileItinerary.stopsCount")}
+                    </span>
                   </p>
                   {(() => {
                     const focusedDay = dayListDays.find((d) => d.dayIndex === focusedDayIndex);
@@ -329,31 +356,27 @@ export function ItineraryMobileView({
             </div>
           </>
         ) : (
-          // Collapsed: no separate header row — the day-switch arrows sit
-          // directly beside the one current-stop card instead, so this whole
-          // state is just one comfortably-sized row instead of a header plus
-          // a second, barely-visible sliver of content underneath it.
-          <div className="flex min-h-0 flex-1 items-center gap-2 px-3 pb-3">
+          // Collapsed: no separate header row — the arrows sit directly beside the one current-stop card instead,
+          // so this whole state is just one comfortably-sized row. The arrows step through THIS DAY's own stops
+          // (see cyclePreviousStop/cycleNextStop), not between days — switching days happens by expanding the
+          // drawer, via its own day switcher above.
+          <div className="flex min-h-0 flex-1 items-center gap-2 px-3 pb-2">
             <button
-              onClick={goToPreviousDay}
-              disabled={dayListDays.length <= 1 || focusedIdx === 0}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
-              style={{ borderColor: "var(--primary)" }}
-              aria-label={t("mobileItinerary.previousDay")}
+              onClick={cyclePreviousStop}
+              disabled={focusedDayItems.length <= 1}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+              style={{ borderColor: "color-mix(in srgb, var(--text) 18%, transparent)" }}
+              aria-label={t("mobileItinerary.previousStop")}
             >
               ‹
             </button>
-            <CollapsedCurrentStop
-              item={currentStopOf(dayListDays.find((d) => d.dayIndex === focusedDayIndex)?.items ?? [])}
-              isToday={focusedDayIndex === todayDayIndex}
-              onExpand={() => setDrawerState("open")}
-            />
+            <CollapsedCurrentStop item={collapsedStop} isCurrent={collapsedIdx === autoStopIdx && focusedDayIndex === todayDayIndex} onExpand={() => setDrawerState("open")} />
             <button
-              onClick={goToNextDay}
-              disabled={dayListDays.length <= 1 || focusedIdx === dayListDays.length - 1}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
-              style={{ borderColor: "var(--primary)" }}
-              aria-label={t("mobileItinerary.nextDay")}
+              onClick={cycleNextStop}
+              disabled={focusedDayItems.length <= 1}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-lg disabled:opacity-30"
+              style={{ borderColor: "color-mix(in srgb, var(--text) 18%, transparent)" }}
+              aria-label={t("mobileItinerary.nextStop")}
             >
               ›
             </button>
@@ -364,51 +387,38 @@ export function ItineraryMobileView({
   );
 }
 
-/** The single stop shown while the drawer is collapsed — deliberately just
- * one card (not a shrunk peek of the open list, which used to just show
- * whatever the fixed height happened to scroll to). Green background/border
- * — same "current" color the open list's time badge uses (see
- * DayItemsList's timeStatusMap) — makes it read as "this is what's
- * happening now," matching how the open list highlights it. Tapping it
- * expands the drawer, same as tapping the drag handle above it. */
-function CollapsedCurrentStop({
-  item,
-  isToday,
-  onExpand,
-}: {
-  item: DayListItem | null;
-  /** Whether the focused day is actually today's real calendar date (see
-   * resolveTodayDayIndex) — the green "happening now" treatment only makes
-   * sense then; otherwise this is just a preview of the day's first stop,
-   * shown in a neutral style so it doesn't falsely claim to be current. */
-  isToday: boolean;
-  onExpand: () => void;
-}) {
+/** The single stop shown while the drawer is collapsed — deliberately just one card (not a shrunk peek of the open
+ * list, which used to just show whatever the fixed height happened to scroll to). Light by default; only a subtle
+ * green tint (no colored border/frame — removed on request) when this is genuinely the real "happening now" stop,
+ * so arrowing to some other stop in the day (see cyclePreviousStop/cycleNextStop) doesn't falsely claim to be
+ * current. Tapping it expands the drawer, same as tapping the drag handle above it. */
+function CollapsedCurrentStop({ item, isCurrent, onExpand }: { item: DayListItem | null; isCurrent: boolean; onExpand: () => void }) {
   const { t } = useTranslation();
   if (!item) {
     return (
-      <div className="flex flex-1 items-center justify-center rounded-2xl border p-3 text-center text-xs opacity-50" style={{ borderColor: "color-mix(in srgb, var(--primary) 14%, transparent)" }}>
+      <div className="flex flex-1 items-center justify-center rounded-2xl border p-3 text-center text-xs opacity-50" style={{ borderColor: "color-mix(in srgb, var(--text) 12%, transparent)" }}>
         {t("mobileItinerary.noPointsToday")}
       </div>
     );
   }
   const name = item.poi ? item.poi.name : (item.customLabel ?? "");
-  const accent = isToday ? "#22C55E" : "var(--primary)";
+  const accent = isCurrent ? "#22C55E" : "var(--text)";
   return (
     <button
       onClick={onExpand}
-      className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl border p-3 text-center shadow-sm"
-      style={{ borderColor: accent, background: `color-mix(in srgb, ${accent} 14%, var(--surface))` }}
+      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl p-2 text-start shadow-sm"
+      style={{ background: isCurrent ? "color-mix(in srgb, #22C55E 8%, var(--surface))" : "var(--surface)" }}
     >
       {item.timeOfDay && (
-        <span className="shrink-0 rounded-full px-2 py-0.5 font-mono text-xs font-bold text-white" style={{ background: accent }}>
+        <span className="shrink-0 rounded-full px-2 py-1 text-xs font-extrabold tabular-nums" style={{ background: `color-mix(in srgb, ${accent} 14%, transparent)`, color: accent }}>
           {item.timeOfDay}
         </span>
       )}
-      <span className="min-w-0 max-w-full truncate text-sm font-bold">
-        {item.poi?.categoryName && <span className="opacity-60">{shortCategoryLabel(item.poi.categoryName)} · </span>}
-        {name}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-bold leading-tight">{name}</span>
+        {item.poi?.categoryName && <span className="block truncate text-[11px] leading-tight opacity-60">{shortCategoryLabel(item.poi.categoryName)}</span>}
       </span>
+      {isCurrent && <span className="shrink-0 text-[10px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
     </button>
   );
 }

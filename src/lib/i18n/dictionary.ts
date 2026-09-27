@@ -814,7 +814,10 @@ export const DICTIONARY = {
   "mobileItinerary.allDaysButton": { he: "🗺️ כל הימים", en: "🗺️ All days" },
   "mobileItinerary.previousDay": { he: "היום הקודם", en: "Previous day" },
   "mobileItinerary.nextDay": { he: "היום הבא", en: "Next day" },
+  "mobileItinerary.previousStop": { he: "העצירה הקודמת", en: "Previous stop" },
+  "mobileItinerary.nextStop": { he: "העצירה הבאה", en: "Next stop" },
   "mobileItinerary.noPointsToday": { he: "אין עדיין נקודות ביום הזה.", en: "No points for this day yet." },
+  "mobileItinerary.stopsCount": { he: "עצירות", en: "stops" },
 
   "addItem.pickFromList": { he: "בחירה מהרשימה", en: "Pick from list" },
   "addItem.search": { he: "חיפוש", en: "Search" },

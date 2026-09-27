@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, setItineraryItemTime, voteItineraryItem } from "@/lib/actions/trip";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
@@ -297,11 +297,13 @@ export function DayItemsList({
     <div className="flex flex-col gap-1.5">
       {ordered.map((item, idx) => {
         const status = timeStatus.get(item.id);
-        const chip = TIME_CHIP_STYLE[status ?? "default"];
+        const dotColor = status === "current" ? "#22C55E" : status === "next" ? "#B45309" : "color-mix(in srgb, var(--text) 30%, transparent)";
         const categoryColor = standardCategoryColor(item.poi?.categoryName ?? "", "#94A3B8");
         const nextItem = ordered[idx + 1];
+        const isFirst = idx === 0;
+        const isLast = idx === ordered.length - 1;
         return (
-          <div key={item.id} className="flex flex-col gap-1.5">
+          <div key={item.id} className="flex flex-col">
             <div className="relative overflow-hidden rounded-2xl">
               {/* Revealed behind the card as it's dragged left — mirrors the
                * delete affordance so the gesture reads clearly before release. */}
@@ -321,39 +323,41 @@ export function DayItemsList({
                 onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
                 onPointerUp={() => handleSwipePointerEnd(item.id)}
                 onPointerCancel={() => handleSwipePointerEnd(item.id)}
-                className="relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3.5 shadow-sm touch-pan-y"
+                className="relative flex cursor-pointer items-stretch gap-2.5 overflow-hidden py-1.5 touch-pan-y"
                 style={{
-                  borderColor: "color-mix(in srgb, var(--text) 10%, transparent)",
-                  background: "var(--surface)",
+                  background: status === "current" ? "color-mix(in srgb, #22C55E 8%, var(--surface))" : "var(--surface)",
                   opacity: dragId === item.id ? 0.6 : 1,
                   transform: `translateX(${swipeX[item.id] ?? 0}px)`,
                   transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
                 }}
               >
-                <span
-                  data-no-swipe
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    handlePointerDown(item.id, e);
-                  }}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={handlePointerUp}
-                  className="shrink-0 cursor-grab touch-none select-none self-stretch px-0.5 text-base opacity-25 active:cursor-grabbing"
-                  aria-label={t("dayItems.dragToReorder")}
-                >
-                  ⠿
-                </span>
+                {/* Timeline column, rightmost (RTL — first in DOM order): the connecting line is drawn as a top
+                 * half-segment + dot + bottom half-segment per row, exactly like TransportConnector already does
+                 * between rows — so consecutive segments chain into one continuous line down the column regardless
+                 * of each row's actual height (an absolutely-positioned overlay line can't track that without
+                 * knowing the total height up front). */}
+                <div className="flex w-11 shrink-0 flex-col items-center">
+                  <div className="w-0 flex-1" style={!isFirst ? { borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)" } : undefined} aria-hidden />
+                  <span className="my-1 h-2.5 w-2.5 shrink-0 rounded-full border-2" style={{ background: "var(--surface)", borderColor: dotColor }} aria-hidden />
+                  <div className="w-0 flex-1" style={!isLast ? { borderInlineStart: "2px dashed color-mix(in srgb, var(--text) 18%, transparent)" } : undefined} aria-hidden />
+                  {times[item.id] && (
+                    <span className="mt-0.5 shrink-0 text-[12.5px] font-extrabold tabular-nums" style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}>
+                      {times[item.id]}
+                    </span>
+                  )}
+                  {status === "current" && <span className="text-[9.5px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
+                  {status === "next" && <span className="text-[9.5px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
+                </div>
 
                 <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center self-start rounded-full"
                   style={{ background: `color-mix(in srgb, ${categoryColor} 16%, var(--surface))` }}
                   aria-hidden
                 >
                   <CategoryGlyph name={item.poi?.categoryName ?? ""} size={15} color={categoryColor} />
                 </span>
 
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 py-1">
                   <p className="line-clamp-2 break-words text-[15px] font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
                   <p className="truncate text-xs font-medium leading-snug" style={{ color: `color-mix(in srgb, ${categoryColor} 75%, var(--text))` }}>
                     {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : t("dayItems.customItem")}
@@ -364,20 +368,6 @@ export function DayItemsList({
                       {notes[item.id]}
                     </p>
                   )}
-                </div>
-
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  {times[item.id] && (
-                    <span className="flex items-center gap-1 rounded-full py-0.5 ps-1.5 pe-2 text-[11px] font-bold tabular-nums" style={chip}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 opacity-60">
-                        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2.4" />
-                        <path d="M12 7v5.5l3.5 2" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-                      </svg>
-                      {times[item.id]}
-                    </span>
-                  )}
-                  {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
-                  {status === "next" && <span className="text-[10px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
                   {notes[item.id]?.trim() && (
                     <button
                       data-no-swipe
@@ -394,10 +384,25 @@ export function DayItemsList({
                       className="rounded-full px-1 text-xs opacity-50 hover:opacity-100"
                       aria-label={expandedNotes.has(item.id) ? t("dayItems.collapseNote") : t("dayItems.showFullNote")}
                     >
-                      {expandedNotes.has(item.id) ? "︿" : "﹀"}
+                      {expandedNotes.has(item.id) ? "︿ פחות" : "﹀ עוד"}
                     </button>
                   )}
                 </div>
+
+                <span
+                  data-no-swipe
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    handlePointerDown(item.id, e);
+                  }}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  className="shrink-0 cursor-grab touch-none select-none self-stretch px-0.5 text-base opacity-25 active:cursor-grabbing"
+                  aria-label={t("dayItems.dragToReorder")}
+                >
+                  ⠿
+                </span>
               </div>
             </div>
 
@@ -503,12 +508,22 @@ function ItemDetailSheet({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Tapping a stop opened this sheet AND popped the on-screen keyboard straight up (reported live) — the browser
+  // was auto-focusing the first focusable descendant of this freshly-mounted dialog, which happens to be the time
+  // input right below. Explicitly focusing the (non-editable) root the instant it mounts wins that race, so nothing
+  // gets focused — and therefore no keyboard opens — until the visitor actually taps a real field themselves.
+  useEffect(() => {
+    rootRef.current?.focus();
+  }, []);
   if (typeof document === "undefined") return null;
   return createPortal(
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
+        ref={rootRef}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[75vh] w-full max-w-xs flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="flex max-h-[75vh] w-full max-w-xs flex-col overflow-hidden rounded-2xl bg-white shadow-2xl outline-none"
       >
         {item.poi?.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
