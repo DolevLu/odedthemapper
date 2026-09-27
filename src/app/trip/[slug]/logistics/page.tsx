@@ -73,14 +73,14 @@ export default async function LogisticsPage({ params }: { params: Promise<{ slug
               <form action={addAction} className="flex flex-col gap-3">
                 <div className="grid grid-cols-4 gap-2">
                   {TYPES.map((ty, i) => (
-                    <label key={ty.value} className="cursor-pointer">
+                    <label key={ty.value} className="cursor-pointer" title={ty.value === "ticket" ? t("logistics.type.ticketHint") : undefined}>
                       <input type="radio" name="type" value={ty.value} defaultChecked={i === 0} className="peer sr-only" />
                       <span
-                        className="flex flex-col items-center gap-0.5 rounded-xl border px-1 py-2 text-center text-[11px] font-semibold peer-checked:border-[color:var(--primary)] peer-checked:bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]"
+                        className="flex h-[4.5rem] flex-col items-center justify-center gap-1 rounded-xl border px-1 py-1.5 text-center text-[11px] font-semibold leading-tight text-balance peer-checked:border-[color:var(--primary)] peer-checked:bg-[color-mix(in_srgb,var(--primary)_14%,transparent)]"
                         style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
                       >
-                        <span className="text-xl">{ty.icon}</span>
-                        {t(`logistics.type.${ty.value}` as DictionaryKey)}
+                        <span className="text-xl leading-none">{ty.icon}</span>
+                        <span className="line-clamp-2 break-words">{t(`logistics.type.${ty.value}` as DictionaryKey)}</span>
                       </span>
                     </label>
                   ))}
