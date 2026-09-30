@@ -7,7 +7,7 @@ import { PLANS, type PlanKey } from "@/lib/plans";
 import { resolvePromoCode, recordPromoCodeUse } from "@/lib/promoCodes";
 
 const SubscribeSchema = z.object({
-  planKey: z.enum(["family", "org"]),
+  planKey: z.enum(["plus", "org"]),
   billingCycle: z.enum(["monthly", "annual"]),
   destinationIds: z.array(z.string()).default([]),
   promoCode: z.string().optional(),
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const { planKey, billingCycle, destinationIds, promoCode } = parsed.data;
   const plan = PLANS[planKey as PlanKey];
 
-  if (!plan.isOrgTier) {
+  if (!plan.isOrgTier && !plan.allDestinations) {
     if (destinationIds.length === 0) {
       return NextResponse.json({ error: "יש לבחור לפחות יעד אחד" }, { status: 400 });
     }
@@ -54,9 +54,10 @@ export async function POST(request: Request) {
       currency: "ILS",
       currentPeriodEnd,
       promoCode: promo ? promoCode!.trim().toLowerCase() : undefined,
-      destinations: plan.isOrgTier
-        ? undefined
-        : { create: destinationIds.map((destinationId) => ({ destinationId })) },
+      destinations:
+        plan.isOrgTier || plan.allDestinations
+          ? undefined
+          : { create: destinationIds.map((destinationId) => ({ destinationId })) },
     },
   });
   if (promo) await recordPromoCodeUse(promo.id);

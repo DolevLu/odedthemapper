@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANS, type PlanKey } from "@/lib/plans";
+import { resolvePlan } from "@/lib/plans";
 import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 
 async function requireUserId() {
@@ -23,9 +23,9 @@ export async function inviteSubscriptionMember(subscriptionId: string, formData:
   });
   if (!subscription || subscription.userId !== userId) return { error: "מנוי לא נמצא" };
 
-  const plan = PLANS[subscription.planKey as PlanKey];
+  const plan = resolvePlan(subscription.planKey);
   const seatsUsed = 1 + subscription.members.length; // owner counts as one seat
-  if (plan.seats !== null && seatsUsed >= plan.seats) {
+  if (plan?.seats !== null && seatsUsed >= (plan?.seats ?? 1)) {
     return { error: `התוכנית הזו כוללת עד ${plan.seats} משתמשים` };
   }
   if (email === subscription.user.email.toLowerCase()) {

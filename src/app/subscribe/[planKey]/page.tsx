@@ -41,14 +41,14 @@ export default async function SubscribePage({
         </p>
 
         <div className="mt-6 border-t border-black/5 pt-6">
-          {plan.isOrgTier ? (
+          {plan.isOrgTier || plan.allDestinations ? (
             <div className="flex flex-col gap-4">
               <p className="text-sm opacity-70">התוכנית הזו כוללת גישה לכל היעדים במערכת - אין צורך לבחור.</p>
-              <OrgConfirmButton billingCycle={billingCycle} />
+              <OrgConfirmButton planKey={plan.key as PlanKey} billingCycle={billingCycle} />
             </div>
           ) : (
             <DestinationPicker
-              planKey={plan.key}
+              planKey={plan.key as PlanKey}
               billingCycle={billingCycle}
               limit={plan.destinationLimit ?? 1}
               destinations={destinations}

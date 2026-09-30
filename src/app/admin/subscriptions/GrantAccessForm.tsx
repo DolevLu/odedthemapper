@@ -8,7 +8,7 @@ type DestOption = { id: string; name: string };
 
 export function GrantAccessForm({ destinations }: { destinations: DestOption[] }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [planKey, setPlanKey] = useState<PlanKey>("family");
+  const [planKey, setPlanKey] = useState<PlanKey>("plus");
   const [selectedDest, setSelectedDest] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -60,7 +60,7 @@ export function GrantAccessForm({ destinations }: { destinations: DestOption[] }
         </label>
       </div>
 
-      {!plan.isOrgTier && (
+      {!plan.isOrgTier && !plan.allDestinations && (
         <div>
           <p className="mb-1.5 text-sm font-medium opacity-70">
             יעדים (עד {plan.destinationLimit}) - {selectedDest.length}/{plan.destinationLimit}

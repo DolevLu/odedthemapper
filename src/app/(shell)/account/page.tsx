@@ -6,7 +6,7 @@ import type { DictionaryKey } from "@/lib/i18n/dictionary";
 import { translatePlan } from "@/lib/i18n/plans";
 import { prisma } from "@/lib/prisma";
 import { getResolvedSubscriptionForAccount } from "@/lib/access";
-import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
+import { formatIls, resolvePlan, type PlanKey } from "@/lib/plans";
 import { daysUntilSwappable } from "@/lib/subscriptionUtils";
 import { getUserTravelStats } from "@/lib/stats";
 import { levelForPoints } from "@/lib/gamification";
@@ -33,10 +33,10 @@ export default async function AccountPage() {
 
   const resolved = await getResolvedSubscriptionForAccount(session.user.id);
   const active = resolved?.subscription;
-  const plan = active ? PLANS[active.planKey as PlanKey] : null;
+  const plan = active ? resolvePlan(active.planKey) : null;
 
   const allDestinations =
-    active && !plan?.isOrgTier
+    active && !plan?.isOrgTier && !plan?.allDestinations
       ? await prisma.destination.findMany({
           where: { status: { in: ["preview", "live"] }, isPublic: true },
           select: { slug: true, name: true },
@@ -115,7 +115,7 @@ export default async function AccountPage() {
           )}
           {!resolved!.isOwner && <p className="mt-1 text-xs opacity-60">{t("account.invitedMember")}</p>}
 
-          {plan?.isOrgTier ? (
+          {plan?.isOrgTier || plan?.allDestinations ? (
             <div className="mt-4">
               <p className="text-sm font-semibold">{t("account.unlimitedAccess")}</p>
               <Link href="/destinations" className="mt-1 inline-block text-sm font-medium underline" style={{ color: "var(--primary)" }}>
@@ -152,17 +152,17 @@ export default async function AccountPage() {
               </div>
             )
           )}
-          {PLANS[active.planKey as PlanKey].isOrgTier && resolved!.isOwner && (
+          {plan?.isOrgTier && resolved!.isOwner && (
             <Link href="/admin" className="mt-4 inline-block text-sm font-semibold underline">
               {t("account.goToAdminPanel")}
             </Link>
           )}
 
-          {resolved!.isOwner && PLANS[active.planKey as PlanKey].seats !== 1 && (
+          {resolved!.isOwner && plan?.seats !== 1 && (
             <MemberManager
               subscriptionId={active.id}
               members={active.members.map((m) => ({ id: m.id, invitedEmail: m.invitedEmail }))}
-              seats={PLANS[active.planKey as PlanKey].seats}
+              seats={plan?.seats ?? null}
               ownerEmail={session.user.email ?? ""}
             />
           )}

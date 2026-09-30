@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
+import { formatIls, resolvePlan } from "@/lib/plans";
 import { MockPayButton } from "./MockPayButton";
 
 export default async function MockSubscribeCheckoutPage({
@@ -21,7 +21,7 @@ export default async function MockSubscribeCheckoutPage({
   if (!subscription || subscription.userId !== session.user.id) notFound();
   if (subscription.status === "active") redirect("/account");
 
-  const plan = PLANS[subscription.planKey as PlanKey];
+  const plan = resolvePlan(subscription.planKey)!;
   const cycleLabel = subscription.billingCycle === "monthly" ? "לחודש" : "לשנה";
 
   return (
@@ -42,9 +42,8 @@ export default async function MockSubscribeCheckoutPage({
             ))}
           </div>
         )}
-        {plan.isOrgTier && (
-          <p className="mt-5 text-sm opacity-70">גישה מלאה לכל היעדים + הרשאות ניהול תוכן</p>
-        )}
+        {plan.isOrgTier && <p className="mt-5 text-sm opacity-70">גישה מלאה לכל היעדים + הרשאות ניהול תוכן</p>}
+        {plan.allDestinations && !plan.isOrgTier && <p className="mt-5 text-sm opacity-70">גישה מלאה לכל היעדים</p>}
 
         <p className="mt-4 text-xs opacity-50">
           זהו תשלום מדומה לצורך פיתוח - לא מתבצע חיוב אמיתי. בהמשך יוחלף בסליקה אמיתית דרך PayMe.

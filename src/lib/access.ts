@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
-import { PLANS, TRIAL_PLAN } from "@/lib/plans";
+import { FREE_PLAN, resolvePlan } from "@/lib/plans";
 
 /** Resolves the subscription that grants this user access — either one they
  * own directly, or one they were invited into as a seat (matched by email).
@@ -35,14 +35,16 @@ export async function hasAccessToDestination(userId: string, destinationId: stri
 
   const sub = await getActiveSubscription(userId);
   if (!sub) return false;
-  if (PLANS[sub.planKey as keyof typeof PLANS]?.isOrgTier) return true;
+  const plan = resolvePlan(sub.planKey);
+  if (plan?.isOrgTier || plan?.allDestinations) return true;
   return sub.destinations.some((d) => d.destinationId === destinationId);
 }
 
 export async function getUserPurchasedSlugs(userId: string): Promise<string[]> {
   const sub = await getActiveSubscription(userId);
   if (!sub) return [];
-  if (PLANS[sub.planKey as keyof typeof PLANS]?.isOrgTier) {
+  const plan = resolvePlan(sub.planKey);
+  if (plan?.isOrgTier || plan?.allDestinations) {
     const all = await prisma.destination.findMany({ select: { slug: true } });
     return all.map((d) => d.slug);
   }
@@ -58,7 +60,7 @@ export async function canManageContent(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
   if (user?.isAdmin) return true;
   const sub = await getActiveSubscription(userId);
-  return Boolean(sub && PLANS[sub.planKey as keyof typeof PLANS]?.isOrgTier);
+  return Boolean(sub && resolvePlan(sub.planKey)?.isOrgTier);
 }
 
 /** Daily Gemini-backed AI chat quota for this user's plan — null means
@@ -68,10 +70,10 @@ export async function getAiChatDailyQuota(userId: string): Promise<number | null
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
   if (user?.isAdmin) return null;
   const sub = await getActiveSubscription(userId);
-  if (!sub) return 0;
-  // Not a real PLANS entry (see plans.ts) — handled here directly instead.
-  if (sub.planKey === "trial") return TRIAL_PLAN.aiChatDailyQuota;
-  return PLANS[sub.planKey as keyof typeof PLANS]?.aiChatDailyQuota ?? 0;
+  // No subscription row at all (hasn't picked a free destination yet, or it's just never been created) still gets
+  // the free tier's own quota — "free" isn't something you have to activate to get *some* AI access.
+  if (!sub) return FREE_PLAN.aiChatDailyQuota;
+  return resolvePlan(sub.planKey)?.aiChatDailyQuota ?? FREE_PLAN.aiChatDailyQuota;
 }
 
 export type AccessLevel = "none" | "silver" | "gold";
@@ -87,7 +89,11 @@ export const getAccessLevel = cache(async (userId: string | undefined, destinati
 
   const sub = await getActiveSubscription(userId);
   if (!sub) return "none";
-  if (PLANS[sub.planKey as keyof typeof PLANS]?.isOrgTier) return "gold";
+  const plan = resolvePlan(sub.planKey);
+  if (plan?.isOrgTier) return "gold";
+  // allDestinations (the paid "plus" tier) unlocks every destination but, deliberately, never the client-planner
+  // tool gold gates — it's the cheap ad-free tier, not the professional/agency one.
+  if (plan?.allDestinations) return "silver";
   if (sub.destinations.some((d) => d.destinationId === destinationId)) return "silver";
   return "none";
 });
@@ -229,8 +235,7 @@ export const resolveItineraryOwnerId = cache(async (userId: string): Promise<str
 export async function getActiveSubscriptionSummary(userId: string) {
   const sub = await getActiveSubscription(userId);
   if (!sub) return null;
-  // Not a real PLANS entry (see plans.ts) — handled here directly instead.
-  const plan = sub.planKey === "trial" ? TRIAL_PLAN : PLANS[sub.planKey as keyof typeof PLANS];
+  const plan = resolvePlan(sub.planKey);
   return {
     plan,
     billingCycle: sub.billingCycle,
@@ -239,13 +244,13 @@ export async function getActiveSubscriptionSummary(userId: string) {
   };
 }
 
-/** Ads show for anonymous visitors, logged-in users with no subscription,
- * and the 24h free trial — never for a real paid plan (see AD_FREE_FEATURE
- * in plans.ts, which advertises exactly this on the pricing page). Single
- * source of truth so every ad placement (the site-wide AdSense script plus
- * each individual AdUnit) agrees on who sees ads. */
+/** Ads show for anonymous visitors, logged-in users with no subscription (i.e. no free destination chosen yet),
+ * and the free tier itself — never for a real paid plan (see AD_FREE_FEATURE in plans.ts, which advertises exactly
+ * this on the pricing page). Single source of truth so every ad placement (the site-wide AdSense script plus each
+ * individual AdUnit) agrees on who sees ads. Historical "trial" rows (pre-2026-10-01) also still show ads, same as
+ * they always did. */
 export async function shouldShowAds(userId: string | undefined): Promise<boolean> {
   if (!userId) return true;
   const summary = await getActiveSubscriptionSummary(userId);
-  return summary === null || summary.plan.key === "trial";
+  return summary === null || summary.plan.key === "trial" || summary.plan.key === "free";
 }

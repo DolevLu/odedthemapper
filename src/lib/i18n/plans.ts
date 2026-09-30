@@ -9,7 +9,8 @@ type PlanText = { name: string; audience: string; tagline: string; features: str
  * lists), not a flat key->string map. Order of `features` must match the
  * Hebrew source in lib/plans.ts exactly, since callers zip them together
  * by index (see translatePlan) rather than by feature text. */
-const PLAN_TEXT: Record<"trial" | PlanKey, Record<Lang, PlanText>> = {
+const PLAN_TEXT: Record<"trial" | "free" | PlanKey, Record<Lang, PlanText>> = {
+  // Historical only (see TRIAL_PLAN in lib/plans.ts) — no new "trial" subscriptions are created anymore.
   trial: {
     he: {
       name: "ניסיון חינם",
@@ -31,6 +32,54 @@ const PLAN_TEXT: Record<"trial" | PlanKey, Record<Lang, PlanText>> = {
         "Every feature the other plans have - map, itinerary, AI, phrasebook and more",
         "Up to 10 messages a day to Travi, your smart trip assistant 🧭",
         "Once per user only",
+      ],
+    },
+  },
+  free: {
+    he: {
+      name: "חינמי",
+      audience: "לכל מי שרוצה לתכנן טיול בלי לשלם",
+      tagline: "חינם לתמיד, יעד אחד בכל פעם - עם אפשרות להחליף כל 14 יום.",
+      features: [
+        "גישה מלאה ליעד אחד לבחירה - לתמיד, בלי הגבלת זמן",
+        "אפשרות להחליף יעד פעם ב-14 יום",
+        "כל התכונות עצמן - מפה, מסלול, טראבי לייב, שיחון ועוד",
+        "עד 10 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
+        "כולל פרסומות",
+      ],
+    },
+    en: {
+      name: "Free",
+      audience: "For anyone who wants to plan a trip without paying",
+      tagline: "Free forever, one destination at a time - swap it once every 14 days.",
+      features: [
+        "Full access to one destination of your choice - forever, no time limit",
+        "Option to swap destinations once every 14 days",
+        "Every real feature - map, itinerary, Travi Live, phrasebook and more",
+        "Up to 10 messages a day to Travi, your smart trip assistant 🧭",
+        "Includes ads",
+      ],
+    },
+  },
+  plus: {
+    he: {
+      name: "Travi Plus",
+      audience: "למי שרוצה חוויה נקייה וגישה לכל היעדים",
+      tagline: "בלי פרסומות, גישה לכל היעדים, ועד 30 הודעות ביום ל-AI. וזהו.",
+      features: [
+        "חוויה נקייה - בלי פרסומות 🚫📢",
+        "גישה לכל היעדים במערכת, בלי הגבלה ובלי להחליף",
+        "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭 (במקום 10 בחינמי)",
+      ],
+    },
+    en: {
+      name: "Travi Plus",
+      audience: "For anyone who wants a clean experience and every destination",
+      tagline: "No ads, every destination unlocked, up to 30 AI messages a day. That's it.",
+      features: [
+        "A clean experience - no ads 🚫📢",
+        "Every destination in the system, unlocked - no limit, no swapping",
+        "Up to 30 messages a day to Travi, your smart trip assistant 🧭 (vs. 10 on the free plan)",
       ],
     },
   },
@@ -146,6 +195,6 @@ const PLAN_TEXT: Record<"trial" | PlanKey, Record<Lang, PlanText>> = {
   },
 };
 
-export function translatePlan(lang: Lang, planKey: "trial" | PlanKey): PlanText {
+export function translatePlan(lang: Lang, planKey: "trial" | "free" | PlanKey): PlanText {
   return PLAN_TEXT[planKey][lang];
 }

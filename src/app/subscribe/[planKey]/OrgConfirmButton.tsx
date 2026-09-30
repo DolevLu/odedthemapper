@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { PlanKey } from "@/lib/plans";
 
-export function OrgConfirmButton({ billingCycle }: { billingCycle: "monthly" | "annual" }) {
+// Not just for "org" anymore — any plan with allDestinations (currently just "plus", plus the real org tier) skips
+// the per-destination picker and goes straight to checkout, so this takes the actual planKey instead of assuming org.
+export function OrgConfirmButton({ planKey, billingCycle }: { planKey: PlanKey; billingCycle: "monthly" | "annual" }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export function OrgConfirmButton({ billingCycle }: { billingCycle: "monthly" | "
     const res = await fetch("/api/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planKey: "org", billingCycle, destinationIds: [], promoCode: promoCode || undefined }),
+      body: JSON.stringify({ planKey, billingCycle, destinationIds: [], promoCode: promoCode || undefined }),
     });
     const body = await res.json();
     setLoading(false);

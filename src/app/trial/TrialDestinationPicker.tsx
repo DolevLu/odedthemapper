@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { startFreeTrial } from "@/lib/actions/trial";
+import { startFreeAccess } from "@/lib/actions/trial";
 
 type DestOption = { id: string; slug: string; name: string; tagline: string | null };
 
@@ -25,7 +25,7 @@ export function TrialDestinationPicker({
     }
     setLoading(true);
     setError(null);
-    const result = await startFreeTrial(selected);
+    const result = await startFreeAccess(selected);
     if ("error" in result) {
       setLoading(false);
       setError(result.error);
@@ -37,7 +37,7 @@ export function TrialDestinationPicker({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm font-medium opacity-70">בחרו יעד אחד לניסיון של 24 שעות</p>
+      <p className="text-sm font-medium opacity-70">בחרו יעד אחד - חינם לתמיד, עם אפשרות להחליף כל 14 יום</p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {destinations.map((d) => {
           const checked = selected === d.id;
@@ -73,7 +73,7 @@ export function TrialDestinationPicker({
         className="mt-2 rounded-full px-6 py-3 font-semibold text-white disabled:opacity-50"
         style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
       >
-        {loading ? "מתחיל..." : "🎁 התחלת 24 שעות חינם"}
+        {loading ? "מפעיל..." : "🎁 קבלת גישה חינמית"}
       </button>
     </div>
   );

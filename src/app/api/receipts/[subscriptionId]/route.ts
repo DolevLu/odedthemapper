@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageContent } from "@/lib/access";
-import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
+import { formatIls, resolvePlan } from "@/lib/plans";
 
 const DATE_FMT = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "long", year: "numeric" });
 
@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ subs
   const isAdmin = await canManageContent(session.user.id);
   if (!isOwner && !isAdmin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const plan = PLANS[subscription.planKey as PlanKey];
+  const plan = resolvePlan(subscription.planKey);
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([420, 560]);
   const font = await pdf.embedFont(StandardFonts.Helvetica);

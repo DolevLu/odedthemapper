@@ -113,10 +113,11 @@ export async function getFinancialSummary() {
   ];
 
   const destTypeCounts = new Map<string, number>();
-  let orgTierCount = 0;
+  let allDestCount = 0;
   for (const s of paid) {
-    if (PLANS[s.planKey as PlanKey]?.isOrgTier) {
-      orgTierCount++;
+    const plan = PLANS[s.planKey as PlanKey];
+    if (plan?.isOrgTier || plan?.allDestinations) {
+      allDestCount++;
       continue;
     }
     for (const d of s.destinations) {
@@ -124,7 +125,7 @@ export async function getFinancialSummary() {
       destTypeCounts.set(label, (destTypeCounts.get(label) ?? 0) + 1);
     }
   }
-  if (orgTierCount > 0) destTypeCounts.set("כל היעדים (ארגוני)", orgTierCount);
+  if (allDestCount > 0) destTypeCounts.set("כל היעדים", allDestCount);
   const destinationTypeMix = [...destTypeCounts.entries()].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count);
 
   const promoCodeStats = await prisma.promoCode.findMany({

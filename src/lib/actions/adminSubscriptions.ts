@@ -30,7 +30,7 @@ export async function grantComplimentarySubscription(formData: FormData): Promis
   if (!email) return { error: "יש להזין אימייל" };
   const plan = PLANS[planKey];
   if (!plan) return { error: "תוכנית לא תקינה" };
-  if (!plan.isOrgTier && destinationIds.length === 0) return { error: "יש לבחור לפחות יעד אחד" };
+  if (!plan.isOrgTier && !plan.allDestinations && destinationIds.length === 0) return { error: "יש לבחור לפחות יעד אחד" };
   if (!Number.isFinite(months) || months < 1) return { error: "מספר חודשים לא תקין" };
 
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
@@ -50,7 +50,10 @@ export async function grantComplimentarySubscription(formData: FormData): Promis
       currentPeriodEnd,
       paidAt: new Date(),
       grantedByAdmin: true,
-      destinations: plan.isOrgTier ? undefined : { create: destinationIds.map((destinationId) => ({ destinationId })) },
+      destinations:
+        plan.isOrgTier || plan.allDestinations
+          ? undefined
+          : { create: destinationIds.map((destinationId) => ({ destinationId })) },
     },
   });
 

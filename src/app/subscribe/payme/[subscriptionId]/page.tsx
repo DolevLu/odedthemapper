@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
+import { formatIls, resolvePlan } from "@/lib/plans";
 import { PayMeCheckoutForm } from "./PayMeCheckoutForm";
 
 export default async function PayMeCheckoutPage({
@@ -21,7 +21,7 @@ export default async function PayMeCheckoutPage({
   if (!subscription || subscription.userId !== session.user.id) notFound();
   if (subscription.status === "active") redirect("/account");
 
-  const plan = PLANS[subscription.planKey as PlanKey];
+  const plan = resolvePlan(subscription.planKey)!;
   const cycleLabel = subscription.billingCycle === "monthly" ? "לחודש" : "לשנה";
 
   return (

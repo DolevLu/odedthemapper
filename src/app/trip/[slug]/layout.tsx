@@ -70,7 +70,7 @@ export default async function TripLayout({
   const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
   const tierBadge = tierBadgeForPlanKey(summary?.plan.key ?? null);
   const trialEndsAt = summary?.plan.key === "trial" ? summary.currentPeriodEnd.toISOString() : null;
-  const showAds = summary === null || summary.plan.key === "trial";
+  const showAds = summary === null || summary.plan.key === "trial" || summary.plan.key === "free";
 
   return (
     <DestinationThemeProvider theme={destination.theme} as="main" className="flex min-h-screen flex-1 flex-col">

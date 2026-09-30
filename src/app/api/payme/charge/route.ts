@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PLANS, type PlanKey } from "@/lib/plans";
+import { resolvePlan } from "@/lib/plans";
 import { awardReferralCreditIfEligible } from "@/lib/referral";
 
 const ChargeSchema = z.object({
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   const testMode = process.env.PAYME_TEST_MODE !== "false";
   const baseUrl = testMode ? "https://sandbox.payme.io/api" : "https://live.payme.io/api";
-  const planName = PLANS[subscription.planKey as PlanKey]?.name ?? "מנוי טראבי";
+  const planName = resolvePlan(subscription.planKey)?.name ?? "מנוי טראבי";
 
   let payMeResponse: Response;
   try {

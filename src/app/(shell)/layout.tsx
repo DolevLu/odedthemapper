@@ -42,7 +42,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         />
         <div className="min-w-0 flex-1 pb-32 sm:pb-0">{children}</div>
       </div>
-      <AdSenseScript show={summary === null || summary.plan.key === "trial"} />
+      <AdSenseScript show={summary === null || summary.plan.key === "trial" || summary.plan.key === "free"} />
     </div>
   );
 }

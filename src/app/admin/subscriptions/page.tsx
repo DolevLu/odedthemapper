@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PLANS, formatIls, type PlanKey } from "@/lib/plans";
+import { formatIls, resolvePlan } from "@/lib/plans";
 import { GrantAccessForm } from "./GrantAccessForm";
 import { SubscriptionManagePanel } from "./SubscriptionManagePanel";
 
@@ -38,7 +38,7 @@ export default async function AdminSubscriptionsPage() {
           </thead>
           <tbody>
             {subscriptions.map((s) => {
-              const plan = PLANS[s.planKey as PlanKey];
+              const plan = resolvePlan(s.planKey);
               return (
                 <tr key={s.id} className="border-b border-black/5 align-top">
                   <td className="p-3">
@@ -47,7 +47,7 @@ export default async function AdminSubscriptionsPage() {
                   </td>
                   <td className="p-3">{plan?.name ?? s.planKey}</td>
                   <td className="p-3">{s.billingCycle === "monthly" ? "חודשי" : "שנתי"}</td>
-                  <td className="p-3">{plan?.isOrgTier ? "הכל" : s.destinations.map((d) => d.destination.name).join(", ") || "—"}</td>
+                  <td className="p-3">{plan?.isOrgTier || plan?.allDestinations ? "הכל" : s.destinations.map((d) => d.destination.name).join(", ") || "—"}</td>
                   <td className="p-3">
                     <span className="rounded-full px-2 py-0.5 text-xs" style={{ background: s.status === "active" ? "#dcfce7" : "#f3f4f6" }}>
                       {s.status}
