@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { reorderItineraryDay, removeItineraryItem, setItineraryItemNote, setItineraryItemTime, voteItineraryItem } from "@/lib/actions/trip";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
 import { CategoryGlyph } from "@/components/CategoryIcon";
 import { standardCategoryColor } from "@/lib/mapStyles";
+import { proxiedImageUrl } from "@/lib/imageProxy";
 import { haversineKm, transportIconFor, transportColorFor, googleMapsDirectionsUrl } from "@/lib/geo";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
@@ -320,7 +322,7 @@ export function DayItemsList({
                 onPointerMove={(e) => handleSwipePointerMove(item.id, e)}
                 onPointerUp={() => handleSwipePointerEnd(item.id)}
                 onPointerCancel={() => handleSwipePointerEnd(item.id)}
-                className="relative flex cursor-pointer items-stretch gap-2.5 overflow-hidden rounded-2xl border py-1.5 touch-pan-y"
+                className="relative flex cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-2.5 touch-pan-y"
                 style={{
                   background: status === "current" ? "color-mix(in srgb, #22C55E 8%, var(--surface))" : "var(--surface)",
                   borderColor: "color-mix(in srgb, var(--text) 10%, transparent)",
@@ -329,34 +331,41 @@ export function DayItemsList({
                   transition: swipingId.current === item.id ? "none" : "transform 0.2s ease",
                 }}
               >
-                {/* Time column, rightmost (RTL — first in DOM order). Used to also carry a dashed timeline line
-                 * drawn along this column's inner edge — moving that line outside the cards (per feedback) turned
-                 * out not to hold up well across cards of very different heights (a long note vs. a bare name), so
-                 * it's dropped rather than shipped looking broken; the time itself stays centered here, just a
-                 * touch smaller and with a bit more breathing room so it never crowds this narrow a column. */}
-                <div className="flex w-9 shrink-0 flex-col items-center justify-center gap-0.5 self-stretch px-1">
-                  {times[item.id] && (
-                    <span
-                      className="shrink-0 whitespace-nowrap text-[11px] font-extrabold tabular-nums"
-                      style={{ color: status === "current" ? "#16A34A" : status === "next" ? "#B45309" : "var(--text)" }}
-                    >
-                      {times[item.id]}
-                    </span>
+                {/* Photo-forward redesign (2026-09-30): a real, large photo of the point instead of a small
+                 * category-icon circle — rightmost, i.e. first in DOM order for this RTL layout, mirroring a
+                 * reference LTR design that put the photo on the left. Bigger cards mean fewer fit on screen
+                 * without scrolling, which is the deliberate tradeoff asked for. Falls back to the same category
+                 * glyph the icon circle used to show, for a point with no photo (or a custom, poi-less stop). */}
+                <div
+                  className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl"
+                  style={{ background: `color-mix(in srgb, ${categoryColor} 16%, var(--surface))` }}
+                >
+                  {item.poi?.photoUrl ? (
+                    <Image src={proxiedImageUrl(item.poi.photoUrl)} alt="" fill sizes="96px" className="object-cover" loading="lazy" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <CategoryGlyph name={item.poi?.categoryName ?? ""} size={30} color={categoryColor} />
+                    </div>
                   )}
-                  {status === "current" && <span className="text-[9px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
-                  {status === "next" && <span className="text-[9px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
                 </div>
 
-                <span
-                  className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center self-start rounded-full"
-                  style={{ background: `color-mix(in srgb, ${categoryColor} 16%, var(--surface))` }}
-                  aria-hidden
-                >
-                  <CategoryGlyph name={item.poi?.categoryName ?? ""} size={15} color={categoryColor} />
-                </span>
-
                 <div className="min-w-0 flex-1 py-1">
-                  <p className="line-clamp-2 break-words text-[15px] font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
+                  <div className="mb-1 flex items-center gap-1.5">
+                    {times[item.id] && (
+                      <span
+                        className="shrink-0 whitespace-nowrap rounded-full px-1.5 py-0.5 text-[11px] font-extrabold tabular-nums"
+                        style={{
+                          background: status === "current" ? "#16A34A" : status === "next" ? "#FEF3C7" : "color-mix(in srgb, var(--text) 7%, transparent)",
+                          color: status === "current" ? "white" : status === "next" ? "#B45309" : "color-mix(in srgb, var(--text) 72%, transparent)",
+                        }}
+                      >
+                        {times[item.id]}
+                      </span>
+                    )}
+                    {status === "current" && <span className="text-[10px] font-bold" style={{ color: "#16A34A" }}>{t("dayItems.now")}</span>}
+                    {status === "next" && <span className="text-[10px] font-bold" style={{ color: "#B45309" }}>{t("dayItems.next")}</span>}
+                  </div>
+                  <p className="line-clamp-2 break-words text-base font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
                   <p className="truncate text-xs font-medium leading-snug" style={{ color: `color-mix(in srgb, ${categoryColor} 75%, var(--text))` }}>
                     {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : t("dayItems.customItem")}
                     <span className="opacity-60"> {notes[item.id]?.trim() ? t("dayItems.hasNote") : ""}</span>
