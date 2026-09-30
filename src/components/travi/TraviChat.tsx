@@ -70,7 +70,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
         className={`fixed right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px] ${
           isMapScreen ? "bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)]" : "bottom-[calc(var(--mobile-nav-height,3.5rem)+0.75rem)]"
         }`}
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
         aria-label="טראבי - עוזר הטיול"
       >
         💬
@@ -78,7 +78,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
 
       {open && (
         <div className="fixed bottom-32 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24 sm:right-72">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}>
+          <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
             <span className="font-bold">💬 טראבי</span>
             <button onClick={() => setOpen(false)} className="text-lg opacity-80 hover:opacity-100">
               ✕

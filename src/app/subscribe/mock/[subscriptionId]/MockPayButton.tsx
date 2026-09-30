@@ -22,7 +22,7 @@ export function MockPayButton({ subscriptionId }: { subscriptionId: string }) {
       onClick={handlePay}
       disabled={loading}
       className="mt-6 w-full rounded-full px-4 py-3 font-semibold text-white disabled:opacity-50"
-      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+      style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
     >
       {loading ? "מעבד..." : "שלם עכשיו (מדומה)"}
     </button>

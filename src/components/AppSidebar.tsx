@@ -66,7 +66,7 @@ function DownloadAppLink({ onClick }: { onClick?: () => void }) {
       rel="noopener noreferrer"
       onClick={onClick}
       className="mt-2 flex shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-extrabold text-white shadow-md"
-      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+      style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
     >
       <NavIcon name="download" size={14} />
       {t("nav.downloadApp")}
@@ -728,7 +728,7 @@ export function AppSidebar({
                   href="/destinations"
                   onClick={() => setLockedTier(null)}
                   className="rounded-full px-6 py-3 font-bold text-white"
-                  style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+                  style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
                 >
                   {t("popup.selectDestination")}
                 </Link>

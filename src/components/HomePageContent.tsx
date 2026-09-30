@@ -65,7 +65,7 @@ export async function HomePageContent() {
               <Link
                 href="/destinations"
                 className="rounded-full px-5 py-2.5 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-                style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+                style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
               >
                 {t("home.ctaAllDestinations")}
               </Link>
@@ -113,7 +113,7 @@ export async function HomePageContent() {
             <Link
               href="/destinations"
               className="rounded-full px-6 py-3 font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
             >
               {t("home.allDestinationsArrow")}
             </Link>
@@ -135,7 +135,7 @@ export async function HomePageContent() {
             <div className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
               <p className="text-xs font-semibold opacity-60">{trialText.audience}</p>
               <p className="mt-1 text-lg font-extrabold">🎁 {trialText.name}</p>
-              <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
+              <p className="mt-1 text-xl font-extrabold" style={{ color: "#6D28D9" }}>
                 {t("home.free")}
               </p>
               <p className="mt-2 text-xs opacity-70">{trialText.tagline}</p>
@@ -146,7 +146,7 @@ export async function HomePageContent() {
                 <div key={plan.key} className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
                   <p className="text-xs font-semibold opacity-60">{planText.audience}</p>
                   <p className="mt-1 text-lg font-extrabold">{planText.name}</p>
-                  <p className="mt-1 text-xl font-extrabold" style={{ color: "#7C3AED" }}>
+                  <p className="mt-1 text-xl font-extrabold" style={{ color: "#6D28D9" }}>
                     {formatIls(plan.monthlyCents)}<span className="text-sm font-medium opacity-60">{t("home.perMonth")}</span>
                   </p>
                   <p className="mt-2 text-xs opacity-70">{planText.tagline}</p>
@@ -157,7 +157,7 @@ export async function HomePageContent() {
           <Link
             href="/pricing"
             className="mt-8 inline-block rounded-full px-7 py-3.5 font-bold text-white transition-transform hover:-translate-y-0.5"
-            style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
           >
             {t("home.comparePlans")}
           </Link>

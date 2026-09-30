@@ -22,7 +22,7 @@ export function OptimizeButton({ itineraryId, slug }: { itineraryId: string; slu
       onClick={handleOptimize}
       disabled={loading}
       className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+      style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
       title={t("clientPlanner.optimizeTitle")}
     >
       {loading ? t("clientPlanner.optimizing") : t("clientPlanner.optimizeButton")}

@@ -64,7 +64,7 @@ export function PromoDrawer() {
           href="/pricing"
           onClick={dismiss}
           className="shrink-0 rounded-full px-4 py-2 text-sm font-bold text-white"
-          style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+          style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
         >
           לתוכניות ←
         </Link>

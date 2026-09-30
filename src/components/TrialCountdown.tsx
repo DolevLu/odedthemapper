@@ -48,7 +48,7 @@ export function TrialCountdown({ endsAt }: { endsAt: string }) {
   const seconds = totalSeconds % 60;
 
   return (
-    <span className="text-[10px] font-bold tracking-wide" style={{ color: "#7C3AED" }} dir="ltr">
+    <span className="text-[10px] font-bold tracking-wide" style={{ color: "#6D28D9" }} dir="ltr">
       ⏱️ {pad(hours)}:{pad(minutes)}:{pad(seconds)}
     </span>
   );

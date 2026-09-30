@@ -90,7 +90,7 @@ export function PricingCards() {
               {plan.highlighted && (
                 <span
                   className="absolute -top-3 right-4 rounded-full px-2.5 py-1 text-[11px] font-bold text-white transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 sm:right-8 sm:px-3 sm:text-xs"
-                  style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+                  style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
                 >
                   {t("pricing.mostPopular")}
                 </span>
@@ -147,7 +147,7 @@ export function PricingCards() {
                 className="mt-auto rounded-full px-4 py-2 text-center text-sm font-semibold text-white sm:px-5 sm:py-3 sm:text-base"
                 style={{
                   background: plan.highlighted
-                    ? "linear-gradient(135deg, #7C3AED, #EC4899)"
+                    ? "linear-gradient(135deg, #6D28D9, #EC4899)"
                     : "#1A1A1A",
                 }}
               >

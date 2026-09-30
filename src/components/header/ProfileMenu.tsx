@@ -69,7 +69,7 @@ export function ProfileMenu({
             ? "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
             : "flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white"
         }
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
         aria-label="פרופיל"
       >
         {isLoggedIn ? initial : "👤"}

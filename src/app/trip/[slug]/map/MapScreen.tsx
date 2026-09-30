@@ -1707,7 +1707,7 @@ export function MapScreen({
           <Link
             href="/pricing"
             className="pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
-            style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
           >
             {t("map.previewUpgrade")}
           </Link>

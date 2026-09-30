@@ -35,7 +35,7 @@ export function DestinationsBrowser({ destinations }: { destinations: Destinatio
             onClick={() => setContinent(c.key)}
             className="rounded-full px-4 py-2 text-sm font-semibold transition-colors"
             style={{
-              background: continent === c.key ? "linear-gradient(135deg, #7C3AED, #EC4899)" : "white",
+              background: continent === c.key ? "linear-gradient(135deg, #6D28D9, #EC4899)" : "white",
               color: continent === c.key ? "white" : "#1a1a1a",
               border: continent === c.key ? "none" : "1px solid rgba(0,0,0,0.1)",
             }}

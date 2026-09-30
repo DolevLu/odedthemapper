@@ -42,7 +42,7 @@ export function HeroAppPreview() {
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.08) 0%, transparent 30%, transparent 65%, rgba(0,0,0,0.25) 100%)" }} />
 
           {[
-            { top: "24%", right: "62%", color: "#7C3AED" },
+            { top: "24%", right: "62%", color: "#6D28D9" },
             { top: "58%", right: "38%", color: "#F97316" },
             { top: "34%", right: "18%", color: "#1E3A5F" },
             { top: "74%", right: "55%", color: "#16A34A" },
@@ -72,7 +72,7 @@ export function HeroAppPreview() {
 
           <span
             className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-full text-base shadow-md"
-            style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
           >
             💬
           </span>
@@ -100,13 +100,13 @@ export function HeroAppPreview() {
             </span>
           </div>
           <div className="flex items-center gap-2 rounded-xl border p-2" style={{ borderColor: "rgba(124,58,237,0.15)" }}>
-            <span className="text-xs font-bold" style={{ color: "#7C3AED" }}>
+            <span className="text-xs font-bold" style={{ color: "#6D28D9" }}>
               10:30
             </span>
             <span className="truncate text-xs font-semibold">טיילת גשר קרלוס</span>
           </div>
           <div className="flex items-center gap-2 rounded-xl border p-2 opacity-60" style={{ borderColor: "rgba(124,58,237,0.15)" }}>
-            <span className="text-xs font-bold" style={{ color: "#7C3AED" }}>
+            <span className="text-xs font-bold" style={{ color: "#6D28D9" }}>
               13:00
             </span>
             <span className="truncate text-xs font-semibold">ארוחת צהריים · Café Savoy</span>

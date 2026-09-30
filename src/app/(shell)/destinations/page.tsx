@@ -26,13 +26,13 @@ export default async function DestinationsPage() {
         <Link
           href="/destinations/quiz"
           className="mb-8 flex flex-col items-start gap-2 rounded-3xl p-6 text-white shadow-md sm:flex-row sm:items-center sm:justify-between"
-          style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+          style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
         >
           <div>
             <p className="text-lg font-extrabold">{t("destinations.quizBannerTitle")}</p>
             <p className="text-sm opacity-90">{t("destinations.quizBannerBody")}</p>
           </div>
-          <span className="rounded-full bg-white px-5 py-2.5 font-bold" style={{ color: "#7C3AED" }}>
+          <span className="rounded-full bg-white px-5 py-2.5 font-bold" style={{ color: "#6D28D9" }}>
             {t("destinations.findMyDestination")}
           </span>
         </Link>

@@ -25,7 +25,7 @@ export function TripWrappedSection({
             key={trip.destinationId}
             onClick={() => setOpenId(trip.destinationId)}
             className="game-pop-in flex items-center gap-2 rounded-2xl border border-black/5 px-4 py-3 text-start shadow-sm transition-transform hover:-translate-y-1"
-            style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)", color: "white" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)", color: "white" }}
           >
             <span className="text-xl">{trip.flag ?? "✈️"}</span>
             <span>

@@ -71,7 +71,7 @@ export function TrialDestinationPicker({
         onClick={handleSubmit}
         disabled={loading || !selected}
         className="mt-2 rounded-full px-6 py-3 font-semibold text-white disabled:opacity-50"
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
       >
         {loading ? "מתחיל..." : "🎁 התחלת 24 שעות חינם"}
       </button>

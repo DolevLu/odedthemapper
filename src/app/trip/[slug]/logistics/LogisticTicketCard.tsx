@@ -7,7 +7,7 @@ import { useTranslation } from "@/components/i18n/LanguageContext";
 // purple/pink family (still one distinct shade per type, so cards are still easy to tell apart at a glance);
 // "other" stays a neutral gray on purpose, since it's a real catch-all rather than a category of its own.
 const TYPE_META: Record<string, { label: { he: string; en: string }; icon: string; color: string }> = {
-  flight: { label: { he: "טיסה", en: "Flight" }, icon: "✈️", color: "#7C3AED" },
+  flight: { label: { he: "טיסה", en: "Flight" }, icon: "✈️", color: "#6D28D9" },
   hotel: { label: { he: "מלון", en: "Hotel" }, icon: "🏨", color: "#EC4899" },
   ticket: { label: { he: "כרטיס", en: "Ticket" }, icon: "🎫", color: "#8B5CF6" },
   passport: { label: { he: "דרכון", en: "Passport" }, icon: "🛂", color: "#6D28D9" },

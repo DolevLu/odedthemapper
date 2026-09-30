@@ -29,7 +29,7 @@ export default async function PayMeCheckoutPage({
       <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-xl">
         <p className="text-center text-sm font-medium opacity-60">תשלום מאובטח דרך PayMe</p>
         <h1 className="mt-2 text-center text-2xl font-extrabold">מנוי {plan.name}</h1>
-        <p className="mt-4 text-center text-4xl font-extrabold" style={{ color: "#7C3AED" }}>
+        <p className="mt-4 text-center text-4xl font-extrabold" style={{ color: "#6D28D9" }}>
           {formatIls(subscription.amountCents)} <span className="text-lg font-medium opacity-60">{cycleLabel}</span>
         </p>
 

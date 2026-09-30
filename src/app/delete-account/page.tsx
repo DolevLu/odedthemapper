@@ -56,7 +56,7 @@ export default async function DeleteAccountPage() {
           <Link
             href="/login?callbackUrl=/delete-account"
             className="rounded-full px-6 py-3 text-sm font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
           >
             התחברות
           </Link>

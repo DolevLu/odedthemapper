@@ -73,7 +73,7 @@ export function ItineraryWizard({
     <button
       onClick={() => setOpen(true)}
       className="game-pop-in shrink-0 self-start rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
-      style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+      style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
     >
       {label}
     </button>
@@ -198,7 +198,7 @@ export function ItineraryWizard({
           onClick={handleGenerate}
           disabled={loading || (mode === "freeText" && freeText.trim().length === 0)}
           className="rounded-full px-5 py-2.5 font-semibold text-white disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+          style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
         >
           {loading ? t("wizard.building") : t("wizard.defaultTrigger")}
         </button>

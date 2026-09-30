@@ -52,7 +52,7 @@ export function GuideMenuButton({ onNavigate }: { onNavigate?: () => void }) {
         aria-label="עוד אפשרויות"
         aria-expanded={menuOpen}
         className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white shadow-sm transition-transform hover:scale-110"
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
       >
         ⋮
       </button>
@@ -74,7 +74,7 @@ export function GuideMenuButton({ onNavigate }: { onNavigate?: () => void }) {
             >
               <span
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)", fontFamily: "Georgia, serif" }}
+                style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)", fontFamily: "Georgia, serif" }}
               >
                 i
               </span>

@@ -14,7 +14,7 @@ export function LoginPromptBanner({ slug, path, message }: { slug: string; path:
       <Link
         href={`/login?callbackUrl=${encodeURIComponent(`/trip/${slug}${path}`)}`}
         className="shrink-0 rounded-full px-5 py-2 text-sm font-semibold text-white"
-        style={{ background: "linear-gradient(135deg, #7C3AED, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
       >
         התחברות / הרשמה
       </Link>
