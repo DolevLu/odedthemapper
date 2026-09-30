@@ -31,7 +31,7 @@ export default async function SubscribePage({
   const preselected = dest ? destinations.find((d) => d.slug === dest)?.id : undefined;
 
   return (
-    <div className="flex flex-1 flex-col items-center px-6 py-16" style={{ background: "#FBF6EE" }}>
+    <div className="flex flex-1 flex-col items-center px-6 py-16" style={{ background: "var(--background)" }}>
       <div className="w-full max-w-2xl rounded-3xl border border-black/5 bg-white p-8">
         <p className="text-sm font-semibold opacity-60">{plan.audience}</p>
         <h1 className="mt-1 text-3xl font-extrabold">{plan.name}</h1>

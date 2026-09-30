@@ -22,12 +22,13 @@ type Tier = "free" | "silver" | "gold";
 // The nav chrome's own brand palette — deliberately fixed, not var(--primary)/var(--background) (which follow
 // whichever destination is open and used to make this bar/sidebar go, e.g., red for a destination whose theme
 // happens to be red). Requested on its own: white surfaces, purple active states, a soft pinkish-purple hover,
-// matching the app's own logo mark regardless of destination.
-const NAV_PURPLE = "#7C3AED";
-const NAV_ACTIVE_GRADIENT = "linear-gradient(135deg, #8B5CF6, #7C3AED)";
-const NAV_HOVER_TINT = "#F6ECFB";
-const NAV_ACTIVE_SHADOW = "0 2px 8px rgba(124,58,237,0.3)";
-const NAV_BORDER = "color-mix(in srgb, #7C3AED 12%, transparent)";
+// matching the app's own logo mark regardless of destination. Deepened a shade 2026-09-28 ("still purple, just a
+// little less glowing") — the gradient's lighter end in particular (previously #8B5CF6) read as too bright/neon.
+const NAV_PURPLE = "#6D28D9";
+const NAV_ACTIVE_GRADIENT = "linear-gradient(135deg, #7C3AED, #6D28D9)";
+const NAV_HOVER_TINT = "#F3ECFA";
+const NAV_ACTIVE_SHADOW = "0 2px 8px rgba(109,40,217,0.3)";
+const NAV_BORDER = "color-mix(in srgb, #6D28D9 12%, transparent)";
 const NAV_TEXT = "#1a1a1a";
 
 const TOP_ITEMS: { href: string; labelKey: DictionaryKey; icon: NavIconName }[] = [

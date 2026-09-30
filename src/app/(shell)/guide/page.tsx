@@ -125,7 +125,7 @@ const FEATURES: Feature[] = [
 
 export default function GuidePage() {
   return (
-    <div className="flex flex-1 flex-col" style={{ background: "#FBF6EE" }}>
+    <div className="flex flex-1 flex-col" style={{ background: "var(--background)" }}>
       <section className="relative overflow-hidden px-6 py-12 text-center sm:py-16">
         <div
           className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[640px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"

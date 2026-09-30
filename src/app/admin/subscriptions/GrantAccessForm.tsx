@@ -84,7 +84,7 @@ export function GrantAccessForm({ destinations }: { destinations: DestOption[] }
           type="submit"
           disabled={pending}
           className="w-fit rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-          style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+          style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
         >
           {pending ? "מעניק..." : "הענקת גישה"}
         </button>

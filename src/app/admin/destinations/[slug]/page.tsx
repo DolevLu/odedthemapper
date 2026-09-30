@@ -61,7 +61,7 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           <button
             type="submit"
             className="rounded-lg px-4 py-2 font-semibold text-white sm:col-span-2"
-            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+            style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
           >
             שמירה
           </button>
@@ -81,7 +81,7 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           <button
             type="submit"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+            style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
           >
             שמירה והחלפה
           </button>
@@ -120,7 +120,7 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           <button
             type="submit"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+            style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
           >
             הוספה
           </button>
@@ -148,7 +148,7 @@ export default async function AdminDestinationPage({ params }: { params: Promise
           <button
             type="submit"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+            style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
           >
             הוספה
           </button>

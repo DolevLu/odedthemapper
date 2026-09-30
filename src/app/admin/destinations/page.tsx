@@ -15,7 +15,7 @@ export default async function AdminDestinationsPage() {
         <Link
           href="/admin/destinations/new"
           className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-          style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+          style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
         >
           + הוספת יעד
         </Link>

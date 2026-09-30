@@ -41,7 +41,7 @@ export async function HomePageContent() {
   ];
 
   return (
-    <div className="flex flex-1 flex-col" style={{ background: "#FBF6EE" }}>
+    <div className="flex flex-1 flex-col" style={{ background: "var(--background)" }}>
       <section className="relative overflow-hidden px-6 py-10 sm:py-20">
         <FloatingTravelIcons />
         <div

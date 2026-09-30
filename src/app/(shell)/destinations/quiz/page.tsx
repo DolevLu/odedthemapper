@@ -21,7 +21,7 @@ export default async function DestinationQuizPage() {
     }));
 
   return (
-    <div className="px-6 py-10" style={{ background: "#FBF6EE", minHeight: "100%" }}>
+    <div className="px-6 py-10" style={{ background: "var(--background)", minHeight: "100%" }}>
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-extrabold">{t("destQuiz.pageTitle")}</h1>

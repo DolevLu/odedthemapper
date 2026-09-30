@@ -83,7 +83,7 @@ export function SubscriptionManagePanel({
               <button
                 onClick={() => startTransition(() => extendSubscriptionPeriod(subscriptionId, periodInput))}
                 className="rounded px-2 py-1 font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, #8B5CF6, #7C3AED)" }}
+                style={{ background: "linear-gradient(135deg, #7C3AED, #6D28D9)" }}
               >
                 שמירה
               </button>

@@ -10,8 +10,9 @@
      settings, admin — anywhere DestinationThemeProvider isn't wrapping the content) actually renders buttons and
      accents in. It used to be an unrelated dark brown/terracotta pair left over from an old default; now it's the
      same brand purple/pink the logo and nav chrome use, so those pages read as the same product as the themed
-     destination screens instead of a visibly different, off-brand look. */
-  --primary: #7c3aed;
+     destination screens instead of a visibly different, off-brand look. Deepened a shade 2026-09-28 to match the
+     sidebar's own "still purple, less glowing" retune. */
+  --primary: #6d28d9;
   --secondary: #c4b5fd;
   --accent: #ec4899;
   /* Matches every destination's own --background now (see theme/presets.ts) — a consistent near-white with a hint

@@ -18,7 +18,7 @@ export default async function DestinationsPage() {
   const showAds = await shouldShowAds(session?.user?.id);
   const t = await getServerT();
   return (
-    <div className="px-6 py-10" style={{ background: "#FBF6EE", minHeight: "100%" }}>
+    <div className="px-6 py-10" style={{ background: "var(--background)", minHeight: "100%" }}>
       <div className="mx-auto w-full max-w-6xl">
         <h1 className="mb-2 text-2xl font-extrabold">{t("destinations.title")}</h1>
         <p className="mb-6 opacity-70">{t("destinations.subtitle")}</p>
