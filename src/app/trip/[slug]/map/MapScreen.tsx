@@ -394,6 +394,13 @@ export function MapScreen({
   // the earlier "general attractions" default was tried and explicitly
   // undone.
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // Brief inline notice shown when a preview (anon/unsubscribed) visitor taps a specific category pill —
+  // distinct from previewGate's other controls, which route straight to /pricing with no explanation, because a
+  // locked *category* is the one preview control a visitor is likely to tap repeatedly while exploring, so a
+  // silent redirect away from the map they're looking at would be a jarring way to respond to that specifically.
+  const [categoryLockNotice, setCategoryLockNotice] = useState(false);
+  const categoryLockNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (categoryLockNoticeTimeoutRef.current) clearTimeout(categoryLockNoticeTimeoutRef.current); }, []);
   // "Hide places I've been" — rated places (any personal rating counts as
   // "visited," see PoiRating) drop off the map live as this toggles, no
   // reload. State (not just the ref) since it needs to trigger the marker
@@ -1672,6 +1679,20 @@ export function MapScreen({
   }
   const previewDim: React.CSSProperties = preview ? { opacity: 0.45, filter: "grayscale(1)" } : {};
 
+  // Category pills specifically get a dismissible inline notice instead of previewGate's instant redirect (see
+  // categoryLockNotice above) — auto-hides after a few seconds so it doesn't linger over the map.
+  function handleCategoryPillClick(catName: string) {
+    return () => {
+      if (preview) {
+        setCategoryLockNotice(true);
+        if (categoryLockNoticeTimeoutRef.current) clearTimeout(categoryLockNoticeTimeoutRef.current);
+        categoryLockNoticeTimeoutRef.current = setTimeout(() => setCategoryLockNotice(false), 4000);
+        return;
+      }
+      setActiveCategory(catName);
+    };
+  }
+
   if (error) {
     return (
       <div className="rounded-lg border p-6 text-center text-sm" style={{ borderColor: "var(--primary)" }}>
@@ -1887,7 +1908,7 @@ export function MapScreen({
                 ...previewDim,
               }}
             >
-              <button onClick={previewGate(() => setActiveCategory(catName))} className="flex shrink-0 items-center gap-1">
+              <button onClick={handleCategoryPillClick(catName)} className="flex shrink-0 items-center gap-1">
                 <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-3.5 sm:w-3.5">
                   <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
                 </svg>
@@ -2073,6 +2094,15 @@ export function MapScreen({
       {myRouteVisible && myRouteDays && myRouteDays.length === 0 && (
         <div className="absolute inset-x-3 top-[calc(6.75rem+env(safe-area-inset-top))] z-10 rounded-lg bg-white/95 p-2 text-center text-xs font-semibold shadow-md sm:inset-x-auto sm:start-2 sm:top-[calc(3.25rem+env(safe-area-inset-top))]">
           {t("map.noRouteYetPrefix")} {t("map.itineraryScreenName")}
+        </div>
+      )}
+
+      {categoryLockNotice && (
+        <div className="absolute inset-x-3 top-24 z-10 flex items-center justify-center gap-2 rounded-lg p-2 text-center text-xs font-semibold text-white shadow-md" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
+          <span>🔒 {t("map.categoryRequiresPlan")}</span>
+          <Link href="/pricing" className="underline underline-offset-2">
+            {t("map.allPlans")}
+          </Link>
         </div>
       )}
 

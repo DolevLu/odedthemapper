@@ -1024,6 +1024,8 @@ export const DICTIONARY = {
   "map.geoFailed": { he: "לא הצלחנו לקבל מיקום - בדקו הרשאות מיקום בדפדפן", en: "We couldn't get your location - check location permissions in your browser" },
   "map.apiKeyMissingSuffix": { he: "ודאו ש-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY מוגדר.", en: "Make sure NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is configured." },
   "map.previewUpgrade": { he: "🔓 תצוגה מקדימה - שדרגו את החבילה כדי לפתוח את כל התכונות", en: "🔓 Preview - upgrade your plan to unlock all features" },
+  "map.categoryRequiresPlan": { he: "קטגוריה זו דורשת חבילה", en: "This category requires a plan" },
+  "map.allPlans": { he: "לכל החבילות", en: "See all plans" },
   "map.mapType": { he: "מפה", en: "Map" },
   "map.satellite": { he: "לוויין", en: "Satellite" },
   "map.searchPlaceholder": { he: "זה המקום לחפש", en: "Search here" },
