@@ -16,9 +16,27 @@ import "./globals.css";
 const rubik = Rubik({ subsets: ["latin", "hebrew"], weight: ["400", "500", "600", "700", "800"], display: "swap", variable: "--font-rubik" });
 
 export const metadata: Metadata = {
+  // Needed for opengraph-image.png/twitter-image.png (below) and any other relative metadata URL to resolve to an
+  // absolute one — without it, link previews (Facebook/WhatsApp/etc.) had no og:image at all, so their scrapers
+  // fell back to grabbing the first <img> in the page, which happened to be the Laya partner icon in the sidebar.
+  metadataBase: new URL("https://travi.odedthemapper.com"),
   title: "טראבי",
   description: "מפות טיולים אינטראקטיביות ומדריכים אישיים לכל יעד",
   manifest: "/manifest.json",
+  openGraph: {
+    title: "טראבי",
+    description: "מפות טיולים אינטראקטיביות ומדריכים אישיים לכל יעד",
+    siteName: "טראבי",
+    locale: "he_IL",
+    type: "website",
+    // opengraph-image.png (this folder) is picked up automatically by Next's file convention.
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "טראבי",
+    description: "מפות טיולים אינטראקטיביות ומדריכים אישיים לכל יעד",
+    // twitter-image.png (this folder) is picked up automatically by Next's file convention.
+  },
 };
 
 export function generateViewport() {
