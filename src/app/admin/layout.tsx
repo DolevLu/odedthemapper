@@ -23,6 +23,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/destinations" className="opacity-70 hover:opacity-100">
             יעדים
           </Link>
+          <Link href="/admin/users" className="opacity-70 hover:opacity-100">
+            משתמשים
+          </Link>
           <Link href="/admin/subscriptions" className="opacity-70 hover:opacity-100">
             מנויים
           </Link>

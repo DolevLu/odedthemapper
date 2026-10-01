@@ -3,6 +3,7 @@ import { Rubik } from "next/font/google";
 import { getLang } from "@/lib/i18n/server";
 import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { PresenceHeartbeat } from "@/components/PresenceHeartbeat";
 import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
 import { PromoDrawer } from "@/components/PromoDrawer";
 import { ReferralClaimer } from "@/components/ReferralClaimer";
@@ -124,6 +125,7 @@ export default async function RootLayout({
         <Providers initialLang={initialLang}>
           {children}
           <ReferralClaimer />
+          <PresenceHeartbeat />
         </Providers>
         <PromoDrawer />
         <FocusModeExitButton />

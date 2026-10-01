@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { awardReferralCreditIfEligible } from "@/lib/referral";
+import { notifyAdmins } from "@/lib/adminAlerts";
+import { resolvePlan, formatIls } from "@/lib/plans";
 
 /**
  * PayMe's own server-to-server sale notification (docs.payme.io/docs/guides
@@ -41,7 +43,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }); // 200 regardless — nothing useful to retry
   }
 
-  const subscription = await prisma.subscription.findUnique({ where: { paymentSessionId: transactionId } });
+  const subscription = await prisma.subscription.findUnique({
+    where: { paymentSessionId: transactionId },
+    include: { user: { select: { email: true } } },
+  });
   if (!subscription) {
     console.error("PayMe callback: no subscription for transaction_id", transactionId);
     return NextResponse.json({ ok: true });
@@ -59,6 +64,12 @@ export async function POST(request: Request) {
         data: { status: "active", paidAt: new Date(), ...paymeRefs },
       });
       await awardReferralCreditIfEligible(subscription.userId);
+      const planName = resolvePlan(subscription.planKey)?.name ?? "מנוי טראבי";
+      await notifyAdmins({
+        title: "💰 רכישה חדשה",
+        body: `${subscription.user.email} רכש/ה ${planName} - ${formatIls(subscription.amountCents)}`,
+        url: "/admin/subscriptions",
+      });
     } else if (Object.keys(paymeRefs).length > 0) {
       await prisma.subscription.update({ where: { id: subscription.id }, data: paymeRefs });
     }

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TRIAL_PLAN } from "@/lib/plans";
+import { notifyAdmins } from "@/lib/adminAlerts";
 
 // Never expires in practice — the permanent free tier (see startFreeAccess below) simply has no real end date, but
 // Subscription.currentPeriodEnd is a required, non-null column, so this stands in for "forever."
@@ -99,19 +100,27 @@ export async function startFreeAccess(destinationId: string): Promise<{ error: s
     return { error: "כבר יש לכם גישה פעילה - כדי להחליף יעד אפשר לעשות זאת דרך הגדרות החשבון (עד פעם ב-14 יום)" };
   }
 
-  await prisma.subscription.create({
-    data: {
-      userId,
-      planKey: "free",
-      billingCycle: "monthly",
-      status: "active",
-      paymentSessionId: `free_${randomUUID()}`,
-      amountCents: 0,
-      currency: "ILS",
-      currentPeriodEnd: FAR_FUTURE,
-      paidAt: new Date(),
-      destinations: { create: [{ destinationId }] },
-    },
+  const [, destination] = await Promise.all([
+    prisma.subscription.create({
+      data: {
+        userId,
+        planKey: "free",
+        billingCycle: "monthly",
+        status: "active",
+        paymentSessionId: `free_${randomUUID()}`,
+        amountCents: 0,
+        currency: "ILS",
+        currentPeriodEnd: FAR_FUTURE,
+        paidAt: new Date(),
+        destinations: { create: [{ destinationId }] },
+      },
+    }),
+    prisma.destination.findUnique({ where: { id: destinationId }, select: { name: true } }),
+  ]);
+  await notifyAdmins({
+    title: "🎁 בחירת יעד חינמי",
+    body: `${session.user.email} בחר/ה גישה חינמית ליעד ${destination?.name ?? destinationId}`,
+    url: "/admin/users",
   });
 
   revalidatePath("/", "layout");

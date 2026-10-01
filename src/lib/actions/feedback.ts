@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { saveUploadedFile } from "@/lib/uploads";
 import { canManageContent } from "@/lib/access";
+import { notifyAdmins } from "@/lib/adminAlerts";
 
 const VALID_KINDS = new Set(["bug", "suggestion"]);
 
@@ -35,6 +36,15 @@ export async function submitFeedback(formData: FormData): Promise<{ error: strin
       imageUrl,
       pageUrl: typeof pageUrl === "string" ? pageUrl : null,
     },
+  });
+
+  const kindLabel = kind === "bug" ? "🐛 באג" : "💡 הצעה";
+  const reporter = session?.user?.email ?? "אנונימי";
+  const preview = description.trim().slice(0, 120);
+  await notifyAdmins({
+    title: `${kindLabel} - פנייה חדשה`,
+    body: `${reporter}: ${preview}`,
+    url: "/admin/feedback",
   });
 
   return { ok: true };

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { resolvePlan } from "@/lib/plans";
+import { resolvePlan, formatIls } from "@/lib/plans";
 import { awardReferralCreditIfEligible } from "@/lib/referral";
+import { notifyAdmins } from "@/lib/adminAlerts";
 
 const ChargeSchema = z.object({
   subscriptionId: z.string(),
@@ -120,5 +121,10 @@ export async function POST(request: Request) {
     },
   });
   await awardReferralCreditIfEligible(subscription.userId);
+  await notifyAdmins({
+    title: "💰 רכישה חדשה",
+    body: `${session.user.email} רכש/ה ${planName} - ${formatIls(subscription.amountCents)}`,
+    url: "/admin/subscriptions",
+  });
   return NextResponse.json({ ok: true });
 }

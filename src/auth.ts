@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { notifyAdmins } from "@/lib/adminAlerts";
 
 // Google Sign-In is only registered once real credentials are supplied —
 // next-auth errors at init if an OAuth provider is missing clientId/secret.
@@ -54,6 +55,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // with a "server configuration" error.
   trustHost: true,
   providers,
+  // Fires for an OAuth (Google) signup only - the credentials provider's own registration route creates its User
+  // row directly via prisma.user.create (see /api/register), bypassing the adapter entirely, so it notifies
+  // admins itself instead of relying on this event.
+  events: {
+    async createUser({ user }) {
+      await notifyAdmins({ title: "👤 חשבון חדש", body: `${user.name ?? user.email} נרשם/ה לטראבי (Google)`, url: "/admin/users" });
+    },
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
