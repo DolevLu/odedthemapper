@@ -1922,7 +1922,6 @@ export function MapScreen({
                 aria-label={catHidden ? t("map.showCategory") : t("map.hideCategory")}
                 title={catHidden ? t("map.showCategory") : t("map.hideCategory")}
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full sm:h-[22px] sm:w-[22px]"
-                style={{ background: catActive ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.06)" }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true" className="sm:h-[15px] sm:w-[15px]">
                   <path
