@@ -1,0 +1,95 @@
+[
+ {
+  "d": "prague",
+  "id": 10262143,
+  "s": "trail/czech-republic/prague/prazsky-hrad-k-prasne-brane",
+  "n": "Prague Castle to Powder Gate",
+  "r": 4.6,
+  "m": 40,
+  "g": 11,
+  "l": 2897,
+  "df": "Easy",
+  "rt": "Point to point",
+  "f": [
+   "lake",
+   "kids",
+   "river",
+   "views",
+   "city-walk",
+   "historic-site"
+  ],
+  "lat": 50.09107,
+  "lng": 14.40011
+ },
+ {
+  "d": "prague",
+  "id": 10259532,
+  "s": "trail/czech-republic/prague/stare-mesto-praha-zidovska-ctvrt-okruh",
+  "n": "Old Town Prague - Jewish Quarter Loop",
+  "r": 4.5,
+  "m": 133,
+  "g": 108,
+  "l": 10461,
+  "df": "Moderate",
+  "rt": "Loop",
+  "f": [
+   "dogs-leash",
+   "forest",
+   "lake",
+   "kids",
+   "river",
+   "views",
+   "city-walk",
+   "historic-site",
+   "partially-paved",
+   "strollers"
+  ],
+  "lat": 50.07969,
+  "lng": 14.42983
+ },
+ {
+  "d": "prague",
+  "id": 10860732,
+  "s": "trail/czech-republic/prague/divoka-sarka-nebusicka-skala",
+  "n": "Divoká Šárka - Nebušická skála",
+  "r": 4.5,
+  "m": 113,
+  "g": 118,
+  "l": 8369,
+  "df": "Moderate",
+  "rt": "Out & back",
+  "f": [
+   "forest",
+   "lake",
+   "views",
+   "wild-flowers",
+   "wildlife",
+   "partially-paved"
+  ],
+  "lat": 50.09279,
+  "lng": 14.3254
+ },
+ {
+  "d": "prague",
+  "id": 10520804,
+  "s": "trail/czech-republic/prague/letenske-sady-karluv-most",
+  "n": "Letná Park - Charles Bridge",
+  "r": 4.7,
+  "m": 106,
+  "g": 122,
+  "l": 7403,
+  "df": "Moderate",
+  "rt": "Point to point",
+  "f": [
+   "lake",
+   "river",
+   "views",
+   "wildlife",
+   "city-walk",
+   "historic-site",
+   "partially-paved"
+  ],
+  "lat": 50.097,
+  "lng": 14.43075
+ }
+]

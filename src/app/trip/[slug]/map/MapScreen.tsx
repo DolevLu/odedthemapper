@@ -22,8 +22,6 @@ import type { MapDay } from "@/components/map/DayRouteMap";
 import { haversineKm, isGenericAreaName, colorForDay } from "@/lib/geo";
 import { recordLocationPing } from "@/lib/actions/location";
 import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
-import { sunPosition, shadedSidePath } from "@/lib/shadow";
-import { fetchStreetsInBounds, type StreetWay } from "@/lib/streetNetwork";
 import { saveDestinationOffline, isDestinationSavedOffline, isOfflineStorageSupported } from "@/lib/offlineStore";
 import { CAPITAL_AREA_MATCH_BY_SLUG, CAPITAL_COORDS_BY_SLUG } from "@/lib/capitalCities";
 import { suppressMapsErrorDialog } from "@/lib/suppressMapsErrorDialog";
@@ -67,10 +65,6 @@ const MARKER_SCALE_DEFAULT = 13;
 function markerScaleForZoom(zoom: number | undefined): number {
   return zoom !== undefined && zoom < CITY_VIEW_MAX_ZOOM ? MARKER_SCALE_CITY_VIEW : MARKER_SCALE_DEFAULT;
 }
-
-// Below this zoom the viewport covers too much ground for a reasonable
-// Overpass query (and the map would be too cluttered with shade lines).
-const SHADOW_MIN_ZOOM = 15;
 
 // Every line/polygon's default color (brand purple) — see the shapePois effect below.
 const SHAPE_COLOR = "#7C3AED";
@@ -365,7 +359,6 @@ export function MapScreen({
   const lastTrailPointRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
   const heatmapCirclesRef = useRef<google.maps.Circle[]>([]);
   const myRouteOverlaysRef = useRef<(google.maps.Marker | google.maps.Polyline)[]>([]);
-  const shadowPolylinesRef = useRef<google.maps.Polyline[]>([]);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
   // Google place details captured when a place card opens, keyed by placeId,
   // so the save button can post every field with one click.
@@ -426,12 +419,6 @@ export function MapScreen({
   const [myRouteDays, setMyRouteDays] = useState<MapDay[] | null>(null);
   const [myRouteLoading, setMyRouteLoading] = useState(false);
   const [myRouteActiveDay, setMyRouteActiveDay] = useState<number | null>(null);
-  const [shadowVisible, setShadowVisible] = useState(false);
-  const [shadowStreets, setShadowStreets] = useState<StreetWay[]>([]);
-  const [shadowLoading, setShadowLoading] = useState(false);
-  const [shadowError, setShadowError] = useState<string | null>(null);
-  const [shadowIsNight, setShadowIsNight] = useState(false);
-  const [shadowTick, setShadowTick] = useState(0);
 
   // Both were a wide white banner stretching most of the map's width with
   // no way to dismiss it early and no auto-dismiss — now a small popup that
@@ -1169,90 +1156,6 @@ export function MapScreen({
     }
   }
 
-  // Approximate "which side of the street is shaded" — a heuristic (street
-  // bearing vs. real sun position for the map's current center/time), not a
-  // true building-height shadow simulation, since no free worldwide
-  // building-height API exists. Street geometry comes from OpenStreetMap's
-  // Overpass API for whatever's currently on screen, refreshed as you pan —
-  // Google Maps JS API has no way to enumerate the road network itself.
-  useEffect(() => {
-    if (!loaded || !mapRef.current || !shadowVisible) return;
-    const map = mapRef.current;
-
-    async function refreshStreets() {
-      const zoom = map.getZoom() ?? 0;
-      const bounds = map.getBounds();
-      if (zoom < SHADOW_MIN_ZOOM || !bounds) {
-        setShadowStreets([]);
-        setShadowError(zoom < SHADOW_MIN_ZOOM ? t("map.zoomInForShadows") : null);
-        return;
-      }
-      setShadowLoading(true);
-      setShadowError(null);
-      try {
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-        const streets = await fetchStreetsInBounds({ south: sw.lat(), west: sw.lng(), north: ne.lat(), east: ne.lng() });
-        setShadowStreets(streets);
-      } catch {
-        setShadowError(t("map.shadowLoadFailed"));
-      } finally {
-        setShadowLoading(false);
-      }
-    }
-
-    refreshStreets();
-    let debounce: ReturnType<typeof setTimeout> | null = null;
-    const listener = map.addListener("idle", () => {
-      if (debounce) clearTimeout(debounce);
-      debounce = setTimeout(refreshStreets, 800);
-    });
-    return () => {
-      listener.remove();
-      if (debounce) clearTimeout(debounce);
-    };
-  }, [loaded, shadowVisible]);
-
-  // Renders the fetched streets as shaded-side offset lines, recomputing the
-  // sun's position each time the street set changes.
-  useEffect(() => {
-    if (!loaded || !mapRef.current) return;
-    shadowPolylinesRef.current.forEach((p) => p.setMap(null));
-    shadowPolylinesRef.current = [];
-    if (!shadowVisible || shadowStreets.length === 0) return;
-
-    const center = mapRef.current.getCenter();
-    if (!center) return;
-    const { azimuthDeg, elevationDeg } = sunPosition(new Date(), center.lat(), center.lng());
-    // Below the horizon, there's no sun to cast a shadow on one particular
-    // sidewalk — every street is uniformly in the dark, so draw the streets
-    // themselves rather than an arbitrarily-picked "shaded side" offset line.
-    const isNight = elevationDeg <= 0;
-    setShadowIsNight(isNight);
-
-    shadowPolylinesRef.current = shadowStreets.map(
-      (path) =>
-        new google.maps.Polyline({
-          path: isNight ? path : shadedSidePath(path, azimuthDeg),
-          strokeColor: "#111111",
-          strokeWeight: isNight ? 5 : 4,
-          strokeOpacity: isNight ? 0.5 : 0.35,
-          clickable: false,
-          zIndex: 40,
-          map: mapRef.current!,
-        })
-    );
-  }, [loaded, shadowVisible, shadowStreets, shadowTick]);
-
-  // Recomputes the sun position on a timer while the layer is open, so the
-  // shaded side actually rotates through the day instead of freezing at
-  // whatever moment the layer happened to be toggled on.
-  useEffect(() => {
-    if (!shadowVisible) return;
-    const id = setInterval(() => setShadowTick((t) => t + 1), 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [shadowVisible]);
-
   // Render saved logistics (hotel/flight/etc. with a geocoded address) as their own pins.
   const logisticMarkersRef = useRef<google.maps.Marker[]>([]);
   useEffect(() => {
@@ -1968,18 +1871,6 @@ export function MapScreen({
         >
           {t("map.onlyUnrated")}
         </button>
-        <button
-          onClick={previewGate(() => setShadowVisible((v) => !v))}
-          className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-md sm:px-3 sm:py-1.5 sm:text-xs"
-          style={{ background: shadowVisible ? "#111111" : "rgba(255,255,255,0.94)", color: shadowVisible ? "white" : "#374151", ...previewDim }}
-          title={t("map.shadowTitle")}
-        >
-          {shadowVisible && shadowLoading
-            ? t("map.shadowLoading")
-            : shadowVisible && shadowIsNight
-              ? t("map.shadowNight")
-              : t("map.shadow")}
-        </button>
         </div>
         <button
           onClick={() => pillRowRef.current?.scrollBy({ left: 160, behavior: "smooth" })}
@@ -2142,9 +2033,6 @@ export function MapScreen({
             </button>
           </div>
         </div>
-      )}
-      {shadowVisible && shadowError && (
-        <div className="absolute inset-x-3 top-40 z-10 rounded-lg bg-white/95 p-2 text-center text-xs text-red-600 shadow-md">{shadowError}</div>
       )}
 
       {/* Route mode: off by default, so clicking a point just opens its

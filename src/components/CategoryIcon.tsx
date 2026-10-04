@@ -54,6 +54,11 @@ const SVG_ICONS: { match: RegExp; path: string }[] = [
     path: "M3 7h2v6h7V9a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v9h-2v-3H5v3H3zm5 1a2 2 0 1 1-2 2 2 2 0 0 1 2-2z",
   },
   {
+    // Mountain peaks — the recommended-trails category (see scripts/seed-alltrails.cjs).
+    match: /טרק|trail/i,
+    path: "M14 6l-3.75 5 2.85 3.8-1.6 1.2C9.81 13.75 7 10 7 10l-6 8h22L14 6z",
+  },
+  {
     // A checkmark ("וי") — matches the same glyph the map's own pins use
     // for this category (CHECK_PATH in lib/mapStyles.ts). "עייר"/"ערים"
     // catch the plural forms "עיירות"/"ערים", neither of which actually

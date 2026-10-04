@@ -50,6 +50,7 @@ const CATEGORY_ORDER_PRIORITY: { test: RegExp; rank: number }[] = [
   // neither actually contains the substring "עיר", so both need their own
   // alternative rather than relying on the singular word to cover them.
   { test: /עייר|ערים|עיר|יישוב|town|city/i, rank: 11 },
+  { test: /טרק|trail/i, rank: 12 },
 ];
 
 export function sortCategoryNames(names: string[]): string[] {
@@ -80,6 +81,10 @@ const STANDARD_CATEGORY_STYLES: { match: RegExp; color: string; icon: { type: "p
   { match: /מטרו|רכבת|תחבורה|תחב"צ|metro|train|station/i, color: "#B8722E", icon: { type: "text", char: "M" } },
   { match: /עייר|ערים|עיר|יישוב|town|city/i, color: "#3B9AE1", icon: { type: "path", d: CHECK_PATH } },
   { match: /אטרקצי|attraction/i, color: "#9333EA", icon: { type: "path", d: STAR_PATH } },
+  // Recommended trails (AllTrails import, see scripts/seed-alltrails.cjs) — last on purpose: it is index-aligned
+  // with CATEGORY_OPTION_BY_BUCKET below, whose final "אחר" entry keeps a personal-map folder of this kind from
+  // being filed under one of the fixed saved-pin labels.
+  { match: /טרק|trail/i, color: "#0F766E", icon: { type: "path", d: pathForCategory("טרקים") } },
 ];
 
 // Nightlife categories vary by destination — some KML sources already split
@@ -135,7 +140,7 @@ export const SAVED_PIN_FALLBACK_COLOR = "#6B7280";
 
 // Index-aligned with STANDARD_CATEGORY_STYLES — the SAVED_PIN_CATEGORY_OPTIONS
 // label that corresponds to each standard bucket.
-const CATEGORY_OPTION_BY_BUCKET = ["בתי קפה", "מסעדות", "פארקים", "ברים", "תחנות מטרו ורכבת", "ערים ועיירות", "אטרקציות"];
+const CATEGORY_OPTION_BY_BUCKET = ["בתי קפה", "מסעדות", "פארקים", "ברים", "תחנות מטרו ורכבת", "ערים ועיירות", "אטרקציות", "אחר"];
 
 /** Which STANDARD_CATEGORY_STYLES bucket (if any) a free-text category name
  * falls into, by index. Used both to file an uploaded personal map point

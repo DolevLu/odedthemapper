@@ -1,0 +1,150 @@
+[
+ {
+  "d": "hongkong",
+  "id": 10407552,
+  "s": "trail/hong-kong/central-and-western/victoria-peak-loop",
+  "n": "Victoria Peak Loop",
+  "r": 4.7,
+  "m": 62,
+  "g": 91,
+  "l": 4023,
+  "df": "Easy",
+  "rt": "Loop",
+  "f": [
+   "forest",
+   "kids",
+   "views",
+   "waterfall",
+   "wild-flowers",
+   "wildlife",
+   "paved"
+  ],
+  "lat": 22.27094,
+  "lng": 114.14979
+ },
+ {
+  "d": "hongkong",
+  "id": 10258293,
+  "s": "trail/hong-kong/southern/dragons-back",
+  "n": "Dragon's Back",
+  "r": 4.7,
+  "m": 88,
+  "g": 150,
+  "l": 5150,
+  "df": "Moderate",
+  "rt": "Point to point",
+  "f": [
+   "beach",
+   "forest",
+   "lake",
+   "views",
+   "wild-flowers",
+   "wildlife"
+  ],
+  "lat": 22.25609,
+  "lng": 114.23033
+ },
+ {
+  "d": "hongkong",
+  "id": 10368761,
+  "s": "trail/hong-kong/sha-tin/lion-rock",
+  "n": "Lion Rock",
+  "r": 4.7,
+  "m": null,
+  "g": 407,
+  "l": 4184,
+  "df": "Moderate",
+  "rt": "Out & back",
+  "f": [
+   "views"
+  ],
+  "lat": 22.34471,
+  "lng": 114.18655
+ },
+ {
+  "d": "hongkong",
+  "id": 10297806,
+  "s": "trail/hong-kong/sai-kung/high-junk-peak-country-trail--2",
+  "n": "High Junk Peak Country Trail",
+  "r": 4.7,
+  "m": 155,
+  "g": 362,
+  "l": 6598,
+  "df": "Moderate",
+  "rt": "Point to point",
+  "f": [
+   "beach",
+   "forest",
+   "views",
+   "wildlife"
+  ],
+  "lat": 22.31637,
+  "lng": 114.282
+ },
+ {
+  "d": "hongkong",
+  "id": 10373366,
+  "s": "trail/hong-kong/north/shing-mun-reservoir-loop",
+  "n": "Shing Mun Reservoir Loop",
+  "r": 4.5,
+  "m": 133,
+  "g": 229,
+  "l": 8047,
+  "df": "Moderate",
+  "rt": "Loop",
+  "f": [
+   "forest",
+   "lake",
+   "kids",
+   "river",
+   "views",
+   "wild-flowers",
+   "wildlife",
+   "partially-paved"
+  ],
+  "lat": 22.38448,
+  "lng": 114.14344
+ },
+ {
+  "d": "hongkong",
+  "id": 10369584,
+  "s": "trail/hong-kong/southern/twin-peaks",
+  "n": "Twin Peaks",
+  "r": 4.7,
+  "m": 159,
+  "g": 412,
+  "l": 5150,
+  "df": "Hard",
+  "rt": "Point to point",
+  "f": [
+   "dogs-leash",
+   "forest",
+   "views",
+   "wildlife"
+  ],
+  "lat": 22.25806,
+  "lng": 114.19776
+ },
+ {
+  "d": "hongkong",
+  "id": 11494276,
+  "s": "trail/hong-kong/auto-generated-2026-06-03-8893",
+  "n": "Tsam Chai Au via Lantau Section 3",
+  "r": 4.5,
+  "m": 110,
+  "g": 344,
+  "l": 3541,
+  "df": "Moderate",
+  "rt": "Out & back",
+  "f": [
+   "forest",
+   "river",
+   "views",
+   "wild-flowers",
+   "wildlife",
+   "historic-site"
+  ],
+  "lat": 22.254,
+  "lng": 113.906
+ }
+]
