@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { DestinationThemeProvider } from "@/components/theme/DestinationThemeProvider";
 import type { DestinationSummary } from "@/lib/data/destinations";
-import { PLANS, formatIls } from "@/lib/plans";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { translate, type Lang } from "@/lib/i18n/dictionary";
 
@@ -88,7 +87,7 @@ export function DestinationCard({ destination, lang = "he" }: { destination: Des
               className="rounded-full px-4 py-2 font-semibold text-white transition-transform group-hover:scale-105"
               style={{ background: isComingSoon ? "#9CA3AF" : "var(--primary)" }}
             >
-              {isComingSoon ? t("destCard.comingSoon") : `${t("destCard.fromPricePrefix")}${formatIls(PLANS.family.monthlyCents)}${t("destCard.fromPriceSuffix")}`}
+              {isComingSoon ? t("destCard.comingSoon") : t("destCard.free")}
             </span>
           </div>
         </div>

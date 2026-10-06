@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { addItineraryItem, addCustomItineraryItem } from "@/lib/actions/trip";
 import { loadPlacesLibrary } from "@/hooks/useGoogleMaps";
+import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
 import { PinPickerModal } from "./PinPickerModal";
 import type { DayListItem } from "./DayItemsList";
 import { useTranslation } from "@/components/i18n/LanguageContext";
@@ -32,7 +33,7 @@ function useGooglePredictions(query: string) {
     const t = setTimeout(() => {
       loadPlacesLibrary()
         .then(() => {
-          if (cancelled) return;
+          if (cancelled || !takeGoogleBudget("places")) return;
           if (!autocompleteServiceRef.current) {
             autocompleteServiceRef.current = new google.maps.places.AutocompleteService();
           }
@@ -68,6 +69,7 @@ function useGooglePredictions(query: string) {
  * attribution UI), same headless pattern as other one-off Places lookups
  * in this app. */
 function resolvePlaceLocation(placeId: string): Promise<{ name: string; lat: number; lng: number } | null> {
+  if (!takeGoogleBudget("places")) return Promise.resolve(null);
   return loadPlacesLibrary().then(
     () =>
       new Promise((resolve) => {

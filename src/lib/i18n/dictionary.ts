@@ -318,8 +318,7 @@ export const DICTIONARY = {
   "destCard.pois": { he: "נקודות עניין", en: "points of interest" },
   "destCard.comingSoon": { he: "בקרוב", en: "Coming soon" },
   "destCard.areas": { he: "אזורים", en: "areas" },
-  "destCard.fromPricePrefix": { he: "מ-", en: "From " },
-  "destCard.fromPriceSuffix": { he: "/חודש", en: "/month" },
+  "destCard.free": { he: "חינם", en: "Free" },
 
   "pricing.title": { he: "תוכנית שמתאימה לאיך שאתם מטיילים", en: "A plan that fits how you travel" },
   "pricing.subtitle": { he: "מנוי חודשי, בלי התחייבות ארוכה. בטלו מתי שתרצו.", en: "Monthly subscription, no long commitment. Cancel anytime." },

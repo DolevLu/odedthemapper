@@ -187,7 +187,8 @@ export async function askTravi(
   userPosition?: { lat: number; lng: number } | null,
   liveContext?: string | null
 ): Promise<TraviReply> {
-  const rawQ = message.trim().toLowerCase();
+  // Capped: the whole message is pasted into the Gemini prompt, so an unbounded one is an unbounded input-token bill.
+  const rawQ = message.trim().slice(0, 500).toLowerCase();
   if (!rawQ) return { text: "ספרו לי מה אתם מחפשים - למשל \"מסעדה טובה בסביבה\" או \"מה יש לעשות פה\".", suggestions: [] };
 
   if (["שלום", "היי", "hi", "hello", "מה קורה", "מה נשמע"].some((g) => rawQ.includes(g))) {

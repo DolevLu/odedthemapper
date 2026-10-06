@@ -1,3 +1,4 @@
+import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
 /** Everything worth keeping from a Google place card - the shape shared by the
  * map's save-pin form and the bulk import/AI flows. */
 export type GoogleDetails = {
@@ -79,6 +80,7 @@ export async function resolvePlaceByQuery(
   query: string,
   near: { lat: number; lng: number } | null
 ): Promise<ResolvedPin | null> {
+  if (!takeGoogleBudget("places", 2)) return null;
   const found = await withTimeout(
     new Promise<google.maps.places.PlaceResult | null>((resolve) => {
       service.findPlaceFromQuery(
@@ -141,6 +143,7 @@ export async function mapWithConcurrency<T, R>(
 /** Full details for a known Google place id (e.g. a search suggestion the
  * user picked). */
 export async function resolvePlaceById(service: google.maps.places.PlacesService, placeId: string): Promise<ResolvedPin | null> {
+  if (!takeGoogleBudget("places")) return null;
   const place = await withTimeout(
     new Promise<google.maps.places.PlaceResult | null>((resolve) => {
       service.getDetails({ placeId, fields: GOOGLE_DETAIL_FIELDS }, (p, status) =>

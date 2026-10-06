@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { auth } from "@/auth";
+import { consumeApiQuota } from "@/lib/apiQuota";
 
 // Client-direct-to-Blob upload endpoint for the album — the album's own
 // upload form used to send the file bytes through a plain Server Action
@@ -19,19 +20,24 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const body = (await request.json()) as HandleUploadBody;
+  const userId = session.user.id;
 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ["image/*", "video/*"],
-        // Generous for a real phone video (a plain <input accept> already
-        // steers toward images/video, this just keeps a very oversized
-        // upload from silently eating storage).
-        maximumSizeInBytes: 200 * 1024 * 1024,
-        addRandomSuffix: true,
-      }),
+      onBeforeGenerateToken: async () => {
+        // Daily per-user file budget (storage + egress cost) — see lib/apiQuota.ts.
+        if (!(await consumeApiQuota(userId, "upload"))) throw new Error("הגעתם למכסת ההעלאות היומית - נסו שוב מחר");
+        return {
+          allowedContentTypes: ["image/*", "video/*"],
+          // Generous for a real phone video (a plain <input accept> already
+          // steers toward images/video, this just keeps a very oversized
+          // upload from silently eating storage).
+          maximumSizeInBytes: 100 * 1024 * 1024,
+          addRandomSuffix: true,
+        };
+      },
       // Not used: onUploadCompleted is a webhook Vercel's own infrastructure
       // calls after the fact, which needs a publicly reachable URL and
       // never fires against localhost in dev. The AlbumMedia row is created

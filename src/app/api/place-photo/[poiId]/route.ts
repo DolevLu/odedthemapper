@@ -13,6 +13,10 @@ import { prisma } from "@/lib/prisma";
  * per viewer. If a reference ever stops working (Google says they can
  * expire), it's re-resolved from the point's place id and re-saved, so the
  * image heals itself instead of staying broken. */
+/** A missing/unresolvable photo is cached too — otherwise every page view of a broken POI re-spends a billed Google
+ * Details + Photo call just to fail again. */
+const NOT_FOUND_HEADERS = { "Cache-Control": "public, max-age=3600, s-maxage=86400" };
+
 export async function GET(_req: Request, { params }: { params: Promise<{ poiId: string }> }) {
   const { poiId } = await params;
   const poi = await prisma.pointOfInterest.findUnique({
@@ -20,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ poiId: 
     select: { googlePlaceId: true, googlePhotoRef: true },
   });
   const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!poi || !apiKey || (!poi.googlePhotoRef && !poi.googlePlaceId)) return new NextResponse("Not found", { status: 404 });
+  if (!poi || !apiKey || (!poi.googlePhotoRef && !poi.googlePlaceId)) return new NextResponse("Not found", { status: 404, headers: NOT_FOUND_HEADERS });
 
   async function fetchPhoto(ref: string): Promise<Response | null> {
     try {
@@ -52,7 +56,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ poiId: 
     }
   }
 
-  if (!upstream) return new NextResponse("Photo unavailable", { status: 404 });
+  if (!upstream) return new NextResponse("Photo unavailable", { status: 404, headers: NOT_FOUND_HEADERS });
 
   return new NextResponse(upstream.body, {
     headers: {

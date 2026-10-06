@@ -25,6 +25,7 @@ import { buildDensityGrid, colorForIntensity } from "@/lib/heatmap";
 import { saveDestinationOffline, isDestinationSavedOffline, isOfflineStorageSupported } from "@/lib/offlineStore";
 import { CAPITAL_AREA_MATCH_BY_SLUG, CAPITAL_COORDS_BY_SLUG } from "@/lib/capitalCities";
 import { suppressMapsErrorDialog } from "@/lib/suppressMapsErrorDialog";
+import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
@@ -926,6 +927,7 @@ export function MapScreen({
     google.maps.event.addListener(mapRef.current, "click", (e: google.maps.IconMouseEvent) => {
       if (!e.placeId || !showGooglePoisRef.current || previewRef.current) return;
       e.stop();
+      if (!takeGoogleBudget("places")) return;
       loadPlacesLibrary()
         .then(() => {
           if (!placesServiceRef.current && mapRef.current) {
@@ -1193,6 +1195,10 @@ export function MapScreen({
   function runPlaceSearch() {
     const query = searchQuery.trim();
     if (!query || !mapRef.current) return;
+    if (!takeGoogleBudget("places")) {
+      setSearchNoResults(true);
+      return;
+    }
     setSearching(true);
     setSearchNoResults(false);
     loadPlacesLibrary()
@@ -1236,6 +1242,10 @@ export function MapScreen({
     const origin = userPositionRef.current;
     if (!origin || !mapRef.current) return;
     setRouteError(null);
+    if (!takeGoogleBudget("directions")) {
+      setRouteError(t("map.routeUnavailable"));
+      return;
+    }
     try {
       await loadRoutesLibrary();
     } catch {

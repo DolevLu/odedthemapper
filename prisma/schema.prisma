@@ -297,6 +297,7 @@ model User {
   deviceTokens  DeviceToken[]
   expenseSplits ExpenseSplit[]
   aiChatUsages  AiChatUsage[]
+  apiUsages     ApiUsage[]
   poiRatings    PoiRating[]
   destinationAccessLog DestinationAccess[]
   feedback      Feedback[]
@@ -455,6 +456,20 @@ model AiChatUsage {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+}
+
+/// Per-user, per-day counter for every cost-bearing call (Gemini, Google geocoding/Places) other than the Travi chat
+/// itself (which has its own AiChatUsage). See lib/apiQuota.ts.
+model ApiUsage {
+  id     String @id @default(cuid())
+  userId String
+  kind   String
+  date   String
+  count  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, date])
 }
 
 model Favorite {

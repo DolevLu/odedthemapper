@@ -1,6 +1,12 @@
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { put } from "@vercel/blob";
+import { auth } from "@/auth";
+import { consumeApiQuota } from "@/lib/apiQuota";
+
+/** Largest file saveUploadedFile will store. Real phone photos are 3-10MB; video goes through the album's direct-to-Blob
+ * route instead (which has its own cap), so nothing legitimate on this path needs more. */
+const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 
 /**
  * Saves an uploaded File and returns its public URL, or null if it couldn't
@@ -12,6 +18,12 @@ import { put } from "@vercel/blob";
  * callers treat a null return as "saved without this file".
  */
 export async function saveUploadedFile(file: File, subfolder: string): Promise<string | null> {
+  // Every stored byte costs money (Blob storage + egress): signed-in users only, images/video only, size-capped, and
+  // a daily per-user file budget so a script can't fill the bucket.
+  if (file.size > MAX_UPLOAD_BYTES || !/^(image|video)\//.test(file.type)) return null;
+  const session = await auth();
+  if (!session?.user?.id || !(await consumeApiQuota(session.user.id, "upload"))) return null;
+
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
   const fileName = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safeName}`;
 
@@ -51,6 +63,9 @@ export async function saveUploadedFile(file: File, subfolder: string): Promise<s
  */
 export async function mirrorRemoteImage(url: string, subfolder: string): Promise<string | null> {
   try {
+    // Only ever called with Google place-photo URLs — refuse anything else rather than fetching arbitrary client-supplied hosts.
+    const host = new URL(url).hostname;
+    if (!/(^|\.)(googleusercontent\.com|googleapis\.com|ggpht\.com|gstatic\.com)$/.test(host)) return null;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(url, { signal: controller.signal });

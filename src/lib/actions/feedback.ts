@@ -24,7 +24,8 @@ export async function submitFeedback(formData: FormData): Promise<{ error: strin
   const session = await auth();
 
   let imageUrl: string | null = null;
-  if (image instanceof File && image.size > 0) {
+  // Anonymous reports are text-only: an open file-upload endpoint would be free storage for anyone.
+  if (session?.user?.id && image instanceof File && image.size > 0) {
     imageUrl = await saveUploadedFile(image, "feedback");
   }
 
@@ -32,7 +33,7 @@ export async function submitFeedback(formData: FormData): Promise<{ error: strin
     data: {
       userId: session?.user?.id ?? null,
       kind,
-      description: description.trim(),
+      description: description.trim().slice(0, 2000),
       imageUrl,
       pageUrl: typeof pageUrl === "string" ? pageUrl : null,
     },

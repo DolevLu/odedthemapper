@@ -9,6 +9,7 @@ import { saveUploadedFile, mirrorRemoteImage } from "@/lib/uploads";
 import { resolveItineraryOwnerId, canManageContent, getGroupContext } from "@/lib/access";
 import { assertDayAccess, assertItemAccess, itemLabel } from "@/lib/groupAccess";
 import { logGroupActivity } from "@/lib/groupActivity";
+import { consumeApiQuota } from "@/lib/apiQuota";
 import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { parsePersonalMapFile } from "@/lib/kml/parsePersonalPoints";
 import { extractTextDescription } from "@/lib/data/pois";
@@ -243,6 +244,8 @@ export async function repairSavedPinPhoto(pinId: string) {
 
   const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) return { photoUrl: pin.photoUrl };
+  // Each repair is a billed Places Details + Photo call — capped per user per day.
+  if (!(await consumeApiQuota(userId, "googleLookup"))) return { photoUrl: pin.photoUrl };
 
   try {
     const detailsRes = await fetch(
@@ -485,7 +488,8 @@ export async function addLogistic(destinationId: string, slug: string, formData:
 
   const imageFile = formData.get("image") as File | null;
   const imageUrl = imageFile && imageFile.size > 0 ? await saveUploadedFile(imageFile, "logistics") : null;
-  const geo = address ? await geocodeAddress(address) : null;
+  // Billed Google Geocoding call — capped per user per day; over the cap the item still saves, just without a map pin.
+  const geo = address && (await consumeApiQuota(userId, "googleLookup")) ? await geocodeAddress(address.slice(0, 300)) : null;
 
   await prisma.tripLogistic.create({
     data: {
@@ -746,9 +750,13 @@ export async function fetchAiSuggestedPois(
   categories: string[],
   excludeNames: string[]
 ): Promise<{ name: string; description: string }[]> {
-  await requireUserId();
+  const userId = await requireUserId();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return [];
+  // Gemini costs money per call — capped per user per day (see lib/apiQuota.ts).
+  if (!(await consumeApiQuota(userId, "aiPlanning"))) return [];
+  destinationName = destinationName.slice(0, 100);
+  categories = categories.slice(0, 20).map((c) => c.slice(0, 60));
 
   try {
     const categoryHint = categories.length > 0 ? `בתחומי העניין: ${categories.join(", ")}` : "בכל תחום";
@@ -1280,12 +1288,14 @@ export async function optimizeClientItinerary(itineraryId: string, slug: string)
  * arrays are empty (meaning "no restriction") when nothing in the text
  * implies a restriction, rather than risking an empty itinerary. */
 async function resolveFreeTextIntent(
+  userId: string,
   freeText: string,
   availableCategories: string[],
   availableAreas: string[]
 ): Promise<{ categories: string[]; areas: string[] }> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey) {
+  // Gemini costs money per call — capped per user per day; over the cap it falls through to the free keyword match.
+  if (apiKey && (await consumeApiQuota(userId, "aiPlanning"))) {
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
@@ -1350,7 +1360,7 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
   const tripDays = Math.max(1, Math.min(14, Number(formData.get("tripDays") ?? 3)));
   let categories = formData.getAll("categories").map(String);
   let areas = formData.getAll("areas").map(String);
-  const freeText = String(formData.get("freeText") ?? "").trim();
+  const freeText = String(formData.get("freeText") ?? "").trim().slice(0, 400);
 
   if (freeText && categories.length === 0 && areas.length === 0) {
     const [allCategoryNames, allAreas] = await Promise.all([
@@ -1358,6 +1368,7 @@ export async function generateItineraryFromPreferences(destinationId: string, sl
       prisma.area.findMany({ where: { destinationId }, select: { id: true, name: true } }),
     ]);
     const resolved = await resolveFreeTextIntent(
+      userId,
       freeText,
       [...new Set(allCategoryNames.map((c) => c.name))],
       allAreas.map((a) => a.name)

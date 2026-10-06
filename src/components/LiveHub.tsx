@@ -10,6 +10,7 @@ import { weatherIcon, weatherLabel } from "@/lib/weather";
 import { haversineKm } from "@/lib/geo";
 import { isIndoorFriendly, isOutdoorStop } from "@/lib/indoor";
 import { ensureGoogleMaps, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
+import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
 import type { FlatPoi } from "@/lib/data/pois";
 import { DESTINATION_FACTS } from "@/lib/destinationFacts";
 
@@ -48,6 +49,7 @@ function toMinutes(hhmm: string): number {
  * until someone actually asks. */
 async function lookupOpenNow(stop: LiveStop): Promise<OpenState> {
   if (stop.lat == null || stop.lng == null) return "unknown";
+  if (!takeGoogleBudget("places", 2)) return "unknown";
   try {
     await ensureGoogleMaps();
     await loadPlacesLibrary();

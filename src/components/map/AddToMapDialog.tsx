@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import { ensureGoogleMaps, loadPlacesLibrary } from "@/hooks/useGoogleMaps";
+import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
 import { parseGoogleList, type ListItem } from "@/lib/googleList";
 import { mapWithConcurrency, resolvePlaceById, resolvePlaceByQuery, type ResolvedPin } from "@/lib/googlePlaceDetails";
 import { aiSuggestPlaces, saveResolvedPins } from "@/lib/actions/mapImport";
@@ -164,7 +165,7 @@ export function AddToMapDialog({
       try {
         await ensureGoogleMaps();
         await loadPlacesLibrary();
-        if (cancelled) return;
+        if (cancelled || !takeGoogleBudget("places")) return;
         sessionTokenRef.current ??= new google.maps.places.AutocompleteSessionToken();
         const center = getCenter();
         new google.maps.places.AutocompleteService().getPlacePredictions(
