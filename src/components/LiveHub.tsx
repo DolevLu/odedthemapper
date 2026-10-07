@@ -101,7 +101,7 @@ export function LiveHub({
   stops: LiveStop[] | null;
   pois: FlatPoi[];
 }) {
-  const { t, lang } = useTranslation();
+  const { t, lang, cat } = useTranslation();
   const router = useRouter();
   const [now, setNow] = useState<Date | null>(null);
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
@@ -253,7 +253,7 @@ export function LiveHub({
     setAsking(true);
     setReply(null);
     try {
-      setReply(await askTravi(destinationId, q, position, liveContext()));
+      setReply(await askTravi(destinationId, q, position, liveContext(), lang));
     } catch {
       setReply({ text: t("weather.loadFailed"), suggestions: [] });
     }
@@ -338,7 +338,7 @@ export function LiveHub({
           {swapCandidates.map(({ poi, km }) => (
             <div key={poi.id} className="flex items-center justify-between gap-2 text-sm">
               <span className="min-w-0 truncate">
-                {poi.name} <span className="text-xs opacity-50">· {poi.categoryName} · {km.toFixed(1)} km</span>
+                {poi.name} <span className="text-xs opacity-50">· {cat(poi.categoryName)} · {km.toFixed(1)} km</span>
               </span>
               <button
                 onClick={() => applySwap(focusStop, poi.id)}
@@ -503,7 +503,7 @@ export function LiveHub({
                       style={{ borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
                     >
                       <span className="min-w-0 truncate">
-                        {s.name} <span className="text-xs opacity-50">· {s.categoryName}</span>
+                        {s.name} <span className="text-xs opacity-50">· {cat(s.categoryName)}</span>
                       </span>
                       <span className="shrink-0 text-xs opacity-60">{s.distanceKm != null ? `${s.distanceKm.toFixed(1)} km` : "🗺️"}</span>
                     </Link>

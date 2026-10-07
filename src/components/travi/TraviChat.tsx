@@ -5,15 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { askTravi, type TraviSuggestion } from "@/lib/actions/travi";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 type Message = { role: "user" | "travi"; text: string; suggestions?: TraviSuggestion[] };
 
-function formatDistance(km: number): string {
+function formatDistance(km: number, lang: "he" | "en"): string {
+  if (lang === "en") return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
   return km < 1 ? `${Math.round(km * 1000)} מ׳` : `${km.toFixed(1)} ק״מ`;
 }
 
 export function TraviChat({ destinationId, slug }: { destinationId: string; slug: string }) {
   const pathname = usePathname();
+  const { t, lang, area } = useTranslation();
   // The Map screen (root of a destination, "/trip/[slug]" with nothing
   // after it) has its own collapsed points-list bar to clear on mobile;
   // every other screen only has the plain bottom nav, so the button should
@@ -21,7 +24,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
   const isMapScreen = pathname === `/trip/${slug}`;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: "travi", text: "היי! אני טראבי 🧭 שאלו אותי על מסעדות, ברים, אטרקציות בסביבה, או איך להשתמש באפליקציה." },
+    { role: "travi", text: t("travi.greeting") },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,7 +48,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
     setInput("");
     setMessages((m) => [...m, { role: "user", text }]);
     setLoading(true);
-    const reply = await askTravi(destinationId, text, positionRef.current);
+    const reply = await askTravi(destinationId, text, positionRef.current, null, lang);
     setMessages((m) => [...m, { role: "travi", text: reply.text, suggestions: reply.suggestions }]);
     setLoading(false);
   }
@@ -71,7 +74,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
           isMapScreen ? "bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)]" : "bottom-[calc(var(--mobile-nav-height,3.5rem)+0.75rem)]"
         }`}
         style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
-        aria-label="טראבי - עוזר הטיול"
+        aria-label={t("travi.ariaLabel")}
       >
         💬
       </button>
@@ -79,7 +82,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
       {open && (
         <div className="fixed bottom-32 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24 sm:right-72">
           <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
-            <span className="font-bold">💬 טראבי</span>
+            <span className="font-bold">{t("travi.title")}</span>
             <button onClick={() => setOpen(false)} className="text-lg opacity-80 hover:opacity-100">
               ✕
             </button>
@@ -99,9 +102,9 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
                         <div key={s.id} className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-xs text-black shadow-sm">
                           <Link href={`/trip/${slug}?focus=${s.id}`} className="min-w-0 flex-1">
                             <span className="font-semibold">{s.name}</span>
-                            <span className="opacity-60"> · {s.areaName}</span>
-                            {s.distanceKm !== null && <span className="opacity-60"> · {formatDistance(s.distanceKm)}</span>}
-                            <span className="opacity-60"> · 🗺️ הראו במפה</span>
+                            <span className="opacity-60"> · {area(s.areaName)}</span>
+                            {s.distanceKm !== null && <span className="opacity-60"> · {formatDistance(s.distanceKm, lang)}</span>}
+                            <span className="opacity-60"> · {t("travi.showOnMap")}</span>
                           </Link>
                           <FavoriteButton poiId={s.id} slug={slug} />
                         </div>
@@ -111,12 +114,12 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
                 </div>
               </div>
             ))}
-            {loading && <p className="text-xs opacity-50">טראבי חושב...</p>}
+            {loading && <p className="text-xs opacity-50">{t("travi.thinking")}</p>}
           </div>
 
           {!locationEnabled && (
             <button onClick={shareLocation} className="border-t px-3 py-1.5 text-start text-xs opacity-60 hover:opacity-100" style={{ borderColor: "#1A1A1A11" }}>
-              📍 שתפו מיקום כדי לקבל המלצות לפי קרבה
+              {t("travi.shareLocation")}
             </button>
           )}
 
@@ -125,7 +128,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="שאלו את טראבי..."
+              placeholder={t("travi.placeholder")}
               className="min-w-0 flex-1 rounded-full border px-3 py-2 text-sm"
               style={{ borderColor: "#1A1A1A22" }}
             />

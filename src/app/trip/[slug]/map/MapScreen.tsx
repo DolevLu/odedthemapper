@@ -27,7 +27,8 @@ import { CAPITAL_AREA_MATCH_BY_SLUG, CAPITAL_COORDS_BY_SLUG } from "@/lib/capita
 import { suppressMapsErrorDialog } from "@/lib/suppressMapsErrorDialog";
 import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
 import { useTranslation } from "@/components/i18n/LanguageContext";
-import type { DictionaryKey } from "@/lib/i18n/dictionary";
+import { areaLabel, categoryLabel, poiDescription } from "@/lib/i18n/content";
+import type { DictionaryKey, Lang } from "@/lib/i18n/dictionary";
 
 // Only persist a new trail point once the user has actually moved a bit, or
 // enough time has passed — GPS ticks arrive every ~1s and would otherwise
@@ -114,12 +115,13 @@ function starRatingHtml(poiId: string, myRating: number): string {
   return `<div style="display:flex;align-items:center;gap:1px;margin-top:6px" data-rate-row data-poi-id="${poiId}">${stars}</div>`;
 }
 
-function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, myRating: number, isAdmin: boolean, t: (key: DictionaryKey) => string): string {
+function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean, myRating: number, isAdmin: boolean, t: (key: DictionaryKey) => string, lang: Lang = "he"): string {
   const photo = poi.photoUrl
     ? `<img src="${poi.photoUrl}" alt="" style="width:220px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:6px" onerror="this.style.display='none'" />`
     : "";
-  const description = poi.description
-    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${poi.description.slice(0, 220)}</div>`
+  const descText = poiDescription(lang, poi.description);
+  const description = descText
+    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${descText.slice(0, 220)}</div>`
     : "";
   // Plain data-attributed buttons, not React — Google's InfoWindow content is
   // an HTML string, so clicks are wired up separately via the "domready"
@@ -141,7 +143,7 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   const safeLink = (u: string) => (/^https?:\/\//i.test(u) ? escapeHtml(u) : "#");
   const googleDetails = [
     poi.googleRating != null
-      ? line(`⭐ ${poi.googleRating}${poi.googleRatingCount ? ` · ${poi.googleRatingCount.toLocaleString("he-IL")} ${t("map.reviews")}` : ""}`)
+      ? line(`⭐ ${poi.googleRating}${poi.googleRatingCount ? ` · ${poi.googleRatingCount.toLocaleString(lang === "en" ? "en-US" : "he-IL")} ${t("map.reviews")}` : ""}`)
       : "",
     poi.address ? line(`📍 ${escapeHtml(poi.address)}`) : "",
     poi.phone ? line(`<a href="tel:${escapeHtml(poi.phone)}" style="color:#7C3AED">📞 ${escapeHtml(poi.phone)}</a>`) : "",
@@ -154,7 +156,7 @@ function infoWindowHtml(poi: FlatPoi, favorited: boolean, wantsBooking: boolean,
   return `<div style="font-family:'Rubik',sans-serif;padding:8px">
     ${photo}
     <strong>${poi.name}</strong><br/>
-    <span style="opacity:.6;font-size:12px">${poi.categoryName} · ${poi.areaName}</span>
+    <span style="opacity:.6;font-size:12px">${categoryLabel(lang, poi.categoryName)} · ${areaLabel(lang, poi.areaName)}</span>
     ${googleDetails}
     ${description}
     ${starRatingHtml(poi.id, myRating)}
@@ -1295,7 +1297,7 @@ export function MapScreen({
     }
     setSelectedPoiId(poi.id);
     infoWindowRef.current?.setContent(
-      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), ratingsByPoiIdRef.current[poi.id] ?? 0, isAdmin, t)
+      infoWindowHtml(poi, favoritedIdsRef.current.has(poi.id), wantsBookingIdsRef.current.has(poi.id), ratingsByPoiIdRef.current[poi.id] ?? 0, isAdmin, t, lang)
     );
     infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
     if (routeModeActiveRef.current) {
@@ -1825,7 +1827,7 @@ export function MapScreen({
                 <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0 sm:h-3.5 sm:w-3.5">
                   <path d={pathForCategory(catName)} fill={catActive ? "white" : "black"} />
                 </svg>
-                <span style={catHidden ? { textDecoration: "line-through" } : undefined}>{catName}</span>
+                <span style={catHidden ? { textDecoration: "line-through" } : undefined}>{categoryLabel(lang, catName)}</span>
               </button>
               <button
                 onClick={(e) => {
@@ -2181,7 +2183,7 @@ export function MapScreen({
           </span>
           <span className="ps-4 text-xs opacity-60">
             {"distanceKm" in poi ? `${formatDistance((poi as unknown as { distanceKm: number }).distanceKm, t)} · ` : ""}
-            {poi.areaName}
+            {areaLabel(lang, poi.areaName)}
             {routeToPoiId === poi.id && t("map.activeRouteSuffix")}
           </span>
         </span>

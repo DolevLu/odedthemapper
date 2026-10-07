@@ -79,8 +79,8 @@ export default async function RootLayout({
     // hydrates, so the server-rendered markup never has them — an expected,
     // deliberate mismatch on this one element, not a real bug to warn about.
     <html
-      lang="he"
-      dir="rtl"
+      lang={initialLang}
+      dir={initialLang === "en" ? "ltr" : "rtl"}
       className={`h-full antialiased ${rubik.variable}`}
       // Highest-specificity way to point the site's existing --font-heading/--font-body/--font-display-latin
       // tokens (globals.css) at the self-hosted font without depending on cascade order between this and that

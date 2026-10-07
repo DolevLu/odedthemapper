@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { fetchWeatherForecast, weatherIcon, weatherLabel } from "@/lib/weather";
 import { isGenericAreaName } from "@/lib/geo";
 import { getLang, getServerT } from "@/lib/i18n/server";
+import { destName } from "@/lib/i18n/content";
+
 
 export default async function WeatherPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -48,7 +50,7 @@ export default async function WeatherPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-        {t("weather.title")} {destination.name}
+        {t("weather.title")} {destName(lang, destination.slug, destination.name)}
       </h1>
 
       {!forecast ? (

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setTripStartDateTime } from "@/lib/actions/trip";
 import { flagForSlug } from "@/lib/countryFlags";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** Formats a Date as the value a <input type="datetime-local"> expects
  * ("YYYY-MM-DDTHH:mm"), using the browser's local time components — NOT
@@ -48,6 +49,7 @@ export function TodayCard({
   myDestinations: { slug: string; name: string }[];
 }) {
   const router = useRouter();
+  const { t, lang } = useTranslation();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!targetDateTimeIso);
   const [dateTimeInput, setDateTimeInput] = useState(() =>
@@ -144,7 +146,7 @@ export function TodayCard({
        * the photo's own brightness/colors. */}
       {hidden ? (
         <button onClick={() => setHiddenPersist(false)} className="self-center text-xs underline opacity-60 hover:opacity-100">
-          ⏱️ הצגת הספירה לאחור
+          {t("today.show")}
         </button>
       ) : (
       <div
@@ -166,7 +168,7 @@ export function TodayCard({
 
         <div className="relative z-10 flex w-full flex-col items-center gap-3">
           <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-            {destinationName} מחכה לנו
+            {destinationName} {t("today.waitsSuffix")}
           </h1>
 
           {!editing && countdown ? (
@@ -176,29 +178,29 @@ export function TodayCard({
                * regardless of the page's own RTL direction, which would
                * otherwise flip the DOM order visually right-to-left. */}
               <div dir="ltr" className="flex items-center gap-3 sm:gap-5">
-                <CountdownBlock value={countdown.days} label="ימים" />
+                <CountdownBlock value={countdown.days} label={t("today.days")} />
                 <span className="pb-4 text-2xl font-bold opacity-30">:</span>
-                <CountdownBlock value={countdown.hours} label="שעות" />
+                <CountdownBlock value={countdown.hours} label={t("today.hours")} />
                 <span className="pb-4 text-2xl font-bold opacity-30">:</span>
-                <CountdownBlock value={countdown.minutes} label="דקות" />
+                <CountdownBlock value={countdown.minutes} label={t("today.minutes")} />
               </div>
               <button onClick={openEdit} className="text-xs underline opacity-60 hover:opacity-100">
-                ✏️ {targetDate!.toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })} · עריכת מועד הטיסה
+                ✏️ {targetDate!.toLocaleString(lang === "en" ? "en-US" : "he-IL", { dateStyle: "short", timeStyle: "short" })} · {t("today.editFlight")}
               </button>
             </>
           ) : !editing && tripAlreadyHere ? (
             <>
               <p className="text-lg font-bold" style={{ color: "var(--primary)" }}>
-                ✈️ הטיול כבר כאן - תיהנו!
+                {t("today.tripHere")}
               </p>
               <button onClick={openEdit} className="text-xs underline opacity-60 hover:opacity-100">
-                ✏️ עריכת מועד הטיסה
+                ✏️ {t("today.editFlight")}
               </button>
             </>
           ) : (
             <div className="flex flex-col items-center gap-2">
               <p className="text-sm opacity-70">
-                {targetDateTimeIso ? "עדכנו את מועד הטיסה:" : "עדיין לא הוגדר מועד טיסה - הוסיפו טיסה בלוגיסטיקה, או קבעו כאן מועד יעד:"}
+                {targetDateTimeIso ? t("today.updateFlight") : t("today.noFlight")}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <input
@@ -214,17 +216,17 @@ export function TodayCard({
                   className="rounded-full px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   style={{ background: "var(--primary)" }}
                 >
-                  שמירה
+                  {t("today.save")}
                 </button>
                 {targetDateTimeIso && (
                   <button onClick={() => setEditing(false)} className="rounded-full px-3 py-2 text-xs font-semibold opacity-60">
-                    ביטול
+                    {t("today.cancel")}
                   </button>
                 )}
               </div>
               {!targetDateTimeIso && (
                 <Link href={`/trip/${slug}/logistics`} className="text-xs underline opacity-60">
-                  או הוסיפו כרטיס טיסה בלוגיסטיקה
+                  {t("today.addInLogistics")}
                 </Link>
               )}
             </div>
@@ -232,8 +234,8 @@ export function TodayCard({
         </div>
         <button
           onClick={() => setHiddenPersist(true)}
-          aria-label="הסתרת הספירה לאחור"
-          title="הסתרת הספירה לאחור"
+          aria-label={t("today.hide")}
+          title={t("today.hide")}
           className="absolute end-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full text-sm shadow-sm"
           style={{ background: "rgba(255,255,255,0.85)", color: "#333" }}
         >

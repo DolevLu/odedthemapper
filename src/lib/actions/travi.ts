@@ -10,29 +10,37 @@ import { geminiGenerate } from "@/lib/gemini";
 export type TraviSuggestion = { id: string; name: string; categoryName: string; areaName: string; distanceKm: number | null };
 export type TraviReply = { text: string; suggestions: TraviSuggestion[] };
 
-const CATEGORY_INTENTS: { keywords: string[]; categoryFragments: string[]; label: string }[] = [
+const CATEGORY_INTENTS: { keywords: string[]; categoryFragments: string[]; label: string; enKeywords: RegExp; labelEn: string }[] = [
   {
     keywords: ["מסעד", "לאכול", "לאכל", "ארוחת ערב", "ארוחת צהריים", "ערב", "צהריים", "רעב", "רעבה", "אוכל", "מנה", "שף", "פיצה", "פסטה", "המבורגר", "לזון"],
     categoryFragments: ["מסעד"],
     label: "מסעדות",
+    enKeywords: /\b(restaurants?|eat|eating|food|dinner|lunch|hungry|meal|pizza|pasta|burger)\b/i,
+    labelEn: "restaurants",
   },
   {
     keywords: ["קפה", "בראנץ", "קפא", "ארוחת בוקר", "בוקר", "קרואסון", "עוגה", "מאפה", "אספרסו", "לתת קפה"],
     categoryFragments: ["קפה", "בראנץ"],
     label: "בתי קפה",
+    enKeywords: /\b(coffee|cafes?|cafés?|brunch|breakfast|croissant|pastry|espresso|cake)\b/i,
+    labelEn: "cafés",
   },
   {
     keywords: ["בר ", "לבר", "שתייה", "שתות", "לשתות", "דרינק", "חיי לילה", "מסיבה", "קלאב", "בירה", "יין", "אלכוהול", "קוקטייל", "פאב"],
     categoryFragments: ["בר", "לילה", "מסיב"],
     label: "ברים וחיי לילה",
+    enKeywords: /\b(bars?|drinks?|pubs?|beer|wine|cocktails?|nightlife|clubs?|party)\b/i,
+    labelEn: "bars and nightlife spots",
   },
-  { keywords: ["מוזיאון", "תרבות", "גלריה", "אמנות", "תערוכה"], categoryFragments: ["מוזיאון"], label: "מוזיאונים" },
-  { keywords: ["פארק", "טבע", "טיול רגלי", "ירוק", "גן ציבורי", "פיקניק", "שביל"], categoryFragments: ["פארק"], label: "פארקים" },
-  { keywords: ["מלון", "לינה", "לישון", "לינה", "הוסטל", "לחפש חדר"], categoryFragments: ["מלון"], label: "מלונות" },
+  { keywords: ["מוזיאון", "תרבות", "גלריה", "אמנות", "תערוכה"], categoryFragments: ["מוזיאון"], label: "מוזיאונים", enKeywords: /\b(museums?|galler(?:y|ies)|art|exhibitions?)\b/i, labelEn: "museums" },
+  { keywords: ["פארק", "טבע", "טיול רגלי", "ירוק", "גן ציבורי", "פיקניק", "שביל"], categoryFragments: ["פארק"], label: "פארקים", enKeywords: /\b(parks?|nature|picnic|gardens?|green)\b/i, labelEn: "parks" },
+  { keywords: ["מלון", "לינה", "לישון", "לינה", "הוסטל", "לחפש חדר"], categoryFragments: ["מלון"], label: "מלונות", enKeywords: /\b(hotels?|hostels?|sleep|stay|accommodation)\b/i, labelEn: "hotels" },
   {
     keywords: ["אטרקצי", "לעשות", "לבקר", "פעילות", "מה יש", "מומלץ", "כדאי", "אתר תיירות", "נוף", "לצלם", "משהו מעניין", "בילוי", "מה אפשר"],
     categoryFragments: ["אטרקצי", "כללי"],
     label: "אטרקציות",
+    enKeywords: /\b(attractions?|things to do|sightseeing|visit|views?|viewpoints?|photos?|something interesting|activity|activities|what to do|must[- ]see|recommendw*)\b/i,
+    labelEn: "attractions",
   },
 ];
 
@@ -59,6 +67,24 @@ const FAQ_INTENTS: { keywords: string[]; answer: string }[] = [
   { keywords: ["שיחון", "מילים בשפה", "לתרגם", "תרגום", "הגייה"], answer: "במסך \"שיחון\" יש מילים וביטויים שימושיים בשפה המקומית, כולל הקראה קולית של ההגייה." },
   { keywords: ["ציוד", "מה לקחת", "צ'ק ליסט", "רשימת אריזה", "מה לארוז"], answer: "במסך \"ציוד וצ'ק ליסט\" יש רשימת ציוד מומלצת לפני הטיסה, עם אפשרות לסמן מה כבר ארזתם." },
   { keywords: ["אלבום", "תמונות מהטיול", "וידאו", "קולאז'"], answer: "במסך \"אלבום\" אפשר להעלות תמונות ווידאו מהטיול וליצור מהם קולאז'ים." },
+];
+
+// English counterpart of FAQ_INTENTS - same screens, same answers, matched by regex on the lowercased question.
+const FAQ_EN: { re: RegExp; answer: string }[] = [
+  { re: /\b(use|using|filter)\b.*\bmap\b|\bmap\b.*\b(filter|categor)/, answer: "On the Map screen you see every point on a Google map, colored by category. Tap a pin for details, filter by category with the buttons at the top, and tap 📍 to sort by distance from you." },
+  { re: /\b(itinerary|plan (my|the) (trip|day)|build (a )?route|schedule)\b/, answer: "On the Itinerary screen you can add days and stops, drag to reorder, and even ask the app to build an itinerary automatically from the days and interests you pick." },
+  { re: /\b(budget|expenses?|spent|spending)\b/, answer: "On the Expenses screen you can log expenses by day, set an overall budget, and see how much is left for today." },
+  { re: /\b(favou?rites?|save (a )?(place|point)|saved)\b/, answer: "Tap the heart ⭐ on any point on the map or in a list to save it - it will appear on the Favorites screen." },
+  { re: /\b(offline|no internet|without internet|no signal)\b/, answer: "After you've opened each screen once, its content is saved on your device and available even without internet." },
+  { re: /\b(my location|gps|navigate|directions|where am i)\b/, answer: "On the Map screen the 📍 My location button shows where you are, sorts the list by distance, and if you tap a point it draws a walking route to it." },
+  { re: /\b(quiz|trivia|game)\b/, answer: "The Quizzes screen has short quizzes about sports, history and geography of the destination." },
+  { re: /\b(documents?|flight tickets?|booking confirmation|logistics|passport|visa|travel insurance)\b/, answer: "On the Logistics screen you can save flights, hotels, tickets, passport, visa and insurance - with automatic reminders before they come up." },
+  { re: /\b(holidays?|bank holiday|upcoming events?)\b/, answer: "On the Bookable screen there is a calendar of upcoming holidays at the destination, so you know in advance about days when businesses may operate differently." },
+  { re: /\b(what now|what should i do now|what to do now|recommendation now|travi live)\b/, answer: "On the Travi Live (What now) screen you get recommendations by proximity, the local time vs. your home time, and an emergency-info button with outlets, visa and tips." },
+  { re: /\b(weather|forecast|rain|temperature)\b/, answer: "The Weather screen shows the forecast for the next two days at the destination." },
+  { re: /\b(phrasebook|translate|translation|pronunciation|local words)\b/, answer: "The Phrasebook screen has useful words and phrases in the local language, including spoken pronunciation." },
+  { re: /\b(packing|what to pack|checklist|gear)\b/, answer: "The Packing & checklist screen has a recommended gear list for before the flight, with the option to tick off what you've already packed." },
+  { re: /\b(album|trip photos|videos?|collage)\b/, answer: "On the Album screen you can upload photos and videos from the trip and turn them into collages." },
 ];
 
 // Short reference of every screen, given to Gemini as context so it can
@@ -110,7 +136,7 @@ async function rawSearch(destinationId: string, q: string): Promise<TraviSuggest
 }
 
 function matchIntentSuggestions(rawQ: string, q: string) {
-  const intent = CATEGORY_INTENTS.find((c) => c.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
+  const intent = CATEGORY_INTENTS.find((c) => c.keywords.some((k) => rawQ.includes(k) || q.includes(k)) || c.enKeywords.test(rawQ));
   if (!intent) return null;
   return { intent };
 }
@@ -127,11 +153,12 @@ async function askGemini(params: {
   suggestions: TraviSuggestion[];
   intentLabel: string | null;
   liveContext?: string | null;
+  lang?: "he" | "en";
 }): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const { message, destinationName, suggestions, intentLabel, liveContext } = params;
+  const { message, destinationName, suggestions, intentLabel, liveContext, lang = "he" } = params;
 
   const suggestionsBlock =
     suggestions.length > 0
@@ -140,7 +167,7 @@ async function askGemini(params: {
           .join("\n")}`
       : "לא נמצאו נקודות עניין רלוונטיות במאגר שלנו לשאלה הזו - אם השאלה היא על נקודת עניין/מקום ביעד, ציינו זאת בעדינות והציעו לחפש במפה; אם זו שאלה כללית (טיפ נסיעה, תרגום, ידע כללי, מזג אוויר, וכו') ענו עליה ישירות מהידע הכללי שלכם.";
 
-  const systemPrompt = `אתם "טראבי" 🧭, עוזר טיולים ידידותי בתוך אפליקציית הטיולים "טראבי" ליעד ${destinationName}. ענו בעברית, קצר וממוקד (2-4 משפטים לכל היותר), בטון חם וישיר.
+  const systemPrompt = `אתם "טראבי" 🧭, עוזר טיולים ידידותי בתוך אפליקציית הטיולים "טראבי" ליעד ${destinationName}. ${lang === "en" ? "ענו באנגלית בלבד (ANSWER IN ENGLISH ONLY, even though these instructions are in Hebrew)" : "ענו בעברית"}, קצר וממוקד (2-4 משפטים לכל היותר), בטון חם וישיר.
 
 ${APP_SCREENS_REFERENCE}
 
@@ -185,15 +212,19 @@ export async function askTravi(
   destinationId: string,
   message: string,
   userPosition?: { lat: number; lng: number } | null,
-  liveContext?: string | null
+  liveContext?: string | null,
+  lang: "he" | "en" = "he"
 ): Promise<TraviReply> {
+  const en = lang === "en";
   // Capped: the whole message is pasted into the Gemini prompt, so an unbounded one is an unbounded input-token bill.
   const rawQ = message.trim().slice(0, 500).toLowerCase();
-  if (!rawQ) return { text: "ספרו לי מה אתם מחפשים - למשל \"מסעדה טובה בסביבה\" או \"מה יש לעשות פה\".", suggestions: [] };
+  if (!rawQ) return { text: en ? "Tell me what you're looking for - for example \"a good restaurant nearby\" or \"what is there to do here\"." : "ספרו לי מה אתם מחפשים - למשל \"מסעדה טובה בסביבה\" או \"מה יש לעשות פה\".", suggestions: [] };
 
-  if (["שלום", "היי", "hi", "hello", "מה קורה", "מה נשמע"].some((g) => rawQ.includes(g))) {
+  if (["שלום", "היי", "מה קורה", "מה נשמע"].some((g) => rawQ.includes(g)) || /^(hi|hello|hey)\b/.test(rawQ)) {
     return {
-      text: "היי! אני טראבי 🧭 - אני מכיר את כל הנקודות שיש לכם ביעד הזה. תשאלו אותי דברים כמו \"מסעדה טובה בסביבה\", \"מה יש לעשות היום\", או שאלות על השימוש באפליקציה.",
+      text: en
+        ? "Hi! I'm Travi 🧭 - I know every point you have in this destination. Ask me things like \"a good restaurant nearby\", \"what is there to do today\", or how to use the app."
+        : "היי! אני טראבי 🧭 - אני מכיר את כל הנקודות שיש לכם ביעד הזה. תשאלו אותי דברים כמו \"מסעדה טובה בסביבה\", \"מה יש לעשות היום\", או שאלות על השימוש באפליקציה.",
       suggestions: [],
     };
   }
@@ -204,14 +235,16 @@ export async function askTravi(
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) {
-    return { text: "צריך להתחבר כדי לדבר עם טראבי.", suggestions: [] };
+    return { text: en ? "You need to sign in to talk to Travi." : "צריך להתחבר כדי לדבר עם טראבי.", suggestions: [] };
   }
   const dailyQuota = await getAiChatDailyQuota(userId);
   if (dailyQuota !== null) {
     const { allowed } = await consumeAiChatQuota(userId, dailyQuota);
     if (!allowed) {
       return {
-        text: `הגעתם למכסת ${dailyQuota} ההודעות היומיות שלכם לטראבי 🧭 להיום - המכסה מתאפסת מחר. שדרוג לחבילה גדולה יותר מעלה גם את המכסה היומית.`,
+        text: en
+          ? `You've reached your daily limit of ${dailyQuota} messages to Travi 🧭 - it resets tomorrow.`
+          : `הגעתם למכסת ${dailyQuota} ההודעות היומיות שלכם לטראבי 🧭 להיום - המכסה מתאפסת מחר. שדרוג לחבילה גדולה יותר מעלה גם את המכסה היומית.`,
         suggestions: [],
       };
     }
@@ -225,7 +258,7 @@ export async function askTravi(
   let intentLabel: string | null = null;
   const matched = matchIntentSuggestions(rawQ, q);
   if (matched) {
-    intentLabel = matched.intent.label;
+    intentLabel = en ? matched.intent.labelEn : matched.intent.label;
     const pois = await prisma.pointOfInterest.findMany({
       where: {
         geometryType: "point",
@@ -261,26 +294,35 @@ export async function askTravi(
     suggestions,
     intentLabel,
     liveContext: liveContext?.slice(0, 600) ?? null,
+    lang,
   });
   if (geminiText) return { text: geminiText, suggestions };
 
   // Gemini unavailable/failed — fall back to the original deterministic logic.
-  const faqMatch = FAQ_INTENTS.find((f) => f.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
-  if (faqMatch) return { text: faqMatch.answer, suggestions: [] };
+  const faqMatch = en ? FAQ_EN.find((f) => f.re.test(rawQ)) : FAQ_INTENTS.find((f) => f.keywords.some((k) => rawQ.includes(k) || q.includes(k)));
+  if (faqMatch) return { text: "answer" in faqMatch ? faqMatch.answer : "", suggestions: [] };
 
   if (suggestions.length > 0) {
     return {
-      text: intentLabel
-        ? userPosition
-          ? `הנה ${intentLabel} קרובים אליכם:`
-          : `הנה כמה ${intentLabel} מהמאגר שלנו - הפעילו מיקום כדי שאמיין לפי קרבה:`
-        : "מצאתי כמה תוצאות שעשויות להתאים מהמאגר שלנו:",
+      text: en
+        ? intentLabel
+          ? userPosition
+            ? `Here are ${intentLabel} near you:`
+            : `Here are some ${intentLabel} from our database - turn on location and I'll sort them by distance:`
+          : "I found a few results that might fit, from our database:"
+        : intentLabel
+          ? userPosition
+            ? `הנה ${intentLabel} קרובים אליכם:`
+            : `הנה כמה ${intentLabel} מהמאגר שלנו - הפעילו מיקום כדי שאמיין לפי קרבה:`
+          : "מצאתי כמה תוצאות שעשויות להתאים מהמאגר שלנו:",
       suggestions,
     };
   }
 
   return {
-    text: "לא הצלחתי למצוא משהו מתאים מהמאגר שלנו לשאלה הזו. נסו לנסח אחרת (למשל \"בר בסביבה\", \"קולוסיאום\" או שם מקום ספציפי), או חפשו ישירות במפה שלנו עם הסינון לפי קטגוריה.",
+    text: en
+      ? "I couldn't find anything suitable in our database for that. Try rephrasing (for example \"a bar nearby\" or a specific place name), or search the map directly with the category filter."
+      : "לא הצלחתי למצוא משהו מתאים מהמאגר שלנו לשאלה הזו. נסו לנסח אחרת (למשל \"בר בסביבה\", \"קולוסיאום\" או שם מקום ספציפי), או חפשו ישירות במפה שלנו עם הסינון לפי קטגוריה.",
     suggestions: [],
   };
 }

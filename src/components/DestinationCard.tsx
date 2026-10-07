@@ -4,6 +4,7 @@ import { DestinationThemeProvider } from "@/components/theme/DestinationThemePro
 import type { DestinationSummary } from "@/lib/data/destinations";
 import { proxiedImageUrl } from "@/lib/imageProxy";
 import { translate, type Lang } from "@/lib/i18n/dictionary";
+import { destName, destTagline } from "@/lib/i18n/content";
 
 // Deliberately a plain function taking a `lang` prop (not an async Server
 // Component calling getServerT()) — this card is rendered from BOTH a
@@ -43,7 +44,7 @@ export function DestinationCard({ destination, lang = "he" }: { destination: Des
             // optimizer outright over its User-Agent policy.
             <Image
               src={proxiedImageUrl(thumb)}
-              alt={destination.name}
+              alt={destName(lang, destination.slug, destination.name)}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               loading="lazy"
@@ -59,7 +60,7 @@ export function DestinationCard({ destination, lang = "he" }: { destination: Des
           )}
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
           <span className="absolute bottom-2 right-3 text-lg font-extrabold text-white drop-shadow">
-            {destination.name}
+            {destName(lang, destination.slug, destination.name)}
           </span>
           {destination.isBestSeller && (
             <span
@@ -72,7 +73,7 @@ export function DestinationCard({ destination, lang = "he" }: { destination: Des
         </div>
 
         <div className="flex flex-1 flex-col gap-3 p-5">
-          {destination.tagline && <p className="text-sm opacity-70" style={{ color: "var(--text)" }}>{destination.tagline}</p>}
+          {destTagline(lang, destination.slug, destination.tagline) && <p className="text-sm opacity-70" style={{ color: "var(--text)" }}>{destTagline(lang, destination.slug, destination.tagline)}</p>}
 
           <div className="mt-auto flex items-center justify-between pt-3 text-sm">
             <div className="flex flex-col gap-0.5 opacity-80" style={{ color: "var(--text)" }}>

@@ -27,7 +27,7 @@ export function ItineraryWizard({
 }) {
   const router = useRouter();
   const { requestConfirm, modal: confirmModal } = useSaveOrDiscardFlow(destinationId, slug);
-  const { t } = useTranslation();
+  const { t, cat, area } = useTranslation();
   const label = triggerLabel ?? t("wizard.defaultTrigger");
   const [open, setOpen] = useState(!hasExistingDays);
   const [mode, setMode] = useState<"filters" | "freeText">("filters");
@@ -148,7 +148,7 @@ export function ItineraryWizard({
                     color: selectedCategories.includes(c) ? "white" : "var(--text)",
                   }}
                 >
-                  {c}
+                  {cat(c)}
                 </button>
               ))}
             </div>
@@ -169,7 +169,7 @@ export function ItineraryWizard({
                       color: selectedAreas.includes(a.id) ? "white" : "var(--text)",
                     }}
                   >
-                    {a.name}
+                    {area(a.name)}
                   </button>
                 ))}
               </div>

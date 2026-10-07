@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { DICTIONARY, type DictionaryKey, type Lang } from "@/lib/i18n/dictionary";
+import { areaLabel, categoryLabel, destName, destTagline } from "@/lib/i18n/content";
 
 function applyLang(lang: Lang) {
   document.documentElement.lang = lang === "he" ? "he" : "en";
@@ -17,6 +18,11 @@ type LanguageContextValue = {
   lang: Lang;
   setLang: (lang: Lang) => void;
   t: (key: DictionaryKey) => string;
+  /** Display-only English labels for Hebrew DB content (see lib/i18n/content.ts); identity in Hebrew. */
+  cat: (name: string) => string;
+  area: (name: string) => string;
+  destName: (slug: string, name: string) => string;
+  destTagline: (slug: string, tagline: string | null) => string | null;
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -60,7 +66,14 @@ export function LanguageProvider({ children, initialLang }: { children: ReactNod
     return DICTIONARY[key]?.[lang] ?? DICTIONARY[key]?.he ?? key;
   }
 
-  return <LanguageContext.Provider value={{ lang, setLang, t }}>{children}</LanguageContext.Provider>;
+  const content = {
+    cat: (name: string) => categoryLabel(lang, name),
+    area: (name: string) => areaLabel(lang, name),
+    destName: (slug: string, name: string) => destName(lang, slug, name),
+    destTagline: (slug: string, tagline: string | null) => destTagline(lang, slug, tagline),
+  };
+
+  return <LanguageContext.Provider value={{ lang, setLang, t, ...content }}>{children}</LanguageContext.Provider>;
 }
 
 export function useTranslation(): LanguageContextValue {

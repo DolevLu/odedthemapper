@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import { categoryLabel, poiDescription } from "@/lib/i18n/content";
+import type { Lang } from "@/lib/i18n/dictionary";
 import { colorForDay, haversineKm, transportIconFor } from "@/lib/geo";
 import { DECLUTTERED_MAP_STYLES, categoryMarkerIcon, currentLocationIcon } from "@/lib/mapStyles";
 
@@ -114,12 +117,13 @@ function numberedStopIcon(stopNumber: number, color: string, isCurrent: boolean,
 // layer, not competing with the route's own numbered stops for attention.
 const GHOST_RADIUS_PX = 4;
 
-function otherPoiInfoWindowHtml(p: OtherPoi): string {
+function otherPoiInfoWindowHtml(p: OtherPoi, lang: Lang = "he"): string {
+  const en = lang === "en";
   const photo = p.photoUrl
     ? `<img src="${p.photoUrl}" alt="" style="width:200px;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
   const description = p.description
-    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${p.description.slice(0, 200)}</div>`
+    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${(poiDescription(lang, p.description) ?? "").slice(0, 200)}</div>`
     : "";
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const safe = (u: string) => (/^https?:\/\//i.test(u) ? esc(u) : "#");
@@ -127,32 +131,33 @@ function otherPoiInfoWindowHtml(p: OtherPoi): string {
   // Same details block the main Map screen's popup shows for a point linked
   // to a Google Place, so a point reads the same wherever it's opened.
   const google = [
-    p.googleRating != null ? line(`⭐ ${p.googleRating}${p.googleRatingCount ? ` · ${p.googleRatingCount.toLocaleString("he-IL")} ביקורות` : ""}`) : "",
+    p.googleRating != null ? line(`⭐ ${p.googleRating}${p.googleRatingCount ? ` · ${p.googleRatingCount.toLocaleString(en ? "en-US" : "he-IL")} ${en ? "reviews" : "ביקורות"}` : ""}`) : "",
     p.address ? line(`📍 ${esc(p.address)}`) : "",
     p.phone ? line(`<a href="tel:${esc(p.phone)}" style="color:#7C3AED">📞 ${esc(p.phone)}</a>`) : "",
-    p.website ? line(`<a href="${safe(p.website)}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 אתר</a>`) : "",
-    p.googleUrl ? line(`<a href="${safe(p.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">🗺️ פתיחה ב-Google Maps</a>`) : "",
+    p.website ? line(`<a href="${safe(p.website)}" target="_blank" rel="noopener" style="color:#7C3AED">🌐 ${en ? "Website" : "אתר"}</a>`) : "",
+    p.googleUrl ? line(`<a href="${safe(p.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">🗺️ ${en ? "Open in Google Maps" : "פתיחה ב-Google Maps"}</a>`) : "",
     p.googleHours && p.googleHours.length > 0
       ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${p.googleHours.map((h) => `<div>${esc(h)}</div>`).join("")}</details>`
       : "",
   ].join("");
-  return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong><div style="font-size:11px;opacity:.6;margin-top:2px">${p.categoryName}</div>${google}${description}</div>`;
+  return `<div style="font-family:'Rubik',sans-serif;padding:8px">${photo}<strong>${p.name}</strong><div style="font-size:11px;opacity:.6;margin-top:2px">${categoryLabel(lang, p.categoryName)}</div>${google}${description}</div>`;
 }
 
-function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, totalDays: number, movable: boolean): string {
+function infoWindowHtml(p: MapDay["points"][number], currentDayIndex: number, totalDays: number, movable: boolean, lang: Lang = "he"): string {
+  const en = lang === "en";
   const photo = p.photoUrl
     ? `<img src="${p.photoUrl}" alt="" style="width:200px;height:110px;object-fit:cover;border-radius:8px;margin-bottom:6px" />`
     : "";
   const description = p.description
-    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${p.description.slice(0, 200)}</div>`
+    ? `<div style="font-size:12px;opacity:.75;margin-top:4px;max-width:220px">${(poiDescription(lang, p.description) ?? "").slice(0, 200)}</div>`
     : "";
   const otherDays = Array.from({ length: totalDays }, (_, i) => i + 1).filter((d) => d !== currentDayIndex);
   const moveButtons =
     movable && otherDays.length > 0
       ? `<div style="margin-top:8px;max-width:220px">
-          <div style="font-size:11px;opacity:.6;margin-bottom:4px">העברה ליום:</div>
+          <div style="font-size:11px;opacity:.6;margin-bottom:4px">${en ? "Move to day:" : "העברה ליום:"}</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">
-            ${otherDays.map((d) => `<button data-move-btn data-item-id="${p.id}" data-day="${d}" style="${MOVE_BTN_STYLE}">יום ${d}</button>`).join("")}
+            ${otherDays.map((d) => `<button data-move-btn data-item-id="${p.id}" data-day="${d}" style="${MOVE_BTN_STYLE}">${en ? "Day" : "יום"} ${d}</button>`).join("")}
           </div>
         </div>`
       : "";
@@ -196,6 +201,11 @@ export function DayRouteMap({
    * nearby is still one click away — see OtherPoi. */
   otherPois?: OtherPoi[];
 }) {
+  const { t, lang } = useTranslation();
+  const langRef = useRef<Lang>(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
   const { loaded, error } = useGoogleMaps();
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -357,7 +367,7 @@ export function DayRouteMap({
         const marker = new google.maps.Marker({
           position: { lat: p.lat, lng: p.lng },
           map: mapRef.current!,
-          title: `יום ${day.dayIndex} · ${p.name}${isCurrent ? " (עכשיו)" : isDone ? " (בוצע)" : ""}`,
+          title: `${langRef.current === "en" ? "Day" : "יום"} ${day.dayIndex} · ${p.name}${isCurrent ? (langRef.current === "en" ? " (now)" : " (עכשיו)") : isDone ? (langRef.current === "en" ? " (done)" : " (בוצע)") : ""}`,
           // Same "where am I" cue as the list view's green highlight — a
           // slightly bigger circle with a green ring instead of the usual
           // white one, so the current stop reads at a glance on the map too.
@@ -372,7 +382,7 @@ export function DayRouteMap({
         });
         marker.addListener("click", () => {
           revertRevealedRef.current?.();
-          infoWindowRef.current?.setContent(infoWindowHtml(p, day.dayIndex, days.length, Boolean(onMoveToDayRef.current)));
+          infoWindowRef.current?.setContent(infoWindowHtml(p, day.dayIndex, days.length, Boolean(onMoveToDayRef.current), langRef.current));
           infoWindowRef.current?.open({ map: mapRef.current!, anchor: marker });
         });
         overlaysRef.current.push(marker);
@@ -443,7 +453,7 @@ export function DayRouteMap({
         marker.setTitle(p.name);
         marker.setIcon(categoryMarkerIcon(p.categoryColor, p.iconCategory ?? p.categoryName, 10, false, p.colorHex, p.name));
         marker.setMap(map);
-        infoWindowRef.current?.setContent(otherPoiInfoWindowHtml(p));
+        infoWindowRef.current?.setContent(otherPoiInfoWindowHtml(p, langRef.current));
         infoWindowRef.current?.open({ map, anchor: marker });
       });
       circles.set(p.id, { circle, lat: p.lat });
@@ -571,7 +581,7 @@ export function DayRouteMap({
                 color: activeDayIndex == null ? "white" : "var(--text)",
               }}
             >
-              כל הימים
+              {t("routeMap.allDays")}
             </button>
             {days.map((day) => {
               const color = colorForDay(day.dayIndex - 1);
@@ -586,7 +596,7 @@ export function DayRouteMap({
                     color: active ? "white" : "var(--text)",
                   }}
                 >
-                  יום {day.dayIndex}
+                  {t("routeMap.day")} {day.dayIndex}
                 </button>
               );
             })}
@@ -608,14 +618,14 @@ export function DayRouteMap({
             className="rounded-full px-2.5 py-1"
             style={{ background: mapType === "roadmap" ? "var(--primary)" : "transparent", color: mapType === "roadmap" ? "white" : "#1a1a1a" }}
           >
-            מפה
+            {t("routeMap.map")}
           </button>
           <button
             onClick={() => setMapType("satellite")}
             className="rounded-full px-2.5 py-1"
             style={{ background: mapType === "satellite" ? "var(--primary)" : "transparent", color: mapType === "satellite" ? "white" : "#1a1a1a" }}
           >
-            לוויין
+            {t("routeMap.satellite")}
           </button>
         </div>
         {/* One small switch for the whole grey "other points" layer — right
@@ -625,7 +635,7 @@ export function DayRouteMap({
           <button
             onClick={() => setShowGhosts((v) => !v)}
             aria-pressed={showGhosts}
-            title={showGhosts ? "הסתרת נקודות נוספות" : "הצגת נקודות נוספות"}
+            title={showGhosts ? t("routeMap.moreHide") : t("routeMap.moreShow")}
             className={`absolute z-10 flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold shadow-md ${
               mobileFullScreen ? "start-2 top-[calc(6.25rem+env(safe-area-inset-top))] sm:end-2 sm:start-auto sm:top-12" : "end-2 top-12"
             }`}
@@ -636,7 +646,7 @@ export function DayRouteMap({
               className="inline-block h-2.5 w-2.5 rounded-full"
               style={{ background: showGhosts ? "#9CA3AF" : "transparent", border: "1.5px solid #9CA3AF" }}
             />
-            נקודות נוספות
+            {t("routeMap.more")}
           </button>
         )}
       </div>

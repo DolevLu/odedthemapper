@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** Shown to a newly-paying user who hasn't done any of the 3 basic setup
  * steps yet for this destination — without this, a first-time visitor lands
@@ -11,6 +12,7 @@ import Link from "next/link";
  * per-destination and per-browser (localStorage), not a DB round-trip for
  * something this low-stakes. */
 export function OnboardingNudge({ slug }: { slug: string }) {
+  const { t } = useTranslation();
   const storageKey = `onboarding-dismissed:${slug}`;
   const [dismissed, setDismissed] = useState(true); // default hidden until we know localStorage says otherwise, avoids a flash
 
@@ -34,9 +36,9 @@ export function OnboardingNudge({ slug }: { slug: string }) {
   if (dismissed) return null;
 
   const steps = [
-    { href: `/trip/${slug}/logistics`, icon: "✈️", label: "הוסיפו טיסה" },
-    { href: `/trip/${slug}/itinerary`, icon: "📅", label: "בנו מסלול" },
-    { href: `/trip/${slug}`, icon: "🗺️", label: "עיינו במפה" },
+    { href: `/trip/${slug}/logistics`, icon: "✈️", label: t("onboard.addFlight") },
+    { href: `/trip/${slug}/itinerary`, icon: "📅", label: t("onboard.buildItinerary") },
+    { href: `/trip/${slug}`, icon: "🗺️", label: t("onboard.browseMap") },
   ];
 
   return (
@@ -45,8 +47,8 @@ export function OnboardingNudge({ slug }: { slug: string }) {
       style={{ borderRadius: "var(--radius)", borderColor: "var(--primary)", background: "var(--surface)" }}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold">👋 בואו נתחיל - 3 צעדים ראשונים</p>
-        <button onClick={dismiss} aria-label="סגירה" className="shrink-0 rounded-full px-2 py-1 text-xs opacity-50 hover:opacity-100">
+        <p className="text-sm font-bold">{t("onboard.title")}</p>
+        <button onClick={dismiss} aria-label={t("onboard.close")} className="shrink-0 rounded-full px-2 py-1 text-xs opacity-50 hover:opacity-100">
           ✕
         </button>
       </div>

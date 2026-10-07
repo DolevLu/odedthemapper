@@ -3,8 +3,11 @@
 import Image from "next/image";
 import type { FlatPoi } from "@/lib/data/pois";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import { poiDescription } from "@/lib/i18n/content";
 
 export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => void }) {
+  const { cat, area, lang } = useTranslation();
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6" onClick={onClose}>
       <div
@@ -20,11 +23,11 @@ export function PoiDetailModal({ poi, onClose }: { poi: FlatPoi; onClose: () => 
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: poi.categoryColor }} />
             <span className="text-xs opacity-60">
-              {poi.categoryName} · {poi.areaName}
+              {cat(poi.categoryName)} · {area(poi.areaName)}
             </span>
           </div>
           <h2 className="text-lg font-bold">{poi.name}</h2>
-          {poi.description && <p className="text-sm opacity-80">{poi.description}</p>}
+          {poi.description && <p className="text-sm opacity-80">{poiDescription(lang, poi.description)}</p>}
           {poi.address && <p className="text-xs opacity-60">📍 {poi.address}</p>}
           {poi.hours && <p className="text-xs opacity-60">🕐 {poi.hours}</p>}
           {poi.tip && <p className="text-xs opacity-70">💡 {poi.tip}</p>}

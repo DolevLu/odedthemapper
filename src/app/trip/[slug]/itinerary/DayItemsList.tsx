@@ -138,7 +138,7 @@ export function DayItemsList({
   // full detail sheet (that already lets you read/edit the whole note, but
   // required a tap-and-close round trip just to peek at one).
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const { t } = useTranslation();
+  const { t, lang, cat } = useTranslation();
 
   // Keep `order`/`notes` in sync with `items` when the server sends a fresh list
   // (React's documented pattern for adjusting state during render, in place
@@ -367,7 +367,7 @@ export function DayItemsList({
                   </div>
                   <p className="line-clamp-2 break-words text-base font-bold leading-snug">{item.poi ? item.poi.name : item.customLabel}</p>
                   <p className="truncate text-xs font-medium leading-snug" style={{ color: `color-mix(in srgb, ${categoryColor} 75%, var(--text))` }}>
-                    {item.poi?.categoryName ? shortCategoryLabel(item.poi.categoryName) : t("dayItems.customItem")}
+                    {item.poi?.categoryName ? (lang === "en" ? cat(item.poi.categoryName) : shortCategoryLabel(item.poi.categoryName)) : t("dayItems.customItem")}
                     <span className="opacity-60"> {notes[item.id]?.trim() ? t("dayItems.hasNote") : ""}</span>
                   </p>
                   {notes[item.id]?.trim() && (
@@ -529,7 +529,7 @@ function ItemDetailSheet({
   onRemove: () => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, lang, cat } = useTranslation();
   const rootRef = useRef<HTMLDivElement>(null);
   // Tapping a stop opened this sheet AND popped the on-screen keyboard straight up (reported live) — the browser
   // was auto-focusing the first focusable descendant of this freshly-mounted dialog, which happens to be the time
@@ -576,7 +576,7 @@ function ItemDetailSheet({
         <div className="flex flex-col gap-2.5 overflow-y-auto p-3.5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              {item.poi?.categoryName && <p className="text-[11px] font-semibold opacity-60">{shortCategoryLabel(item.poi.categoryName)}</p>}
+              {item.poi?.categoryName && <p className="text-[11px] font-semibold opacity-60">{lang === "en" ? cat(item.poi.categoryName) : shortCategoryLabel(item.poi.categoryName)}</p>}
               <h2 className="truncate text-sm font-bold">{item.poi ? item.poi.name : item.customLabel}</h2>
               <input
                 type="time"

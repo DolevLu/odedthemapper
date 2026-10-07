@@ -8,8 +8,11 @@ import { prisma } from "@/lib/prisma";
 import { destinationCenter } from "@/lib/geo";
 import { UpgradeRequired } from "@/components/UpgradeRequired";
 import { NowScreen } from "../NowScreen";
+import { getLang } from "@/lib/i18n/server";
+import { destName } from "@/lib/i18n/content";
 
 export default async function TripNowPage({ params }: { params: Promise<{ slug: string }> }) {
+  const lang = await getLang();
   const { slug } = await params;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
@@ -136,7 +139,7 @@ export default async function TripNowPage({ params }: { params: Promise<{ slug: 
       showAds={showAds}
       today={{
         destinationId: destination.id,
-        destinationName: destination.name,
+        destinationName: destName(lang, destination.slug, destination.name),
         heroImage: destination.heroImage,
         logisticId: logistics[0]?.id ?? null,
         targetDateTimeIso: tripStartExact ? tripStartExact.toISOString() : null,

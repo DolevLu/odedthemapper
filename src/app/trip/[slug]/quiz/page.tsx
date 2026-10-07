@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { getVisitedCountryCodes, getCountryPhotos } from "@/lib/actions/visitedCountries";
 import { VisitedCountriesMap } from "@/components/VisitedCountriesMap";
 import { QuizPicker } from "./QuizPicker";
-import { getServerT } from "@/lib/i18n/server";
+import { getLang, getServerT } from "@/lib/i18n/server";
+import { destName } from "@/lib/i18n/content";
+
 
 export default async function QuizPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -13,6 +15,7 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   if (!destination) notFound();
   const userId = session?.user?.id;
   const t = await getServerT();
+  const lang = await getLang();
 
   const [questions, visitedCodes, photosByCountry] = await Promise.all([
     prisma.quizQuestion.findMany({ where: { destinationId: destination.id } }),
@@ -24,7 +27,7 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="mb-1 text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("tripQuiz.title")} {destination.name}
+          {t("tripQuiz.title")} {destName(lang, destination.slug, destination.name)}
         </h1>
         {questions.length === 0 ? (
           <p className="text-sm opacity-60">{t("tripQuiz.none")}</p>

@@ -66,7 +66,7 @@ export function NowScreen({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [detailPoi, setDetailPoi] = useState<FlatPoi | null>(null);
   const [rainMode, setRainMode] = useState(false);
-  const { t } = useTranslation();
+  const { t, cat, area } = useTranslation();
 
   function requestLocation() {
     setRequesting(true);
@@ -208,7 +208,7 @@ export function NowScreen({
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate font-medium">{poi.name}</span>
                         <span className="truncate text-xs opacity-60">
-                          {poi.categoryName} · {poi.areaName}
+                          {cat(poi.categoryName)} · {area(poi.areaName)}
                           {"distanceKm" in poi && ` · ${(poi as unknown as { distanceKm: number }).distanceKm.toFixed(1)} ${t("wrapped.km")}`}
                         </span>
                       </span>

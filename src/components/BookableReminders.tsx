@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { togglePackingCheck } from "@/lib/actions/trip";
+import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** Keeps a title to at most two words so two cards fit per row instead of
  * one full-width row each — this section is meant to be a quick glance-and-
@@ -21,6 +22,7 @@ export function BookableReminders({
   slug: string;
   bookableItems: { id: string; name: string }[];
 }) {
+  const { t } = useTranslation();
   const [handledIds, setHandledIds] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
 
@@ -41,7 +43,7 @@ export function BookableReminders({
 
   return (
     <section>
-      <h2 className="mb-2 text-sm font-bold">🎟️ לזכור להזמין</h2>
+      <h2 className="mb-2 text-sm font-bold">{t("bookable.remember")}</h2>
       <div className="grid grid-cols-2 gap-1.5">
         {visible.map((item) => (
           <div
@@ -55,8 +57,8 @@ export function BookableReminders({
             <span className="flex shrink-0 items-center gap-1">
               <button
                 onClick={() => markHandled(item.id, "booked")}
-                aria-label="הוזמן"
-                title="הוזמן"
+                aria-label={t("bookable.booked")}
+                title={t("bookable.booked")}
                 className="flex h-4 w-4 items-center justify-center rounded-full border text-[9px] font-bold"
                 style={{ borderColor: "var(--text)", color: "var(--text)" }}
               >
@@ -64,8 +66,8 @@ export function BookableReminders({
               </button>
               <button
                 onClick={() => markHandled(item.id, "dismissed")}
-                aria-label="לא מעוניין/ת"
-                title="לא מעוניין/ת"
+                aria-label={t("bookable.notInterested")}
+                title={t("bookable.notInterested")}
                 className="flex h-4 w-4 items-center justify-center rounded-full border text-[9px] font-bold"
                 style={{ borderColor: "var(--text)", color: "var(--text)", opacity: 0.6 }}
               >
@@ -76,7 +78,7 @@ export function BookableReminders({
         ))}
       </div>
       <Link href={`/trip/${slug}/packing`} className="mt-1.5 inline-block text-xs underline opacity-60">
-        לצ׳ק ליסט המלא ←
+        {t("bookable.fullChecklist")}
       </Link>
     </section>
   );

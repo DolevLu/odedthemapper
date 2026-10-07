@@ -4,7 +4,9 @@ import { getDestinationBySlug } from "@/lib/data/destinations";
 import { prisma } from "@/lib/prisma";
 import { DESTINATION_LOCALE } from "@/lib/localeCodes";
 import { PhraseCard } from "./PhraseCard";
-import { getServerT } from "@/lib/i18n/server";
+import { getLang, getServerT } from "@/lib/i18n/server";
+import { destName } from "@/lib/i18n/content";
+
 
 export default async function PhrasebookPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -12,6 +14,7 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
   if (!destination) notFound();
   const userId = session?.user?.id;
   const t = await getServerT();
+  const lang = await getLang();
 
   const [entries, progress] = await Promise.all([
     prisma.phrasebookEntry.findMany({ where: { destinationId: destination.id } }),
@@ -26,7 +29,7 @@ export default async function PhrasebookPage({ params }: { params: Promise<{ slu
     <div>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold" style={{ fontFamily: "var(--font-heading)" }}>
-          {t("phrasebook.title")} {destination.name}
+          {t("phrasebook.title")} {destName(lang, destination.slug, destination.name)}
         </h1>
         {entries.length > 0 && userId && (
           <span className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: "var(--primary)" }}>

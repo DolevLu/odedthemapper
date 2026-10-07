@@ -5,6 +5,8 @@ import { FavoriteButton } from "@/components/FavoriteButton";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { KosherStar, KOSHER_TAG_MATCH } from "@/components/KosherStar";
 import { proxiedImageUrl } from "@/lib/imageProxy";
+import { useTranslation } from "@/components/i18n/LanguageContext";
+import { tagLabel } from "@/lib/i18n/content";
 
 export type PoiCardData = {
   id: string;
@@ -44,7 +46,9 @@ export function PoiCard({
   scheduled?: boolean;
   variant?: "grid" | "compact";
 }) {
-  const tag = statusTag(poi.tags);
+  const { cat, area, lang } = useTranslation();
+  const rawTag = statusTag(poi.tags);
+  const tag = rawTag ? tagLabel(lang, rawTag) : null;
 
   if (variant === "compact") {
     return (
@@ -63,7 +67,7 @@ export function PoiCard({
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-bold">{poi.name}</h3>
           <p className="truncate text-xs opacity-60">
-            <CategoryIcon name={poi.categoryName} size={11} /> {poi.categoryName} · {poi.areaName}
+            <CategoryIcon name={poi.categoryName} size={11} /> {cat(poi.categoryName)} · {area(poi.areaName)}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             {tag && (
@@ -135,9 +139,9 @@ export function PoiCard({
             {poi.name}
           </h3>
           <p className="truncate text-[11px] font-semibold leading-tight" style={{ color: poi.categoryColor }}>
-            {poi.categoryName}
+            {cat(poi.categoryName)}
           </p>
-          <p className="truncate text-[10px] leading-tight opacity-60">{poi.areaName}</p>
+          <p className="truncate text-[10px] leading-tight opacity-60">{area(poi.areaName)}</p>
           {(tag || poi.hours || scheduled !== undefined) && (
             <div className="flex flex-wrap items-center gap-1">
               {tag && (
