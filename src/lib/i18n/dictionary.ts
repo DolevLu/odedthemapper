@@ -346,6 +346,8 @@ export const DICTIONARY = {
   "pricing.hours24": { he: "⏱️ 24 שעות", en: "⏱️ 24 hours" },
   "pricing.free": { he: "חינם", en: "Free" },
   "pricing.forever": { he: "♾️ לתמיד", en: "♾️ Forever" },
+  "pricing.cancelAnytime": { he: "✅ ביטול חינם בכל רגע", en: "✅ Cancel free anytime" },
+  "pricing.cancelBanner": { he: "ביטול חינם בכל רגע - ישירות מהחשבון שלכם, באתר ובאפליקציה. בלי התחייבות ובלי שיחות.", en: "Cancel free anytime - right from your account, on the website and in the app. No commitment, no phone calls." },
   "pricing.sevenDays": { he: "⏱️ 7 ימים", en: "⏱️ 7 days" },
   "pricing.startFreeTrial": { he: "התחלת ניסיון חינם", en: "Start free trial" },
   "pricing.startFree": {

@@ -40,6 +40,8 @@ export default async function SubscribePage({
           <span className="opacity-60"> / חודש · {billingCycle === "monthly" ? "חיוב חודשי" : "חיוב שנתי"}</span>
         </p>
 
+        <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">✅ ביטול חינם בכל רגע - ישירות מהחשבון, באתר ובאפליקציה. בלי התחייבות.</p>
+
         <div className="mt-6 border-t border-black/5 pt-6">
           {plan.isOrgTier || plan.allDestinations ? (
             <div className="flex flex-col gap-4">

@@ -310,9 +310,12 @@ export async function HomePageContent() {
               );
             })}
           </div>
+          <p className="mt-6 text-sm font-bold" style={{ color: "#047857" }}>
+            {t("pricing.cancelBanner")}
+          </p>
           <Link
             href="/pricing"
-            className="mt-8 inline-block rounded-full px-7 py-3.5 font-bold text-white transition-transform hover:-translate-y-0.5"
+            className="mt-4 inline-block rounded-full px-7 py-3.5 font-bold text-white transition-transform hover:-translate-y-0.5"
             style={{ background: GRADIENT }}
           >
             {t("home.comparePlans")}

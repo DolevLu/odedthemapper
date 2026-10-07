@@ -92,6 +92,7 @@ const PLAN_TEXT: Record<"trial" | "free" | PlanKey, Record<Lang, PlanText>> = {
       tagline: "יעד אחד לבחירה, מפה, מסלול וטראבי - בלי פרסומות. למשתמש אחד.",
       features: [
         "חוויה נקייה - בלי פרסומות 🚫📢",
+        "ביטול חינם בכל רגע, בלי התחייבות ✅",
         "גישה מלאה ליעד אחד לבחירה, עם אפשרות להחליף יעד פעם ב-14 יום",
         "כל התכונות - מפה, מסלול, טראבי לייב, שיחון, אלבום ועוד",
         "ועוד עשרות פיצרים לטיול מקצה לקצה",
@@ -105,6 +106,7 @@ const PLAN_TEXT: Record<"trial" | "free" | PlanKey, Record<Lang, PlanText>> = {
       tagline: "One destination of your choice, map, itinerary and Travi - no ads. For one user.",
       features: [
         "A clean experience - no ads 🚫📢",
+        "Cancel free anytime, no commitment ✅",
         "Full access to one destination of your choice, swappable once every 14 days",
         "Every feature - map, itinerary, Travi Live, phrasebook, album and more",
         "Plus dozens more features for the whole trip, end to end",
@@ -120,6 +122,7 @@ const PLAN_TEXT: Record<"trial" | "free" | PlanKey, Record<Lang, PlanText>> = {
       tagline: "כל היעדים פתוחים, עד 5 משתמשים בחבילה אחת, תכנון משותף - בלי פרסומות.",
       features: [
         "חוויה נקייה - בלי פרסומות 🚫📢",
+        "ביטול חינם בכל רגע, בלי התחייבות ✅",
         "גישה לכל היעדים במערכת, בלי הגבלה ובלי להחליף",
         "עד 5 משתמשים בחבילה: תכנון משותף, הצבעה והתראות בזמן אמת",
         "כל התכונות - מפה, מסלול, טראבי לייב, שיחון, אלבום ועוד",
@@ -133,6 +136,7 @@ const PLAN_TEXT: Record<"trial" | "free" | PlanKey, Record<Lang, PlanText>> = {
       tagline: "Every destination unlocked, up to 5 users on one plan, shared planning - no ads.",
       features: [
         "A clean experience - no ads 🚫📢",
+        "Cancel free anytime, no commitment ✅",
         "Every destination in the system, unlocked - no limit, no swapping",
         "Up to 5 users on one plan: shared planning, voting and real-time notifications",
         "Every feature - map, itinerary, Travi Live, phrasebook, album and more",

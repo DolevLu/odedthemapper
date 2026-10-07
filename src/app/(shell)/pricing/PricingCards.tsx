@@ -89,6 +89,7 @@ export function PricingCards() {
                 <span className={chip}>{plan.allDestinations ? `🌍 ${t("pricing.allDestinations")}` : `📍 ${t("pricing.oneDestinationPlain")}`}</span>
                 <span className={chip}>{plan.seats && plan.seats > 1 ? `👥 ${t("pricing.upToUsersPrefix")} ${plan.seats} ${t("pricing.usersSuffix")}` : `👤 ${t("pricing.oneUser")}`}</span>
                 <span className={chip}>🚫📢 {t("pricing.noAds")}</span>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700 sm:px-3 sm:py-1 sm:text-xs">{t("pricing.cancelAnytime")}</span>
               </div>
 
               <div>
@@ -119,6 +120,10 @@ export function PricingCards() {
           );
         })}
       </div>
+
+      <p className="w-full max-w-3xl rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm font-bold text-emerald-800 sm:text-base">
+        {t("pricing.cancelBanner")}
+      </p>
     </div>
   );
 }
