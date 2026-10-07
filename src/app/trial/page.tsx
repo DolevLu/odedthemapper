@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -6,11 +7,15 @@ import { TrialDestinationPicker } from "./TrialDestinationPicker";
 
 // Route kept at /trial (not renamed) — it's the one real link to this page (see PricingCards), so there's nothing
 // gained by moving it and a real risk of breaking a bookmarked/shared link for no reason. The content itself is
-// fully the 2026-10-01 "free, forever, one destination" offer now, not the old 24h trial.
+// the 2026-10-07 "one free week, one destination" offer now (the week itself starts at sign-up — see lib/freeWeek.ts).
 export default async function TrialPage({ searchParams }: { searchParams: Promise<{ dest?: string }> }) {
   const { dest } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect(`/register?callbackUrl=${encodeURIComponent(`/trial${dest ? `?dest=${dest}` : ""}`)}`);
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { freeUntil: true } });
+  const freeUntil = user?.freeUntil ?? null;
+  const weekState: "never" | "over" | "active" = !freeUntil ? "never" : freeUntil.getTime() <= Date.now() ? "over" : "active";
 
   const destinations = await prisma.destination.findMany({
     where: { status: { in: ["preview", "live"] }, isPublic: true },
@@ -36,7 +41,25 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
         </ul>
 
         <div className="mt-6 border-t border-black/5 pt-6">
-          <TrialDestinationPicker destinations={destinations} preselectId={preselected} />
+          {weekState === "active" ? (
+            <>
+              <p className="mb-4 rounded-2xl bg-violet-50 p-3 text-sm font-semibold" style={{ color: "#6D28D9" }}>
+                ⏱️ השבוע החינמי שלכם מסתיים ב-{freeUntil!.toLocaleDateString("he-IL", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+              </p>
+              <TrialDestinationPicker destinations={destinations} preselectId={preselected} />
+            </>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold">
+                {weekState === "over"
+                  ? "השבוע החינמי שלכם הסתיים. אפשר להמשיך עם אחת התוכניות - מ-29 ₪ לחודש."
+                  : "השבוע החינמי כבר נוצל מהרשת הזו (שבוע אחד לכל רשת, גם עם חשבון חדש). אפשר להמשיך עם אחת התוכניות - מ-29 ₪ לחודש."}
+              </p>
+              <Link href="/pricing" className="rounded-full px-5 py-3 text-center font-semibold text-white" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
+                לתוכניות ולמחירים
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

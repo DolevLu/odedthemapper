@@ -8,10 +8,6 @@ import { prisma } from "@/lib/prisma";
 import { TRIAL_PLAN } from "@/lib/plans";
 import { notifyAdmins } from "@/lib/adminAlerts";
 
-// Never expires in practice — the permanent free tier (see startFreeAccess below) simply has no real end date, but
-// Subscription.currentPeriodEnd is a required, non-null column, so this stands in for "forever."
-const FAR_FUTURE = new Date("2099-01-01T00:00:00Z");
-
 /** Real client IP behind Vercel's proxy — x-forwarded-for can carry a chain
  * of proxies, so only the first (closest to the actual visitor) hop is used. */
 async function getClientIp(): Promise<string> {
@@ -77,18 +73,17 @@ export async function startFreeTrial(destinationId: string): Promise<{ error: st
   return { ok: true };
 }
 
-/** 2026-10-01 business-model change: every user gets free, permanent (no expiry) access to one destination by
- * default — this is what actually activates it the first time, same mechanism startFreeTrial above always used
- * (a real Subscription row), just planKey "free" instead of "trial" and no currentPeriodEnd that ever passes. No
- * IP/one-per-user anti-abuse check here (unlike the old trial) — there's nothing to abuse: everyone gets exactly
- * one free destination slot already, forever, so claiming it isn't a scarce resource.
+/** Activates the free week's one destination. The week itself started at sign-up (User.freeUntil, set once per network by
+ * grantFreeWeek in lib/freeWeek.ts) — picking a destination later never extends or restarts it: the real "free"
+ * Subscription row simply ends at freeUntil, and every access check already filters on currentPeriodEnd, so access
+ * stops by itself. Accounts whose network already used its free week have no freeUntil and get nothing here — they
+ * need a paid plan.
  *
- * Only handles the FIRST activation. Changing which destination a user who already has free (or paid) access
- * already has is swapSubscriptionDestination's job (lib/actions/subscription.ts) — same 14-day-cooldown mechanism
- * solo/family always used, unchanged, since it already works on any Subscription regardless of planKey. */
+ * Only handles the FIRST activation. Changing which destination a user who already has access already has is
+ * swapSubscriptionDestination's job (lib/actions/subscription.ts), unchanged. */
 export async function startFreeAccess(destinationId: string): Promise<{ error: string } | { ok: true }> {
   const session = await auth();
-  if (!session?.user?.id) return { error: "יש להתחבר כדי לקבל גישה חינמית" };
+  if (!session?.user?.id) return { error: "יש להתחבר כדי להתחיל את השבוע החינמי" };
   const userId = session.user.id;
 
   const existing = await prisma.subscription.findFirst({
@@ -100,6 +95,13 @@ export async function startFreeAccess(destinationId: string): Promise<{ error: s
     return { error: "כבר יש לכם גישה פעילה - כדי להחליף יעד אפשר לעשות זאת דרך הגדרות החשבון (עד פעם ב-14 יום)" };
   }
 
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { freeUntil: true } });
+  if (!user?.freeUntil) return { error: "השבוע החינמי כבר נוצל מהרשת הזו - אפשר להמשיך עם אחת התוכניות בתשלום" };
+  if (user.freeUntil.getTime() <= Date.now()) return { error: "השבוע החינמי שלכם הסתיים - אפשר להמשיך עם אחת התוכניות בתשלום" };
+
+  const alreadyUsed = await prisma.subscription.findFirst({ where: { userId, planKey: "free" }, select: { id: true } });
+  if (alreadyUsed) return { error: "השבוע החינמי כבר נוצל - אפשר להמשיך עם אחת התוכניות בתשלום" };
+
   const [, destination] = await Promise.all([
     prisma.subscription.create({
       data: {
@@ -110,7 +112,7 @@ export async function startFreeAccess(destinationId: string): Promise<{ error: s
         paymentSessionId: `free_${randomUUID()}`,
         amountCents: 0,
         currency: "ILS",
-        currentPeriodEnd: FAR_FUTURE,
+        currentPeriodEnd: user.freeUntil,
         paidAt: new Date(),
         destinations: { create: [{ destinationId }] },
       },
@@ -118,7 +120,7 @@ export async function startFreeAccess(destinationId: string): Promise<{ error: s
     prisma.destination.findUnique({ where: { id: destinationId }, select: { name: true } }),
   ]);
   await notifyAdmins({
-    title: "🎁 בחירת יעד חינמי",
+    title: "🎁 בחירת יעד לשבוע החינמי",
     body: `${session.user.email} בחר/ה גישה חינמית ליעד ${destination?.name ?? destinationId}`,
     url: "/admin/users",
   });

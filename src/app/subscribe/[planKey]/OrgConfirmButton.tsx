@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PlanKey } from "@/lib/plans";
 
-// Not just for "org" anymore — any plan with allDestinations (currently just "plus", plus the real org tier) skips
+// Not just for "org" anymore — any plan with allDestinations (the "family" all-destinations plan and the real org tier) skips
 // the per-destination picker and goes straight to checkout, so this takes the actual planKey instead of assuming org.
 export function OrgConfirmButton({ planKey, billingCycle }: { planKey: PlanKey; billingCycle: "monthly" | "annual" }) {
   const router = useRouter();

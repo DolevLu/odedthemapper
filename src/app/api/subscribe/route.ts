@@ -7,7 +7,7 @@ import { PLANS, type PlanKey } from "@/lib/plans";
 import { resolvePromoCode, recordPromoCodeUse } from "@/lib/promoCodes";
 
 const SubscribeSchema = z.object({
-  planKey: z.enum(["plus", "org"]),
+  planKey: z.enum(["solo", "family", "org"]),
   billingCycle: z.enum(["monthly", "annual"]),
   destinationIds: z.array(z.string()).default([]),
   promoCode: z.string().optional(),

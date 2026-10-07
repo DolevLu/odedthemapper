@@ -23,9 +23,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   }
 
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
-  const planLabel = summary ? summary.plan.name : session?.user ? "חינמי" : null;
+  const planLabel = summary ? summary.plan.name : session?.user ? "ללא חבילה" : null;
   const tierBadge = tierBadgeForPlanKey(summary?.plan.key ?? null);
-  const trialEndsAt = summary?.plan.key === "trial" ? summary.currentPeriodEnd.toISOString() : null;
+  const trialEndsAt = summary?.plan.key === "trial" || summary?.plan.key === "free" ? summary.currentPeriodEnd.toISOString() : null;
 
   return (
     <div className="flex min-h-screen flex-1 flex-col">

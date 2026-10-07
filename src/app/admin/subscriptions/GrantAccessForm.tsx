@@ -8,7 +8,7 @@ type DestOption = { id: string; name: string };
 
 export function GrantAccessForm({ destinations }: { destinations: DestOption[] }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [planKey, setPlanKey] = useState<PlanKey>("plus");
+  const [planKey, setPlanKey] = useState<PlanKey>("family");
   const [selectedDest, setSelectedDest] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

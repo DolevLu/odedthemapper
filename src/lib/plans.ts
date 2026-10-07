@@ -29,8 +29,8 @@ export type Plan = {
   legacy?: boolean;
 };
 
-// 2026-10-01 business-model change: the old self-serve 24h/1-destination TRIAL_PLAN is now what every user gets
-// permanently — see FREE_PLAN below. TRIAL_PLAN itself is kept only so any historical Subscription row with
+// 2026-10-01 business-model change: the old self-serve 24h/1-destination TRIAL_PLAN was replaced by the free tier —
+// see FREE_PLAN below. TRIAL_PLAN itself is kept only so any historical Subscription row with
 // planKey "trial" (created before this change) still resolves correctly (limits, quotas, receipts); no new trial
 // subscriptions are created anymore (see lib/actions/trial.ts).
 export const TRIAL_PLAN = {
@@ -54,16 +54,19 @@ export const TRIAL_PLAN = {
   ],
 };
 
-// The permanent free tier every user gets by default — not a PLANS entry for the same reason TRIAL_PLAN wasn't
-// (see access.ts, which special-cases planKey "free" directly wherever it matters: AI chat quota, ads gating, the
-// subscription summary). A real, permanent (no expiry) Subscription row with planKey "free" is what actually grants
-// this — see startFreeAccess in lib/actions/trial.ts, which creates it the first time a user picks their one
-// destination. The 14-day swap cooldown is the exact same SubscriptionDestination.assignedAt + swapSubscriptionDestination
-// mechanism solo/family already used, just applied to a $0, never-expiring subscription instead of a paid one.
+// 2026-10-07 business-model change: the free tier is now ONE FREE WEEK, not forever. The week starts the moment an
+// account is created (see grantFreeWeek in lib/freeWeek.ts, which stores User.freeUntil) and is granted once per
+// network (IP), not per email — so opening a new account, even from another browser, never earns a second week.
+// It is still not a PLANS entry (see access.ts, which special-cases planKey "free" wherever it matters: AI chat quota,
+// ads gating, the subscription summary). The real "free" Subscription row — created by startFreeAccess in
+// lib/actions/trial.ts when the user picks their one destination — simply ends at User.freeUntil, and every access
+// check already filters on currentPeriodEnd, so access stops by itself when the week is over.
+export const FREE_WEEK_DAYS = 7;
+
 export const FREE_PLAN = {
   key: "free" as const,
-  name: "חינמי",
-  audience: "לכל מי שרוצה לתכנן טיול בלי לשלם",
+  name: "שבוע חינם",
+  audience: "לכל מי שרוצה לנסות לפני שמשלמים",
   monthlyCents: 0,
   annualCents: 0,
   destinationLimit: 1,
@@ -71,82 +74,73 @@ export const FREE_PLAN = {
   isOrgTier: false,
   allDestinations: false,
   aiChatDailyQuota: 10,
-  tagline: "חינם לתמיד, יעד אחד בכל פעם - עם אפשרות להחליף כל 14 יום.",
+  tagline: "שבוע שלם, יעד אחד לבחירה, כל התכונות פתוחות - בלי כרטיס אשראי.",
   features: [
-    "גישה מלאה ליעד אחד לבחירה - לתמיד, בלי הגבלת זמן",
-    "אפשרות להחליף יעד פעם ב-14 יום",
+    "גישה מלאה ליעד אחד לבחירה, ל-7 ימים מרגע ההרשמה",
     "כל התכונות עצמן - מפה, מסלול, טראבי לייב, שיחון ועוד",
     "עד 10 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
+    "ועוד עשרות פיצרים לטיול מקצה לקצה",
+    "שבוע אחד בלבד לכל משתמש",
     "כולל פרסומות",
   ],
 };
 
 export const PLANS: Record<PlanKey, Plan> = {
-  // Legacy plans below: kept exactly as they were so anyone still on one of these (grandfathered before the
-  // 2026-10-01 pricing change) keeps the access/quota/receipts they're actually paying for. None of the three are
-  // offered for purchase anymore (see PURCHASABLE_PLANS) — the one plan on sale now is "plus", below.
+  // The two plans on sale to consumers (2026-10-07): "solo" — one destination, one user, ₪29/month — and "family" — every
+  // destination, up to 5 users sharing the plan, ₪99/month. Both are ad-free with 30 Travi AI messages a day. (The
+  // keys are the old ones on purpose: nobody was ever actually paying on the retired ₪125 versions of them, so
+  // there is nothing to grandfather, and the whole subscription/seat/swap machinery already keys off these names.)
   solo: {
-    legacy: true,
     key: "solo",
-    name: "מטייל בודד",
-    audience: "למטיילים בודדים",
-    monthlyCents: 12500,
-    annualCents: 112500,
+    name: "יעד אחד",
+    audience: "למטיילים בודדים שיודעים לאן הם נוסעים",
+    monthlyCents: 2900,
+    annualCents: 34800, // no annual plan — same monthly rate; kept only so shared price math still has a number to read.
     destinationLimit: 1,
     seats: 1,
     isOrgTier: false,
-    aiChatDailyQuota: 10,
-    tagline: "כל מה שצריך ליעד אחד - מפה, מסלול ותקציב במקום אחד.",
+    aiChatDailyQuota: 30,
+    tagline: "יעד אחד לבחירה, מפה, מסלול וטראבי - בלי פרסומות. למשתמש אחד.",
     features: [
       AD_FREE_FEATURE,
       "גישה מלאה ליעד אחד לבחירה, עם אפשרות להחליף יעד פעם ב-14 יום",
-      "מפה אינטראקטיבית עם כל הנקודות והקטגוריות",
-      "מסך \"טראבי לייב\" - המלצות לפי קרבה אליכם",
-      "מתכנן מסלול יומי אישי + ייצוא כ-PDF",
-      "מועדפים ורשימת אטרקציות להזמנה",
-      "מעקב הוצאות ותקציב יומי",
-      "שיחון, ציוד וצ׳ק ליסט וגלריה",
-      "מצב אופליין",
-      "משתמש אחד בלבד",
-      "עד 10 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
+      "כל התכונות - מפה, מסלול, טראבי לייב, שיחון, אלבום ועוד",
+      "ועוד עשרות פיצרים לטיול מקצה לקצה",
+      "משתמש אחד",
+      "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
   },
   family: {
-    legacy: true,
     key: "family",
-    name: "מטיילים, משפחות ונוודים",
-    audience: "למטיילים, למשפחות ולנוודים דיגיטליים",
-    monthlyCents: 12500,
-    annualCents: 112500,
-    destinationLimit: 5,
+    name: "כל היעדים",
+    audience: "למשפחות, לזוגות ולחברים שמטיילים ביחד",
+    monthlyCents: 9900,
+    annualCents: 118800, // no annual plan — same monthly rate.
+    destinationLimit: null,
     seats: 5,
     isOrgTier: false,
+    allDestinations: true,
     aiChatDailyQuota: 30,
-    tagline: "עד 5 יעדים, מפות מוכנות ועשירות, תכנון משותף וטראבי לייב בזמן הטיול.",
+    tagline: "כל היעדים פתוחים, עד 5 משתמשים בחבילה אחת, תכנון משותף - בלי פרסומות.",
     features: [
       AD_FREE_FEATURE,
-      "גישה עד 5 יעדים לבחירה, עם אפשרות להחליף כל יעד בנפרד פעם ב-14 יום",
-      "טראבי לייב - מה קורה עכשיו: שעה, מזג אוויר, הנקודה הבאה ותכנון מחדש בלחיצה",
-      "מפות מוכנות גדולות ועשירות, או בניית מפה מאפס - גם עם AI וייבוא רשימת גוגל",
-      "תכנון משותף עד 5 משתמשים: עריכה, הצבעה והתראות בזמן אמת",
-      "אלבום דיגיטלי אינטראקטיבי וקולאז'ים",
-      "מצב אופליין",
-      "רשימת אטרקציות להזמנה וקודי הנחה",
-      "מסלול יומי + PDF, מעקב הוצאות, שיחון וצ׳ק ליסט ציוד",
-      "תמיכה מועדפת",
-      "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
+      "גישה לכל היעדים במערכת, בלי הגבלה ובלי להחליף",
+      "עד 5 משתמשים בחבילה: תכנון משותף, הצבעה והתראות בזמן אמת",
+      "כל התכונות - מפה, מסלול, טראבי לייב, שיחון, אלבום ועוד",
+      "ועוד עשרות פיצרים לטיול מקצה לקצה",
+      "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭 לכל משתמש",
     ],
     highlighted: true,
   },
-  // The one plan actually on sale now: cheap, simple, removes the free tier's two frictions (ads + the lower AI
-  // quota) and unlocks every destination — no per-destination picking/swapping at all, same as org, just without
-  // org's content-management rights (see allDestinations vs isOrgTier above).
+  // Retired 2026-10-07 (the ₪30 all-destinations plan, on sale for a week) — kept only so any row with this key
+  // still resolves. Never offered: see PURCHASABLE_PLANS.
   plus: {
+    legacy: true,
     key: "plus",
     name: "Travi Plus",
     audience: "למי שרוצה חוויה נקייה וגישה לכל היעדים",
     monthlyCents: 3000,
-    annualCents: 36000, // same monthly rate — no annual plan, no discount; kept purely so the Plan type/shared math (formatIls etc.) still has a number to read.
+    annualCents: 36000,
     destinationLimit: null,
     seats: 1,
     isOrgTier: false,
@@ -156,9 +150,8 @@ export const PLANS: Record<PlanKey, Plan> = {
     features: [
       AD_FREE_FEATURE,
       "גישה לכל היעדים במערכת, בלי הגבלה ובלי להחליף",
-      "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭 (במקום 10 בחינמי)",
+      "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
-    highlighted: true,
   },
   org: {
     key: "org",
@@ -221,8 +214,8 @@ export function formatIls(cents: number): string {
 // elsewhere): just a small status marker, not a rename of the plans
 // themselves.
 const TIER_BADGES: Record<PlanKey, string> = {
-  solo: "GOLD",
-  family: "DIAMOND",
+  solo: "SOLO",
+  family: "FAMILY",
   org: "PRO",
   plus: "PLUS",
 };

@@ -8,7 +8,7 @@ function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/** Live 24h countdown shown in the sidebar in place of the plain tier badge
+/** Live countdown (days + hh:mm:ss) shown in the sidebar in place of the plain tier badge
  * while a free trial (see lib/actions/trial.ts) is active. The actual
  * access cutoff is already enforced server-side the moment currentPeriodEnd
  * passes (every access check already filters on it) — this just keeps the
@@ -37,19 +37,20 @@ export function TrialCountdown({ endsAt }: { endsAt: string }) {
   if (remainingMs <= 0) {
     return (
       <Link href="/pricing" className="text-[10px] font-bold underline" style={{ color: "#DC2626" }}>
-        הניסיון הסתיים - שדרגו עכשיו
+        השבוע החינמי הסתיים - שדרגו עכשיו
       </Link>
     );
   }
 
   const totalSeconds = Math.floor(remainingMs / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
   return (
     <span className="text-[10px] font-bold tracking-wide" style={{ color: "#6D28D9" }} dir="ltr">
-      ⏱️ {pad(hours)}:{pad(minutes)}:{pad(seconds)}
+      ⏱️ {days > 0 ? `${days}d ` : ""}{pad(hours)}:{pad(minutes)}:{pad(seconds)}
     </span>
   );
 }

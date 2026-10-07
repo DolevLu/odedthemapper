@@ -138,7 +138,7 @@ export async function HomePageContent() {
               </Link>
               <Link href="/pricing" className="rounded-full border border-black/10 bg-white px-5 py-2.5 font-bold transition-transform hover:-translate-y-0.5">
                 {t("home.ctaPricingPrefix")}
-                {formatIls(PLANS.plus.monthlyCents)}
+                {formatIls(PLANS.solo.monthlyCents)}
                 {t("home.ctaPricingSuffix")}
               </Link>
             </div>
@@ -286,7 +286,7 @@ export async function HomePageContent() {
           {/* Free first in DOM order — right-most in this always-RTL layout
            * and top-most once the grid wraps to one column on mobile, same
            * as the /pricing page's own card order (see PricingCards.tsx). */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border border-black/5 p-5 text-start transition-shadow hover:shadow-md">
               <p className="text-xs font-semibold opacity-60">{freeText.audience}</p>
               <p className="mt-1 text-lg font-extrabold">🎁 {freeText.name}</p>

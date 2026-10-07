@@ -235,6 +235,9 @@ model User {
   /// NextAuth sessions here are JWT-based (nothing written to the DB per login) and there's no separate heartbeat
   /// table otherwise.
   lastSeenAt    DateTime?
+  /// End of this account's one free week (see lib/freeWeek.ts). Set at sign-up, once per IP: null means this network
+  /// already got its free week (a second account earns nothing). The "free" Subscription ends exactly here.
+  freeUntil     DateTime?
 
   // Gamification: level-up subscription credits (see lib/credits.ts). The
   // level itself is always recomputed live from current stats — these three

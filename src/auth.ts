@@ -6,6 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { notifyAdmins } from "@/lib/adminAlerts";
+import { grantFreeWeek } from "@/lib/freeWeek";
 
 // Google Sign-In is only registered once real credentials are supplied —
 // next-auth errors at init if an OAuth provider is missing clientId/secret.
@@ -60,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   // admins itself instead of relying on this event.
   events: {
     async createUser({ user }) {
+      if (user.id) await grantFreeWeek(user.id); // the free week starts at sign-up, once per network (lib/freeWeek.ts)
       await notifyAdmins({ title: "👤 חשבון חדש", body: `${user.name ?? user.email} נרשם/ה לטראבי (Google)`, url: "/admin/users" });
     },
   },

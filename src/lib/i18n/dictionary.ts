@@ -193,15 +193,21 @@ export const DICTIONARY = {
   "home.perMonth": { he: "/חודש", en: "/month" },
   "home.comparePlans": { he: "השוואת תוכניות", en: "Compare plans" },
   "home.faqTitle": { he: "שאלות ותשובות", en: "FAQ" },
-  "home.faq.q1": { he: "החבילה החינמית באמת חינמית לתמיד?", en: "Is the free plan really free forever?" },
-  "home.faq.a1": {
-    he: "כן - בלי כרטיס אשראי ובלי הגבלת זמן. בוחרים יעד אחד ומקבלים גישה מלאה אליו, לתמיד. יש פרסומות בגרסה החינמית - זו הדרך שלנו לשמור את זה חינמי לכולם.",
-    en: "Yes - no credit card and no time limit. Pick one destination and get full access to it, forever. The free plan shows ads - that's how we keep it free for everyone.",
+  "home.faq.q1": {
+    he: "השבוע החינמי באמת חינמי?",
+    en: "Is the free week really free?",
   },
-  "home.faq.q2": { he: "מה ההבדל בין החינמי ל-Travi Plus?", en: "What's the difference between Free and Travi Plus?" },
+  "home.faq.a1": {
+    he: "כן - בלי כרטיס אשראי. מרגע ההרשמה יש לכם שבוע שלם עם גישה מלאה ליעד אחד לבחירה ולכל התכונות. השבוע ניתן פעם אחת לכל רשת, כך שחשבון נוסף לא מקבל שבוע נוסף. יש פרסומות בשבוע החינמי.",
+    en: "Yes - no credit card. From the moment you sign up you get a full week with complete access to one destination and every feature. The week is granted once per network, so an extra account doesn't earn another week. The free week shows ads.",
+  },
+  "home.faq.q2": {
+    he: "מה ההבדל בין שתי החבילות בתשלום?",
+    en: "What's the difference between the two paid plans?",
+  },
   "home.faq.a2": {
-    he: "בחינמי יש גישה ליעד אחד שאפשר להחליף פעם ב-14 יום, עם פרסומות. ב-Plus (30 ₪ לחודש) יש גישה לכל היעדים בלי הגבלה, בלי פרסומות בכלל, ועד 30 הודעות ביום לטראבי AI במקום 10.",
-    en: "Free gives you one destination, swappable once every 14 days, with ads. Plus (30 ILS/month) unlocks every destination with no limit, removes ads entirely, and raises your Travi AI chat quota to 30 messages a day instead of 10.",
+    he: "יעד אחד (29 ₪ לחודש): יעד אחד לבחירה שאפשר להחליף פעם ב-14 יום, למשתמש אחד. כל היעדים (99 ₪ לחודש): כל היעדים פתוחים, עד 5 משתמשים בחבילה אחת. בשתיהן אין פרסומות ויש עד 30 הודעות ביום לטראבי AI.",
+    en: "One destination (29 ILS/month): one destination of your choice, swappable once every 14 days, for one user. All destinations (99 ILS/month): every destination unlocked, up to 5 users on one plan. Both have no ads and up to 30 Travi AI messages a day.",
   },
   "home.faq.q3": { he: "המפה עובדת גם בלי אינטרנט?", en: "Does the map work without internet?" },
   "home.faq.a3": {
@@ -210,21 +216,27 @@ export const DICTIONARY = {
   },
   "home.faq.q4": { he: "אפשר לבטל את המנוי מתי שרוצים?", en: "Can I cancel my subscription anytime?" },
   "home.faq.a4": {
-    he: "בהחלט - אין התחייבות ארוכת טווח, אפשר לבטל בכל רגע. והחבילה החינמית ממשיכה לעבוד גם בלי מנוי בכלל.",
-    en: "Absolutely - there's no long-term commitment, you can cancel anytime. And the free plan keeps working with no subscription at all.",
+    he: "בהחלט - אין התחייבות ארוכת טווח, אפשר לבטל בכל רגע.",
+    en: "Absolutely - there's no long-term commitment, you can cancel anytime.",
   },
   "home.faq.q5": { he: "אפשר להחליף את היעד שבחרתי?", en: "Can I switch my chosen destination?" },
   "home.faq.a5": {
-    he: "כן - גם בחבילה החינמית אפשר להחליף את היעד שלכם פעם ב-14 יום, דרך הגדרות החשבון. ב-Plus כל היעדים פתוחים בכל רגע, בלי צורך להחליף.",
-    en: "Yes - even on the free plan you can swap your destination once every 14 days, from account settings. On Plus every destination is open at all times, no swapping needed.",
+    he: "בחבילת יעד אחד אפשר להחליף את היעד פעם ב-14 יום, דרך הגדרות החשבון. בחבילת כל היעדים הכול פתוח בכל רגע, בלי צורך להחליף.",
+    en: "On the One destination plan you can swap your destination once every 14 days, from account settings. On All destinations everything is open at all times, no swapping needed.",
   },
 
   "home.bento.eyebrow": { he: "למה טראבי", en: "Why Travi" },
   "home.bento.title": { he: "כל מה שצריך לטיול אחד, במקום אחד", en: "Everything one trip needs, in one place" },
   "home.bento.destinationsLabel": { he: "יעדים מוכנים לטיול", en: "ready-made destinations" },
   "home.bento.poisLabel": { he: "נקודות עניין מתוכננות מראש", en: "pre-planned points of interest" },
-  "home.bento.freeValue": { he: "חינם", en: "Free" },
-  "home.bento.freeLabel": { he: "לתמיד, ליעד אחד - בלי כרטיס אשראי", en: "Forever, for one destination - no credit card" },
+  "home.bento.freeValue": {
+    he: "שבוע חינם",
+    en: "Free week",
+  },
+  "home.bento.freeLabel": {
+    he: "יעד אחד, כל התכונות - בלי כרטיס אשראי",
+    en: "One destination, every feature - no credit card",
+  },
   "home.bento.aiValue": { he: "AI 24/7", en: "AI 24/7" },
   "home.bento.aiLabel": { he: "טראבי, עוזר הטיול החכם, תמיד זמין", en: "Travi, your smart trip assistant, always on" },
 
@@ -232,8 +244,8 @@ export const DICTIONARY = {
   "home.how.title": { he: "מהרעיון לטיול, בארבעה צעדים", en: "From idea to trip, in four steps" },
   "home.how.step1.title": { he: "בוחרים יעד", en: "Pick a destination" },
   "home.how.step1.body": {
-    he: "דפדפו בין עשרות יעדים מוכנים, או התחילו חינם עם היעד הראשון שלכם - לתמיד.",
-    en: "Browse dozens of ready-made destinations, or start free with your first one - forever.",
+    he: "דפדפו בין עשרות יעדים מוכנים, והתחילו שבוע חינם עם היעד הראשון שלכם.",
+    en: "Browse dozens of ready-made destinations, and start a free week with your first one.",
   },
   "home.how.step2.title": { he: "מתכננים מסלול עם AI", en: "Plan a route with AI" },
   "home.how.step2.body": {
@@ -253,10 +265,13 @@ export const DICTIONARY = {
 
   "home.why.eyebrow": { he: "למה מטיילים בוחרים בטראבי", en: "Why travelers choose Travi" },
   "home.why.title": { he: "לא עוד אפליקציה עם מפה גנרית", en: "Not just another app with a generic map" },
-  "home.why.card1.title": { he: "חינם באמת", en: "Actually free" },
+  "home.why.card1.title": {
+    he: "בלי כרטיס אשראי",
+    en: "No credit card",
+  },
   "home.why.card1.body": {
-    he: "לא עוד חודש ניסיון שנגמר. החבילה החינמית נשארת חינמית - לתמיד.",
-    en: "Not another trial month that runs out. The free plan stays free - forever.",
+    he: "שבוע שלם עם כל התכונות, בלי להזין כרטיס אשראי. אחר כך בוחרים חבילה - מ-29 ₪ לחודש.",
+    en: "A whole week with every feature, without entering a credit card. Then pick a plan - from 29 ILS a month.",
   },
   "home.why.card2.title": { he: "עובד גם בלי אינטרנט", en: "Works without internet" },
   "home.why.card2.body": {
@@ -279,7 +294,7 @@ export const DICTIONARY = {
     he: "בלי כרטיס אשראי, בלי התחייבות - פשוט בוחרים יעד ומתחילים.",
     en: "No credit card, no commitment - just pick a destination and start.",
   },
-  "home.finalCta.cta": { he: "בואו נתחיל - בחינם", en: "Let's start - for free" },
+  "home.finalCta.cta": { he: "בואו נתחיל - שבוע חינם", en: "Let's start - a free week" },
 
   "footer.tagline": { he: "פלטפורמת הטיולים שלכם - מתכנון ועד הנחיתה חזרה.", en: "Your travel platform - from planning to landing back home." },
   "footer.explore": { he: "גלו", en: "Explore" },
@@ -318,7 +333,10 @@ export const DICTIONARY = {
   "destCard.pois": { he: "נקודות עניין", en: "points of interest" },
   "destCard.comingSoon": { he: "בקרוב", en: "Coming soon" },
   "destCard.areas": { he: "אזורים", en: "areas" },
-  "destCard.free": { he: "חינם", en: "Free" },
+  "destCard.free": {
+    he: "שבוע חינם",
+    en: "Free week",
+  },
 
   "pricing.title": { he: "תוכנית שמתאימה לאיך שאתם מטיילים", en: "A plan that fits how you travel" },
   "pricing.subtitle": { he: "מנוי חודשי, בלי התחייבות ארוכה. בטלו מתי שתרצו.", en: "Monthly subscription, no long commitment. Cancel anytime." },
@@ -328,8 +346,12 @@ export const DICTIONARY = {
   "pricing.hours24": { he: "⏱️ 24 שעות", en: "⏱️ 24 hours" },
   "pricing.free": { he: "חינם", en: "Free" },
   "pricing.forever": { he: "♾️ לתמיד", en: "♾️ Forever" },
+  "pricing.sevenDays": { he: "⏱️ 7 ימים", en: "⏱️ 7 days" },
   "pricing.startFreeTrial": { he: "התחלת ניסיון חינם", en: "Start free trial" },
-  "pricing.startFree": { he: "🎁 קבלת גישה חינמית", en: "🎁 Get free access" },
+  "pricing.startFree": {
+    he: "🎁 להתחיל שבוע חינם",
+    en: "🎁 Start your free week",
+  },
   "pricing.noAds": { he: "בלי פרסומות", en: "No ads" },
   "pricing.mostPopular": { he: "⭐ הכי פופולרי", en: "⭐ Most popular" },
   "pricing.allDestinations": { he: "כל היעדים", en: "All destinations" },

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { claimReferralCode } from "@/lib/referral";
 import { notifyAdmins } from "@/lib/adminAlerts";
+import { grantFreeWeek } from "@/lib/freeWeek";
 
 const RegisterSchema = z.object({
   name: z.string().min(1).max(120),
@@ -29,6 +30,8 @@ export async function POST(request: Request) {
   const passwordHash = await bcrypt.hash(password, 10);
   const created = await prisma.user.create({ data: { name, email, passwordHash } });
   if (ref) await claimReferralCode(created.id, ref);
+  // The free week starts now, at sign-up — once per network, not per email (see lib/freeWeek.ts).
+  await grantFreeWeek(created.id);
   await notifyAdmins({ title: "👤 חשבון חדש", body: `${name} (${email}) נרשם/ה לטראבי`, url: "/admin/users" });
 
   return NextResponse.json({ ok: true });
