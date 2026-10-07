@@ -8,6 +8,11 @@ import { TrialDestinationPicker } from "./TrialDestinationPicker";
 // Route kept at /trial (not renamed) — it's the one real link to this page (see PricingCards), so there's nothing
 // gained by moving it and a real risk of breaking a bookmarked/shared link for no reason. The content itself is
 // the 2026-10-07 "one free week, one destination" offer now (the week itself starts at sign-up — see lib/freeWeek.ts).
+function weekStateOf(freeUntil: Date | null): "never" | "over" | "active" {
+  if (!freeUntil) return "never";
+  return freeUntil.getTime() <= Date.now() ? "over" : "active";
+}
+
 export default async function TrialPage({ searchParams }: { searchParams: Promise<{ dest?: string }> }) {
   const { dest } = await searchParams;
   const session = await auth();
@@ -15,7 +20,7 @@ export default async function TrialPage({ searchParams }: { searchParams: Promis
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { freeUntil: true } });
   const freeUntil = user?.freeUntil ?? null;
-  const weekState: "never" | "over" | "active" = !freeUntil ? "never" : freeUntil.getTime() <= Date.now() ? "over" : "active";
+  const weekState = weekStateOf(freeUntil);
 
   const destinations = await prisma.destination.findMany({
     where: { status: { in: ["preview", "live"] }, isPublic: true },
