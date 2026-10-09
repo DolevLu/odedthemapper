@@ -1665,7 +1665,7 @@ export function MapScreen({
        * route-mode buttons. Moved to the itinerary screen's filter row on
        * request for THAT screen specifically — this map screen's own copy
        * stays put right here, unchanged. */}
-      <div className="absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)] left-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
+      <div className="absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+3rem)] left-2 z-10 flex gap-0.5 rounded-full bg-white/95 p-0.5 text-[11px] font-semibold shadow-md sm:hidden">
         <button
           onClick={() => setMapType("roadmap")}
           className="rounded-full px-2 py-0.5"
@@ -2063,7 +2063,7 @@ export function MapScreen({
        * stacked above the Travi chat button's own clearance — a static
        * guess here previously let the points list creep over this button on
        * devices whose real nav-bar height differed from the guess. */}
-      <div className="group absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+8.25rem)] end-3 z-10 sm:bottom-6">
+      <div className="group absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+7rem)] end-3 z-10 sm:bottom-6">
         <button
           onClick={previewGate(() => setRouteModeActive((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
@@ -2092,7 +2092,7 @@ export function MapScreen({
        * button (bottom-6 h-14) instead of sharing its exact offset, which
        * was overlapping the two. Mobile offset: same dynamic clearance as
        * the route-mode button it mirrors (see its own comment). */}
-      <div className="group absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+8.25rem)] start-3 z-10 sm:bottom-24">
+      <div className="group absolute bottom-[calc(var(--mobile-nav-height,3.5rem)+7rem)] start-3 z-10 sm:bottom-24">
         <button
           onClick={previewGate(() => setShowGooglePois((v) => !v))}
           className="flex h-11 w-11 items-center justify-center rounded-full shadow-md"
@@ -2123,10 +2123,10 @@ export function MapScreen({
        * isn't added again here. This sits the list flush against the nav on
        * any device, with no gap and no overlap. */}
       <div
-        className="absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl"
-        style={{ background: "var(--surface)", height: listOpen ? "70vh" : "3.5rem", ...previewDim }}
+        className={`absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 ${listOpen ? "" : "h-9 sm:h-14"} sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl`}
+        style={{ background: "var(--surface)", ...(listOpen ? { height: "70vh" } : {}), ...previewDim }}
       >
-        <div className="flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-semibold">
+        <div className="flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px] font-semibold sm:px-4 sm:py-3 sm:text-sm">
           <button onClick={previewGate(() => setListOpen((v) => !v))} className="flex flex-1 items-center gap-2 text-start">
             <span>
               {t("map.pointsInListPrefix")} {sortedList.length} {t("map.pointsInListSuffix")}
@@ -2137,7 +2137,7 @@ export function MapScreen({
             <button
               onClick={previewGate(handleSaveOffline)}
               disabled={offlineSaving}
-              className="shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold opacity-70 hover:opacity-100 disabled:opacity-50"
+              className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold opacity-70 hover:opacity-100 disabled:opacity-50 sm:py-1 sm:text-[11px]"
               style={{ background: offlineSaved ? "color-mix(in srgb, #16A34A 12%, transparent)" : "transparent", color: offlineSaved ? "#16A34A" : "var(--text)" }}
               title={t("map.saveOfflineTitle")}
             >
@@ -2148,7 +2148,7 @@ export function MapScreen({
                   : t("map.saveOffline")}
             </button>
           )}
-          <button onClick={previewGate(() => setListOpen((v) => !v))} className="shrink-0 text-xs opacity-60">
+          <button onClick={previewGate(() => setListOpen((v) => !v))} className="shrink-0 text-[10px] opacity-60 sm:text-xs">
             {listOpen ? "▼" : "▲"}
           </button>
         </div>

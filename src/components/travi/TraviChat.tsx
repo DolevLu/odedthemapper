@@ -71,7 +71,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
       <button
         onClick={() => setOpen((o) => !o)}
         className={`fixed right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px] ${
-          isMapScreen ? "bottom-[calc(var(--mobile-nav-height,3.5rem)+4.25rem)]" : "bottom-[calc(var(--mobile-nav-height,3.5rem)+0.75rem)]"
+          isMapScreen ? "bottom-[calc(var(--mobile-nav-height,3.5rem)+3rem)]" : "bottom-[calc(var(--mobile-nav-height,3.5rem)+0.75rem)]"
         }`}
         style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
         aria-label={t("travi.ariaLabel")}
