@@ -35,6 +35,10 @@ export function proxiedImageUrl(url: string): string {
   // route itself never uses a query string anyway — the image is fully
   // identified by its path alone.
   const withoutQuery = url.split("?")[0];
-  const tail = withoutQuery.slice(WIKIMEDIA_UPLOAD_PREFIX.length);
+  // Wikimedia thumbnails in the data are often the 3840px step (several MB each) - with next/image's resizing no
+  // longer in the path (see next.config.ts images.unoptimized) they are asked for at the 960px step instead, which
+  // is Wikimedia's own standard size and plenty for a card/list photo.
+  const sized = withoutQuery.replace(/\/(\d{3,4})px-([^/]+)$/, (m, w: string, name: string) => (Number(w) > 960 ? `/960px-${name}` : m));
+  const tail = sized.slice(WIKIMEDIA_UPLOAD_PREFIX.length);
   return `/api/image-proxy/wikimedia/${tail}`;
 }

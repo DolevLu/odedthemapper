@@ -114,14 +114,15 @@ export function ItineraryLayoutSwitcher({
        * floating day filter (see DayRouteMap) — that one overlays the map
        * itself rather than taking up separate space above it. */}
       <div
-        className="flex h-full min-h-0 w-[420px] shrink-0 flex-col border-e"
+        className="m-3 flex h-[calc(100%-1.5rem)] min-h-0 w-[420px] shrink-0 flex-col overflow-hidden rounded-3xl border shadow-lg"
         style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)", background: "var(--surface)" }}
       >
         {/* All six actions (שמורים, הוספת יום, מסלול טינדר, מסלול AI, שמירה, PDF) now live in this one row —
          * they don't all fit at 420px, so this scrolls horizontally with a small arrow on each side (matching the
          * same pattern the map/mobile itinerary's own pill rows already use) rather than wrapping onto a second
          * line or hiding anything. */}
-        <div className="flex flex-nowrap shrink-0 items-center gap-1 border-b p-2" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
+        {/* dir="ltr" on this row: the page is RTL, which put the "‹" button on the physical RIGHT (and mirrored its glyph), so the arrow on the left scrolled the wrong way. LTR keeps each arrow on the side it points to; the pill row itself stays RTL. */}
+        <div dir="ltr" className="flex flex-nowrap shrink-0 items-center gap-1 border-b p-2" style={{ borderColor: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
           <button
             onClick={() => pillRowRef.current?.scrollBy({ left: -160, behavior: "smooth" })}
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm"
@@ -130,7 +131,7 @@ export function ItineraryLayoutSwitcher({
           >
             ‹
           </button>
-          <div ref={pillRowRef} className="no-scrollbar flex flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto scroll-smooth p-0.5">
+          <div ref={pillRowRef} dir="rtl" className="no-scrollbar flex flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto scroll-smooth p-0.5">
             <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
             <ItineraryWizard
               destinationId={destinationId}

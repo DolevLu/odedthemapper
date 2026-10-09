@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { saveItineraryAsTemplate } from "@/lib/actions/trip";
 import { setRoutePublic } from "@/lib/actions/publicRoutes";
@@ -71,46 +72,59 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
       >
         {saved ? t("itinerary.saved") : t("itinerary.saveButton")}
       </button>
-      {open && (
-        <div
-          className="absolute z-30 mt-1 w-72 rounded-xl border p-2.5 shadow-lg"
-          style={{ background: "var(--surface)", borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
-        >
-          <p className="mb-2 text-xs font-bold opacity-70">{t("itinerary.whatToCallIt")}</p>
-          <input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            placeholder={t("itinerary.namePlaceholder")}
-            className="mb-2 w-full rounded-lg border px-2 py-1.5 text-sm"
-            style={{ borderColor: "var(--primary)" }}
-          />
-          <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs font-bold">
-            <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} />
-            🌍 {t("pub.share.toggle")}
-          </label>
-          {share && (
-            <div className="mb-2">
-              <PublishFields audience={audience} onAudience={setAudience} description={description} onDescription={setDescription} />
-            </div>
-          )}
-          {shareMsg && <p className="mb-2 text-xs font-semibold text-red-600">{shareMsg}</p>}
-          <div className="flex gap-1.5">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 rounded-full px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60"
-              style={{ background: "var(--primary)" }}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          // A real modal portaled to <body>: the pill row this button lives in scrolls horizontally and sits inside the
+          // itinerary map's own stacking context, so an in-place dropdown was clipped / hidden behind the route drawer
+          // (the save settings could not be seen). On phones it is a bottom sheet, on desktop a centered card.
+          <div className="fixed inset-0 z-[400] flex items-end justify-center bg-black/40 p-3 sm:items-center" onClick={() => setOpen(false)}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[88vh] w-full max-w-sm flex-col gap-3 overflow-y-auto rounded-2xl p-4 shadow-2xl"
+              style={{ background: "var(--surface)" }}
             >
-              {saving ? t("itinerary.saving") : t("itinerary.savePlain")}
-            </button>
-            <button onClick={() => setOpen(false)} className="rounded-full px-3 py-1.5 text-xs opacity-60">
-              {t("itinerary.cancel")}
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold">{t("itinerary.saveButton")}</h2>
+                <button onClick={() => setOpen(false)} className="text-xl opacity-50 hover:opacity-100" aria-label={t("nav.close")}>
+                  ✕
+                </button>
+              </div>
+              <label className="flex flex-col gap-1 text-xs font-bold opacity-80">
+                {t("itinerary.whatToCallIt")}
+                <input
+                  autoFocus
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                  placeholder={t("itinerary.namePlaceholder")}
+                  className="w-full rounded-lg border px-2 py-1.5 text-sm font-normal"
+                  style={{ borderColor: "var(--primary)", background: "var(--surface)" }}
+                />
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-sm font-bold" style={{ borderColor: share ? "var(--primary)" : "rgba(0,0,0,0.12)" }}>
+                <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} className="h-4 w-4" />
+                <span>🌍 {t("pub.share.toggle")}</span>
+              </label>
+              {share && <PublishFields audience={audience} onAudience={setAudience} description={description} onDescription={setDescription} />}
+              {shareMsg && <p className="text-sm font-semibold text-red-600">{shareMsg}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                  style={{ background: "var(--primary)" }}
+                >
+                  {saving ? t("itinerary.saving") : share ? t("pub.share.save") + " + 🌍" : t("itinerary.savePlain")}
+                </button>
+                <button onClick={() => setOpen(false)} className="rounded-full px-4 py-2.5 text-sm opacity-60">
+                  {t("itinerary.cancel")}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

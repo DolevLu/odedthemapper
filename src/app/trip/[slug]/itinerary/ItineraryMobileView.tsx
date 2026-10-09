@@ -10,6 +10,7 @@ import type { DayListItem } from "./DayItemsList";
 import { ItineraryTopBar } from "./ItineraryTopBar";
 import { ItineraryWizard } from "./ItineraryWizard";
 import { ExportPdfButton } from "./ExportPdfButton";
+import { SaveItineraryButton } from "./SaveItineraryButton";
 import { shortCategoryLabel } from "@/lib/categoryLabels";
 import { setItineraryDayDate } from "@/lib/actions/trip";
 import { useTranslation } from "@/components/i18n/LanguageContext";
@@ -246,6 +247,7 @@ export function ItineraryMobileView({
         >
           <ItineraryTopBar destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} templates={templates} />
           <ItineraryWizard destinationId={destinationId} slug={slug} categories={categoryNames} areas={areas} hasExistingDays={hasExistingDays} />
+          <SaveItineraryButton destinationId={destinationId} slug={slug} hasExistingDays={hasExistingDays} />
           <ExportPdfButton destinationId={destinationId} slug={slug} />
         </div>
         <button

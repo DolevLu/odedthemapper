@@ -465,6 +465,8 @@ export const DICTIONARY = {
   "home.share.step1": { he: "גוללים ורואים מקום מגניב", en: "Scroll and spot a cool place" },
   "home.share.step2": { he: "שיתוף ← טראבי", en: "Share → Travi" },
   "home.share.step3": { he: "הוא על המפה שלכם", en: "It's on your map" },
+  "map.searchAllFor": { he: "חיפוש כל התוצאות עבור", en: "Search all results for" },
+  "map.searchResultsOnMap": { he: "תוצאות סומנו על המפה", en: "results marked on the map" },
   "pricing.title": { he: "תוכנית שמתאימה לאיך שאתם מטיילים", en: "A plan that fits how you travel" },
   "pricing.subtitle": { he: "מנוי חודשי, בלי התחייבות ארוכה. בטלו מתי שתרצו.", en: "Monthly subscription, no long commitment. Cancel anytime." },
   "pricing.monthly": { he: "חודשי", en: "Monthly" },

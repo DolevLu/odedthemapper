@@ -26,6 +26,7 @@ import { saveDestinationOffline, isDestinationSavedOffline, isOfflineStorageSupp
 import { CAPITAL_AREA_MATCH_BY_SLUG, CAPITAL_COORDS_BY_SLUG } from "@/lib/capitalCities";
 import { suppressMapsErrorDialog } from "@/lib/suppressMapsErrorDialog";
 import { takeGoogleBudget } from "@/lib/clientGoogleBudget";
+import { isSpecificPlaceQuery, matchCurated } from "@/lib/mapSearch";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 import { areaLabel, categoryLabel, poiDescription } from "@/lib/i18n/content";
 import type { DictionaryKey, Lang } from "@/lib/i18n/dictionary";
@@ -351,6 +352,11 @@ export function MapScreen({
   const stopSuppressingMapsErrorDialogRef = useRef<(() => void) | null>(null);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  // A tapped point's details open in a drawer (bottom sheet on phones, side panel on desktop) instead of Google's small
+  // InfoWindow bubble. infoWindowRef now holds a thin stand-in with the same setContent/open/close surface, so every
+  // existing "open this point's details" call keeps working and just renders here.
+  const [drawer, setDrawer] = useState<{ html: string; open: boolean; v: number }>({ html: "", open: false, v: 0 });
+  const drawerBodyRef = useRef<HTMLDivElement>(null);
   const markersByPoiId = useRef<Map<string, google.maps.Marker>>(new Map());
   const currentMarkerScaleRef = useRef<number>(MARKER_SCALE_DEFAULT);
   // Which marker ids currently have a name-tag label showing — lets
@@ -484,6 +490,14 @@ export function MapScreen({
   const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchNoResults, setSearchNoResults] = useState(false);
+  // Live suggestions under the search box (curated points first, then Google's own predictions near the map's
+  // center), and the numbered markers a category search ("train station") drops on the map.
+  type Suggestion = { kind: "poi"; id: string; title: string; subtitle: string } | { kind: "google"; placeId: string; title: string; subtitle: string; distance: number | null };
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const searchMarkersRef = useRef<google.maps.Marker[]>([]);
+  const suggestTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const [searchResultCount, setSearchResultCount] = useState<number | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [offlineSaved, setOfflineSaved] = useState(false);
   const [offlineSaving, setOfflineSaving] = useState(false);
@@ -504,6 +518,9 @@ export function MapScreen({
   const [showGooglePois, setShowGooglePois] = useState(false);
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const [pendingSavePin, setPendingSavePin] = useState<PendingSavePin | null>(null);
+  useEffect(() => {
+    if (drawer.open && infoWindowRef.current) google.maps.event.trigger(infoWindowRef.current, "domready");
+  }, [drawer.open, drawer.html, drawer.v]);
   const [addOpen, setAddOpen] = useState(false);
   const [addTab, setAddTab] = useState<"list" | "link">("list");
   // First-run nudge for the "share a Reel into Travi" feature: shown only to someone with no saved places yet,
@@ -798,13 +815,30 @@ export function MapScreen({
       }
     }
 
-    infoWindowRef.current = new google.maps.InfoWindow();
+    const shim = new google.maps.MVCObject() as unknown as Record<string, unknown>;
+    let lastPosition: google.maps.LatLng | google.maps.LatLngLiteral | null = null;
+    shim.setContent = (html: string) => setDrawer((d) => ({ ...d, html }));
+    shim.setPosition = (p: google.maps.LatLng | google.maps.LatLngLiteral) => {
+      lastPosition = p;
+    };
+    shim.close = () => setDrawer((d) => (d.open ? { ...d, open: false } : d));
+    shim.open = (opts?: { anchor?: google.maps.Marker }) => {
+      setDrawer((d) => ({ ...d, open: true, v: d.v + 1 }));
+      // Bring the tapped point into the part of the map the drawer doesn't cover.
+      const target = opts?.anchor?.getPosition() ?? lastPosition;
+      const map = mapRef.current;
+      if (!target || !map) return;
+      const desktop = window.innerWidth >= 640;
+      map.panTo(target);
+      google.maps.event.addListenerOnce(map, "idle", () => (desktop ? map.panBy(-190, 0) : map.panBy(0, Math.round(window.innerHeight * 0.17))));
+    };
+    infoWindowRef.current = shim as unknown as google.maps.InfoWindow;
 
     // Wires up the plain-HTML favorite/booking buttons inside the info
     // window's content — fires on every open() (Maps rebuilds the content
     // DOM node each time), so registering it once here is enough.
     google.maps.event.addListener(infoWindowRef.current, "domready", () => {
-      const favBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-fav-btn]");
+      const favBtn = drawerBodyRef.current?.querySelector<HTMLButtonElement>("[data-fav-btn]");
       if (favBtn) {
         favBtn.onclick = (e) => {
           e.stopPropagation();
@@ -832,7 +866,7 @@ export function MapScreen({
           toggleFavorite(poiId, slug);
         };
       }
-      const bookBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-book-btn]");
+      const bookBtn = drawerBodyRef.current?.querySelector<HTMLButtonElement>("[data-book-btn]");
       if (bookBtn) {
         bookBtn.onclick = (e) => {
           e.stopPropagation();
@@ -844,7 +878,7 @@ export function MapScreen({
           toggleWantsBooking(poiId, slug);
         };
       }
-      const editStyleBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-edit-style-btn]");
+      const editStyleBtn = drawerBodyRef.current?.querySelector<HTMLButtonElement>("[data-edit-style-btn]");
       if (editStyleBtn) {
         editStyleBtn.onclick = (e) => {
           e.stopPropagation();
@@ -864,7 +898,7 @@ export function MapScreen({
           }
         };
       }
-      const saveBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-save-pin-btn]");
+      const saveBtn = drawerBodyRef.current?.querySelector<HTMLButtonElement>("[data-save-pin-btn]");
       if (saveBtn) {
         saveBtn.onclick = (e) => {
           e.stopPropagation();
@@ -879,7 +913,7 @@ export function MapScreen({
           infoWindowRef.current?.close();
         };
       }
-      mapDivRef.current?.querySelectorAll<HTMLButtonElement>("[data-pin-vote]").forEach((btn) => {
+      drawerBodyRef.current?.querySelectorAll<HTMLButtonElement>("[data-pin-vote]").forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
           const id = btn.getAttribute("data-pin-id")!;
@@ -890,7 +924,7 @@ export function MapScreen({
           infoWindowRef.current?.close();
         };
       });
-      const deletePinBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-delete-pin-btn]");
+      const deletePinBtn = drawerBodyRef.current?.querySelector<HTMLButtonElement>("[data-delete-pin-btn]");
       if (deletePinBtn) {
         deletePinBtn.onclick = (e) => {
           e.stopPropagation();
@@ -898,7 +932,7 @@ export function MapScreen({
           infoWindowRef.current?.close();
         };
       }
-      const editPinBtn = mapDivRef.current?.querySelector<HTMLButtonElement>("[data-edit-pin-btn]");
+      const editPinBtn = drawerBodyRef.current?.querySelector<HTMLButtonElement>("[data-edit-pin-btn]");
       if (editPinBtn) {
         editPinBtn.onclick = (e) => {
           e.stopPropagation();
@@ -923,7 +957,7 @@ export function MapScreen({
       // button). Repaints the whole row on click rather than just toggling
       // classes, since every star's filled/outline state depends on the new
       // value, not just the clicked one.
-      const rateBtns = mapDivRef.current?.querySelectorAll<HTMLButtonElement>("[data-rate-btn]");
+      const rateBtns = drawerBodyRef.current?.querySelectorAll<HTMLButtonElement>("[data-rate-btn]");
       rateBtns?.forEach((btn) => {
         btn.onclick = (e) => {
           e.stopPropagation();
@@ -933,7 +967,7 @@ export function MapScreen({
           const nextValue = clickedValue === currentValue ? 0 : clickedValue;
           if (nextValue === 0) delete ratingsByPoiIdRef.current[poiId];
           else ratingsByPoiIdRef.current[poiId] = nextValue;
-          const row = mapDivRef.current?.querySelector<HTMLElement>(`[data-rate-row][data-poi-id="${poiId}"]`);
+          const row = drawerBodyRef.current?.querySelector<HTMLElement>(`[data-rate-row][data-poi-id="${poiId}"]`);
           row?.querySelectorAll<HTMLButtonElement>("[data-rate-btn]").forEach((s) => {
             s.textContent = Number(s.getAttribute("data-value")) <= nextValue ? "⭐" : "☆";
           });
@@ -949,6 +983,7 @@ export function MapScreen({
     // Only paying users can ever get here: previewGate() stops anonymous/
     // unsubscribed visitors from turning the layer on in the first place.
     google.maps.event.addListener(mapRef.current, "click", (e: google.maps.IconMouseEvent) => {
+      if (!e.placeId) infoWindowRef.current?.close();
       if (!e.placeId || !showGooglePoisRef.current || previewRef.current) return;
       e.stop();
       if (!takeGoogleBudget("places")) return;
@@ -1212,55 +1247,188 @@ export function MapScreen({
     });
   }, [loaded, logisticPins]);
 
-  // Free-text search against Google Places itself (not just our curated
-  // POIs) — biased to the current viewport, panning/zooming to the top
-  // result and offering the same "💾 שמירה למפה" info-window button already
-  // wired up for the "tap a Google POI tag" flow above.
+  function clearSearchMarkers() {
+    searchMarkersRef.current.forEach((m) => m.setMap(null));
+    searchMarkersRef.current = [];
+    setSearchResultCount(null);
+  }
+
+  // The info window for ONE Google place (a search hit or a picked suggestion), with the same "save to my map" button
+  // the "tap a Google POI tag" flow uses.
+  function openGooglePlaceWindow(place: { placeId: string; name: string; address: string | null; lat: number; lng: number }, anchor?: google.maps.Marker) {
+    const name = escapeHtml(place.name);
+    infoWindowRef.current?.setContent(
+      `<div style="font-family:'Rubik',sans-serif;padding:8px">
+        <strong>${name}</strong>
+        ${place.address ? `<div style="font-size:12px;opacity:.6;margin-top:2px">${escapeHtml(place.address)}</div>` : ""}
+        <div style="margin-top:8px">
+          <button data-save-pin-btn data-place-id="${place.placeId}" data-place-name="${name}" data-place-lat="${place.lat}" data-place-lng="${place.lng}" style="${INFO_ACTION_BTN_STYLE}">${t("map.savePin")}</button>
+        </div>
+      </div>`
+    );
+    if (anchor) infoWindowRef.current?.open({ map: mapRef.current!, anchor });
+    else {
+      infoWindowRef.current?.setPosition({ lat: place.lat, lng: place.lng });
+      infoWindowRef.current?.open({ map: mapRef.current! });
+    }
+  }
+
+  // Search (Enter / the search button): asks Google Places near where the map is looking. ONE specific place (the typed
+  // text is that place's name) -> just that place, opened. A kind of place ("train station", "תחנת רכבת") -> the most
+  // relevant nearby results are marked on the map, numbered, and the view fits them all.
   function runPlaceSearch() {
     const query = searchQuery.trim();
     if (!query || !mapRef.current) return;
+    setSuggestOpen(false);
     if (!takeGoogleBudget("places")) {
       setSearchNoResults(true);
       return;
     }
     setSearching(true);
     setSearchNoResults(false);
+    clearSearchMarkers();
     loadPlacesLibrary()
       .then(() => {
         if (!placesServiceRef.current && mapRef.current) {
           placesServiceRef.current = new google.maps.places.PlacesService(mapRef.current);
         }
+        const center = userPositionRef.current ?? getMapCenter();
         placesServiceRef.current?.textSearch(
-          { query, bounds: mapRef.current?.getBounds() ?? undefined },
+          { query, ...(center ? { location: center, radius: 15000 } : { bounds: mapRef.current?.getBounds() ?? undefined }) },
           (results, status) => {
             setSearching(false);
-            const top = results?.[0];
-            const location = top?.geometry?.location;
-            if (status !== google.maps.places.PlacesServiceStatus.OK || !top || !location || !top.place_id) {
+            const hits = (results ?? []).filter((r) => r.geometry?.location && r.place_id);
+            if (status !== google.maps.places.PlacesServiceStatus.OK || hits.length === 0) {
               setSearchNoResults(true);
               return;
             }
-            const lat = location.lat();
-            const lng = location.lng();
-            const name = top.name ?? query;
-            mapRef.current!.panTo({ lat, lng });
-            mapRef.current!.setZoom(16);
-            infoWindowRef.current?.setContent(
-              `<div style="font-family:'Rubik',sans-serif;padding:8px">
-                <strong>${name}</strong>
-                ${top.formatted_address ? `<div style="font-size:12px;opacity:.6;margin-top:2px">${top.formatted_address}</div>` : ""}
-                <div style="margin-top:8px">
-                  <button data-save-pin-btn data-place-id="${top.place_id}" data-place-name="${name}" data-place-lat="${lat}" data-place-lng="${lng}" style="${INFO_ACTION_BTN_STYLE}">${t("map.savePin")}</button>
-                </div>
-              </div>`
-            );
-            infoWindowRef.current?.setPosition({ lat, lng });
-            infoWindowRef.current?.open({ map: mapRef.current! });
+            const toPlace = (r: google.maps.places.PlaceResult) => ({
+              placeId: r.place_id!,
+              name: r.name ?? query,
+              address: r.formatted_address ?? null,
+              lat: r.geometry!.location!.lat(),
+              lng: r.geometry!.location!.lng(),
+            });
+            if (isSpecificPlaceQuery(query, hits.map((h) => h.name ?? ""))) {
+              const p = toPlace(hits[0]);
+              mapRef.current!.panTo({ lat: p.lat, lng: p.lng });
+              mapRef.current!.setZoom(16);
+              openGooglePlaceWindow(p);
+              return;
+            }
+            const shown = hits.slice(0, 12);
+            const bounds = new google.maps.LatLngBounds();
+            shown.forEach((r, i) => {
+              const p = toPlace(r);
+              const marker = new google.maps.Marker({
+                position: { lat: p.lat, lng: p.lng },
+                map: mapRef.current!,
+                title: p.name,
+                label: { text: String(i + 1), color: "#ffffff", fontWeight: "700", fontSize: "12px" },
+                zIndex: 900,
+              });
+              marker.addListener("click", () => openGooglePlaceWindow(p, marker));
+              searchMarkersRef.current.push(marker);
+              bounds.extend({ lat: p.lat, lng: p.lng });
+            });
+            if (center) bounds.extend(center);
+            mapRef.current!.fitBounds(bounds, 60);
+            setSearchResultCount(shown.length);
           }
         );
       })
       .catch(() => setSearching(false));
   }
+
+  async function pickSuggestion(s: Suggestion) {
+    setSuggestOpen(false);
+    if (s.kind === "poi") {
+      const poi = pointPoisById.get(s.id);
+      if (!poi || !mapRef.current) return;
+      setSearchQuery(poi.name);
+      clearSearchMarkers();
+      mapRef.current.panTo({ lat: poi.lat, lng: poi.lng });
+      mapRef.current.setZoom(17);
+      const marker = markersByPoiId.current.get(poi.id);
+      if (marker) openPoi(poi, marker);
+      return;
+    }
+    if (!mapRef.current || !takeGoogleBudget("places")) return;
+    setSearchQuery(s.title);
+    clearSearchMarkers();
+    setSearching(true);
+    try {
+      await loadPlacesLibrary();
+      if (!placesServiceRef.current) placesServiceRef.current = new google.maps.places.PlacesService(mapRef.current);
+      placesServiceRef.current.getDetails({ placeId: s.placeId, fields: ["name", "geometry", "formatted_address", "place_id"], sessionToken: suggestTokenRef.current ?? undefined }, (place, status) => {
+        setSearching(false);
+        suggestTokenRef.current = null;
+        const loc = place?.geometry?.location;
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !place || !loc) {
+          setSearchNoResults(true);
+          return;
+        }
+        const p = { placeId: s.placeId, name: place.name ?? s.title, address: place.formatted_address ?? null, lat: loc.lat(), lng: loc.lng() };
+        mapRef.current!.panTo({ lat: p.lat, lng: p.lng });
+        mapRef.current!.setZoom(16);
+        openGooglePlaceWindow(p);
+      });
+    } catch {
+      setSearching(false);
+    }
+  }
+
+  // Suggestions while typing - debounced, refreshed on every keystroke: instant matches among our curated points,
+  // plus Google's autocomplete biased to where the map (or the traveler) is, with the distance to each.
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (preview || q.length < 2 || !loaded) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const center = userPositionRef.current ?? getMapCenter();
+      const local: Suggestion[] = matchCurated(q, pointPois, center, 3).map((p) => ({ kind: "poi", id: p.id, title: p.name, subtitle: p.areaName }));
+      if (!cancelled) setSuggestions(local);
+      if (!takeGoogleBudget("places")) return;
+      try {
+        await loadPlacesLibrary();
+        if (cancelled) return;
+        suggestTokenRef.current ??= new google.maps.places.AutocompleteSessionToken();
+        new google.maps.places.AutocompleteService().getPlacePredictions(
+          {
+            input: q,
+            sessionToken: suggestTokenRef.current,
+            ...(center ? { locationBias: { center, radius: 20000 }, origin: center } : {}),
+          },
+          (results, status) => {
+            if (cancelled) return;
+            const g: Suggestion[] =
+              status === google.maps.places.PlacesServiceStatus.OK && results
+                ? results.slice(0, 6).map((r) => ({
+                    kind: "google" as const,
+                    placeId: r.place_id,
+                    title: r.structured_formatting?.main_text ?? r.description,
+                    subtitle: r.structured_formatting?.secondary_text ?? "",
+                    distance: typeof r.distance_meters === "number" ? r.distance_meters : null,
+                  }))
+                : [];
+            // a Google result that is the same place as one of our curated suggestions would just repeat it
+            const seen = new Set(local.map((l) => l.title.toLowerCase()));
+            setSuggestions([...local, ...g.filter((x) => !seen.has(x.title.toLowerCase()))].slice(0, 8));
+          }
+        );
+      } catch {
+        /* keep the local matches */
+      }
+    }, 220);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, loaded, preview]);
 
   async function drawRouteTo(poi: FlatPoi) {
     const origin = userPositionRef.current;
@@ -1724,7 +1892,9 @@ export function MapScreen({
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setSearchNoResults(false);
+              setSuggestOpen(true);
             }}
+            onFocus={() => setSuggestOpen(true)}
             onKeyDown={(e) => e.key === "Enter" && previewGate(runPlaceSearch)()}
             placeholder={t("map.searchPlaceholder")}
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
@@ -1735,6 +1905,8 @@ export function MapScreen({
               onClick={() => {
                 setSearchQuery("");
                 setSearchNoResults(false);
+                setSuggestions([]);
+                clearSearchMarkers();
               }}
               className="shrink-0 px-1 text-sm opacity-50 hover:opacity-100"
               aria-label={t("map.clearSearch")}
@@ -1937,7 +2109,9 @@ export function MapScreen({
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setSearchNoResults(false);
+              setSuggestOpen(true);
             }}
+            onFocus={() => setSuggestOpen(true)}
             onKeyDown={(e) => e.key === "Enter" && previewGate(runPlaceSearch)()}
             placeholder={t("map.searchPlaceholder")}
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
@@ -1948,6 +2122,8 @@ export function MapScreen({
               onClick={() => {
                 setSearchQuery("");
                 setSearchNoResults(false);
+                setSuggestions([]);
+                clearSearchMarkers();
               }}
               className="shrink-0 text-sm opacity-50 hover:opacity-100"
               aria-label={t("map.clearSearch")}
@@ -2034,6 +2210,51 @@ export function MapScreen({
           <Link href="/pricing" className="underline underline-offset-2">
             {t("map.allPlans")}
           </Link>
+        </div>
+      )}
+
+      {suggestOpen && suggestions.length > 0 && searchQuery.trim().length >= 2 && (
+        <>
+          <div className="fixed inset-0 z-20 sm:hidden" onClick={() => setSuggestOpen(false)} />
+          <ul
+            dir="rtl"
+            className="absolute inset-x-2 top-[calc(3.9rem+env(safe-area-inset-top))] z-30 max-h-[55vh] overflow-y-auto rounded-2xl bg-white py-1 shadow-xl sm:inset-x-auto sm:right-3 sm:top-[3.6rem] sm:w-80"
+            style={{ color: "#1a1a1a" }}
+          >
+            {suggestions.map((s) => (
+              <li key={s.kind === "poi" ? "p" + s.id : "g" + s.placeId}>
+                <button onMouseDown={(e) => e.preventDefault()} onClick={() => pickSuggestion(s)} className="flex w-full items-center gap-3 px-3 py-2 text-start hover:bg-black/5">
+                  <span className="shrink-0 text-lg" aria-hidden="true">
+                    {s.kind === "poi" ? "⭐" : "📍"}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{s.title}</span>
+                    {s.subtitle && <span className="block truncate text-xs opacity-60">{s.subtitle}</span>}
+                  </span>
+                  {s.kind === "google" && s.distance != null && (
+                    <span dir="ltr" className="shrink-0 text-xs opacity-50">{s.distance < 1000 ? `${Math.round(s.distance)} m` : `${(s.distance / 1000).toFixed(1)} km`}</span>
+                  )}
+                </button>
+              </li>
+            ))}
+            <li>
+              <button onMouseDown={(e) => e.preventDefault()} onClick={() => previewGate(runPlaceSearch)()} className="flex w-full items-center gap-3 border-t px-3 py-2 text-start text-sm font-semibold hover:bg-black/5" style={{ borderColor: "rgba(0,0,0,0.08)", color: "var(--primary)" }}>
+                <span aria-hidden="true">🔍</span>
+                <span className="min-w-0 flex-1 truncate">{t("map.searchAllFor")} "{searchQuery.trim()}"</span>
+              </button>
+            </li>
+          </ul>
+        </>
+      )}
+
+      {searchResultCount != null && (
+        <div className="absolute inset-x-0 top-[calc(7.4rem+env(safe-area-inset-top))] z-10 flex justify-center sm:top-[calc(3.4rem+env(safe-area-inset-top))]">
+          <span className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold shadow-md">
+            📍 {searchResultCount} {t("map.searchResultsOnMap")}
+            <button onClick={() => { clearSearchMarkers(); setSearchQuery(""); }} className="opacity-50 hover:opacity-100" aria-label={t("map.clearSearch")}>
+              ✕
+            </button>
+          </span>
         </div>
       )}
 
@@ -2144,7 +2365,7 @@ export function MapScreen({
        * isn't added again here. This sits the list flush against the nav on
        * any device, with no gap and no overlap. */}
       <div
-        className={`absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 ${listOpen ? "" : "h-9 sm:h-14"} sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl`}
+        className={`absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-20 flex flex-col overflow-hidden rounded-t-3xl shadow-[0_-4px_16px_rgba(0,0,0,0.15)] transition-[height] duration-200 ${listOpen ? "" : "h-9 sm:h-14"} sm:inset-x-auto sm:bottom-4 sm:left-1/2 sm:w-80 sm:-translate-x-1/2 sm:rounded-2xl`}
         style={{ background: "var(--surface)", ...(listOpen ? { height: "70vh" } : {}), ...previewDim }}
       >
         <div className="flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px] font-semibold sm:px-4 sm:py-3 sm:text-sm">
@@ -2176,6 +2397,29 @@ export function MapScreen({
         {listOpen && <div className="flex-1 overflow-y-auto overscroll-contain">{sortedList.map((poi) => renderListItem(poi))}</div>}
       </div>
     </div>
+    {drawer.open && (
+      <div
+        className="absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-[200] flex max-h-[62vh] flex-col overflow-hidden rounded-t-3xl shadow-[0_-8px_28px_rgba(0,0,0,0.22)] sm:inset-x-auto sm:bottom-4 sm:left-3 sm:top-[4.5rem] sm:max-h-none sm:w-[380px] sm:rounded-3xl sm:shadow-2xl"
+        style={{ background: "var(--surface)", color: "var(--text)" }}
+      >
+        <div className="relative flex shrink-0 items-center justify-center px-3 pb-1 pt-2 sm:justify-end sm:pt-3">
+          <span className="h-1 w-10 rounded-full sm:hidden" style={{ background: "color-mix(in srgb, var(--text) 25%, transparent)" }} />
+          <button
+            onClick={() => infoWindowRef.current?.close()}
+            className="absolute end-3 top-2 flex h-9 w-9 items-center justify-center rounded-full text-lg sm:static"
+            style={{ background: "color-mix(in srgb, var(--text) 8%, transparent)" }}
+            aria-label={t("nav.close")}
+          >
+            ✕
+          </button>
+        </div>
+        <div
+          ref={drawerBodyRef}
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 [&_div]:!max-w-none [&_img]:!h-44 [&_img]:!w-full [&_img]:!rounded-2xl [&_img]:!object-cover [&_strong]:text-lg"
+          dangerouslySetInnerHTML={{ __html: drawer.html }}
+        />
+      </div>
+    )}
     {isLoggedIn && !preview && savedPins.length === 0 && !shareTipDismissed && !addOpen && (
       <div
         className="absolute inset-x-3 bottom-[calc(var(--mobile-nav-height,3.5rem)+10.5rem)] z-10 mx-auto flex max-w-sm items-center gap-2 rounded-2xl px-3 py-2 text-xs shadow-lg sm:bottom-24"

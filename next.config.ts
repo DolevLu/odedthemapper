@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Vercel's image optimizer has a monthly quota on this plan; once it is spent EVERY /_next/image request answers
+    // 402 Payment Required and all photos (destination cards, route/point lists) go blank until the month resets
+    // (confirmed live: every image on /destinations returned 402). Serving the source URLs directly can never hit
+    // that limit - and costs nothing. Sizes stay small because the sources are already sized: Google place photos
+    // are fetched at 800px, and Wikimedia thumbnails are capped at 960px in lib/imageProxy.ts.
+    unoptimized: true,
     // POI photos come from many sources (Wikipedia, admin uploads, future
     // imports) rather than one fixed host — curated data set only via
     // seeding/admin scripts, never a public user-facing URL field, so a

@@ -18,15 +18,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ path: s
 
   const target = `https://upload.wikimedia.org/${path.map(encodeURIComponent).join("/")}`;
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(target, { headers: { "User-Agent": USER_AGENT }, next: { revalidate: 86400 } });
-  } catch {
-    return new NextResponse("Upstream fetch failed", { status: 502 });
+  // Full-size originals on Commons are often 5-20MB. With next/image's resizer out of the path (see next.config.ts
+  // images.unoptimized) they are fetched as Wikimedia's own 960px thumbnail instead, falling back to the original only
+  // if Wikimedia has no such thumbnail (e.g. the original is smaller than 960px).
+  const origMatch = path.length === 5 && /^(jpe?g|png|gif|webp)$/i.test(path[4].split(".").pop() ?? "") ? path : null;
+  const thumbTarget = origMatch
+    ? `https://upload.wikimedia.org/${[origMatch[0], origMatch[1], "thumb", origMatch[2], origMatch[3], origMatch[4]].map(encodeURIComponent).join("/")}/960px-${encodeURIComponent(origMatch[4])}`
+    : null;
+
+  async function get(url: string): Promise<Response | null> {
+    try {
+      const r = await fetch(url, { headers: { "User-Agent": USER_AGENT }, next: { revalidate: 86400 } });
+      return r.ok && r.body ? r : null;
+    } catch {
+      return null;
+    }
   }
-  if (!upstream.ok || !upstream.body) {
-    return new NextResponse("Upstream fetch failed", { status: 502 });
-  }
+  const upstream = (thumbTarget ? await get(thumbTarget) : null) ?? (await get(target));
+  if (!upstream) return new NextResponse("Upstream fetch failed", { status: 502 });
 
   return new NextResponse(upstream.body, {
     headers: {
