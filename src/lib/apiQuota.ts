@@ -14,6 +14,8 @@ export const API_DAILY_LIMITS = {
   googleLookup: 60,
   /** Files written to our storage (album/pin/logistics photos, mirrored Google photos) — storage + bandwidth cost. */
   upload: 200,
+  /** Reading a shared reel/video link (one outbound page fetch + one AI read each). */
+  socialImport: 30,
 } as const;
 
 export type ApiQuotaKind = keyof typeof API_DAILY_LIMITS;

@@ -303,6 +303,10 @@ export function MapScreen({
     phone?: string | null;
     website?: string | null;
     googleUrl?: string | null;
+    /** The reel/video this pin was shared from (Instagram/TikTok/Facebook), if any. */
+    sourceUrl?: string | null;
+    sourcePlatform?: string | null;
+    sourceThumb?: string | null;
     rating?: number | null;
     ratingCount?: number | null;
     openingHours?: string[] | null;
@@ -1366,6 +1370,10 @@ export function MapScreen({
           pin.phone ? line(`<a href="tel:${escapeHtml(pin.phone)}" style="color:#7C3AED">📞 ${escapeHtml(pin.phone)}</a>`) : "",
           pin.website ? line(`<a href="${safeLink(pin.website)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.website")}</a>`) : "",
           pin.googleUrl ? line(`<a href="${safeLink(pin.googleUrl)}" target="_blank" rel="noopener" style="color:#7C3AED">${t("map.openInGoogleMaps")}</a>`) : "",
+          // The reel/video this place was shared from - one tap back to the original post.
+          pin.sourceUrl
+            ? line(`<a href="${safeLink(pin.sourceUrl)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;color:#7C3AED;font-weight:600">${pin.sourceThumb ? `<img src="${escapeHtml(pin.sourceThumb)}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'" />` : ""}<span>▶ ${t("map.watchSource")} ${pin.sourcePlatform ? "· " + escapeHtml(pin.sourcePlatform.charAt(0).toUpperCase() + pin.sourcePlatform.slice(1)) : ""}</span></a>`)
+            : "",
           pin.openingHours && pin.openingHours.length > 0
             ? `<details style="font-size:12px;margin-top:3px"><summary style="cursor:pointer">🕐</summary>${pin.openingHours.map((h) => `<div>${escapeHtml(h)}</div>`).join("")}</details>`
             : "",

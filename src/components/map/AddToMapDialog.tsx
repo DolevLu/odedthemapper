@@ -9,7 +9,7 @@ import { parseGoogleList, type ListItem } from "@/lib/googleList";
 import { mapWithConcurrency, resolvePlaceById, resolvePlaceByQuery, type ResolvedPin } from "@/lib/googlePlaceDetails";
 import { aiSuggestPlaces, saveResolvedPins } from "@/lib/actions/mapImport";
 
-type Tab = "list" | "search" | "ai";
+type Tab = "list" | "search" | "ai" | "link";
 type Candidate = ResolvedPin & { why?: string | null };
 
 const MAX_LIST_ITEMS = 80;
@@ -81,6 +81,7 @@ export function AddToMapDialog({
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [aiPrompt, setAiPrompt] = useState("");
   const [query, setQuery] = useState("");
+  const [link, setLink] = useState("");
   const [predictions, setPredictions] = useState<{ placeId: string; description: string }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
@@ -289,6 +290,7 @@ export function AddToMapDialog({
           {tabBtn("list", t("addMap.tab.list"))}
           {tabBtn("search", t("addMap.tab.search"))}
           {tabBtn("ai", t("addMap.tab.ai"))}
+          {tabBtn("link", t("addMap.tab.link"))}
         </div>
 
         {tab === "list" && (
@@ -361,6 +363,31 @@ export function AddToMapDialog({
               ✨ {t("addMap.ai.go")}
             </button>
             <p className="text-[11px] opacity-50">{t("addMap.ai.verifiedNote")}</p>
+          </div>
+        )}
+
+        {tab === "link" && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm opacity-70">{t("addMap.link.intro")}</p>
+            <input
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && link.trim() && router.push(`/share-target?url=${encodeURIComponent(link.trim())}`)}
+              placeholder={t("addMap.link.placeholder")}
+              inputMode="url"
+              dir="ltr"
+              className="rounded-full border px-4 py-2 text-sm"
+              style={{ borderColor: "var(--primary)", background: "var(--surface)" }}
+            />
+            <button
+              onClick={() => router.push(`/share-target?url=${encodeURIComponent(link.trim())}`)}
+              disabled={link.trim().length < 12}
+              className="rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+            >
+              📍 {t("addMap.link.go")}
+            </button>
+            <p className="text-[11px] opacity-50">{t("addMap.link.tip")}</p>
           </div>
         )}
 

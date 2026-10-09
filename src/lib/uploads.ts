@@ -65,7 +65,7 @@ export async function mirrorRemoteImage(url: string, subfolder: string): Promise
   try {
     // Only ever called with Google place-photo URLs — refuse anything else rather than fetching arbitrary client-supplied hosts.
     const host = new URL(url).hostname;
-    if (!/(^|\.)(googleusercontent\.com|googleapis\.com|ggpht\.com|gstatic\.com)$/.test(host)) return null;
+    if (!/(^|\.)(googleusercontent\.com|googleapis\.com|ggpht\.com|gstatic\.com|cdninstagram\.com|fbcdn\.net|tiktokcdn(-us|-eu)?\.com|muscdn\.com)$/.test(host)) return null;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(url, { signal: controller.signal });

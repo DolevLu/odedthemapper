@@ -4,7 +4,9 @@ import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -88,6 +90,28 @@ public class MainActivity extends BridgeActivity {
     showLoadingOverlay();
     installBackHandler();
     createNotificationChannel();
+    // Cold start from a share: Capacitor is still loading the start page, so wait a moment before overriding it.
+    final Intent launchIntent = getIntent();
+    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> handleShareIntent(launchIntent), 900);
+  }
+
+  // App already running (launchMode singleTask): a new share arrives here instead of onCreate.
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    handleShareIntent(intent);
+  }
+
+  // A link shared into the app (Instagram / TikTok / Facebook ...) opens the in-app "add this place" screen with the
+  // shared text, which the site then turns into a pin on the map (see /share-target).
+  private void handleShareIntent(Intent intent) {
+    if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return;
+    String shared = intent.getStringExtra(Intent.EXTRA_TEXT);
+    if (shared == null || shared.trim().isEmpty()) return;
+    intent.setAction(Intent.ACTION_MAIN); // handled - don't re-run on a later resume/rotation
+    String url = getBridge().getServerUrl() + "/share-target?text=" + Uri.encode(shared.length() > 3000 ? shared.substring(0, 3000) : shared);
+    WebView web = getBridge().getWebView();
+    if (web != null) web.loadUrl(url);
   }
 
   // The system Back button (or gesture) goes back one screen/step inside the app, using the WebView's own history

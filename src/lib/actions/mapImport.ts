@@ -33,7 +33,7 @@ export async function saveResolvedPins(
   destinationId: string,
   slug: string,
   pins: ResolvedPin[],
-  source: "google_list" | "ai" | "manual"
+  source: "google_list" | "ai" | "manual" | "social"
 ): Promise<{ saved: number; skipped: number }> {
   const userId = await requireSessionUserId();
   if (!(await hasAccessToDestination(userId, destinationId))) throw new Error("אין גישה ליעד הזה");

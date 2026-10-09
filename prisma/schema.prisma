@@ -679,7 +679,13 @@ model SavedMapPin {
   rating        Float?
   ratingCount   Int?
   openingHours  String? // JSON array of weekday text lines
-  source        String? // google | upload | google_list | ai | manual
+  source        String? // google | upload | google_list | ai | manual | social
+  /// Set when the pin was added by sharing a reel/video into Travi (see lib/actions/socialImport.ts): the original
+  /// post, kept as a reference the pin can link back to. Latest share wins.
+  sourceUrl      String?
+  sourcePlatform String? // instagram | tiktok | facebook
+  sourceThumb    String?
+  sourceTitle    String?
   createdAt     DateTime @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

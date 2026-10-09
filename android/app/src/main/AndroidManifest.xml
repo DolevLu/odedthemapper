@@ -23,6 +23,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- "Share -> Travi": links shared from Instagram / TikTok / Facebook (or any app) arrive as plain text. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
         </activity>
 
         <!-- Push notifications (Firebase Cloud Messaging): default channel, status-bar icon and accent colour. -->
