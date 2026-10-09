@@ -39,6 +39,7 @@ export function OnboardingNudge({ slug }: { slug: string }) {
     { href: `/trip/${slug}/logistics`, icon: "✈️", label: t("onboard.addFlight") },
     { href: `/trip/${slug}/itinerary`, icon: "📅", label: t("onboard.buildItinerary") },
     { href: `/trip/${slug}`, icon: "🗺️", label: t("onboard.browseMap") },
+    { href: "/share-target", icon: "📲", label: t("onboard.addFromVideo") },
   ];
 
   return (

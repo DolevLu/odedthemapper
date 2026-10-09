@@ -301,6 +301,7 @@ model User {
   expenseSplits ExpenseSplit[]
   aiChatUsages  AiChatUsage[]
   apiUsages     ApiUsage[]
+  routeRatings  PublicRouteRating[]
   poiRatings    PoiRating[]
   destinationAccessLog DestinationAccess[]
   feedback      Feedback[]
@@ -991,10 +992,36 @@ model ItineraryTemplate {
   daysJson      String // snapshot: [{dayIndex, note, items: [{customLabel, poiId, timeOfDay, note, order}]}]
   createdAt     DateTime @default(now())
 
+  // Community sharing (the "public routes" feed on the itinerary screen). Only personal templates can be published.
+  isPublic      Boolean   @default(false)
+  publishedAt   DateTime?
+  description   String?
+  audience      String? // comma list of: family | couple | friends | solo
+  summaryJson   String? // computed at publish time: {days, stops, topCategories[], cover}
+  ratingAvg     Float     @default(0)
+  ratingCount   Int       @default(0)
+  copyCount     Int       @default(0)
+
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   destination Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  ratings     PublicRouteRating[]
 
   @@index([userId, destinationId, kind])
+  @@index([destinationId, isPublic])
+}
+
+/** One community star rating (1-5) of a public route, one per user. */
+model PublicRouteRating {
+  id         String   @id @default(cuid())
+  templateId String
+  userId     String
+  value      Int
+  createdAt  DateTime @default(now())
+
+  template ItineraryTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, userId])
 }
 
 /** Submitted via the sidebar's report menu (see FeedbackModal) — a bug

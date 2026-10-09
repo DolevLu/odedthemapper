@@ -1090,11 +1090,11 @@ export async function saveItineraryAsTemplate(
     items: d.items.map((i) => ({ poiId: i.poiId, customLabel: i.customLabel, timeOfDay: i.timeOfDay, note: i.note, order: i.order })),
   }));
 
-  await prisma.itineraryTemplate.create({
+  const created = await prisma.itineraryTemplate.create({
     data: { userId, destinationId, kind, name: name.trim() || "מסלול ללא שם", daysJson: JSON.stringify(snapshot) },
   });
   revalidatePath(`/trip/${slug}/${kind === "personal" ? "itinerary" : "client-planner"}`);
-  return { ok: true };
+  return { ok: true, id: created.id };
 }
 
 /** The saved-itinerary list for the version-switcher dropdown. */
@@ -1103,7 +1103,7 @@ export async function listItineraryTemplates(destinationId: string, kind: "perso
   return prisma.itineraryTemplate.findMany({
     where: { userId, destinationId, kind },
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, createdAt: true },
+    select: { id: true, name: true, createdAt: true, isPublic: true, audience: true, description: true },
   });
 }
 

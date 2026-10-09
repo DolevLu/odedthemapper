@@ -207,6 +207,29 @@ export async function HomePageContent() {
         </ScrollReveal>
       </section>
 
+      {/* NEW: share a Reel / TikTok / Facebook post into Travi */}
+      <section className="relative overflow-hidden px-6 pb-20">
+        <ScrollReveal className="relative mx-auto w-full max-w-4xl rounded-3xl border border-black/5 bg-white p-8 text-center shadow-sm sm:p-10">
+          <span className="rounded-full px-3 py-1 text-xs font-extrabold text-white" style={{ background: GRADIENT }}>
+            {t("home.share.eyebrow")}
+          </span>
+          <h2 className="mt-3 text-2xl font-extrabold sm:text-3xl">{t("home.share.title")}</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-sm opacity-70 sm:text-base">{t("home.share.body")}</p>
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { icon: "📱", text: t("home.share.step1") },
+              { icon: "↗️", text: t("home.share.step2") },
+              { icon: "📍", text: t("home.share.step3") },
+            ].map((s, i) => (
+              <div key={i} className="rounded-2xl p-4" style={{ background: "color-mix(in srgb, #7C3AED 7%, white)" }}>
+                <div className="text-3xl">{s.icon}</div>
+                <p className="mt-1 text-sm font-bold">{s.text}</p>
+              </div>
+            ))}
+          </div>
+        </ScrollReveal>
+      </section>
+
       {/* DESTINATIONS — scrolling marquee of every live city, then a curated grid */}
       <section className="relative overflow-hidden">
         <FloatingTravelIcons variant="destinations" />

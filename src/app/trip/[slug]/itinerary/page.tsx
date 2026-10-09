@@ -14,16 +14,19 @@ import { ItineraryWizard } from "./ItineraryWizard";
 import { ItineraryLayoutSwitcher } from "./ItineraryLayoutSwitcher";
 import { ItineraryTemplatePreview } from "./ItineraryTemplatePreview";
 import { getServerT } from "@/lib/i18n/server";
+import { PublicRoutesFeed } from "./PublicRoutesFeed";
+import { PublicRouteView } from "./PublicRouteView";
+import { getPublicRoute, type PublicSort } from "@/lib/actions/publicRoutes";
 
 export default async function ItineraryPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ previewTemplate?: string }>;
+  searchParams: Promise<{ previewTemplate?: string; view?: string; route?: string; aud?: string; sort?: string }>;
 }) {
   const { slug } = await params;
-  const { previewTemplate } = await searchParams;
+  const { previewTemplate, view, route, aud, sort } = await searchParams;
   const [destination, session] = await Promise.all([getDestinationBySlug(slug), auth()]);
   if (!destination) notFound();
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
@@ -35,6 +38,25 @@ export default async function ItineraryPage({
   const userId = session!.user!.id;
   const ownerId = await resolveItineraryOwnerId(userId);
   const t = await getServerT();
+
+  // "Public routes": the community feed (and one opened route) takes the place of the personal route view.
+  if (view === "public") {
+    if (route) {
+      const [detail, dayCount] = await Promise.all([
+        getPublicRoute(route),
+        prisma.itineraryDay.count({ where: { itinerary: { userId: ownerId, destinationId: destination.id, kind: "personal" } } }),
+      ]);
+      if (detail) {
+        return (
+          <div className="mx-auto w-full max-w-6xl">
+            <PublicRouteView slug={slug} route={detail} hasExistingDays={dayCount > 0} />
+          </div>
+        );
+      }
+    }
+    const sortKey: PublicSort = sort === "new" || sort === "popular" ? sort : "top";
+    return <PublicRoutesFeed slug={slug} destinationId={destination.id} aud={aud ?? null} sort={sortKey} />;
+  }
 
   const [itinerary, poiOptions, areas, templates, logistics, flatPois] = await Promise.all([
     prisma.itinerary.findUnique({

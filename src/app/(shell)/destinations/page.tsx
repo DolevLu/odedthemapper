@@ -7,6 +7,7 @@ import { DestinationsBrowser } from "@/components/DestinationsBrowser";
 import { DestinationsGridSkeleton } from "@/components/DestinationsGridSkeleton";
 import { AdUnit } from "@/components/AdUnit";
 import { getServerT } from "@/lib/i18n/server";
+import { ShareTipStrip } from "@/components/ShareTipStrip";
 
 async function DestinationsBrowserSection() {
   const destinations = await getAllDestinations();
@@ -22,6 +23,8 @@ export default async function DestinationsPage() {
       <div className="mx-auto w-full max-w-6xl">
         <h1 className="mb-2 text-2xl font-extrabold">{t("destinations.title")}</h1>
         <p className="mb-6 opacity-70">{t("destinations.subtitle")}</p>
+
+        {session?.user?.id && <ShareTipStrip className="mb-6" />}
 
         <Link
           href="/destinations/quiz"

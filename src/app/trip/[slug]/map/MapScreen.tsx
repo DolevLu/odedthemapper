@@ -505,6 +505,24 @@ export function MapScreen({
   const [mapType, setMapType] = useState<"roadmap" | "satellite">("roadmap");
   const [pendingSavePin, setPendingSavePin] = useState<PendingSavePin | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [addTab, setAddTab] = useState<"list" | "link">("list");
+  // First-run nudge for the "share a Reel into Travi" feature: shown only to someone with no saved places yet,
+  // until they open it or dismiss it (remembered per browser).
+  const [shareTipDismissed, setShareTipDismissed] = useState(true);
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShareTipDismissed(localStorage.getItem("share-tip-dismissed-v1") === "1");
+    } catch {
+      setShareTipDismissed(false);
+    }
+  }, []);
+  function dismissShareTip() {
+    setShareTipDismissed(true);
+    try {
+      localStorage.setItem("share-tip-dismissed-v1", "1");
+    } catch {}
+  }
   const getMapCenter = useCallback(() => {
     const c = mapRef.current?.getCenter();
     return c ? { lat: c.lat(), lng: c.lng() } : null;
@@ -1783,7 +1801,10 @@ export function MapScreen({
           onChange={handlePersonalFileSelected}
         />
         <button
-          onClick={previewGate(() => setAddOpen(true))}
+          onClick={previewGate(() => {
+            setAddTab("list");
+            setAddOpen(true);
+          })}
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base font-bold shadow-md sm:h-7 sm:w-7"
           style={{ background: "rgba(255,255,255,0.94)", color: "var(--primary)", ...previewDim }}
           disabled={personalUploadStatus?.kind === "working"}
@@ -2155,6 +2176,30 @@ export function MapScreen({
         {listOpen && <div className="flex-1 overflow-y-auto overscroll-contain">{sortedList.map((poi) => renderListItem(poi))}</div>}
       </div>
     </div>
+    {isLoggedIn && !preview && savedPins.length === 0 && !shareTipDismissed && !addOpen && (
+      <div
+        className="absolute inset-x-3 bottom-[calc(var(--mobile-nav-height,3.5rem)+10.5rem)] z-10 mx-auto flex max-w-sm items-center gap-2 rounded-2xl px-3 py-2 text-xs shadow-lg sm:bottom-24"
+        style={{ background: "var(--surface)", border: "1px solid color-mix(in srgb, var(--primary) 30%, transparent)" }}
+      >
+        <span aria-hidden="true" className="text-lg">
+          📲
+        </span>
+        <button
+          className="min-w-0 flex-1 text-start"
+          onClick={() => {
+            setAddTab("link");
+            setAddOpen(true);
+            dismissShareTip();
+          }}
+        >
+          <span className="block font-extrabold">{t("share.tip.title")}</span>
+          <span className="opacity-70">{t("share.tip.body")}</span>
+        </button>
+        <button onClick={dismissShareTip} className="shrink-0 text-base opacity-40 hover:opacity-100" aria-label={t("share.tip.dismiss")}>
+          ✕
+        </button>
+      </div>
+    )}
     {addOpen && (
       <AddToMapDialog
         destinationId={destinationId}
@@ -2162,6 +2207,7 @@ export function MapScreen({
         getCenter={getMapCenter}
         onPickKml={() => personalUploadInputRef.current?.click()}
         onClose={() => setAddOpen(false)}
+        initialTab={addTab}
       />
     )}
     {pendingSavePin && (

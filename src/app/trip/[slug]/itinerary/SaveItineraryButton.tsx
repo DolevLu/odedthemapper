@@ -3,6 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveItineraryAsTemplate } from "@/lib/actions/trip";
+import { setRoutePublic } from "@/lib/actions/publicRoutes";
+import { PublishFields, publishErrorText } from "./PublishRouteDialog";
+import type { Audience } from "@/lib/publicRoutes";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
 /** A standalone "save the current active itinerary as a named snapshot"
@@ -19,17 +22,36 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
   const [, startTransition] = useTransition();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Optional: publish the route to the community feed while saving it
+  const [share, setShare] = useState(false);
+  const [audience, setAudience] = useState<Audience[]>([]);
+  const [description, setDescription] = useState("");
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
   const { t } = useTranslation();
 
   function handleSave() {
     setSaving(true);
     startTransition(async () => {
-      const result = await saveItineraryAsTemplate(destinationId, slug, name.trim() || t("itinerary.myRouteDefaultName"), "personal");
-      setSaving(false);
+      const finalName = name.trim() || t("itinerary.myRouteDefaultName");
+      const result = await saveItineraryAsTemplate(destinationId, slug, finalName, "personal");
       if (result && "error" in result) {
+        setSaving(false);
         window.alert(result.error);
         return;
       }
+      if (share && result && "id" in result && result.id) {
+        const pub = await setRoutePublic(result.id, slug, { isPublic: true, name: finalName, audience, description });
+        if ("error" in pub) {
+          // The route itself is saved; only the publishing failed - say why and keep the panel open.
+          setSaving(false);
+          setShareMsg(publishErrorText(pub.error, t));
+          router.refresh();
+          return;
+        }
+      }
+      setSaving(false);
+      setShareMsg(null);
+      setShare(false);
       setOpen(false);
       setName("");
       setSaved(true);
@@ -51,7 +73,7 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
       </button>
       {open && (
         <div
-          className="absolute z-30 mt-1 w-64 rounded-xl border p-2.5 shadow-lg"
+          className="absolute z-30 mt-1 w-72 rounded-xl border p-2.5 shadow-lg"
           style={{ background: "var(--surface)", borderColor: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
         >
           <p className="mb-2 text-xs font-bold opacity-70">{t("itinerary.whatToCallIt")}</p>
@@ -64,6 +86,16 @@ export function SaveItineraryButton({ destinationId, slug, hasExistingDays }: { 
             className="mb-2 w-full rounded-lg border px-2 py-1.5 text-sm"
             style={{ borderColor: "var(--primary)" }}
           />
+          <label className="mb-2 flex cursor-pointer items-center gap-2 text-xs font-bold">
+            <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} />
+            🌍 {t("pub.share.toggle")}
+          </label>
+          {share && (
+            <div className="mb-2">
+              <PublishFields audience={audience} onAudience={setAudience} description={description} onDescription={setDescription} />
+            </div>
+          )}
+          {shareMsg && <p className="mb-2 text-xs font-semibold text-red-600">{shareMsg}</p>}
           <div className="flex gap-1.5">
             <button
               onClick={handleSave}

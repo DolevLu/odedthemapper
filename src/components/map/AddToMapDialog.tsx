@@ -63,16 +63,18 @@ export function AddToMapDialog({
   getCenter,
   onPickKml,
   onClose,
+  initialTab = "list",
 }: {
   destinationId: string;
   slug: string;
   getCenter: () => { lat: number; lng: number } | null;
   onPickKml: () => void;
   onClose: () => void;
+  initialTab?: Tab;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("list");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -285,6 +287,21 @@ export function AddToMapDialog({
             ✕
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => reset("link")}
+          className="flex items-center gap-3 rounded-2xl border p-3 text-start"
+          style={{ borderColor: "color-mix(in srgb, var(--primary) 30%, transparent)", background: "color-mix(in srgb, var(--primary) 7%, var(--surface))" }}
+        >
+          <span className="flex shrink-0 items-center gap-1 text-lg" aria-hidden="true">
+            📱<span className="text-xs opacity-60">→</span>↗<span className="text-xs opacity-60">→</span>📍
+          </span>
+          <span className="min-w-0 text-xs">
+            <span className="block text-sm font-extrabold">{t("share.tip.title")}</span>
+            <span className="opacity-70">{t("share.tip.body")}</span>
+          </span>
+        </button>
 
         <div className="flex flex-wrap gap-1 rounded-full bg-black/5 p-1">
           {tabBtn("list", t("addMap.tab.list"))}

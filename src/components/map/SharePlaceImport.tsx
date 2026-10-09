@@ -9,7 +9,7 @@ import { analyzeSharedLink, findDestinationForPoint, saveSocialPin, type NearbyD
 import { categoryLabel } from "@/lib/i18n/content";
 
 type Candidate = ResolvedPin & { fromAi: boolean };
-type Phase = "reading" | "finding" | "pick" | "saving" | "done";
+type Phase = "paste" | "reading" | "finding" | "pick" | "saving" | "done";
 
 const PLATFORM_LABEL: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook" };
 
@@ -24,7 +24,9 @@ async function getService(): Promise<google.maps.places.PlacesService> {
  * to the map with the original video attached as a link. */
 export function SharePlaceImport({ initialText }: { initialText: string }) {
   const { t, lang } = useTranslation();
-  const [phase, setPhase] = useState<Phase>("reading");
+  const hasLink = /https?:[/][/]/i.test(initialText);
+  const [phase, setPhase] = useState<Phase>(hasLink ? "reading" : "paste");
+  const [pasted, setPasted] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<SharedSource | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -53,22 +55,28 @@ export function SharePlaceImport({ initialText }: { initialText: string }) {
     setPhase("pick");
   }
 
-  useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-    (async () => {
-      try {
-        const res = await analyzeSharedLink(initialText);
-        if (!res.ok) {
-          setError(errText(res.error));
-          return;
-        }
-        setSource(res.source);
-        await resolveAll(res.guesses.map((g) => ({ query: g.query, category: g.category, fromAi: res.via === "ai" })));
-      } catch {
-        setError(t("share.failed"));
+  async function run(text: string) {
+    setError(null);
+    setPhase("reading");
+    try {
+      const res = await analyzeSharedLink(text);
+      if (!res.ok) {
+        setError(errText(res.error));
+        setPhase("paste");
+        return;
       }
-    })();
+      setSource(res.source);
+      await resolveAll(res.guesses.map((g) => ({ query: g.query, category: g.category, fromAi: res.via === "ai" })));
+    } catch {
+      setError(t("share.failed"));
+      setPhase("paste");
+    }
+  }
+
+  useEffect(() => {
+    if (startedRef.current || !hasLink) return;
+    startedRef.current = true;
+    run(initialText);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -145,6 +153,26 @@ export function SharePlaceImport({ initialText }: { initialText: string }) {
             </p>
             {source.caption && <p className="line-clamp-2 text-xs opacity-70">{source.caption}</p>}
           </div>
+        </div>
+      )}
+
+      {phase === "paste" && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-bold">{t("share.paste.title")}</p>
+          <input
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && pasted.trim().length > 10 && run(pasted)}
+            placeholder="https://www.instagram.com/reel/..."
+            inputMode="url"
+            dir="ltr"
+            className="rounded-full border px-4 py-2 text-sm"
+            style={{ borderColor: "var(--primary)", background: "var(--surface)" }}
+          />
+          <button onClick={() => run(pasted)} disabled={pasted.trim().length < 12} className="rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
+            📍 {t("share.paste.go")}
+          </button>
+          <p className="text-[11px] opacity-50">{t("share.paste.tip")}</p>
         </div>
       )}
 

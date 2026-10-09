@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import { applyItineraryTemplate, deleteItineraryTemplate } from "@/lib/actions/trip";
 import { useSaveOrDiscardFlow } from "@/hooks/useSaveOrDiscardFlow";
 import { AddDayButton } from "./AddDayButton";
+import Link from "next/link";
+import { PublishRouteDialog } from "./PublishRouteDialog";
+import { parseAudience } from "@/lib/publicRoutes";
 import { useTranslation } from "@/components/i18n/LanguageContext";
 
-type Template = { id: string; name: string };
+type Template = { id: string; name: string; isPublic?: boolean; audience?: string | null; description?: string | null };
 
 /** Compact action row for the itinerary screen — the version-switcher
  * dropdown (pick/rename-free save of multiple saved itineraries per
@@ -30,6 +33,7 @@ export function ItineraryTopBar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [, startTransition] = useTransition();
   const [applying, setApplying] = useState<string | null>(null);
+  const [publishFor, setPublishFor] = useState<Template | null>(null);
   const { t } = useTranslation();
 
   function goToBuilder() {
@@ -96,6 +100,19 @@ export function ItineraryTopBar({
               >
                 <span className="truncate">{applying === template.id ? t("topBar.loading") : template.name}</span>
                 <span className="flex shrink-0 items-center gap-1.5">
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      setPublishFor(template);
+                    }}
+                    className={template.isPublic ? "opacity-100" : "opacity-50 hover:opacity-100"}
+                    role="button"
+                    aria-label={t("pub.share.shareSettings")}
+                    title={template.isPublic ? t("pub.share.published") : t("pub.share.shareSettings")}
+                  >
+                    🌍
+                  </span>
                   <span onClick={(e) => handleApply(template.id, e)} className="opacity-50 hover:opacity-100" role="button" aria-label={t("topBar.applyToActive")} title={t("topBar.applyToActive")}>
                     ✅
                   </span>
@@ -111,6 +128,14 @@ export function ItineraryTopBar({
 
       <AddDayButton destinationId={destinationId} slug={slug} />
 
+      <Link
+        href={`/trip/${slug}/itinerary?view=public`}
+        className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm"
+        style={{ borderColor: "var(--primary)", color: "var(--primary)", background: "var(--surface)" }}
+      >
+        {t("pub.button")}
+      </Link>
+
       <button
         onClick={goToBuilder}
         className="game-pop-in shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
@@ -120,6 +145,14 @@ export function ItineraryTopBar({
       </button>
 
       {modal}
+      {publishFor && (
+        <PublishRouteDialog
+          templateId={publishFor.id}
+          slug={slug}
+          initial={{ name: publishFor.name, isPublic: Boolean(publishFor.isPublic), audience: parseAudience(publishFor.audience), description: publishFor.description ?? "" }}
+          onClose={() => setPublishFor(null)}
+        />
+      )}
     </div>
   );
 }
