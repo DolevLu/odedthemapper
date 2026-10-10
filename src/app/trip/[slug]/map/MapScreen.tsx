@@ -355,7 +355,8 @@ export function MapScreen({
   // A tapped point's details open in a drawer (bottom sheet on phones, side panel on desktop) instead of Google's small
   // InfoWindow bubble. infoWindowRef now holds a thin stand-in with the same setContent/open/close surface, so every
   // existing "open this point's details" call keeps working and just renders here.
-  const [drawer, setDrawer] = useState<{ html: string; open: boolean; v: number }>({ html: "", open: false, v: 0 });
+  const [drawer, setDrawer] = useState<{ html: string; open: boolean; v: number; expanded: boolean }>({ html: "", open: false, v: 0, expanded: false });
+  const drawerDragRef = useRef<{ startY: number; moved: number } | null>(null);
   const drawerBodyRef = useRef<HTMLDivElement>(null);
   const markersByPoiId = useRef<Map<string, google.maps.Marker>>(new Map());
   const currentMarkerScaleRef = useRef<number>(MARKER_SCALE_DEFAULT);
@@ -823,14 +824,14 @@ export function MapScreen({
     };
     shim.close = () => setDrawer((d) => (d.open ? { ...d, open: false } : d));
     shim.open = (opts?: { anchor?: google.maps.Marker }) => {
-      setDrawer((d) => ({ ...d, open: true, v: d.v + 1 }));
+      setDrawer((d) => ({ ...d, open: true, v: d.v + 1, expanded: false }));
       // Bring the tapped point into the part of the map the drawer doesn't cover.
       const target = opts?.anchor?.getPosition() ?? lastPosition;
       const map = mapRef.current;
       if (!target || !map) return;
       const desktop = window.innerWidth >= 640;
       map.panTo(target);
-      google.maps.event.addListenerOnce(map, "idle", () => (desktop ? map.panBy(-190, 0) : map.panBy(0, Math.round(window.innerHeight * 0.17))));
+      google.maps.event.addListenerOnce(map, "idle", () => (desktop ? map.panBy(-190, 0) : map.panBy(0, Math.round(window.innerHeight * 0.1))));
     };
     infoWindowRef.current = shim as unknown as google.maps.InfoWindow;
 
@@ -2398,24 +2399,46 @@ export function MapScreen({
       </div>
     </div>
     {drawer.open && (
+      // Phones: a bottom sheet that opens SMALL (about a third of the screen) - drag the handle up (or tap it) for the
+      // full details, down to shrink/close; the details also scroll inside it. Desktop: a rounded side panel that
+      // is exactly as tall as its content (no empty white bands), close button floating over the photo.
       <div
-        className="absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-[200] flex max-h-[62vh] flex-col overflow-hidden rounded-t-3xl shadow-[0_-8px_28px_rgba(0,0,0,0.22)] sm:inset-x-auto sm:bottom-4 sm:left-3 sm:top-[4.5rem] sm:max-h-none sm:w-[380px] sm:rounded-3xl sm:shadow-2xl"
+        className={`absolute inset-x-0 bottom-[var(--mobile-nav-height,3.5rem)] z-[200] flex flex-col overflow-hidden rounded-t-3xl shadow-[0_-8px_28px_rgba(0,0,0,0.22)] transition-[height] duration-200 ${drawer.expanded ? "max-h-[78vh]" : "h-[33vh]"} sm:inset-x-auto sm:bottom-auto sm:left-3 sm:top-[4.5rem] sm:h-auto sm:max-h-[calc(100vh-6.5rem)] sm:w-[380px] sm:rounded-3xl sm:shadow-2xl`}
         style={{ background: "var(--surface)", color: "var(--text)" }}
       >
-        <div className="relative flex shrink-0 items-center justify-center px-3 pb-1 pt-2 sm:justify-end sm:pt-3">
-          <span className="h-1 w-10 rounded-full sm:hidden" style={{ background: "color-mix(in srgb, var(--text) 25%, transparent)" }} />
-          <button
-            onClick={() => infoWindowRef.current?.close()}
-            className="absolute end-3 top-2 flex h-9 w-9 items-center justify-center rounded-full text-lg sm:static"
-            style={{ background: "color-mix(in srgb, var(--text) 8%, transparent)" }}
-            aria-label={t("nav.close")}
-          >
-            ✕
-          </button>
+        <div
+          className="flex shrink-0 touch-none justify-center pb-1 pt-2 sm:hidden"
+          onPointerDown={(e) => {
+            drawerDragRef.current = { startY: e.clientY, moved: 0 };
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (drawerDragRef.current) drawerDragRef.current.moved = e.clientY - drawerDragRef.current.startY;
+          }}
+          onPointerUp={() => {
+            const drag = drawerDragRef.current;
+            drawerDragRef.current = null;
+            if (!drag) return;
+            if (Math.abs(drag.moved) < 8) setDrawer((d) => ({ ...d, expanded: !d.expanded }));
+            else if (drag.moved < -30) setDrawer((d) => ({ ...d, expanded: true }));
+            else if (drag.moved > 30) {
+              if (drawer.expanded) setDrawer((d) => ({ ...d, expanded: false }));
+              else infoWindowRef.current?.close();
+            }
+          }}
+        >
+          <span className="h-1.5 w-12 rounded-full" style={{ background: "color-mix(in srgb, var(--text) 25%, transparent)" }} />
         </div>
+        <button
+          onClick={() => infoWindowRef.current?.close()}
+          className="absolute end-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-lg text-black shadow-md sm:start-3 sm:end-auto"
+          aria-label={t("nav.close")}
+        >
+          ✕
+        </button>
         <div
           ref={drawerBodyRef}
-          className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 [&_div]:!max-w-none [&_img]:!h-44 [&_img]:!w-full [&_img]:!rounded-2xl [&_img]:!object-cover [&_strong]:text-lg"
+          className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:p-3 [&_div]:!max-w-none [&_img]:!h-44 [&_img]:!w-full [&_img]:!rounded-2xl [&_img]:!object-cover [&_strong]:text-lg"
           dangerouslySetInnerHTML={{ __html: drawer.html }}
         />
       </div>
