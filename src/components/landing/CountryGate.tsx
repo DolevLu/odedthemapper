@@ -64,7 +64,7 @@ export function CountryGate({ destination, isLoggedIn, lang }: { destination: Ga
               ))}
             </ul>
             <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
-              {["map", "trails", "chat", "phrasebook"].map((s) => (
+              {["map", "route", "chat", "phrasebook"].map((s) => (
                 <div key={s} className="relative h-[290px] w-[134px] shrink-0 overflow-hidden rounded-3xl border-4 border-neutral-900 bg-neutral-900 shadow-lg">
                   <Image src={`/landing/${s}.jpg`} alt="" fill sizes="134px" className="object-cover object-top" />
                 </div>

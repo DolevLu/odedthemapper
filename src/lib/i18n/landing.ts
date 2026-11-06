@@ -56,7 +56,7 @@ function buildHe() {
           title: "המסלול",
           tag: "יום אחרי יום, בלי לבזבז זמן",
           bullets: ["בונים מסלול ימים: גוררים נקודות ומקבלים זמני הליכה ומרחקים", "בנייה בהחלקה - מאשרים/דוחים הצעות עד שהמסלול מוכן", "שיתוף המסלול עם החברים", "אלבום תמונות, הוצאות ורשימת ציוד לטיסה"],
-          image: "/landing/trails.jpg",
+          image: "/landing/route.jpg",
         },
         {
           color: "#CDE6FF",
@@ -200,7 +200,7 @@ function buildEn(): LandingCopy {
           title: "The route",
           tag: "Day after day, no wasted time",
           bullets: ["Build day routes: drag spots and get walking times and distances", "Swipe builder - accept/skip suggestions until the route is ready", "Share the route with your friends", "Photo album, expenses and a packing list"],
-          image: "/landing/trails.jpg",
+          image: "/landing/route.jpg",
         },
         {
           color: "#CDE6FF",
