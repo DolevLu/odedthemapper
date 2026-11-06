@@ -1,5 +1,7 @@
 import Script from "next/script";
 
+const ADS_ENABLED = false;
+
 /** Google AdSense's own async loader, shown only to viewers without an
  * active paid plan — the app deliberately does NOT check this at the root
  * layout (see layout.tsx's own comment on why), so this renders instead
@@ -8,7 +10,9 @@ import Script from "next/script";
  * explicitly) mirrors the snippet's own `async` attribute: non-blocking,
  * loaded once hydration is underway rather than delaying first paint. */
 export function AdSenseScript({ show }: { show: boolean }) {
-  if (!show) return null;
+  // 2026-11: NO ads anywhere in the site or app (owner decision) - the AdSense loader is never injected.
+  void show;
+  if (!ADS_ENABLED) return null;
   return (
     <Script
       async

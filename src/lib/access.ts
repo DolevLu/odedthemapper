@@ -267,6 +267,8 @@ export async function getActiveSubscriptionSummary(userId: string) {
  * individual AdUnit) agrees on who sees ads. Historical "trial" rows (pre-2026-10-01) also still show ads, same as
  * they always did. */
 export async function shouldShowAds(userId: string | undefined): Promise<boolean> {
+  // 2026-11: no ads anywhere (owner decision) - everything that asks "should ads show?" gets no.
+  if (Date.now() > 0) return false;
   if (!userId) return true;
   const summary = await getActiveSubscriptionSummary(userId);
   return summary === null || summary.plan.key === "trial" || summary.plan.key === "free";

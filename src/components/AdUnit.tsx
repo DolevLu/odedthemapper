@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
+// 2026-11: NO ads anywhere in the site or app (owner decision). Flip this (and AdSenseScript's) only to bring ads back.
+const ADS_ENABLED = false;
+
 declare global {
   interface Window {
     adsbygoogle?: unknown[];
@@ -29,7 +32,7 @@ export function AdUnit({
   const insRef = useRef<HTMLModElement>(null);
 
   useEffect(() => {
-    if (!show) return;
+    if (!show || !ADS_ENABLED) return;
     const el = insRef.current;
     // Checked against the DOM node itself (not just a React-instance ref) —
     // React's dev-mode Strict Mode remount can otherwise call this twice for
@@ -81,7 +84,7 @@ export function AdUnit({
     };
   }, [show]);
 
-  if (!show) return null;
+  if (!show || !ADS_ENABLED) return null;
 
   return (
     <ins
