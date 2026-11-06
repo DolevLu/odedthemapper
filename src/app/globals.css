@@ -14,12 +14,12 @@
      sidebar's own "still purple, less glowing" retune. */
   --primary: #6d28d9;
   --secondary: #c4b5fd;
-  --accent: #ec4899;
+  --accent: #8B5CF6;
   /* Matches every destination's own --background now (see theme/presets.ts) — a consistent near-white with a hint
      of lavender, replacing the old plain cream that didn't relate to the brand's own white/purple look at all. */
-  --background: #fbf9ff;
+  --background: #FFFFFF;
   --surface: #ffffff;
-  --text: #2b2420;
+  --text: #111111;
   --font-heading: "Rubik", sans-serif;
   --font-body: "Rubik", sans-serif;
   --font-display-latin: "Rubik", sans-serif;

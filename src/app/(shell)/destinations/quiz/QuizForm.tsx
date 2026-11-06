@@ -105,7 +105,7 @@ export function QuizForm({
             <Link
               href={`/subscribe/family?dest=${result.slug}`}
               className="rounded-full px-5 py-2.5 font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+              style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
             >
               {t("destQuiz.unlockPersonalized")}
             </Link>
@@ -114,7 +114,7 @@ export function QuizForm({
               onClick={handleGenerate}
               disabled={generating}
               className="rounded-full px-5 py-2.5 font-bold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+              style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
             >
               {generating ? t("destQuiz.building") : t("destQuiz.buildForMe")}
             </button>
@@ -225,7 +225,7 @@ export function QuizForm({
         type="submit"
         disabled={vibes.length === 0}
         className="rounded-full px-6 py-3 font-bold text-white disabled:opacity-50"
-        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
       >
         {t("destQuiz.findMyDestination")}
       </button>

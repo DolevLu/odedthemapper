@@ -334,8 +334,8 @@ export const DICTIONARY = {
   "destCard.comingSoon": { he: "בקרוב", en: "Coming soon" },
   "destCard.areas": { he: "אזורים", en: "areas" },
   "destCard.free": {
-    he: "שבוע חינם",
-    en: "Free week",
+    he: "₪49 חד פעמי",
+    en: "₪49 one-time",
   },
 
   "travi.ariaLabel": { he: "טראבי - עוזר הטיול", en: "Travi - trip assistant" },

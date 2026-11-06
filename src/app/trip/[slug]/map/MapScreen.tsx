@@ -241,7 +241,7 @@ const LOGISTIC_EMOJI: Record<string, string> = {
 // function rather than a module-level constant since it touches google.maps.* constructors, which don't exist
 // until the Maps JS API has actually loaded.
 function hotelPinIcon(): google.maps.Icon {
-  const pink = "#EC4899";
+  const pink = "#8B5CF6";
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="27" viewBox="0 0 24 30">
       <path d="${LOGISTIC_PIN_PATH}" fill="${pink}" stroke="white" stroke-width="2" />
@@ -1838,7 +1838,7 @@ export function MapScreen({
           <Link
             href="/pricing"
             className="pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
-            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
           >
             {t("map.previewUpgrade")}
           </Link>
@@ -2206,7 +2206,7 @@ export function MapScreen({
       )}
 
       {categoryLockNotice && (
-        <div className="absolute inset-x-3 top-24 z-10 flex items-center justify-center gap-2 rounded-lg p-2 text-center text-xs font-semibold text-white shadow-md" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
+        <div className="absolute inset-x-3 top-24 z-10 flex items-center justify-center gap-2 rounded-lg p-2 text-center text-xs font-semibold text-white shadow-md" style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}>
           <span>🔒 {t("map.categoryRequiresPlan")}</span>
           <Link href="/pricing" className="underline underline-offset-2">
             {t("map.allPlans")}

@@ -24,6 +24,7 @@ export function PayMeCheckoutForm({
   planName,
   payerEmail,
   payerName,
+  successUrl = "/account",
 }: {
   subscriptionId: string;
   amountCents: number;
@@ -31,6 +32,7 @@ export function PayMeCheckoutForm({
   planName: string;
   payerEmail: string;
   payerName: string;
+  successUrl?: string;
 }) {
   const router = useRouter();
   const instanceRef = useRef<PayMeInstance | null>(null);
@@ -111,7 +113,7 @@ export function PayMeCheckoutForm({
         setLoading(false);
         return;
       }
-      router.push("/account");
+      router.push(successUrl);
       router.refresh();
     } catch {
       setError("התשלום נכשל, נסו שוב");
@@ -165,7 +167,7 @@ export function PayMeCheckoutForm({
         type="submit"
         disabled={!sdkReady || loading}
         className="mt-2 w-full rounded-full px-4 py-3 font-semibold text-white disabled:opacity-50"
-        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
       >
         {loading ? "מעבד..." : sdkReady ? "שלם עכשיו" : "טוען טופס תשלום..."}
       </button>

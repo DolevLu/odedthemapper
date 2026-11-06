@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { hasAccessToDestination, getAiChatDailyQuota } from "@/lib/access";
 import { consumeAiChatQuota } from "@/lib/aiChatQuota";
+import { consumeCountryAiUse } from "@/lib/countryAi";
 import { requireSessionUserId } from "@/lib/groupAccess";
 import { logGroupActivity } from "@/lib/groupActivity";
 import { mirrorRemoteImage } from "@/lib/uploads";
@@ -111,7 +112,9 @@ export async function aiSuggestPlaces(
   const request = prompt.trim().slice(0, 400);
   if (request.length < 3) return { error: "תארו במשפט מה לחפש - למשל: בתי קפה טובים ליד הנהר" };
 
-  const quota = await getAiChatDailyQuota(userId);
+  const countryUse = await consumeCountryAiUse(userId, destinationId);
+  if (countryUse === "exhausted") return { error: "ניצלתם את 3 שימושי ה-AI שכלולים במדינה הזו." };
+  const quota = countryUse === "ok" ? null : await getAiChatDailyQuota(userId);
   if (quota !== null) {
     const { allowed } = await consumeAiChatQuota(userId, quota);
     if (!allowed) return { error: `הגעתם למכסת ${quota} ההודעות היומיות ל-AI - היא מתאפסת מחר.` };

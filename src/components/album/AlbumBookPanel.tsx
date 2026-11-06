@@ -137,7 +137,7 @@ export function AlbumBookPanel({
             <p className="mt-0.5 opacity-70">{t("book.sample.body")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {photos.length > 0 ? (
-                <button onClick={buildFromPhotos} className="rounded-full px-4 py-2 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#7C3AED,#EC4899)" }}>
+                <button onClick={buildFromPhotos} className="rounded-full px-4 py-2 text-sm font-bold text-white" style={{ background: "linear-gradient(135deg,#7C3AED,#8B5CF6)" }}>
                   ✨ {t("book.autoBuild")}
                 </button>
               ) : (

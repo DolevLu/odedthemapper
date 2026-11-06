@@ -14,6 +14,11 @@ function formatDistance(km: number, lang: "he" | "en"): string {
   return km < 1 ? `${Math.round(km * 1000)} מ׳` : `${km.toFixed(1)} ק״מ`;
 }
 
+/** The model sometimes answers with **bold** markdown; show it as bold instead of literal asterisks. */
+function renderBold(text: string) {
+  return text.split("**").map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
+}
+
 export function TraviChat({ destinationId, slug }: { destinationId: string; slug: string }) {
   const pathname = usePathname();
   const { t, lang, area } = useTranslation();
@@ -73,7 +78,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
         className={`fixed right-2 z-[150] flex h-14 w-14 items-center justify-center rounded-full text-2xl text-white shadow-xl sm:bottom-6 sm:right-[268px] ${
           isMapScreen ? "bottom-[calc(var(--mobile-nav-height,3.5rem)+3rem)]" : "bottom-[calc(var(--mobile-nav-height,3.5rem)+0.75rem)]"
         }`}
-        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
         aria-label={t("travi.ariaLabel")}
       >
         💬
@@ -81,7 +86,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
 
       {open && (
         <div className="fixed bottom-32 right-4 z-[150] flex h-[480px] w-[calc(100vw-2rem)] max-w-sm flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:bottom-24 sm:right-72">
-          <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
+          <div className="flex items-center justify-between gap-2 px-4 py-3 text-white" style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}>
             <span className="font-bold">{t("travi.title")}</span>
             <button onClick={() => setOpen(false)} className="text-lg opacity-80 hover:opacity-100">
               ✕
@@ -95,7 +100,7 @@ export function TraviChat({ destinationId, slug }: { destinationId: string; slug
                   className="max-w-[85%] rounded-2xl px-3 py-2 text-sm"
                   style={{ background: m.role === "user" ? "#7C3AED" : "#F3F4F6", color: m.role === "user" ? "white" : "#1a1a1a" }}
                 >
-                  <p>{m.text}</p>
+                  <p>{renderBold(m.text)}</p>
                   {m.suggestions && m.suggestions.length > 0 && (
                     <div className="mt-2 flex flex-col gap-1.5">
                       {m.suggestions.map((s) => (

@@ -7,7 +7,7 @@ import type { DictionaryKey } from "@/lib/i18n/dictionary";
 
 const SLIDE_GRADIENTS = [
   "linear-gradient(160deg, #7C3AED, #4C1D95)",
-  "linear-gradient(160deg, #EC4899, #9D174D)",
+  "linear-gradient(160deg, #8B5CF6, #9D174D)",
   "linear-gradient(160deg, #F59E0B, #B45309)",
   "linear-gradient(160deg, #16A34A, #14532D)",
   "linear-gradient(160deg, #2563EB, #1E3A8A)",

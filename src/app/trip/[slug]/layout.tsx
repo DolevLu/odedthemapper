@@ -11,6 +11,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { TraviChat } from "@/components/travi/TraviChat";
 import { WalkthroughGuide } from "@/components/WalkthroughGuide";
 import { TripContentArea } from "@/components/TripContentArea";
+import { CountryGate } from "@/components/landing/CountryGate";
+import { getLang } from "@/lib/i18n/server";
 
 export default async function TripLayout({
   children,
@@ -29,6 +31,12 @@ export default async function TripLayout({
   // redirect away from the destination entirely.
   const accessLevel = await getAccessLevel(session?.user?.id, destination.id);
   const isLoggedIn = Boolean(session?.user?.id);
+
+  // Since 2026-11 the platform is visible ONLY to people who bought this country (one-time ₪49), admins and
+  // legacy/org plans: everyone else gets the buy-this-country page - destination, price, what's inside, a few screens.
+  if (accessLevel === "none") {
+    return <CountryGate destination={destination} isLoggedIn={isLoggedIn} lang={await getLang()} />;
+  }
 
   // Remembers "the destination they chose" for the shell's default-context
   // fallback ((shell)/layout.tsx) — this layout only re-runs when the slug
@@ -52,18 +60,16 @@ export default async function TripLayout({
     // itself, which DOES get removed on a 14-day swap — this is what lets
     // the archive keep showing a past trip forever, independent of current
     // subscription state.
-    if (accessLevel !== "none") {
-      const destinationId = destination.id;
-      after(() =>
-        prisma.destinationAccess
-          .upsert({
-            where: { userId_destinationId: { userId, destinationId } },
-            update: {},
-            create: { userId, destinationId },
-          })
-          .catch(() => {})
-      );
-    }
+    const destinationId = destination.id;
+    after(() =>
+      prisma.destinationAccess
+        .upsert({
+          where: { userId_destinationId: { userId, destinationId } },
+          update: {},
+          create: { userId, destinationId },
+        })
+        .catch(() => {})
+    );
   }
 
   const summary = session?.user?.id ? await getActiveSubscriptionSummary(session.user.id) : null;
@@ -90,8 +96,8 @@ export default async function TripLayout({
         </TripContentArea>
       </div>
 
-      {accessLevel !== "none" && <TraviChat destinationId={destination.id} slug={slug} />}
-      {accessLevel !== "none" && <WalkthroughGuide slug={slug} />}
+      <TraviChat destinationId={destination.id} slug={slug} />
+      <WalkthroughGuide slug={slug} />
       <AdSenseScript show={showAds} />
     </DestinationThemeProvider>
   );

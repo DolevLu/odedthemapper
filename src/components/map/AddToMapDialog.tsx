@@ -375,7 +375,7 @@ export function AddToMapDialog({
               onClick={runAi}
               disabled={busy !== null || aiPrompt.trim().length < 3}
               className="rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+              style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
             >
               ✨ {t("addMap.ai.go")}
             </button>
@@ -400,7 +400,7 @@ export function AddToMapDialog({
               onClick={() => router.push(`/share-target?url=${encodeURIComponent(link.trim())}`)}
               disabled={link.trim().length < 12}
               className="rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+              style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
             >
               📍 {t("addMap.link.go")}
             </button>

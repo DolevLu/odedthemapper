@@ -1,10 +1,16 @@
-export type PlanKey = "solo" | "family" | "org" | "plus";
+export type PlanKey = "solo" | "family" | "org" | "plus" | "country";
 
 // Shown (and specially emphasized, see PricingCards) only on plans that
 // actually remove ads — the free tier keeps showing them (see AdSenseScript's
 // own `summary.plan.key === "free"` check), so it's deliberately absent from
 // FREE_PLAN's own features list.
 export const AD_FREE_FEATURE = "חוויה נקייה - בלי פרסומות 🚫📢";
+
+/** Price of one country, in agorot, and how many AI uses a purchased country includes (in total, not per day). */
+export const COUNTRY_PRICE_CENTS = 4900;
+export const COUNTRY_AI_USES = 3;
+/** Country purchases never expire; this is the stored end date. */
+export const COUNTRY_FOREVER = new Date("2099-01-01T00:00:00Z");
 
 export type Plan = {
   // "trial"/"free" aren't real PlanKey entries (see TRIAL_PLAN/FREE_PLAN below) but resolvePlan() returns them in
@@ -155,6 +161,27 @@ export const PLANS: Record<PlanKey, Plan> = {
       "עד 30 הודעות ביום לטראבי, עוזר הטיול החכם 🧭",
     ],
   },
+  // 2026-11 business model: ONE country, ONE-TIME payment, forever. Nothing in the platform is visible before this is
+  // bought (see CountryGate + trip layout). The AI is capped at COUNTRY_AI_USES per purchased country in total, not per day
+  // (see lib/countryAi.ts). Sold through /buy/[slug]; currentPeriodEnd is set far in the future.
+  country: {
+    key: "country",
+    name: "מדינה אחת",
+    audience: "כל מה שצריך לטיול במדינה אחת",
+    monthlyCents: COUNTRY_PRICE_CENTS,
+    annualCents: COUNTRY_PRICE_CENTS,
+    destinationLimit: 1,
+    seats: 1,
+    isOrgTier: false,
+    aiChatDailyQuota: 3,
+    tagline: "תשלום חד פעמי, המדינה שלכם לתמיד - מפה, מסלול, טראבי ועוד.",
+    features: [
+      "תשלום חד פעמי - בלי מנוי ובלי חיוב חודשי",
+      "כל האפליקציה למדינה שבחרתם - מפה, מסלול, טראבי לייב, שיחון, אלבום ועוד",
+      "3 שימושי AI למדינה",
+      "בלי פרסומות",
+    ],
+  },
   org: {
     key: "org",
     name: "ארגונים ומתכנני טיולים",
@@ -181,7 +208,7 @@ export const PLANS: Record<PlanKey, Plan> = {
 };
 
 /** The plans actually offered for purchase (everything except legacy keys). */
-export const PURCHASABLE_PLANS: Plan[] = Object.values(PLANS).filter((p) => !p.legacy);
+export const PURCHASABLE_PLANS: Plan[] = Object.values(PLANS).filter((p) => !p.legacy && p.key === "country");
 
 /** Resolves ANY Subscription.planKey (including "free" and "trial", neither of which is a real PLANS entry — see
  * FREE_PLAN/TRIAL_PLAN above) to its actual Plan-shaped object. Every call site that used to do a raw
@@ -220,6 +247,7 @@ const TIER_BADGES: Record<PlanKey, string> = {
   family: "FAMILY",
   org: "PRO",
   plus: "PLUS",
+  country: "COUNTRY",
 };
 
 export function tierBadgeForPlanKey(planKey: PlanKey | "trial" | "free" | null): string {

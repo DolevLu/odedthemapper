@@ -19,16 +19,21 @@ export default async function PayMeCheckoutPage({
   });
 
   if (!subscription || subscription.userId !== session.user.id) notFound();
-  if (subscription.status === "active") redirect("/account");
+  const isCountry = subscription.planKey === "country";
+  const countrySlug = subscription.destinations[0]?.destination.slug;
+  const successUrl = isCountry && countrySlug ? `/trip/${countrySlug}` : "/account";
+  if (subscription.status === "active") redirect(successUrl);
 
   const plan = resolvePlan(subscription.planKey)!;
-  const cycleLabel = subscription.billingCycle === "monthly" ? "לחודש" : "לשנה";
+  const cycleLabel = isCountry ? "חד פעמי" : subscription.billingCycle === "monthly" ? "לחודש" : "לשנה";
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6" style={{ background: "#FAF7FF" }}>
+    <div className="flex flex-1 items-center justify-center p-6" style={{ background: "#FFFFFF" }}>
       <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 shadow-xl">
         <p className="text-center text-sm font-medium opacity-60">תשלום מאובטח דרך PayMe</p>
-        <h1 className="mt-2 text-center text-2xl font-extrabold">מנוי {plan.name}</h1>
+        <h1 className="mt-2 text-center text-2xl font-extrabold">
+          {isCountry ? `מפת ${subscription.destinations[0]?.destination.name ?? ""}` : `מנוי ${plan.name}`}
+        </h1>
         <p className="mt-4 text-center text-4xl font-extrabold" style={{ color: "#6D28D9" }}>
           {formatIls(subscription.amountCents)} <span className="text-lg font-medium opacity-60">{cycleLabel}</span>
         </p>
@@ -50,6 +55,7 @@ export default async function PayMeCheckoutPage({
           planName={plan.name}
           payerEmail={session.user.email ?? ""}
           payerName={session.user.name ?? ""}
+          successUrl={successUrl}
         />
       </div>
     </div>

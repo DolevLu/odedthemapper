@@ -7,7 +7,7 @@ import { FREE_PLAN, resolvePlan } from "@/lib/plans";
  * Cached per-request: this is looked up repeatedly (layout, page, header,
  * sidebar) on every single navigation, and without dedup each call was a
  * fresh round-trip to the database for identical data. */
-const getActiveSubscription = cache(async (userId: string) => {
+export const getActiveSubscription = cache(async (userId: string) => {
   const owned = await prisma.subscription.findFirst({
     where: { userId, status: "active", currentPeriodEnd: { gt: new Date() } },
     include: { destinations: true },
@@ -29,10 +29,21 @@ const getActiveSubscription = cache(async (userId: string) => {
   return membership?.subscription ?? null;
 });
 
+/** Destination ids this user bought as one-time ₪49 country purchases (planKey "country", active). A user can own
+ * several at once - which is why this is separate from getActiveSubscription (that returns just the latest row). */
+export const getCountryDestinationIds = cache(async (userId: string): Promise<string[]> => {
+  const rows = await prisma.subscriptionDestination.findMany({
+    where: { subscription: { userId, planKey: "country", status: "active", currentPeriodEnd: { gt: new Date() } } },
+    select: { destinationId: true },
+  });
+  return [...new Set(rows.map((r) => r.destinationId))];
+});
+
 export async function hasAccessToDestination(userId: string, destinationId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
   if (user?.isAdmin) return true; // admins can open any destination's app for QA without subscribing
 
+  if ((await getCountryDestinationIds(userId)).includes(destinationId)) return true;
   const sub = await getActiveSubscription(userId);
   if (!sub) return false;
   const plan = resolvePlan(sub.planKey);
@@ -42,14 +53,19 @@ export async function hasAccessToDestination(userId: string, destinationId: stri
 
 export async function getUserPurchasedSlugs(userId: string): Promise<string[]> {
   const sub = await getActiveSubscription(userId);
-  if (!sub) return [];
+  const countryIds = await getCountryDestinationIds(userId);
+  if (!sub && countryIds.length === 0) return [];
+  if (!sub) {
+    const own = await prisma.destination.findMany({ where: { id: { in: countryIds } }, select: { slug: true } });
+    return own.map((d) => d.slug);
+  }
   const plan = resolvePlan(sub.planKey);
   if (plan?.isOrgTier || plan?.allDestinations) {
     const all = await prisma.destination.findMany({ select: { slug: true } });
     return all.map((d) => d.slug);
   }
   const destinations = await prisma.destination.findMany({
-    where: { id: { in: sub.destinations.map((d) => d.destinationId) } },
+    where: { id: { in: [...new Set([...sub.destinations.map((d) => d.destinationId), ...countryIds])] } },
     select: { slug: true },
   });
   return destinations.map((d) => d.slug);
@@ -87,6 +103,7 @@ export const getAccessLevel = cache(async (userId: string | undefined, destinati
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
   if (user?.isAdmin) return "gold";
 
+  if ((await getCountryDestinationIds(userId)).includes(destinationId)) return "silver";
   const sub = await getActiveSubscription(userId);
   if (!sub) return "none";
   const plan = resolvePlan(sub.planKey);

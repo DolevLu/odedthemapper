@@ -20,7 +20,7 @@ const CATEGORIES: { value: string; labelKey: DictionaryKey; emoji: string; color
   { value: "אוכל", labelKey: "expenses.category.food", emoji: "🍽️", color: "#F59E0B" },
   { value: "תחבורה", labelKey: "expenses.category.transport", emoji: "🚌", color: "#3B82F6" },
   { value: "לינה", labelKey: "expenses.category.lodging", emoji: "🛏️", color: "#8B5CF6" },
-  { value: "אטרקציות", labelKey: "expenses.category.attractions", emoji: "🎟️", color: "#EC4899" },
+  { value: "אטרקציות", labelKey: "expenses.category.attractions", emoji: "🎟️", color: "#8B5CF6" },
   { value: "קניות", labelKey: "expenses.category.shopping", emoji: "🛍️", color: "#10B981" },
   { value: "אחר", labelKey: "expenses.category.other", emoji: "🧾", color: "#94A3B8" },
 ];

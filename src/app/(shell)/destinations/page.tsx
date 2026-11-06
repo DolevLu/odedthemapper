@@ -29,7 +29,7 @@ export default async function DestinationsPage() {
         <Link
           href="/destinations/quiz"
           className="mb-8 flex flex-col items-start gap-2 rounded-3xl p-6 text-white shadow-md sm:flex-row sm:items-center sm:justify-between"
-          style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+          style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
         >
           <div>
             <p className="text-lg font-extrabold">{t("destinations.quizBannerTitle")}</p>

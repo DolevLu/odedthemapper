@@ -10,6 +10,7 @@ import { resolveItineraryOwnerId, canManageContent, getGroupContext } from "@/li
 import { assertDayAccess, assertItemAccess, itemLabel } from "@/lib/groupAccess";
 import { logGroupActivity } from "@/lib/groupActivity";
 import { consumeApiQuota } from "@/lib/apiQuota";
+import { consumeCountryAiUse } from "@/lib/countryAi";
 import { SAVED_PIN_FALLBACK_COLOR } from "@/lib/mapStyles";
 import { parsePersonalMapFile } from "@/lib/kml/parsePersonalPoints";
 import { extractTextDescription } from "@/lib/data/pois";
@@ -738,6 +739,14 @@ export async function buildSwipeDeck(
   }));
 }
 
+/** AI-planning gate: country buyers spend one of their country's 3 AI uses; everyone else the daily planning budget. */
+async function aiPlanningAllowed(userId: string): Promise<boolean> {
+  const country = await consumeCountryAiUse(userId);
+  if (country === "ok") return true;
+  if (country === "exhausted") return false;
+  return consumeApiQuota(userId, "aiPlanning");
+}
+
 /** Asks Gemini for a handful of extra tourist-recommended spots for this
  * destination (optionally narrowed to the chosen category names) to keep the
  * swipe deck going once our own POI database for that filter is exhausted.
@@ -754,7 +763,7 @@ export async function fetchAiSuggestedPois(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return [];
   // Gemini costs money per call — capped per user per day (see lib/apiQuota.ts).
-  if (!(await consumeApiQuota(userId, "aiPlanning"))) return [];
+  if (!(await aiPlanningAllowed(userId))) return [];
   destinationName = destinationName.slice(0, 100);
   categories = categories.slice(0, 20).map((c) => c.slice(0, 60));
 
@@ -1295,7 +1304,7 @@ async function resolveFreeTextIntent(
 ): Promise<{ categories: string[]; areas: string[] }> {
   const apiKey = process.env.GEMINI_API_KEY;
   // Gemini costs money per call — capped per user per day; over the cap it falls through to the free keyword match.
-  if (apiKey && (await consumeApiQuota(userId, "aiPlanning"))) {
+  if (apiKey && (await aiPlanningAllowed(userId))) {
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,

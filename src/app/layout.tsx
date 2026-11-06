@@ -5,7 +5,6 @@ import { Providers } from "@/components/Providers";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { PresenceHeartbeat } from "@/components/PresenceHeartbeat";
 import { PortraitOnlyGate } from "@/components/PortraitOnlyGate";
-import { PromoDrawer } from "@/components/PromoDrawer";
 import { ReferralClaimer } from "@/components/ReferralClaimer";
 import { FocusModeExitButton } from "@/components/FocusModeExitButton";
 import "./globals.css";
@@ -127,7 +126,6 @@ export default async function RootLayout({
           <ReferralClaimer />
           <PresenceHeartbeat />
         </Providers>
-        <PromoDrawer />
         <FocusModeExitButton />
         <ServiceWorkerRegister />
       </body>

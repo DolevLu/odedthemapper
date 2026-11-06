@@ -96,7 +96,7 @@ export function AlbumUploadForm({ destinationId, slug, variant = "hero" }: { des
           className="flex cursor-pointer flex-col items-center gap-3 border-2 border-dashed px-6 py-12 text-center transition-colors hover:bg-black/5 aria-disabled:pointer-events-none aria-disabled:opacity-60"
           style={{ borderRadius: "calc(var(--radius) + 6px)", borderColor: "color-mix(in srgb, var(--primary) 45%, transparent)", background: "var(--surface)" }}
         >
-          <span className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED22, #EC489922)" }}>
+          <span className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: "linear-gradient(135deg, #7C3AED22, #8B5CF622)" }}>
             <UploadIcon size={30} />
           </span>
           <span className="text-base font-bold">{uploading ? `${t("album.uploading")} ${label}` : t("album.uploadButton")}</span>

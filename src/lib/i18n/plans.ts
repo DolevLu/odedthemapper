@@ -35,6 +35,30 @@ const PLAN_TEXT: Record<"trial" | "free" | PlanKey, Record<Lang, PlanText>> = {
       ],
     },
   },
+  country: {
+    he: {
+      name: "מדינה אחת",
+      audience: "כל מה שצריך לטיול במדינה אחת",
+      tagline: "תשלום חד פעמי, המדינה שלכם לתמיד - מפה, מסלול, טראבי ועוד.",
+      features: [
+        "תשלום חד פעמי - בלי מנוי ובלי חיוב חודשי",
+        "כל האפליקציה למדינה שבחרתם - מפה, מסלול, טראבי לייב, שיחון, אלבום ועוד",
+        "3 שימושי AI למדינה",
+        "בלי פרסומות",
+      ],
+    },
+    en: {
+      name: "One country",
+      audience: "Everything for a trip to one country",
+      tagline: "One payment, your country forever - map, route, Travi and more.",
+      features: [
+        "One-time payment - no subscription, no monthly charge",
+        "The whole app for your country - map, route, Travi Live, phrasebook, album and more",
+        "3 AI uses per country",
+        "No ads",
+      ],
+    },
+  },
   free: {
     he: {
       name: "שבוע חינם",

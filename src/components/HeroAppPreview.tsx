@@ -58,7 +58,7 @@ export function HeroAppPreview() {
            * so it's obvious pins are clickable and show real info */}
           <div className="absolute z-10 w-32 -translate-x-1/2" style={{ top: "0%", right: "62%" }}>
             <div className="overflow-hidden rounded-lg bg-white shadow-lg">
-              <div className="h-10 w-full" style={{ background: "linear-gradient(135deg, #F97316, #EC4899)" }} />
+              <div className="h-10 w-full" style={{ background: "linear-gradient(135deg, #F97316, #8B5CF6)" }} />
               <div className="p-1.5 text-right">
                 <p className="truncate text-[10px] font-bold">Café Savoy</p>
                 <p className="truncate text-[9px] opacity-60">בית קפה · 350 מ׳</p>
@@ -72,7 +72,7 @@ export function HeroAppPreview() {
 
           <span
             className="absolute bottom-3 left-3 flex h-9 w-9 items-center justify-center rounded-full text-base shadow-md"
-            style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
           >
             💬
           </span>

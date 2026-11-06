@@ -223,7 +223,7 @@ function HowMapWorksDiagram() {
          * so it's obvious what tapping a pin actually does */}
         <div className="absolute z-10 w-36 -translate-x-1/2" style={{ top: "-2%", right: "65%" }}>
           <div className="overflow-hidden rounded-lg bg-white shadow-lg">
-            <div className="h-12 w-full" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }} />
+            <div className="h-12 w-full" style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }} />
             <div className="p-2 text-right">
               <p className="truncate text-xs font-bold">גשר קרלוס</p>
               <p className="truncate text-[10px] opacity-60">אטרקציות · 200 מ׳</p>
@@ -243,7 +243,7 @@ function HowMapWorksDiagram() {
         {/* callout 3 — chat */}
         <span
           className="absolute bottom-3 left-3 z-10 flex h-9 w-9 items-center justify-center rounded-full text-base shadow-md"
-          style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+          style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
         >
           💬
         </span>

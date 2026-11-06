@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { hasAccessToDestination } from "@/lib/access";
 import { requireSessionUserId } from "@/lib/groupAccess";
 import { consumeApiQuota } from "@/lib/apiQuota";
+import { consumeCountryAiUse } from "@/lib/countryAi";
 import { geminiGenerate } from "@/lib/gemini";
 import { SAVED_PIN_CATEGORY_OPTIONS } from "@/lib/mapStyles";
 import { canonicalSocialUrl, extractSocialUrl, heuristicHints, platformForUrl, readSocialPost, type SocialPlatform } from "@/lib/socialLink";
@@ -36,6 +37,13 @@ export type AnalyzeResult =
 
 const text = (v: unknown, max: number): string | null => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
+async function aiReadAllowed(userId: string): Promise<boolean> {
+  const country = await consumeCountryAiUse(userId);
+  if (country === "ok") return true;
+  if (country === "exhausted") return false;
+  return consumeApiQuota(userId, "aiPlanning");
+}
+
 /** Step 1 of "share a reel into Travi": reads the shared link's public preview (caption, author, thumbnail) and
  * works out which real place the post is about. Names only - the browser then verifies every guess against Google
  * Places, so a wrong guess can never put a non-existent place on the map. */
@@ -64,7 +72,7 @@ export async function analyzeSharedLink(rawText: string): Promise<AnalyzeResult>
   if (!context.trim() && !base.title) return { ok: true, source: base, guesses: [], via: "none" };
 
   // AI reading of caption + hashtags (counts against the daily AI-planning budget; falls back to the caption hints).
-  if (process.env.GEMINI_API_KEY && (await consumeApiQuota(userId, "aiPlanning"))) {
+  if (process.env.GEMINI_API_KEY && (await aiReadAllowed(userId))) {
     const system = `You read the caption of a social-media travel video and identify the ONE real, specific place it is about (a cafe, restaurant, bar, park, viewpoint, museum, attraction, shop, hotel, trail...). Return JSON only: {"places":[{"name": the place name as it appears on Google Maps, "city": the city, "category": one of ${SAVED_PIN_CATEGORY_OPTIONS.join(" / ")}, "confidence": 0 to 1}]} with at most 3 places, best first. Use the 📍 line, @mentions of businesses and hashtags as clues (a city hashtag tells you the city). If the post is not about a specific place, return {"places":[]}. Never invent a place that the text does not point to.`;
     try {
       const res = await geminiGenerate(

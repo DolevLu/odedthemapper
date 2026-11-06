@@ -169,7 +169,7 @@ export function SharePlaceImport({ initialText }: { initialText: string }) {
             className="rounded-full border px-4 py-2 text-sm"
             style={{ borderColor: "var(--primary)", background: "var(--surface)" }}
           />
-          <button onClick={() => run(pasted)} disabled={pasted.trim().length < 12} className="rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50" style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}>
+          <button onClick={() => run(pasted)} disabled={pasted.trim().length < 12} className="rounded-full px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50" style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}>
             📍 {t("share.paste.go")}
           </button>
           <p className="text-[11px] opacity-50">{t("share.paste.tip")}</p>
@@ -248,7 +248,7 @@ export function SharePlaceImport({ initialText }: { initialText: string }) {
                 onClick={save}
                 disabled={phase === "saving"}
                 className="rounded-full px-5 py-3 text-base font-bold text-white disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+                style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
               >
                 {t("share.add")}
               </button>

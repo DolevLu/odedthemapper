@@ -66,7 +66,7 @@ export function OrgConfirmButton({ planKey, billingCycle }: { planKey: PlanKey; 
         onClick={handleSubmit}
         disabled={loading}
         className="rounded-full px-6 py-3 font-semibold text-white disabled:opacity-50"
-        style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+        style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
       >
         {loading ? "טוען..." : "מעבר לתשלום"}
       </button>

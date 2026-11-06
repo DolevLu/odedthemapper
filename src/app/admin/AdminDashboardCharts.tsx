@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import type { FinancialSummary, UsageSummary, Recommendation } from "@/lib/admin/analytics";
 
-const COLORS = ["#7C3AED", "#EC4899", "#F59E0B", "#0EA5E9", "#22C55E", "#EF4444", "#8B5CF6", "#14B8A6"];
+const COLORS = ["#7C3AED", "#8B5CF6", "#F59E0B", "#0EA5E9", "#22C55E", "#EF4444", "#8B5CF6", "#14B8A6"];
 
 function TrendBadge({ pct }: { pct: number }) {
   if (pct === 0) return <span className="text-xs opacity-50">ללא שינוי</span>;
@@ -86,7 +86,7 @@ export function AdminDashboardCharts({
                 <XAxis dataKey="month" fontSize={11} />
                 <YAxis fontSize={11} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="purchases" fill="#EC4899" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="purchases" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>

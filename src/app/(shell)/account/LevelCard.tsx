@@ -21,7 +21,7 @@ export async function LevelCard({
         <div className="flex items-center gap-3">
           <span
             className="site-logo flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-extrabold text-white shadow-md"
-            style={{ background: "linear-gradient(135deg, var(--primary), #EC4899)" }}
+            style={{ background: "linear-gradient(135deg, var(--primary), #8B5CF6)" }}
           >
             {level.level}
           </span>
@@ -44,7 +44,7 @@ export async function LevelCard({
         <div className="h-3 w-full overflow-hidden rounded-full bg-black/5">
           <div
             className="h-full rounded-full transition-all"
-            style={{ width: `${level.progressPct}%`, background: "linear-gradient(90deg, var(--primary), #EC4899)" }}
+            style={{ width: `${level.progressPct}%`, background: "linear-gradient(90deg, var(--primary), #8B5CF6)" }}
           />
         </div>
         <p className="mt-1.5 text-xs opacity-60">

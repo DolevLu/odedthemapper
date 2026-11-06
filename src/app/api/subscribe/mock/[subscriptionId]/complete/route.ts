@@ -6,6 +6,9 @@ import { notifyAdmins } from "@/lib/adminAlerts";
 import { resolvePlan, formatIls } from "@/lib/plans";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ subscriptionId: string }> }) {
+  // Demo payments only: with the real gateway configured, anyone could otherwise "complete" their own pending
+  // subscription for free by calling this endpoint.
+  if (process.env.PAYME_API_KEY) return NextResponse.json({ error: "not found" }, { status: 404 });
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "יש להתחבר" }, { status: 401 });

@@ -19,13 +19,14 @@ export default async function MockSubscribeCheckoutPage({
   });
 
   if (!subscription || subscription.userId !== session.user.id) notFound();
-  if (subscription.status === "active") redirect("/account");
+  const countrySlug = subscription.planKey === "country" ? subscription.destinations[0]?.destination.slug : undefined;
+  if (subscription.status === "active") redirect(countrySlug ? `/trip/${countrySlug}` : "/account");
 
   const plan = resolvePlan(subscription.planKey)!;
   const cycleLabel = subscription.billingCycle === "monthly" ? "לחודש" : "לשנה";
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6" style={{ background: "#FAF7FF" }}>
+    <div className="flex flex-1 items-center justify-center p-6" style={{ background: "#FFFFFF" }}>
       <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-8 text-center shadow-xl">
         <p className="text-sm font-medium opacity-60">מצב תשלום - הדגמה (Test Mode)</p>
         <h1 className="mt-2 text-2xl font-extrabold">מנוי {plan.name}</h1>
@@ -49,7 +50,7 @@ export default async function MockSubscribeCheckoutPage({
           זהו תשלום מדומה לצורך פיתוח - לא מתבצע חיוב אמיתי. בהמשך יוחלף בסליקה אמיתית דרך PayMe.
         </p>
 
-        <MockPayButton subscriptionId={subscription.id} />
+        <MockPayButton subscriptionId={subscription.id} successUrl={countrySlug ? `/trip/${countrySlug}` : "/account"} />
       </div>
     </div>
   );

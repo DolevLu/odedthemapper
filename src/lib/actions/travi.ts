@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { haversineKm } from "@/lib/geo";
 import { getAiChatDailyQuota } from "@/lib/access";
 import { consumeAiChatQuota } from "@/lib/aiChatQuota";
+import { consumeCountryAiUse } from "@/lib/countryAi";
 import { geminiGenerate } from "@/lib/gemini";
 
 export type TraviSuggestion = { id: string; name: string; categoryName: string; areaName: string; distanceKm: number | null };
@@ -237,7 +238,17 @@ export async function askTravi(
   if (!userId) {
     return { text: en ? "You need to sign in to talk to Travi." : "צריך להתחבר כדי לדבר עם טראבי.", suggestions: [] };
   }
-  const dailyQuota = await getAiChatDailyQuota(userId);
+  // Country buyers (one-time ₪49) get 3 AI uses per country in total, not a daily allowance.
+  const countryUse = await consumeCountryAiUse(userId, destinationId);
+  if (countryUse === "exhausted") {
+    return {
+      text: en
+        ? "You've used the 3 AI uses included with this country 🧭 - the rest of the app keeps working as always."
+        : "ניצלתם את 3 שימושי ה-AI שכלולים במדינה הזו 🧭 - כל שאר האפליקציה ממשיכה לעבוד כרגיל.",
+      suggestions: [],
+    };
+  }
+  const dailyQuota = countryUse === "ok" ? null : await getAiChatDailyQuota(userId);
   if (dailyQuota !== null) {
     const { allowed } = await consumeAiChatQuota(userId, dailyQuota);
     if (!allowed) {

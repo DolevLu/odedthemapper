@@ -127,7 +127,7 @@ export function PublicRouteView({ slug, route, hasExistingDays }: { slug: string
               onClick={() => (hasExistingDays ? setConfirming(true) : applyRoute())}
               disabled={busy}
               className="rounded-full px-4 py-2 text-sm font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #6D28D9, #EC4899)" }}
+              style={{ background: "linear-gradient(135deg, #6D28D9, #8B5CF6)" }}
             >
               {t("pub.use")}
             </button>

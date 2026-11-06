@@ -82,6 +82,9 @@ export async function startFreeTrial(destinationId: string): Promise<{ error: st
  * Only handles the FIRST activation. Changing which destination a user who already has access already has is
  * swapSubscriptionDestination's job (lib/actions/subscription.ts), unchanged. */
 export async function startFreeAccess(destinationId: string): Promise<{ error: string } | { ok: true }> {
+  // Retired 2026-11: no free access anymore, every country is a one-time ₪49 purchase (see /buy/[slug]).
+  void destinationId;
+  if (Date.now() > 0) return { error: "הגישה לכל מדינה היא ברכישה חד פעמית של ₪49" };
   const session = await auth();
   if (!session?.user?.id) return { error: "יש להתחבר כדי להתחיל את השבוע החינמי" };
   const userId = session.user.id;
